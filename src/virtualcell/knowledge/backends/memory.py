@@ -1,0 +1,71 @@
+"""In-memory KnowledgeStore backend.
+
+Pure Python, zero external dependencies. This is the default backend and the one
+exercised by the test suite. It is suitable for demos, tests, and small graphs.
+"""
+
+from __future__ import annotations
+
+from collections import defaultdict
+
+from virtualcell.knowledge.schema import BioEntity, Interaction
+
+
+class InMemoryKnowledgeStore:
+    """A dict-backed implementation of the KnowledgeStore protocol."""
+
+    def __init__(self) -> None:
+        self._entities: dict[str, BioEntity] = {}
+        # adjacency: entity_id -> list of (relation, neighbor_id)
+        self._edges: dict[str, list[tuple[str, str]]] = defaultdict(list)
+
+    def upsert(self, entity: BioEntity) -> None:
+        self._entities[entity.id] = entity
+
+    def add_interaction(self, interaction: Interaction) -> None:
+        if interaction.source_id not in self._entities:
+            raise KeyError(f"unknown source entity: {interaction.source_id}")
+        if interaction.target_id not in self._entities:
+            raise KeyError(f"unknown target entity: {interaction.target_id}")
+        rel = interaction.relation.value
+        self._edges[interaction.source_id].append((rel, interaction.target_id))
+        # store the reverse direction too so neighbor queries are symmetric
+        self._edges[interaction.target_id].append((rel, interaction.source_id))
+
+    def get(self, entity_id: str) -> BioEntity | None:
+        return self._entities.get(entity_id)
+
+    def neighbors(self, entity_id: str, relation: str | None = None) -> list[BioEntity]:
+        out: list[BioEntity] = []
+        seen: set[str] = set()
+        for rel, neighbor_id in self._edges.get(entity_id, []):
+            if relation is not None and rel != relation:
+                continue
+            if neighbor_id in seen:
+                continue
+            seen.add(neighbor_id)
+            entity = self._entities.get(neighbor_id)
+            if entity is not None:
+                out.append(entity)
+        return out
+
+    def search(self, query: str, k: int = 10) -> list[BioEntity]:
+        """Case-insensitive substring ranking over each entity's text."""
+        q = query.lower().strip()
+        if not q:
+            return []
+        scored: list[tuple[int, BioEntity]] = []
+        for entity in self._entities.values():
+            haystack = entity.text().lower()
+            if q in haystack:
+                # crude score: exact name match ranks highest, then alias, then text
+                score = 0
+                if entity.name.lower() == q:
+                    score = 3
+                elif q in entity.name.lower():
+                    score = 2
+                else:
+                    score = 1
+                scored.append((score, entity))
+        scored.sort(key=lambda pair: pair[0], reverse=True)
+        return [entity for _, entity in scored[:k]]
