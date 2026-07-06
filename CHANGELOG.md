@@ -11,7 +11,11 @@ to [Semantic Versioning](https://semver.org/).
   `UniProt2Reactome` export into the knowledge base as `Protein`/`Pathway`
   entities and `PARTICIPATES_IN` interactions, with species filtering and source
   provenance (roadmap Stage 1 → real data).
-- `virtualcell ingest reactome --path <file>` CLI command.
+- Real **UniProt** data-source connector (`UniProtSource`) that ingests a
+  UniProtKB TSV export as rich `Protein` and `Gene` entities plus `ENCODES`
+  interactions, enriching skeletal proteins previously ingested from Reactome
+  under the same `protein:<accession>` id.
+- `virtualcell ingest {reactome,uniprot} --path <file>` CLI command.
 
 ## [0.1.0] - 2026-07-06
 

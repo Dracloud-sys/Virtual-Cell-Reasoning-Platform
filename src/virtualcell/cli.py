@@ -6,6 +6,7 @@ Usage:
     virtualcell search "<query>"
     virtualcell neighbors <entity_id>
     virtualcell ingest reactome --path <UniProt2Reactome.txt>
+    virtualcell ingest uniprot  --path <uniprotkb_export.tsv>
 
 The CLI seeds an in-memory knowledge base with the bundled sample dataset.
 """
@@ -82,6 +83,10 @@ def _cmd_ingest(args: argparse.Namespace) -> int:
         from virtualcell.knowledge.sources.reactome import ReactomeSource
 
         source = ReactomeSource(path=args.path, species=args.species)
+    elif args.source == "uniprot":
+        from virtualcell.knowledge.sources.uniprot import UniProtSource
+
+        source = UniProtSource(path=args.path, species=args.species)
     else:  # pragma: no cover - argparse restricts choices
         print(f"unknown source: {args.source}")
         return 1
@@ -121,7 +126,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_ask.set_defaults(func=_cmd_ask)
 
     p_ingest = sub.add_parser("ingest", help="ingest a real data source into a knowledge base")
-    p_ingest.add_argument("source", choices=["reactome"])
+    p_ingest.add_argument("source", choices=["reactome", "uniprot"])
     p_ingest.add_argument(
         "--path", required=True, help="path to the source file (e.g. UniProt2Reactome.txt)"
     )
