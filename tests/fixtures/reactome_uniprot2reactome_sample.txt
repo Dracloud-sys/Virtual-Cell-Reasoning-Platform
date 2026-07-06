@@ -1,0 +1,7 @@
+P04637	R-HSA-69541	https://reactome.org/PathwayBrowser/#/R-HSA-69541	Stabilisation of p53	TAS	Homo sapiens
+P04637	R-HSA-6804756	https://reactome.org/PathwayBrowser/#/R-HSA-6804756	Regulation of TP53 Activity through Phosphorylation	TAS	Homo sapiens
+Q00987	R-HSA-6804756	https://reactome.org/PathwayBrowser/#/R-HSA-6804756	Regulation of TP53 Activity through Phosphorylation	TAS	Homo sapiens
+Q00987	R-HSA-69541	https://reactome.org/PathwayBrowser/#/R-HSA-69541	Stabilisation of p53	TAS	Homo sapiens
+P38398	R-HSA-5693567	https://reactome.org/PathwayBrowser/#/R-HSA-5693567	HDR through Homologous Recombination (HRR)	TAS	Homo sapiens
+P04637	R-MMU-69541	https://reactome.org/PathwayBrowser/#/R-MMU-69541	Stabilisation of p53	IEA	Mus musculus
+MALFORMED_LINE_NO_TABS

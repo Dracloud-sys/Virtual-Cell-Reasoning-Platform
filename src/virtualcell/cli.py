@@ -5,6 +5,7 @@ Usage:
     virtualcell agents
     virtualcell search "<query>"
     virtualcell neighbors <entity_id>
+    virtualcell ingest reactome --path <UniProt2Reactome.txt>
 
 The CLI seeds an in-memory knowledge base with the bundled sample dataset.
 """
@@ -74,6 +75,31 @@ def _cmd_ask(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_ingest(args: argparse.Namespace) -> int:
+    from virtualcell.knowledge.sources.base import load_into
+
+    if args.source == "reactome":
+        from virtualcell.knowledge.sources.reactome import ReactomeSource
+
+        source = ReactomeSource(path=args.path, species=args.species)
+    else:  # pragma: no cover - argparse restricts choices
+        print(f"unknown source: {args.source}")
+        return 1
+
+    store = InMemoryKnowledgeStore()
+    try:
+        n_entities, n_interactions = load_into(source, store)
+    except (OSError, ValueError) as exc:
+        print(f"ingest failed: {exc}")
+        return 1
+
+    print(
+        f"ingested {n_entities} entities, {n_interactions} interactions "
+        f"from '{args.source}' ({args.path})"
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="virtualcell", description="Virtual Cell Platform CLI")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -93,6 +119,16 @@ def build_parser() -> argparse.ArgumentParser:
     p_ask = sub.add_parser("ask", help="ask the Literature Agent")
     p_ask.add_argument("query")
     p_ask.set_defaults(func=_cmd_ask)
+
+    p_ingest = sub.add_parser("ingest", help="ingest a real data source into a knowledge base")
+    p_ingest.add_argument("source", choices=["reactome"])
+    p_ingest.add_argument(
+        "--path", required=True, help="path to the source file (e.g. UniProt2Reactome.txt)"
+    )
+    p_ingest.add_argument(
+        "--species", default="Homo sapiens", help="species filter (default: Homo sapiens)"
+    )
+    p_ingest.set_defaults(func=_cmd_ingest)
 
     return parser
 

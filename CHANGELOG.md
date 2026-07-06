@@ -6,6 +6,13 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Real **Reactome** data-source connector (`ReactomeSource`) that ingests the
+  `UniProt2Reactome` export into the knowledge base as `Protein`/`Pathway`
+  entities and `PARTICIPATES_IN` interactions, with species filtering and source
+  provenance (roadmap Stage 1 → real data).
+- `virtualcell ingest reactome --path <file>` CLI command.
+
 ## [0.1.0] - 2026-07-06
 
 ### Added
