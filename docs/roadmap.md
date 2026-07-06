@@ -19,6 +19,48 @@ that move the project closer to a full digital organism.
 | 11 | Digital Organ | Planned |
 | 12 | Digital Organism | Planned |
 
+## Strategic positioning (decided 2026-07-06)
+
+The platform's defensible identity is an **interpretable, evidence-graded
+mechanistic reasoning layer** — *not* a data-driven perturbation predictor.
+
+Rationale, informed by two reference works:
+
+- **AlphaCell** (bioRxiv, 2026) — a data-driven "Virtual Cell World Model"
+  trained on 220M cells / 1.2B params. State-of-the-art at predicting *what*
+  changes (genome-wide expression under a perturbation), but a black box, unable
+  to handle novel compounds, transcriptome-only, and infeasible to reproduce at
+  small scale.
+- **"How to build the virtual cell with AI"** (Bunne et al., *Cell* 2024) — the
+  field's blueprint (Universal Representations + Virtual Instruments). It names
+  **interpretability, mechanism, calibrated uncertainty, hypothesis-space
+  narrowing, and non-expert agent interfaces** as the hardest, least-solved
+  challenges.
+
+Those unsolved challenges are precisely what this platform already designs for:
+`EvidenceTier` + `confidence`, a provenance-tagged symbolic knowledge graph, and
+an agent-first architecture. So we do **not** compete with predictors like
+AlphaCell — we complement them: where a predictor says *what* changes, we explain
+*why, through which pathways, and how confidently*, with citations.
+
+### Capability stack for this identity (build order)
+
+1. **Evidence-graded multi-hop reasoning primitive** — from a seed entity,
+   traverse the graph and return affected entities with their path, the evidence
+   tier of the weakest edge on the path, and a `combine_confidences`-composed
+   score. (Buildable on the current gene→protein→pathway graph.)
+2. **Edge enrichment** — protein–protein interactions (IntAct/STRING,
+   `INTERACTS_WITH`) and gene-regulatory edges, to make propagation mechanistic.
+3. **Compound layer** — drug–target data (ChEMBL) as the entry point for
+   "substance → target → mechanism" reasoning.
+4. **LLM agent interface** — natural-language question in, cited evidence-graded
+   mechanistic hypothesis out (realizes the agent-first design).
+5. **Biological benchmarks** — validate reasoning against known biology,
+   answering the "how do we build trust?" question.
+
+Persistence (JSON snapshot or the stubbed Neo4j backend) is folded in around
+step 3, when the merged graph becomes worth keeping across sessions.
+
 ## Biological hierarchy respected across stages
 
 ```
@@ -36,6 +78,12 @@ Genome → Epigenome → Transcriptome → Proteome → Metabolome
 
 ## Near-term (post v0.1)
 
-- Real Neo4j/Qdrant backend implementations wired end-to-end.
-- First data-source ingestion (Gene Ontology, Reactome).
-- Gene Regulatory Network model (Stage 3) as the first PyTorch-backed agent.
+Reprioritized per the strategic positioning above. The next concrete step is
+step 1 of the capability stack (the evidence-graded reasoning primitive).
+
+- ✅ First real data-source ingestion: **Reactome** and **UniProt** connectors,
+  with cross-source protein enrichment (`virtualcell ingest`).
+- ▶ Evidence-graded multi-hop reasoning primitive (`virtualcell explain`).
+- Edge enrichment (PPI / gene-regulatory) and the compound (ChEMBL) layer.
+- LLM agent interface over the knowledge graph.
+- Persistence (JSON snapshot / Neo4j) once the merged graph is worth keeping.
