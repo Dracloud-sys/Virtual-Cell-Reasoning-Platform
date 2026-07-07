@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from virtualcell import __version__
-from virtualcell.api.routes import agents, knowledge
+from virtualcell.api.routes import agents, knowledge, reasoning
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
 from virtualcell.knowledge.sources.base import load_into
 from virtualcell.knowledge.sources.sample import SampleDataSource
@@ -28,14 +28,15 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Virtual Cell Platform",
+    title="Virtual Cell Reasoning Platform",
     version=__version__,
-    description="An AI-driven, modular, explainable digital cell.",
+    description="An AI-driven, modular, explainable cell-biology reasoning platform.",
     lifespan=lifespan,
 )
 
 app.include_router(knowledge.router)
 app.include_router(agents.router)
+app.include_router(reasoning.router)
 
 
 @app.get("/health", tags=["system"])

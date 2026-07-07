@@ -6,7 +6,18 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Repositioned as the **Virtual Cell Reasoning Platform** — an interpretable,
+  evidence-graded mechanistic reasoning layer, not a black-box simulator. Dynamic
+  ML simulation is out of scope (delegated to external models). Updated README,
+  API/CLI titles, and package metadata/URLs accordingly.
+
 ### Added
+- **Natural-language reasoning layer** (`virtualcell.reasoning`): retrieves a
+  relevant subgraph for a question and answers it, grounded strictly in cited,
+  evidence-graded knowledge-base facts. Backed by **Anthropic Claude** (`llm`
+  extra + `ANTHROPIC_API_KEY`) with a deterministic offline fallback so it runs
+  with no key. Exposed via `virtualcell qa` and `POST /reasoning/qa`.
 - Real **Reactome** data-source connector (`ReactomeSource`) that ingests the
   `UniProt2Reactome` export into the knowledge base as `Protein`/`Pathway`
   entities and `PARTICIPATES_IN` interactions, with species filtering and source

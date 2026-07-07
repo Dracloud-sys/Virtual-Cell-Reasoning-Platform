@@ -1,7 +1,7 @@
 [project]
 name = "virtualcell"
 version = "0.1.0"
-description = "An AI-driven, modular, explainable digital cell platform."
+description = "An AI-driven, modular, explainable cell-biology reasoning platform."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
@@ -41,6 +41,9 @@ vector = [
 orchestration = [
     "langgraph>=0.1",
 ]
+llm = [
+    "anthropic>=0.40",
+]
 dev = [
     "pytest>=8.2",
     "pytest-asyncio>=0.23",
@@ -54,9 +57,9 @@ dev = [
 virtualcell = "virtualcell.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/OWNER/virtual-cell-platform"
-Repository = "https://github.com/OWNER/virtual-cell-platform"
-Documentation = "https://github.com/OWNER/virtual-cell-platform/tree/main/docs"
+Homepage = "https://github.com/Dracloud-sys/Virtual-Cell-Reasoning-Platform"
+Repository = "https://github.com/Dracloud-sys/Virtual-Cell-Reasoning-Platform"
+Documentation = "https://github.com/Dracloud-sys/Virtual-Cell-Reasoning-Platform/tree/main/docs"
 
 [build-system]
 requires = ["hatchling"]

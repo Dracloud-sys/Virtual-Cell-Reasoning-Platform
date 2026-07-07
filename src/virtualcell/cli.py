@@ -1,10 +1,12 @@
-"""Command-line interface for the Virtual Cell Platform.
+"""Command-line interface for the Virtual Cell Reasoning Platform.
 
 Usage:
     virtualcell version
     virtualcell agents
     virtualcell search "<query>"
     virtualcell neighbors <entity_id>
+    virtualcell ask "<query>"
+    virtualcell qa "<natural-language question>"
     virtualcell ingest reactome --path <UniProt2Reactome.txt>
     virtualcell ingest uniprot  --path <uniprotkb_export.tsv>
 
@@ -15,6 +17,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
+import sys
 
 from virtualcell import __version__
 from virtualcell.core.agent import AgentContext
@@ -76,6 +80,18 @@ def _cmd_ask(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_qa(args: argparse.Namespace) -> int:
+    from virtualcell.reasoning.qa import QuestionAnswerer
+
+    store = _seeded_store()
+    result = QuestionAnswerer(store).answer(args.question, k=args.k)
+    print(result.answer)
+    print(f"\n[backend: {result.backend}]")
+    if result.grounded_entity_ids:
+        print(f"[grounded in: {', '.join(result.grounded_entity_ids)}]")
+    return 0
+
+
 def _cmd_ingest(args: argparse.Namespace) -> int:
     from virtualcell.knowledge.sources.base import load_into
 
@@ -106,7 +122,9 @@ def _cmd_ingest(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="virtualcell", description="Virtual Cell Platform CLI")
+    parser = argparse.ArgumentParser(
+        prog="virtualcell", description="Virtual Cell Reasoning Platform CLI"
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("version", help="print version").set_defaults(func=_cmd_version)
@@ -125,6 +143,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_ask.add_argument("query")
     p_ask.set_defaults(func=_cmd_ask)
 
+    p_qa = sub.add_parser("qa", help="answer a natural-language question (grounded LLM)")
+    p_qa.add_argument("question")
+    p_qa.add_argument("-k", type=int, default=5, help="retrieval breadth per term")
+    p_qa.set_defaults(func=_cmd_qa)
+
     p_ingest = sub.add_parser("ingest", help="ingest a real data source into a knowledge base")
     p_ingest.add_argument("source", choices=["reactome", "uniprot"])
     p_ingest.add_argument(
@@ -139,6 +162,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Biological data (e.g. UniProt protein names) contains non-ASCII characters;
+    # force UTF-8 output so printing never crashes on a legacy console codec.
+    for stream in (sys.stdout, sys.stderr):
+        # pragma: no cover - stream may not be reconfigurable (e.g. when redirected)
+        with contextlib.suppress(AttributeError, ValueError):
+            stream.reconfigure(encoding="utf-8")
+
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

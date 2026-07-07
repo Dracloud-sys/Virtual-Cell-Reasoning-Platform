@@ -28,3 +28,15 @@ def test_agent_run() -> None:
         body = resp.json()
         assert body["agent"] == "literature"
         assert body["claims"]
+
+
+def test_reasoning_qa(monkeypatch) -> None:
+    # Force the offline backend so the test never makes a network call.
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    with TestClient(app) as client:
+        resp = client.post("/reasoning/qa", json={"question": "What is TP53?"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["backend"] == "offline-template"
+        assert body["grounded_entity_ids"]
+        assert body["facts"]

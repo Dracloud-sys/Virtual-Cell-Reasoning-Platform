@@ -1,78 +1,81 @@
-# Virtual Cell Platform
+# Virtual Cell Reasoning Platform
 
-> An AI-driven, modular, explainable **digital cell** — a coordinated ecosystem of specialized agents, biological models, and simulation engines that aims to predict cellular behavior *before* wet-lab validation.
+> An AI-driven, modular, **explainable reasoning layer for cell biology** — it structures biological knowledge into a graph and lets agents answer questions with **evidence-graded, cited** explanations and hypotheses. It complements data-driven perturbation predictors rather than competing with them.
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![CI](https://github.com/OWNER/virtual-cell-platform/actions/workflows/ci.yml/badge.svg)](../../actions)
+[![CI](https://github.com/Dracloud-sys/Virtual-Cell-Reasoning-Platform/actions/workflows/ci.yml/badge.svg)](../../actions)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 
 ---
 
 ## Vision
 
-The Virtual Cell is **not a single AI model**. It is a coordinated ecosystem of specialized agents, biological knowledge bases, and simulation engines that together form a biologically realistic, extensible **digital twin** of the cell.
+The platform is **not** a black-box cell simulator. It is an *interpretable, evidence-graded mechanistic reasoning layer*: it ingests curated biology into a knowledge graph, and AI agents reason over that graph to explain **why**, **through which pathways**, and **how confidently** — every statement tagged with an evidence tier and a citation back to its source.
 
-The platform grows through a 12-stage roadmap, from a Cellular Knowledge Base to a full Digital Organism. See [`docs/roadmap.md`](docs/roadmap.md).
+Where a data-driven model (e.g. AlphaCell, STATE) predicts *what* changes under a perturbation, this platform explains and contextualizes it. Dynamic ML simulation is deliberately **out of scope** — such models are integrated as external services. See [`docs/roadmap.md`](docs/roadmap.md) for the strategic positioning and capability stack.
 
 ## Design principles
 
 - **Modular** — every module is independently replaceable; no monoliths.
 - **Agent-first** — features are modeled as cooperating agents, each with defined responsibilities, inputs, outputs, memory, reasoning, and confidence.
-- **Scientifically rigorous** — knowledge is separated into three tiers (`established` / `hypothesis` / `speculative`) and never mixed. This is enforced in code via `EvidenceTier`.
-- **Dynamic** — the cell is simulated over time, environment, and state — never treated as static.
+- **Scientifically rigorous** — knowledge is separated into three tiers (`established` / `hypothesis` / `speculative`) and never mixed, enforced in code via `EvidenceTier`.
+- **Grounded & auditable** — answers are synthesized *only* from retrieved knowledge-graph facts, each carrying a citation; the model never invents biology.
 - **Reproducible & testable** — type hints, Pydantic contracts, unit tests, managed configuration.
 
-## What v0.1 does today
-
-This is the foundational scaffold. It provides the full architecture with working core pieces:
+## What works today
 
 - Importable `virtualcell` package with core abstractions (`BaseAgent`, `Evidence`, `KnowledgeStore`).
-- A working **in-memory Cellular Knowledge Base** (Stage 1) — insert genes/proteins/pathways and query neighbors/search with zero external dependencies.
-- FastAPI app exposing `/health` and knowledge endpoints.
-- A reference stub agent that queries the knowledge base and returns an evidence-tagged `Claim`.
+- A working **in-memory knowledge graph** — genes/proteins/pathways with neighbor/search queries, zero external dependencies.
+- **Real data ingestion**: `Reactome` and `UniProt` connectors, with cross-source protein enrichment (`virtualcell ingest`).
+- **Natural-language Q&A** grounded in the graph (`virtualcell qa`, `POST /reasoning/qa`): retrieves relevant subgraph → answers via **Anthropic Claude**, with a deterministic **offline fallback** so it runs with no API key.
+- FastAPI app exposing `/health`, knowledge, agent, and reasoning endpoints.
 - `pytest` suite, `ruff`-clean codebase, GitHub Actions CI.
-- `docker-compose` for the API plus Postgres, Neo4j, and Qdrant (graph/vector backends are interface-ready; connection optional in v0.1).
 
-Specialized agents, the simulation engine, and PyTorch models are present as **interfaces/stubs** and will be filled in subsequent releases.
+Specialized agents beyond the reference Literature agent are present as **stubs**; the mechanistic multi-hop `explain` primitive is the next step (see roadmap).
 
 ## Quickstart
 
 ```bash
 # Install (uv recommended)
 uv sync
-
 # or with pip
 pip install -e ".[dev]"
 
-# Run the knowledge-base example
-python examples/01_knowledge_base_quickstart.py
+# Ask a grounded natural-language question (works offline with no key)
+virtualcell qa "What is TP53 and what pathway is it involved in?"
 
-# Run the API
+# For LLM-synthesized answers, install the extra and set your key
+pip install -e ".[llm]"
+export ANTHROPIC_API_KEY=...        # never commit this
+
+# Ingest real data
+virtualcell ingest reactome --path data/UniProt2Reactome.txt
+virtualcell ingest uniprot  --path data/uniprot_human_reviewed.tsv
+
+# Run the API, tests, lint
 uvicorn virtualcell.api.main:app --reload
-
-# Tests & lint
 pytest
 ruff check .
 ```
 
 ## Architecture
 
-See [`docs/architecture.md`](docs/architecture.md) for the full design, [`docs/agents.md`](docs/agents.md) for the agent catalog, and [`docs/evidence-policy.md`](docs/evidence-policy.md) for the scientific-evidence policy.
+See [`docs/architecture.md`](docs/architecture.md) for the full design, [`docs/agents.md`](docs/agents.md) for the agent catalog, and [`docs/evidence-policy.md`](docs/evidence-policy.md) for the evidence policy.
 
 ```
 src/virtualcell/
 ├── core/           # shared abstractions: BaseAgent, contracts, evidence, config
-├── agents/         # specialized agents (stubs in v0.1)
-├── orchestration/  # LangGraph orchestrator
-├── knowledge/      # Stage 1: Cellular Knowledge Base (working)
-├── simulation/     # dynamic simulation engine (interface)
+├── knowledge/      # knowledge graph: store, schema, backends, data-source connectors
+├── reasoning/      # natural-language Q&A grounded in the graph (LLM + offline backend)
+├── agents/         # specialized agents (Literature works; others are stubs)
+├── orchestration/  # multi-agent orchestrator
 ├── api/            # FastAPI app
 └── cli.py          # command-line entry point
 ```
 
 ## Tech stack
 
-Python 3.12 · uv · Ruff · Pydantic v2 · FastAPI · LangGraph · Neo4j · Qdrant · PostgreSQL · Docker · PyTorch · MCP.
+Python 3.12 · uv · Ruff · Pydantic v2 · FastAPI · Anthropic Claude · Neo4j · Qdrant · PostgreSQL · Docker.
 
 ## Contributing
 

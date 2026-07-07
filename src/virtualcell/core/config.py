@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
 
+    # Reasoning LLM (the API key itself is read from the standard ANTHROPIC_API_KEY
+    # environment variable by the SDK, never from here).
+    llm_model: str = "claude-sonnet-5"
+
     # Logging
     log_level: str = "INFO"
 
