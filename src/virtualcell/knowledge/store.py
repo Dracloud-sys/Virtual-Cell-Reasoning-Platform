@@ -8,7 +8,21 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from pydantic import BaseModel
+
 from virtualcell.knowledge.schema import BioEntity, Interaction
+
+
+class Edge(BaseModel):
+    """A typed, weighted connection from one entity to a neighbour.
+
+    Unlike :meth:`KnowledgeStore.neighbors` (which returns only entities), an edge
+    preserves the relation type and confidence needed for mechanistic traversal.
+    """
+
+    relation: str
+    target_id: str
+    confidence: float = 1.0
 
 
 @runtime_checkable
@@ -29,6 +43,13 @@ class KnowledgeStore(Protocol):
 
     def neighbors(self, entity_id: str, relation: str | None = None) -> list[BioEntity]:
         """Return entities directly connected to ``entity_id``.
+
+        If ``relation`` is given, restrict to edges of that relation type.
+        """
+        ...
+
+    def edges(self, entity_id: str, relation: str | None = None) -> list[Edge]:
+        """Return typed, weighted edges outgoing from ``entity_id``.
 
         If ``relation`` is given, restrict to edges of that relation type.
         """

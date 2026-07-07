@@ -7,6 +7,7 @@ Usage:
     virtualcell neighbors <entity_id>
     virtualcell ask "<query>"
     virtualcell qa "<natural-language question>"
+    virtualcell explain <entity_id>
     virtualcell ingest reactome --path <UniProt2Reactome.txt>
     virtualcell ingest uniprot  --path <uniprotkb_export.tsv>
 
@@ -80,6 +81,29 @@ def _cmd_ask(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_explain(args: argparse.Namespace) -> int:
+    from virtualcell.reasoning.explain import explain
+
+    store = _seeded_store()
+    try:
+        result = explain(store, args.entity_id, max_hops=args.hops, top_k=args.k)
+    except ValueError as exc:
+        print(exc)
+        return 1
+
+    print(
+        f"Mechanistic reach of {result.seed_id} ({result.seed_name}), "
+        f"<= {result.max_hops} hop(s):"
+    )
+    for link in result.links:
+        print(
+            f"[{link.tier.value:11}] ({link.confidence:.2f}) {link.hops}-hop  "
+            f"{link.target_id}  {link.target_name}"
+        )
+        print(f"              via: {' | '.join(link.path)}")
+    return 0
+
+
 def _cmd_qa(args: argparse.Namespace) -> int:
     from virtualcell.reasoning.qa import QuestionAnswerer
 
@@ -147,6 +171,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_qa.add_argument("question")
     p_qa.add_argument("-k", type=int, default=5, help="retrieval breadth per term")
     p_qa.set_defaults(func=_cmd_qa)
+
+    p_explain = sub.add_parser("explain", help="evidence-graded mechanistic reach of an entity")
+    p_explain.add_argument("entity_id")
+    p_explain.add_argument("--hops", type=int, default=2, help="max inference hops (default 2)")
+    p_explain.add_argument("-k", type=int, default=25, help="max results to show")
+    p_explain.set_defaults(func=_cmd_explain)
 
     p_ingest = sub.add_parser("ingest", help="ingest a real data source into a knowledge base")
     p_ingest.add_argument("source", choices=["reactome", "uniprot"])

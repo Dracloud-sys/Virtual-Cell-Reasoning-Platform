@@ -13,6 +13,13 @@ to [Semantic Versioning](https://semver.org/).
   API/CLI titles, and package metadata/URLs accordingly.
 
 ### Added
+- **Evidence-graded multi-hop reasoning primitive** (`virtualcell.reasoning.explain`,
+  `virtualcell explain <id>`, `GET /reasoning/explain/{id}`): traverses the graph
+  from a seed entity and ranks reachable entities by a path-decayed, multi-path
+  corroborated confidence. Direct curated edges stay `established`; 2-hop
+  inferences are downgraded to `hypothesis` and 3+-hop to `speculative`, so an
+  inference is never presented as an established fact. Each result carries the
+  path that justifies it. Backed by a new typed, weighted `Edge` on the store.
 - **Natural-language reasoning layer** (`virtualcell.reasoning`): retrieves a
   relevant subgraph for a question and answers it, grounded strictly in cited,
   evidence-graded knowledge-base facts. Backed by **Anthropic Claude** (`llm`

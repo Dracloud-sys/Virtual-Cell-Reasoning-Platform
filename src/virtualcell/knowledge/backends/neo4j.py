@@ -9,6 +9,7 @@ implementation and keeps the driver import lazy so the package works without the
 from __future__ import annotations
 
 from virtualcell.knowledge.schema import BioEntity, Interaction
+from virtualcell.knowledge.store import Edge
 
 
 class Neo4jKnowledgeStore:
@@ -54,6 +55,11 @@ class Neo4jKnowledgeStore:
     def neighbors(
         self, entity_id: str, relation: str | None = None
     ) -> list[BioEntity]:  # pragma: no cover  # noqa: E501
+        raise NotImplementedError("Neo4j backend lands in a subsequent release")
+
+    def edges(
+        self, entity_id: str, relation: str | None = None
+    ) -> list[Edge]:  # pragma: no cover
         raise NotImplementedError("Neo4j backend lands in a subsequent release")
 
     def search(self, query: str, k: int = 10) -> list[BioEntity]:  # pragma: no cover

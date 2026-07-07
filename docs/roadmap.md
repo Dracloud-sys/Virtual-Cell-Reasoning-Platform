@@ -78,12 +78,18 @@ Genome → Epigenome → Transcriptome → Proteome → Metabolome
 
 ## Near-term (post v0.1)
 
-Reprioritized per the strategic positioning above. The next concrete step is
-step 1 of the capability stack (the evidence-graded reasoning primitive).
+Reprioritized per the strategic positioning above.
 
 - ✅ First real data-source ingestion: **Reactome** and **UniProt** connectors,
   with cross-source protein enrichment (`virtualcell ingest`).
-- ▶ Evidence-graded multi-hop reasoning primitive (`virtualcell explain`).
-- Edge enrichment (PPI / gene-regulatory) and the compound (ChEMBL) layer.
-- LLM agent interface over the knowledge graph.
+- ✅ Evidence-graded multi-hop reasoning primitive (`virtualcell explain`,
+  `GET /reasoning/explain/{id}`): direct edges are `established`, multi-hop
+  inferences are downgraded to `hypothesis`/`speculative`, confidence decays with
+  path length and is corroborated across paths.
+- ✅ Natural-language Q&A grounded in the graph (`virtualcell qa`,
+  `POST /reasoning/qa`): Claude backend + offline fallback.
+- ▶ Edge enrichment (PPI / gene-regulatory) and the compound (ChEMBL) layer, so
+  reasoning spans real mechanistic chains and "substance → target → effect".
 - Persistence (JSON snapshot / Neo4j) once the merged graph is worth keeping.
+- Feed `explain` paths into the `qa` agent so natural-language answers cite
+  multi-hop mechanistic chains, not just direct facts.

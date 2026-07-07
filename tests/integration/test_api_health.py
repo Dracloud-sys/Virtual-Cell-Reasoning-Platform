@@ -40,3 +40,15 @@ def test_reasoning_qa(monkeypatch) -> None:
         assert body["backend"] == "offline-template"
         assert body["grounded_entity_ids"]
         assert body["facts"]
+
+
+def test_reasoning_explain() -> None:
+    with TestClient(app) as client:
+        resp = client.get("/reasoning/explain/gene:TP53")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["seed_id"] == "gene:TP53"
+        assert body["links"]
+
+        missing = client.get("/reasoning/explain/gene:NOPE")
+        assert missing.status_code == 404
