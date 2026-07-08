@@ -58,7 +58,7 @@ class Neo4jKnowledgeStore:
         raise NotImplementedError("Neo4j backend lands in a subsequent release")
 
     def edges(
-        self, entity_id: str, relation: str | None = None
+        self, entity_id: str, relation: str | None = None, direction: str = "forward"
     ) -> list[Edge]:  # pragma: no cover
         raise NotImplementedError("Neo4j backend lands in a subsequent release")
 

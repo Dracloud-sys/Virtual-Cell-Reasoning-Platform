@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Edge directionality is now preserved for reasoning.** The store records each
+  edge's direction; `edges()`/`explain()` follow biological arrows by default
+  (`direction="forward"`), so `explain` yields causal/downstream reach rather than
+  mere graph reachability (e.g. TP53's forward reach no longer includes its
+  upstream regulator MDM2). Symmetric relations (`INTERACTS_WITH`) traverse both
+  ways; `neighbors()` stays undirected; pass `direction="any"` for reachability.
 - Repositioned as the **Virtual Cell Reasoning Platform** — an interpretable,
   evidence-graded mechanistic reasoning layer, not a black-box simulator. Dynamic
   ML simulation is out of scope (delegated to external models). Updated README,

@@ -14,15 +14,19 @@ from virtualcell.knowledge.schema import BioEntity, Interaction
 
 
 class Edge(BaseModel):
-    """A typed, weighted connection from one entity to a neighbour.
+    """A typed, weighted, directed connection from one entity to a neighbour.
 
     Unlike :meth:`KnowledgeStore.neighbors` (which returns only entities), an edge
-    preserves the relation type and confidence needed for mechanistic traversal.
+    preserves the relation type, confidence, and direction needed for mechanistic
+    traversal. ``forward`` is ``True`` when traversing the edge follows its
+    biological arrow (or the relation is symmetric); a reverse edge of a directed
+    relation has ``forward=False`` and should not be treated as a causal step.
     """
 
     relation: str
     target_id: str
     confidence: float = 1.0
+    forward: bool = True
 
 
 @runtime_checkable
@@ -48,10 +52,15 @@ class KnowledgeStore(Protocol):
         """
         ...
 
-    def edges(self, entity_id: str, relation: str | None = None) -> list[Edge]:
-        """Return typed, weighted edges outgoing from ``entity_id``.
+    def edges(
+        self, entity_id: str, relation: str | None = None, direction: str = "forward"
+    ) -> list[Edge]:
+        """Return typed, weighted, directed edges outgoing from ``entity_id``.
 
-        If ``relation`` is given, restrict to edges of that relation type.
+        ``direction`` is ``"forward"`` (default; only edges whose arrow points away
+        from ``entity_id``, plus symmetric relations) or ``"any"`` (all edges,
+        including reverse edges of directed relations). If ``relation`` is given,
+        restrict to that relation type.
         """
         ...
 

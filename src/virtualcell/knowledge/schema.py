@@ -59,6 +59,12 @@ class RelationType(StrEnum):
     REGULATES = "regulates"  # gene/protein -> gene/protein
 
 
+# Relations whose biological meaning is symmetric (A relates to B iff B relates to A).
+# For every other relation the edge is directed: a reverse edge is stored only as a
+# traversal convenience and must not be followed as a forward (causal) step.
+SYMMETRIC_RELATIONS: frozenset[RelationType] = frozenset({RelationType.INTERACTS_WITH})
+
+
 class Interaction(BaseModel):
     """A typed, directed edge between two entities."""
 

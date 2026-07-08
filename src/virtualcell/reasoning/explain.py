@@ -83,8 +83,13 @@ def explain(
     seed_id: str,
     max_hops: int = _DEFAULT_MAX_HOPS,
     top_k: int = 25,
+    direction: str = "forward",
 ) -> Explanation:
-    """Return the ranked, evidence-graded mechanistic reach of ``seed_id``."""
+    """Return the ranked, evidence-graded mechanistic reach of ``seed_id``.
+
+    ``direction`` defaults to ``"forward"`` so traversal follows biological arrows
+    (a causal/downstream reach); pass ``"any"`` for undirected graph reachability.
+    """
     seed = store.get(seed_id)
     if seed is None:
         raise ValueError(f"entity not found: {seed_id}")
@@ -107,7 +112,7 @@ def explain(
     for hop in range(1, max_hops + 1):
         next_frontier: list[tuple[str, float, list[str], frozenset[str]]] = []
         for current, conf, chain, visited in frontier:
-            for edge in store.edges(current):
+            for edge in store.edges(current, direction=direction):
                 target = edge.target_id
                 if target in visited:  # no cycles within a single path
                     continue

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from virtualcell.knowledge.schema import BioEntity, Interaction
+from virtualcell.knowledge.schema import SYMMETRIC_RELATIONS, BioEntity, Interaction
 from virtualcell.knowledge.store import Edge
 
 
@@ -17,8 +17,8 @@ class InMemoryKnowledgeStore:
 
     def __init__(self) -> None:
         self._entities: dict[str, BioEntity] = {}
-        # adjacency: entity_id -> list of (relation, neighbor_id, confidence)
-        self._edges: dict[str, list[tuple[str, str, float]]] = defaultdict(list)
+        # adjacency: entity_id -> list of (relation, neighbor_id, confidence, forward)
+        self._edges: dict[str, list[tuple[str, str, float, bool]]] = defaultdict(list)
 
     def upsert(self, entity: BioEntity) -> None:
         self._entities[entity.id] = entity
@@ -30,9 +30,12 @@ class InMemoryKnowledgeStore:
             raise KeyError(f"unknown target entity: {interaction.target_id}")
         rel = interaction.relation.value
         conf = interaction.confidence
-        self._edges[interaction.source_id].append((rel, interaction.target_id, conf))
-        # store the reverse direction too so neighbor queries are symmetric
-        self._edges[interaction.target_id].append((rel, interaction.source_id, conf))
+        symmetric = interaction.relation in SYMMETRIC_RELATIONS
+        # Forward edge (source -> target) always follows the relation's arrow.
+        self._edges[interaction.source_id].append((rel, interaction.target_id, conf, True))
+        # Reverse edge (target -> source): a real forward step only if symmetric;
+        # otherwise stored for undirected neighbour queries but marked reverse.
+        self._edges[interaction.target_id].append((rel, interaction.source_id, conf, symmetric))
 
     def get(self, entity_id: str) -> BioEntity | None:
         return self._entities.get(entity_id)
@@ -40,7 +43,7 @@ class InMemoryKnowledgeStore:
     def neighbors(self, entity_id: str, relation: str | None = None) -> list[BioEntity]:
         out: list[BioEntity] = []
         seen: set[str] = set()
-        for rel, neighbor_id, _conf in self._edges.get(entity_id, []):
+        for rel, neighbor_id, _conf, _forward in self._edges.get(entity_id, []):
             if relation is not None and rel != relation:
                 continue
             if neighbor_id in seen:
@@ -51,14 +54,20 @@ class InMemoryKnowledgeStore:
                 out.append(entity)
         return out
 
-    def edges(self, entity_id: str, relation: str | None = None) -> list[Edge]:
+    def edges(
+        self, entity_id: str, relation: str | None = None, direction: str = "forward"
+    ) -> list[Edge]:
         out: list[Edge] = []
-        for rel, neighbor_id, conf in self._edges.get(entity_id, []):
+        for rel, neighbor_id, conf, forward in self._edges.get(entity_id, []):
             if relation is not None and rel != relation:
+                continue
+            if direction == "forward" and not forward:
                 continue
             if neighbor_id not in self._entities:
                 continue
-            out.append(Edge(relation=rel, target_id=neighbor_id, confidence=conf))
+            out.append(
+                Edge(relation=rel, target_id=neighbor_id, confidence=conf, forward=forward)
+            )
         return out
 
     def search(self, query: str, k: int = 10) -> list[BioEntity]:

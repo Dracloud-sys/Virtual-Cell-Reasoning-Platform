@@ -36,6 +36,10 @@ def test_direct_edge_is_established_multi_hop_is_downgraded(store) -> None:
     assert apop.confidence < 1.0
     assert apop.path  # the "why" chain is populated
 
+    # MDM2 (Q00987) only *regulates* p53 (an upstream, incoming arrow), so it is
+    # not part of TP53's forward/downstream reach.
+    assert "protein:Q00987" not in by_id
+
 
 def test_seed_is_excluded_and_results_ranked_by_confidence(store) -> None:
     result = explain(store, "gene:TP53", max_hops=2)
@@ -71,6 +75,21 @@ def test_multiple_paths_corroborate_confidence() -> None:
     # 1 - (1-0.25)(1-0.25) = 0.4375, higher than either path alone.
     assert d.hops == 2
     assert d.confidence == pytest.approx(0.4375)
+
+
+def test_directed_edges_are_not_followed_backward(store) -> None:
+    # gene -encodes-> protein is directed. From the p53 protein, forward traversal
+    # reaches its pathway but NOT its encoding gene (that arrow points the other way).
+    forward_ids = {link.target_id for link in explain(store, "protein:P04637", max_hops=1).links}
+    assert "pathway:apoptosis" in forward_ids
+    assert "gene:TP53" not in forward_ids
+
+    # Undirected reachability ("any") does include the encoding gene.
+    any_ids = {
+        link.target_id
+        for link in explain(store, "protein:P04637", max_hops=1, direction="any").links
+    }
+    assert "gene:TP53" in any_ids
 
 
 def test_unknown_seed_raises(store) -> None:

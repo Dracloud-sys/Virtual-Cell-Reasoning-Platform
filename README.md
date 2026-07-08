@@ -58,6 +58,17 @@ pytest
 ruff check .
 ```
 
+### Notebooks / Kaggle
+
+The package uses a `src/` layout, so install it rather than relying on the working
+directory (this avoids `ModuleNotFoundError: No module named 'virtualcell'`):
+
+```python
+%pip install -e .           # from the repo root
+# or, without installing:
+import sys; sys.path.append("/kaggle/working/Virtual-Cell-Reasoning-Platform/src")
+```
+
 ## Architecture
 
 See [`docs/architecture.md`](docs/architecture.md) for the full design, [`docs/agents.md`](docs/agents.md) for the agent catalog, and [`docs/evidence-policy.md`](docs/evidence-policy.md) for the evidence policy.
