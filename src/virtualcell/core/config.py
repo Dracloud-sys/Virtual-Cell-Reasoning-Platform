@@ -18,6 +18,9 @@ class Settings(BaseSettings):
 
     # Knowledge base
     knowledge_backend: str = "memory"  # memory | neo4j
+    # Optional path to a saved graph JSON; if set, the API loads it at startup
+    # instead of the bundled sample dataset.
+    graph_path: str | None = None
 
     # Neo4j
     neo4j_uri: str = "bolt://localhost:7687"

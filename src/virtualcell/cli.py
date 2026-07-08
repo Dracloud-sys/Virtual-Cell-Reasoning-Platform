@@ -8,10 +8,13 @@ Usage:
     virtualcell ask "<query>"
     virtualcell qa "<natural-language question>"
     virtualcell explain <entity_id>
-    virtualcell ingest reactome --path <UniProt2Reactome.txt>
-    virtualcell ingest uniprot  --path <uniprotkb_export.tsv>
+    virtualcell ingest reactome --path <UniProt2Reactome.txt> --save graph.json
+    virtualcell ingest uniprot  --path <uniprotkb_export.tsv> --load graph.json --save graph.json
+    virtualcell qa "..." --load graph.json
 
-The CLI seeds an in-memory knowledge base with the bundled sample dataset.
+Query commands seed the bundled sample dataset unless ``--load <graph.json>`` is
+given; ``ingest --save`` persists a graph and ``ingest --load ... --save`` merges
+sources into one file.
 """
 
 from __future__ import annotations
@@ -35,6 +38,16 @@ def _seeded_store() -> InMemoryKnowledgeStore:
     return store
 
 
+def _store(args: argparse.Namespace) -> InMemoryKnowledgeStore:
+    """Load a saved graph if ``--load`` was given, otherwise seed the sample data."""
+    path = getattr(args, "load", None)
+    if path:
+        from virtualcell.knowledge.persistence import load_store
+
+        return load_store(path)
+    return _seeded_store()
+
+
 def _cmd_version(_: argparse.Namespace) -> int:
     print(f"virtualcell {__version__}")
     return 0
@@ -50,7 +63,7 @@ def _cmd_agents(_: argparse.Namespace) -> int:
 
 
 def _cmd_search(args: argparse.Namespace) -> int:
-    store = _seeded_store()
+    store = _store(args)
     hits = store.search(args.query, k=args.k)
     if not hits:
         print("(no matches)")
@@ -61,7 +74,7 @@ def _cmd_search(args: argparse.Namespace) -> int:
 
 
 def _cmd_neighbors(args: argparse.Namespace) -> int:
-    store = _seeded_store()
+    store = _store(args)
     if store.get(args.entity_id) is None:
         print(f"entity not found: {args.entity_id}")
         return 1
@@ -73,7 +86,7 @@ def _cmd_neighbors(args: argparse.Namespace) -> int:
 def _cmd_ask(args: argparse.Namespace) -> int:
     from virtualcell.agents.literature.agent import LiteratureAgent
 
-    store = _seeded_store()
+    store = _store(args)
     agent = LiteratureAgent(AgentContext(services={"knowledge_store": store}), store=store)
     output = asyncio.run(agent.run(AgentInput(query=args.query)))
     for claim in output.claims:
@@ -84,7 +97,7 @@ def _cmd_ask(args: argparse.Namespace) -> int:
 def _cmd_explain(args: argparse.Namespace) -> int:
     from virtualcell.reasoning.explain import explain
 
-    store = _seeded_store()
+    store = _store(args)
     try:
         result = explain(store, args.entity_id, max_hops=args.hops, top_k=args.k)
     except ValueError as exc:
@@ -107,7 +120,7 @@ def _cmd_explain(args: argparse.Namespace) -> int:
 def _cmd_qa(args: argparse.Namespace) -> int:
     from virtualcell.reasoning.qa import QuestionAnswerer
 
-    store = _seeded_store()
+    store = _store(args)
     result = QuestionAnswerer(store).answer(args.question, k=args.k)
     print(result.answer)
     print(f"\n[backend: {result.backend}]")
@@ -131,7 +144,12 @@ def _cmd_ingest(args: argparse.Namespace) -> int:
         print(f"unknown source: {args.source}")
         return 1
 
-    store = InMemoryKnowledgeStore()
+    if args.load:
+        from virtualcell.knowledge.persistence import load_store
+
+        store = load_store(args.load)
+    else:
+        store = InMemoryKnowledgeStore()
     try:
         n_entities, n_interactions = load_into(source, store)
     except (OSError, ValueError) as exc:
@@ -142,6 +160,11 @@ def _cmd_ingest(args: argparse.Namespace) -> int:
         f"ingested {n_entities} entities, {n_interactions} interactions "
         f"from '{args.source}' ({args.path})"
     )
+    if args.save:
+        from virtualcell.knowledge.persistence import save_store
+
+        save_store(store, args.save)
+        print(f"saved graph to {args.save}")
     return 0
 
 
@@ -154,28 +177,35 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("version", help="print version").set_defaults(func=_cmd_version)
     sub.add_parser("agents", help="list registered agents").set_defaults(func=_cmd_agents)
 
+    load_help = "load a saved graph JSON instead of the bundled sample"
+
     p_search = sub.add_parser("search", help="search the knowledge base")
     p_search.add_argument("query")
     p_search.add_argument("-k", type=int, default=10)
+    p_search.add_argument("--load", help=load_help)
     p_search.set_defaults(func=_cmd_search)
 
     p_neighbors = sub.add_parser("neighbors", help="list neighbors of an entity")
     p_neighbors.add_argument("entity_id")
+    p_neighbors.add_argument("--load", help=load_help)
     p_neighbors.set_defaults(func=_cmd_neighbors)
 
     p_ask = sub.add_parser("ask", help="ask the Literature Agent")
     p_ask.add_argument("query")
+    p_ask.add_argument("--load", help=load_help)
     p_ask.set_defaults(func=_cmd_ask)
 
     p_qa = sub.add_parser("qa", help="answer a natural-language question (grounded LLM)")
     p_qa.add_argument("question")
     p_qa.add_argument("-k", type=int, default=5, help="retrieval breadth per term")
+    p_qa.add_argument("--load", help=load_help)
     p_qa.set_defaults(func=_cmd_qa)
 
     p_explain = sub.add_parser("explain", help="evidence-graded mechanistic reach of an entity")
     p_explain.add_argument("entity_id")
     p_explain.add_argument("--hops", type=int, default=2, help="max inference hops (default 2)")
     p_explain.add_argument("-k", type=int, default=25, help="max results to show")
+    p_explain.add_argument("--load", help=load_help)
     p_explain.set_defaults(func=_cmd_explain)
 
     p_ingest = sub.add_parser("ingest", help="ingest a real data source into a knowledge base")
@@ -186,6 +216,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_ingest.add_argument(
         "--species", default="Homo sapiens", help="species filter (default: Homo sapiens)"
     )
+    p_ingest.add_argument("--load", help="merge into an existing saved graph JSON")
+    p_ingest.add_argument("--save", help="write the resulting graph to a JSON file")
     p_ingest.set_defaults(func=_cmd_ingest)
 
     return parser
@@ -201,7 +233,11 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = build_parser()
     args = parser.parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except (OSError, ValueError) as exc:  # e.g. a missing or invalid --load file
+        print(f"error: {exc}")
+        return 1
 
 
 if __name__ == "__main__":

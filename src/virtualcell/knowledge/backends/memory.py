@@ -19,6 +19,8 @@ class InMemoryKnowledgeStore:
         self._entities: dict[str, BioEntity] = {}
         # adjacency: entity_id -> list of (relation, neighbor_id, confidence, forward)
         self._edges: dict[str, list[tuple[str, str, float, bool]]] = defaultdict(list)
+        # original interactions, kept so the graph can be serialized losslessly
+        self._interactions: list[Interaction] = []
 
     def upsert(self, entity: BioEntity) -> None:
         self._entities[entity.id] = entity
@@ -28,6 +30,7 @@ class InMemoryKnowledgeStore:
             raise KeyError(f"unknown source entity: {interaction.source_id}")
         if interaction.target_id not in self._entities:
             raise KeyError(f"unknown target entity: {interaction.target_id}")
+        self._interactions.append(interaction)
         rel = interaction.relation.value
         conf = interaction.confidence
         symmetric = interaction.relation in SYMMETRIC_RELATIONS
@@ -39,6 +42,14 @@ class InMemoryKnowledgeStore:
 
     def get(self, entity_id: str) -> BioEntity | None:
         return self._entities.get(entity_id)
+
+    def all_entities(self) -> list[BioEntity]:
+        """Return every entity (used for serialization)."""
+        return list(self._entities.values())
+
+    def all_interactions(self) -> list[Interaction]:
+        """Return every original interaction (used for serialization)."""
+        return list(self._interactions)
 
     def neighbors(self, entity_id: str, relation: str | None = None) -> list[BioEntity]:
         out: list[BioEntity] = []

@@ -19,6 +19,13 @@ to [Semantic Versioning](https://semver.org/).
   API/CLI titles, and package metadata/URLs accordingly.
 
 ### Added
+- **JSON graph persistence** (`virtualcell.knowledge.persistence`): `save_store` /
+  `load_store` snapshot an ingested graph to a portable JSON file and rebuild it
+  losslessly (entity subclasses, directed edges). `virtualcell ingest --save`
+  persists a graph, `ingest --load ... --save` merges sources into one file, and
+  the query commands (`search`/`neighbors`/`ask`/`qa`/`explain`) take `--load` to
+  work over it — so real ingested genes (TERT, CDK4, ...) survive across sessions
+  instead of only the bundled sample. The API loads `VCELL_GRAPH_PATH` if set.
 - **`explain` is now wired into natural-language Q&A.** Grounding traces directed,
   evidence-graded mechanistic paths from the retrieved entities (instead of shallow
   1-hop neighbours), so answers can cite multi-hop chains and honestly hedge them

@@ -48,9 +48,11 @@ virtualcell qa "What is TP53 and what pathway is it involved in?"
 pip install -e ".[llm]"
 export ANTHROPIC_API_KEY=...        # never commit this
 
-# Ingest real data
-virtualcell ingest reactome --path data/UniProt2Reactome.txt
-virtualcell ingest uniprot  --path data/uniprot_human_reviewed.tsv
+# Ingest real data and persist a merged graph, then query it across sessions
+virtualcell ingest reactome --path data/UniProt2Reactome.txt --save graph.json
+virtualcell ingest uniprot  --path data/uniprot_human_reviewed.tsv --load graph.json --save graph.json
+virtualcell explain gene:TERT --load graph.json
+virtualcell qa "What does TERT do?" --load graph.json
 
 # Run the API, tests, lint
 uvicorn virtualcell.api.main:app --reload

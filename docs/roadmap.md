@@ -90,8 +90,8 @@ Reprioritized per the strategic positioning above.
   `POST /reasoning/qa`): Claude backend + offline fallback.
 - ✅ `explain` paths fed into the `qa` agent so natural-language answers cite
   directed, evidence-graded multi-hop mechanistic chains, not just direct facts.
-- ▶ Persistence (JSON snapshot; Neo4j later) so an ingested graph survives across
-  sessions — the prerequisite for querying real genes (TERT, CDK4, ...) rather
-  than only the bundled sample.
-- Edge enrichment (PPI / gene-regulatory) and the compound (ChEMBL) layer, so
+- ✅ Persistence (JSON snapshot; Neo4j later): `ingest --save`/`--load` and a
+  `--load` flag on the query commands, so an ingested graph survives across
+  sessions and real genes (TERT, CDK4, ...) become queryable.
+- ▶ Edge enrichment (PPI / gene-regulatory) and the compound (ChEMBL) layer, so
   reasoning spans real mechanistic chains and "substance → target → effect".

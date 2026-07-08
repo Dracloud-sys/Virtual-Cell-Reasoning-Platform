@@ -21,8 +21,16 @@ from virtualcell.knowledge.sources.sample import SampleDataSource
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    store = InMemoryKnowledgeStore()
-    load_into(SampleDataSource(), store)
+    from virtualcell.core.config import get_settings
+
+    graph_path = get_settings().graph_path
+    if graph_path:
+        from virtualcell.knowledge.persistence import load_store
+
+        store = load_store(graph_path)
+    else:
+        store = InMemoryKnowledgeStore()
+        load_into(SampleDataSource(), store)
     app.state.knowledge_store = store
     yield
 
