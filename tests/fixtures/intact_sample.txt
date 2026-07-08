@@ -1,0 +1,6 @@
+#ID(s) interactor A	ID(s) interactor B
+uniprotkb:P04637	uniprotkb:Q00987	-	-	-	-	-	-	-	-	-	-	-	-	intact-miscore:0.99
+uniprotkb:P38398-1	uniprotkb:P04637	-	-	-	-	-	-	-	-	-	-	-	-	intact-miscore:0.60
+chebi:"CHEBI:16412"	uniprotkb:P04637	-	-	-	-	-	-	-	-	-	-	-	-	intact-miscore:0.90
+uniprotkb:P04637	uniprotkb:P04637	-	-	-	-	-	-	-	-	-	-	-	-	intact-miscore:0.90
+uniprotkb:Q00987	uniprotkb:P38398	-	-	-	-	-	-	-	-	-	-	-	-	intact-miscore:0.10

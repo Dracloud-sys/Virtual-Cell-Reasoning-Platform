@@ -19,6 +19,13 @@ to [Semantic Versioning](https://semver.org/).
   API/CLI titles, and package metadata/URLs accordingly.
 
 ### Added
+- **IntAct protein-protein interaction connector** (`IntActSource`,
+  `virtualcell ingest intact`): parses an IntAct MITAB export into symmetric
+  `INTERACTS_WITH` edges (UniProt accessions, isoforms collapsed, `--min-score`
+  filter). It is edge-only and merges onto a protein-bearing graph; `load_into`
+  now skips interactions whose endpoints are absent instead of raising. This adds
+  the protein↔protein mechanistic wiring so `explain` finds real chains — e.g.
+  TP53 now reaches MDM2 via `encodes` then a physical `interacts_with`.
 - **JSON graph persistence** (`virtualcell.knowledge.persistence`): `save_store` /
   `load_store` snapshot an ingested graph to a portable JSON file and rebuild it
   losslessly (entity subclasses, directed edges). `virtualcell ingest --save`

@@ -140,6 +140,10 @@ def _cmd_ingest(args: argparse.Namespace) -> int:
         from virtualcell.knowledge.sources.uniprot import UniProtSource
 
         source = UniProtSource(path=args.path, species=args.species)
+    elif args.source == "intact":
+        from virtualcell.knowledge.sources.intact import IntActSource
+
+        source = IntActSource(path=args.path, min_score=args.min_score)
     else:  # pragma: no cover - argparse restricts choices
         print(f"unknown source: {args.source}")
         return 1
@@ -209,12 +213,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_explain.set_defaults(func=_cmd_explain)
 
     p_ingest = sub.add_parser("ingest", help="ingest a real data source into a knowledge base")
-    p_ingest.add_argument("source", choices=["reactome", "uniprot"])
+    p_ingest.add_argument("source", choices=["reactome", "uniprot", "intact"])
     p_ingest.add_argument(
         "--path", required=True, help="path to the source file (e.g. UniProt2Reactome.txt)"
     )
     p_ingest.add_argument(
         "--species", default="Homo sapiens", help="species filter (default: Homo sapiens)"
+    )
+    p_ingest.add_argument(
+        "--min-score", type=float, default=0.0, help="min interaction score (intact only)"
     )
     p_ingest.add_argument("--load", help="merge into an existing saved graph JSON")
     p_ingest.add_argument("--save", help="write the resulting graph to a JSON file")

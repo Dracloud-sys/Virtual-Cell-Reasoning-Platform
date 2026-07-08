@@ -93,5 +93,6 @@ Reprioritized per the strategic positioning above.
 - ✅ Persistence (JSON snapshot; Neo4j later): `ingest --save`/`--load` and a
   `--load` flag on the query commands, so an ingested graph survives across
   sessions and real genes (TERT, CDK4, ...) become queryable.
-- ▶ Edge enrichment (PPI / gene-regulatory) and the compound (ChEMBL) layer, so
-  reasoning spans real mechanistic chains and "substance → target → effect".
+- ◐ Edge enrichment: **PPI done** (IntAct `INTERACTS_WITH`), so reasoning spans
+  protein↔protein mechanistic chains. Gene-regulatory (TF→target) edges next.
+- ▶ Compound (ChEMBL) layer for "substance → target → effect" reasoning.

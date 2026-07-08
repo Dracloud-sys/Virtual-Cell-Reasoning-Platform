@@ -51,6 +51,7 @@ export ANTHROPIC_API_KEY=...        # never commit this
 # Ingest real data and persist a merged graph, then query it across sessions
 virtualcell ingest reactome --path data/UniProt2Reactome.txt --save graph.json
 virtualcell ingest uniprot  --path data/uniprot_human_reviewed.tsv --load graph.json --save graph.json
+virtualcell ingest intact   --path data/intact.txt --min-score 0.5 --load graph.json --save graph.json
 virtualcell explain gene:TERT --load graph.json
 virtualcell qa "What does TERT do?" --load graph.json
 
