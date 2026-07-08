@@ -19,6 +19,10 @@ to [Semantic Versioning](https://semver.org/).
   API/CLI titles, and package metadata/URLs accordingly.
 
 ### Added
+- **`explain` is now wired into natural-language Q&A.** Grounding traces directed,
+  evidence-graded mechanistic paths from the retrieved entities (instead of shallow
+  1-hop neighbours), so answers can cite multi-hop chains and honestly hedge them
+  (a 2-hop inference is surfaced as `hypothesis`, not `established`).
 - **Evidence-graded multi-hop reasoning primitive** (`virtualcell.reasoning.explain`,
   `virtualcell explain <id>`, `GET /reasoning/explain/{id}`): traverses the graph
   from a seed entity and ranks reachable entities by a path-decayed, multi-path

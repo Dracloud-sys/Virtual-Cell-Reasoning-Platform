@@ -1,10 +1,13 @@
 """Grounded question answering over the knowledge graph.
 
 The answerer (1) retrieves entities relevant to a natural-language question, (2)
-expands them with their immediate graph neighbours, (3) turns everything into
-evidence-graded facts, and (4) asks an :class:`~virtualcell.reasoning.llm.LLMBackend`
-to synthesize an answer *from that evidence only*. Because every fact carries a
-knowledge-base citation and an evidence tier, answers stay grounded and auditable.
+traces evidence-graded mechanistic paths from them with :func:`explain`, (3) turns
+everything into evidence-graded facts, and (4) asks an
+:class:`~virtualcell.reasoning.llm.LLMBackend` to synthesize an answer *from that
+evidence only*. Because every fact carries a knowledge-base citation, an evidence
+tier (downgraded for multi-hop inferences), and the path that justifies it,
+answers stay grounded, auditable, and able to explain *why* and *through which
+pathway*.
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ from pydantic import BaseModel, Field
 from virtualcell.core.evidence import EvidenceTier
 from virtualcell.knowledge.schema import BioEntity
 from virtualcell.knowledge.store import KnowledgeStore
+from virtualcell.reasoning.explain import explain
 from virtualcell.reasoning.llm import LLMBackend, get_backend
 
 # Minimal stopword set for extracting searchable terms from a question.
@@ -31,7 +35,8 @@ _STOPWORDS = frozenset({
 # Retrieval / grounding bounds, to keep the evidence block focused and prompts small.
 _MAX_SEED_ENTITIES = 8
 _MAX_EXPANDED_SEEDS = 3
-_MAX_NEIGHBORS_PER_SEED = 6
+_MAX_REACH_PER_SEED = 6
+_DEFAULT_MAX_HOPS = 2
 
 
 class GroundedFact(BaseModel):
@@ -64,9 +69,15 @@ def _terms(question: str) -> list[str]:
 class QuestionAnswerer:
     """Answers natural-language questions grounded in a :class:`KnowledgeStore`."""
 
-    def __init__(self, store: KnowledgeStore, backend: LLMBackend | None = None) -> None:
+    def __init__(
+        self,
+        store: KnowledgeStore,
+        backend: LLMBackend | None = None,
+        max_hops: int = _DEFAULT_MAX_HOPS,
+    ) -> None:
         self.store = store
         self.backend = backend or get_backend()
+        self.max_hops = max_hops
 
     def retrieve(self, question: str, k: int = 5) -> list[BioEntity]:
         """Return entities relevant to the question, de-duplicated and capped."""
@@ -80,8 +91,8 @@ class QuestionAnswerer:
 
     def _ground(self, seeds: list[BioEntity]) -> list[GroundedFact]:
         facts: list[GroundedFact] = []
-        seen_ids: set[str] = {e.id for e in seeds}
 
+        # 1) Direct presence of each retrieved entity (curated => established).
         for entity in seeds:
             desc = f" - {entity.description}" if entity.description else ""
             facts.append(
@@ -90,27 +101,30 @@ class QuestionAnswerer:
                         f"{entity.type.value.capitalize()} '{entity.name}' "
                         f"(id={entity.id}){desc}"
                     ),
-                    # Presence in the curated knowledge base is treated as established.
                     tier=EvidenceTier.ESTABLISHED,
                     citation=f"kb:{entity.id}",
                 )
             )
 
-        # Expand the top few seeds with their neighbours to give relational context.
+        # 2) Directed, evidence-graded mechanistic reach from the top seeds. A direct
+        #    edge stays established; multi-hop inferences are downgraded, and the path
+        #    that justifies each is carried through so the answer can explain "why".
         for entity in seeds[:_MAX_EXPANDED_SEEDS]:
-            for neighbor in self.store.neighbors(entity.id)[:_MAX_NEIGHBORS_PER_SEED]:
+            reach = explain(
+                self.store, entity.id, max_hops=self.max_hops, top_k=_MAX_REACH_PER_SEED
+            )
+            for link in reach.links:
                 facts.append(
                     GroundedFact(
                         statement=(
-                            f"'{entity.name}' (id={entity.id}) is connected to "
-                            f"{neighbor.type.value} '{neighbor.name}' (id={neighbor.id}) "
-                            "in the knowledge graph."
+                            f"{entity.name} -> {link.target_name} ({link.hops}-hop): "
+                            f"{' | '.join(link.path)}"
                         ),
-                        tier=EvidenceTier.ESTABLISHED,
-                        citation=f"kb:{entity.id}->kb:{neighbor.id}",
+                        tier=link.tier,
+                        citation=f"kb:{entity.id}->kb:{link.target_id}",
+                        confidence=link.confidence,
                     )
                 )
-                seen_ids.add(neighbor.id)
         return facts
 
     @staticmethod

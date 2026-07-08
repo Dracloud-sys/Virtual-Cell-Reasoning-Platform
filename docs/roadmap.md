@@ -88,8 +88,10 @@ Reprioritized per the strategic positioning above.
   path length and is corroborated across paths.
 - ✅ Natural-language Q&A grounded in the graph (`virtualcell qa`,
   `POST /reasoning/qa`): Claude backend + offline fallback.
-- ▶ Edge enrichment (PPI / gene-regulatory) and the compound (ChEMBL) layer, so
+- ✅ `explain` paths fed into the `qa` agent so natural-language answers cite
+  directed, evidence-graded multi-hop mechanistic chains, not just direct facts.
+- ▶ Persistence (JSON snapshot; Neo4j later) so an ingested graph survives across
+  sessions — the prerequisite for querying real genes (TERT, CDK4, ...) rather
+  than only the bundled sample.
+- Edge enrichment (PPI / gene-regulatory) and the compound (ChEMBL) layer, so
   reasoning spans real mechanistic chains and "substance → target → effect".
-- Persistence (JSON snapshot / Neo4j) once the merged graph is worth keeping.
-- Feed `explain` paths into the `qa` agent so natural-language answers cite
-  multi-hop mechanistic chains, not just direct facts.

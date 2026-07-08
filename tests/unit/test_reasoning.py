@@ -27,18 +27,20 @@ def test_answer_is_grounded_in_the_knowledge_base(store: InMemoryKnowledgeStore)
     assert result.grounded_entity_ids  # something was retrieved
     assert any("TP53" in eid or "P04637" in eid for eid in result.grounded_entity_ids)
     assert result.facts
-    # Every fact is knowledge-base backed, hence established with a kb citation.
-    assert all(f.tier == EvidenceTier.ESTABLISHED for f in result.facts)
+    # Every fact is knowledge-base backed (kb citation), and direct facts are established.
     assert all(f.citation.startswith("kb:") for f in result.facts)
+    assert any(f.tier == EvidenceTier.ESTABLISHED for f in result.facts)
     # The offline answer surfaces the retrieved evidence.
     assert "kb:" in result.answer
 
 
-def test_neighbor_context_is_included(store: InMemoryKnowledgeStore) -> None:
+def test_multi_hop_mechanistic_paths_are_cited(store: InMemoryKnowledgeStore) -> None:
     qa = QuestionAnswerer(store, backend=TemplateBackend())
     result = qa.answer("MDM2")
-    # At least one fact should express a graph connection (relational context).
-    assert any("connected to" in f.statement for f in result.facts)
+    # Grounding now includes directed mechanistic paths, and a 2-hop inference is
+    # honestly downgraded below established.
+    assert any("->" in f.statement for f in result.facts)
+    assert any(f.tier == EvidenceTier.HYPOTHESIS for f in result.facts)
 
 
 def test_no_match_returns_honest_answer(store: InMemoryKnowledgeStore) -> None:
