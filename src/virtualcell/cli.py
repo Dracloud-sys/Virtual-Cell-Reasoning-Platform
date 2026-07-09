@@ -129,6 +129,33 @@ def _cmd_qa(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_seed(args: argparse.Namespace) -> int:
+    from virtualcell.knowledge.sources.base import load_into
+
+    if args.load:
+        from virtualcell.knowledge.persistence import load_store
+
+        store = load_store(args.load)
+    else:
+        store = InMemoryKnowledgeStore()
+
+    if args.name == "immortalization":
+        from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
+
+        n_entities, n_interactions = load_into(ImmortalizationSeedSource(), store)
+    else:  # pragma: no cover - argparse restricts choices
+        print(f"unknown seed: {args.name}")
+        return 1
+
+    print(f"seeded {n_entities} entities, {n_interactions} interactions from '{args.name}'")
+    if args.save:
+        from virtualcell.knowledge.persistence import save_store
+
+        save_store(store, args.save)
+        print(f"saved graph to {args.save}")
+    return 0
+
+
 def _cmd_ingest(args: argparse.Namespace) -> int:
     from virtualcell.knowledge.sources.base import load_into
 
@@ -211,6 +238,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_explain.add_argument("-k", type=int, default=25, help="max results to show")
     p_explain.add_argument("--load", help=load_help)
     p_explain.set_defaults(func=_cmd_explain)
+
+    p_seed = sub.add_parser("seed", help="build a bundled curated seed graph")
+    p_seed.add_argument("name", choices=["immortalization"])
+    p_seed.add_argument("--load", help="merge into an existing saved graph JSON")
+    p_seed.add_argument("--save", help="write the resulting graph to a JSON file")
+    p_seed.set_defaults(func=_cmd_seed)
 
     p_ingest = sub.add_parser("ingest", help="ingest a real data source into a knowledge base")
     p_ingest.add_argument("source", choices=["reactome", "uniprot", "intact"])

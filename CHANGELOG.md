@@ -7,6 +7,13 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Immortalization seed graph — DRAFT, pending biologist review (PR3).** A
+  curated `ImmortalizationSeedSource` (24 nodes / 26 edges) over the ontology,
+  built with `virtualcell seed immortalization [--load ...] [--save ...]`. Added
+  `PROMOTES`/`INHIBITS` mechanistic relations. The reported spontaneous route is
+  seeded as `ASSOCIATED_WITH`/`SUGGESTS` and explicitly **P53-independent** (never
+  `CAUSES` / "P53 loss"). Surfaced a real gap for a later core fix: `explain`'s
+  tier is hop-based only, so a 1-hop weak association is mislabelled `established`.
 - **Cell-engineering ontology v0 (PR2).** Extended the schema with five vertical
   node types (`CellLine`, `Marker`, `AssayResult`, `Phenotype`, `Mechanism`) and
   relations (`HAS_RESULT`, `INDICATES`, `SUPPORTS`, `CONTRADICTS`,

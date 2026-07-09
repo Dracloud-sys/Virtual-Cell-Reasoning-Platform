@@ -117,11 +117,18 @@ Development is **benchmark-first**: fix the questions the platform must answer
   `AssayResult`, `Phenotype`, `Mechanism`) + relations (`HAS_RESULT`,
   `INDICATES`, `SUPPORTS`, `CONTRADICTS`, `ASSOCIATED_WITH`, `SUGGESTS`,
   `SUGGESTS_NEXT_TEST`); `explain` reasons over them and persistence round-trips.
-- ▶ **PR3** — immortalization seed graph (TERT/CDK4/TP53/RB1/CDKN2A/CDKN1A/PGC1A +
-  senescence markers), with the "P53-independent" spontaneous route seeded as
-  `ASSOCIATED_WITH`/`SUGGESTS` (never `CAUSES`).
+- ◐ **PR3 (draft, pending biologist review)** — immortalization seed graph
+  (`ImmortalizationSeedSource`, `virtualcell seed immortalization`): 24 nodes /
+  26 edges over the ontology, added `PROMOTES`/`INHIBITS` mechanistic relations,
+  with the "P53-independent" spontaneous route seeded as `ASSOCIATED_WITH`/
+  `SUGGESTS` (never `CAUSES`).
+  - **Discovered gap (benchmark-first working):** `explain` derives a claim's
+    tier from hop distance only, so a 1-hop *weak* `ASSOCIATED_WITH`/`SUGGESTS`
+    edge is mislabelled `established`. Fix = make the path tier relation-aware
+    (weak relations cap the tier at `hypothesis`). This is a justified Phase-3
+    core change; do it around PR4.
 - **PR4** — `DecisionReport` contract (reuses `explain`'s `MechanisticLink` for
-  the mechanistic chain).
+  the mechanistic chain); fold in the relation-aware tier cap above.
 - **PR5** — `ImmortalizationAssessmentAgent` v0 (rule-based first, LLM synthesis
   after).
 

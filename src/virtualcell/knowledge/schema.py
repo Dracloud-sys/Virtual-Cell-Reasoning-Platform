@@ -97,6 +97,8 @@ class RelationType(StrEnum):
     PARTICIPATES_IN = "participates_in"  # protein -> pathway
     REGULATES = "regulates"  # gene/protein -> gene/protein
     # Cell-engineering vertical (v0)
+    PROMOTES = "promotes"  # A drives / maintains / enables B (directed, established-ish)
+    INHIBITS = "inhibits"  # A blocks / delays / bypasses B (directed, established-ish)
     HAS_RESULT = "has_result"  # cell line -> assay result
     INDICATES = "indicates"  # assay result / marker -> phenotype / mechanism
     SUPPORTS = "supports"  # evidence -> conclusion
