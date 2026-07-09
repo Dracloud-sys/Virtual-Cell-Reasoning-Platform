@@ -13,9 +13,16 @@ from pydantic import BaseModel, Field
 
 
 class EntityType(StrEnum):
+    # Molecular substrate (horizontal graph)
     GENE = "gene"
     PROTEIN = "protein"
     PATHWAY = "pathway"
+    # Cell-engineering vertical ontology (v0)
+    CELL_LINE = "cell_line"
+    MARKER = "marker"
+    ASSAY_RESULT = "assay_result"
+    PHENOTYPE = "phenotype"
+    MECHANISM = "mechanism"
 
 
 class BioEntity(BaseModel):
@@ -52,17 +59,59 @@ class Pathway(BioEntity):
     source: str | None = None  # e.g. "Reactome", "KEGG"
 
 
+# --- Cell-engineering vertical ontology (v0) ---
+
+
+class CellLine(BioEntity):
+    type: EntityType = EntityType.CELL_LINE
+    species: str | None = None
+    cell_type: str | None = None  # e.g. "fibroblast", "preadipocyte"
+
+
+class Marker(BioEntity):
+    type: EntityType = EntityType.MARKER
+    modality: str | None = None  # "molecular" | "functional"
+
+
+class AssayResult(BioEntity):
+    type: EntityType = EntityType.ASSAY_RESULT
+    assay: str | None = None
+    value: str | None = None
+    unit: str | None = None
+    direction: str | None = None  # e.g. "up" | "down" | "high" | "low" | "worsening"
+    timepoint: str | None = None
+
+
+class Phenotype(BioEntity):
+    type: EntityType = EntityType.PHENOTYPE
+
+
+class Mechanism(BioEntity):
+    type: EntityType = EntityType.MECHANISM
+
+
 class RelationType(StrEnum):
+    # Molecular substrate
     ENCODES = "encodes"  # gene -> protein
     INTERACTS_WITH = "interacts_with"  # protein <-> protein
     PARTICIPATES_IN = "participates_in"  # protein -> pathway
     REGULATES = "regulates"  # gene/protein -> gene/protein
+    # Cell-engineering vertical (v0)
+    HAS_RESULT = "has_result"  # cell line -> assay result
+    INDICATES = "indicates"  # assay result / marker -> phenotype / mechanism
+    SUPPORTS = "supports"  # evidence -> conclusion
+    CONTRADICTS = "contradicts"  # evidence -> conclusion
+    ASSOCIATED_WITH = "associated_with"  # weak, non-causal linkage
+    SUGGESTS = "suggests"  # weak directional hint (never CAUSES)
+    SUGGESTS_NEXT_TEST = "suggests_next_test"  # gap / phenotype -> assay to run
 
 
 # Relations whose biological meaning is symmetric (A relates to B iff B relates to A).
 # For every other relation the edge is directed: a reverse edge is stored only as a
 # traversal convenience and must not be followed as a forward (causal) step.
-SYMMETRIC_RELATIONS: frozenset[RelationType] = frozenset({RelationType.INTERACTS_WITH})
+SYMMETRIC_RELATIONS: frozenset[RelationType] = frozenset(
+    {RelationType.INTERACTS_WITH, RelationType.ASSOCIATED_WITH}
+)
 
 
 class Interaction(BaseModel):

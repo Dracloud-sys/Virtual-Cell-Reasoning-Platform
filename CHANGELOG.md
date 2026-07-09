@@ -7,6 +7,13 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Cell-engineering ontology v0 (PR2).** Extended the schema with five vertical
+  node types (`CellLine`, `Marker`, `AssayResult`, `Phenotype`, `Mechanism`) and
+  relations (`HAS_RESULT`, `INDICATES`, `SUPPORTS`, `CONTRADICTS`,
+  `ASSOCIATED_WITH`, `SUGGESTS`, `SUGGESTS_NEXT_TEST`). `ASSOCIATED_WITH` is
+  symmetric; the rest are directed, so `explain` reasons causally over them.
+  Persistence round-trips the new subclasses. The molecular substrate
+  (gene/protein/pathway) is unchanged.
 - **Cell-engineering vertical, benchmark-first (PR1).** Landed the immortalization
   assessment benchmark under `tests/benchmarks/` (`immortalization_v0.md` +
   machine-readable `immortalization_v0.yaml`: 10 questions, a 3-status vocabulary,

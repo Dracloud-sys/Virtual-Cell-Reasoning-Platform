@@ -14,11 +14,16 @@ from pathlib import Path
 
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
 from virtualcell.knowledge.schema import (
+    AssayResult,
     BioEntity,
+    CellLine,
     EntityType,
     Gene,
     Interaction,
+    Marker,
+    Mechanism,
     Pathway,
+    Phenotype,
     Protein,
 )
 
@@ -29,6 +34,11 @@ _ENTITY_CLASSES: dict[EntityType, type[BioEntity]] = {
     EntityType.GENE: Gene,
     EntityType.PROTEIN: Protein,
     EntityType.PATHWAY: Pathway,
+    EntityType.CELL_LINE: CellLine,
+    EntityType.MARKER: Marker,
+    EntityType.ASSAY_RESULT: AssayResult,
+    EntityType.PHENOTYPE: Phenotype,
+    EntityType.MECHANISM: Mechanism,
 }
 
 

@@ -113,9 +113,11 @@ Development is **benchmark-first**: fix the questions the platform must answer
   (10 questions, 3-status vocab, rubric) + a deterministic rule-based
   `baseline_status` (`agents/immortalization/baseline.py`) + a CI regression that
   freezes the baseline↔spec self-check (8/8 status questions).
-- ▶ **PR2** — minimal domain ontology (`CellLine`, `Marker`, `AssayResult`,
-  `Phenotype`, `Mechanism` + relations like `INDICATES`/`SUPPORTS`/`CONTRADICTS`).
-- **PR3** — immortalization seed graph (TERT/CDK4/TP53/RB1/CDKN2A/CDKN1A/PGC1A +
+- ✅ **PR2 — minimal domain ontology.** Five node types (`CellLine`, `Marker`,
+  `AssayResult`, `Phenotype`, `Mechanism`) + relations (`HAS_RESULT`,
+  `INDICATES`, `SUPPORTS`, `CONTRADICTS`, `ASSOCIATED_WITH`, `SUGGESTS`,
+  `SUGGESTS_NEXT_TEST`); `explain` reasons over them and persistence round-trips.
+- ▶ **PR3** — immortalization seed graph (TERT/CDK4/TP53/RB1/CDKN2A/CDKN1A/PGC1A +
   senescence markers), with the "P53-independent" spontaneous route seeded as
   `ASSOCIATED_WITH`/`SUGGESTS` (never `CAUSES`).
 - **PR4** — `DecisionReport` contract (reuses `explain`'s `MechanisticLink` for
