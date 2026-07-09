@@ -1,0 +1,181 @@
+# VCRP immortalization benchmark v0 — machine-readable eval spec
+# Loadable by the eval harness. Prose expected-answers live in immortalization_v0.md.
+# marker values are normalized to: high | low | increasing | plateau | stable | worsening | improved | normal | unknown
+
+version: 0
+domain: immortalization
+candidate_status_vocab: [possible_candidate, senescence_or_stress_prone, insufficient_evidence]
+orthogonal_flags: [functionality_compromised, trend_needed]
+pass_threshold: 9          # per-question rubric total is 12
+auto_fail_on: overcalling_immortalization
+
+questions:
+  - id: IMM-Q1
+    intent: immortalization_assessment
+    entities: [gammaH2AX, PDL, DT, SA_b_gal]
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      PDL_trend: plateau
+      DT_trend: worsening
+      gammaH2AX: high
+      SA_b_gal: high
+      p16: unknown
+      p21: unknown
+    required_output: [candidate_status, supporting, contradicting, overinterpretation_risk, next_experiment]
+    risk: [overcalling_immortalization, premature_discard]
+    trend_class: simple_trend
+    expected_status: senescence_or_stress_prone
+    expected_flags: []
+
+  - id: IMM-Q2
+    intent: immortalization_assessment
+    entities: [PDL, gammaH2AX, p16, p21, adipogenic_retention]
+    scenario:
+      species: bovine
+      cell_type: preadipocyte
+      PDL_trend: increasing
+      DT_trend: stable
+      gammaH2AX: low
+      SA_b_gal: unknown
+      p16: unknown
+      p21: unknown
+      adipogenic_retention: unknown
+    required_output: [candidate_status, supporting, contradicting, overinterpretation_risk, next_experiment]
+    risk: [overcalling_immortalization]
+    trend_class: single_snapshot
+    expected_status: possible_candidate
+    expected_flags: []
+
+  - id: IMM-Q3
+    intent: immortalization_assessment
+    entities: [PDL, DT]
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      DT_series: {P25: 42, P30: 58, P35: 80}   # hours
+      PDL_trend: increasing
+      DT_trend: worsening
+    required_output: [candidate_status, supporting, contradicting, overinterpretation_risk, next_experiment]
+    risk: [overcalling_immortalization, single_snapshot_misjudgment]
+    trend_class: simple_trend
+    expected_status: senescence_or_stress_prone
+    expected_flags: [trend_needed]
+
+  - id: IMM-Q4
+    intent: senescence_assessment
+    entities: [SA_b_gal, p16, PDL]
+    scenario:
+      species: bovine
+      cell_type: preadipocyte
+      SA_b_gal: high
+      p16: high
+      PDL_trend: plateau
+      gammaH2AX: unknown
+    required_output: [candidate_status, supporting, contradicting, overinterpretation_risk, next_experiment]
+    risk: [overcalling_immortalization]
+    trend_class: single_snapshot
+    expected_status: senescence_or_stress_prone
+    expected_flags: []
+
+  - id: IMM-Q5
+    intent: mechanism_explanation
+    entities: [TERT, telomere, p16, RB]
+    scenario:
+      construct: TERT_only
+      cell_type: p16_competent_primary
+    required_output: [mechanistic_chain, limitation, next_experiment]
+    risk: [overstating_TERT_sufficiency]
+    trend_class: not_applicable
+    expected_status: null    # mechanism question, no status
+    key_points: [telomere_maintenance, does_not_bypass_p16_RB, CDK4_may_be_needed]
+
+  - id: IMM-Q6
+    intent: mechanism_explanation
+    entities: [TERT, CDK4, telomere, p16, RB]
+    scenario:
+      construct: TERT_plus_CDK4
+      species: bovine
+      cell_type: satellite_or_fibroblast
+    required_output: [mechanistic_chain, caveat, next_experiment]
+    risk: [ignoring_genomic_stability, ignoring_functionality]
+    trend_class: not_applicable
+    expected_status: null
+    key_points: [telomere_maintenance, p16_RB_bypass_via_CDK4, non_oncogenic_reliable, verify_stability_and_differentiation]
+
+  - id: IMM-Q7
+    intent: immortalization_vs_functionality
+    entities: [gammaH2AX, PDL, PPARG, CEBPA, FABP4, OilRedO]
+    scenario:
+      species: bovine
+      cell_type: preadipocyte
+      PDL_trend: increasing
+      DT_trend: stable
+      gammaH2AX: low
+      adipogenic_retention: lost
+      OilRedO: weak
+      PPARG: down
+      CEBPA: down
+      FABP4: down
+    required_output: [candidate_status, functionality_flag, supporting, contradicting, next_experiment]
+    risk: [conflating_immortalization_with_utility]
+    trend_class: single_snapshot
+    expected_status: possible_candidate
+    expected_flags: [functionality_compromised]
+
+  - id: IMM-Q8
+    intent: immortalization_assessment
+    entities: [PDL, DT]
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      PDL_trend: increasing
+      DT_trend: stable
+      gammaH2AX: unknown
+      SA_b_gal: unknown
+      p16: unknown
+      p21: unknown
+    required_output: [candidate_status, missing_axes, next_experiment]
+    risk: [overcalling_immortalization]
+    trend_class: single_snapshot
+    expected_status: insufficient_evidence
+    expected_flags: []
+
+  - id: IMM-Q9
+    intent: hypothesis_handling
+    entities: [TERT, PGC1A, telomere, mitochondria, P53]
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      context: spontaneous_route_long_term_culture
+      TERT: activated
+      PGC1A: activated
+    required_output: [claim_decomposition, evidence_tier, citation_flag]
+    risk: [P53_misstatement, causal_overreach]
+    trend_class: not_applicable
+    expected_status: insufficient_evidence
+    required_claims:
+      - {text: "TERT activation associated with telomere maintenance", tier: established}
+      - {text: "PGC1A activation associated with mitochondrial recovery", tier: established}
+      - {text: "reported spontaneous route occurred without activating P53 (P53-independent)", tier: hypothesis, citation_required: true}
+      - {text: "TERT/PGC1A recovery SUGGESTS spontaneous immortalization mechanism", tier: hypothesis}
+    forbidden_phrasings: ["without P53", "P53 loss", "P53 knockout", "CAUSES spontaneous immortalization"]
+    required_edge_relations: [ASSOCIATED_WITH, SUGGESTS]
+
+  - id: IMM-Q10
+    intent: conflicting_evidence_assessment
+    entities: [PDL, gammaH2AX, SA_b_gal, p21, p16]
+    scenario:
+      species: bovine
+      cell_type: preadipocyte
+      PDL_trend: increasing
+      gammaH2AX: high
+      SA_b_gal: low
+      p21: high
+      p16: normal
+    required_output: [candidate_status, supporting, contradicting, conflict_explanation, next_experiment]
+    risk: [forcing_single_conclusion]
+    trend_class: single_snapshot
+    expected_status: insufficient_evidence
+    acceptable_status: [insufficient_evidence, senescence_or_stress_prone]
+    must_report_both_sides: true

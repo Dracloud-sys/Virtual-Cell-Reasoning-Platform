@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Cell-engineering vertical, benchmark-first (PR1).** Landed the immortalization
+  assessment benchmark under `tests/benchmarks/` (`immortalization_v0.md` +
+  machine-readable `immortalization_v0.yaml`: 10 questions, a 3-status vocabulary,
+  and a scoring rubric) together with a deterministic rule-based
+  `baseline_status` (`virtualcell.agents.immortalization.baseline`) and a CI
+  regression that freezes the baseline↔spec self-check (8/8 status questions;
+  mechanism questions Q5/Q6 excluded). This is the near-term wedge; the 12-stage
+  roadmap stays the north star.
+
 ### Changed
 - **Edge directionality is now preserved for reasoning.** The store records each
   edge's direction; `edges()`/`explain()` follow biological arrows by default

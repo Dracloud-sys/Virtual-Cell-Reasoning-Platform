@@ -94,5 +94,35 @@ Reprioritized per the strategic positioning above.
   `--load` flag on the query commands, so an ingested graph survives across
   sessions and real genes (TERT, CDK4, ...) become queryable.
 - ◐ Edge enrichment: **PPI done** (IntAct `INTERACTS_WITH`), so reasoning spans
-  protein↔protein mechanistic chains. Gene-regulatory (TF→target) edges next.
-- ▶ Compound (ChEMBL) layer for "substance → target → effect" reasoning.
+  protein↔protein mechanistic chains. Gene-regulatory (TF→target) edges later.
+- Compound (ChEMBL) layer for "substance → target → effect" reasoning (later).
+
+## Cell-engineering vertical (near-term wedge)
+
+The 12-stage roadmap remains the **north star**, but near-term development is
+focused on a concrete, defensible wedge: an **immortalization candidate
+assessment assistant** for cell engineering (bovine/cultured-meat context). The
+generic Reactome/UniProt/IntAct graph is the horizontal *substrate*; this vertical
+is where the platform earns its keep. See the plan behind this in the project's
+strategy notes and the benchmark in [`../tests/benchmarks/`](../tests/benchmarks/).
+
+Development is **benchmark-first**: fix the questions the platform must answer
+*before* touching `core`, then let real failures justify any `core` change.
+
+- ✅ **PR1 — Benchmark landed.** `tests/benchmarks/immortalization_v0.{md,yaml}`
+  (10 questions, 3-status vocab, rubric) + a deterministic rule-based
+  `baseline_status` (`agents/immortalization/baseline.py`) + a CI regression that
+  freezes the baseline↔spec self-check (8/8 status questions).
+- ▶ **PR2** — minimal domain ontology (`CellLine`, `Marker`, `AssayResult`,
+  `Phenotype`, `Mechanism` + relations like `INDICATES`/`SUPPORTS`/`CONTRADICTS`).
+- **PR3** — immortalization seed graph (TERT/CDK4/TP53/RB1/CDKN2A/CDKN1A/PGC1A +
+  senescence markers), with the "P53-independent" spontaneous route seeded as
+  `ASSOCIATED_WITH`/`SUGGESTS` (never `CAUSES`).
+- **PR4** — `DecisionReport` contract (reuses `explain`'s `MechanisticLink` for
+  the mechanistic chain).
+- **PR5** — `ImmortalizationAssessmentAgent` v0 (rule-based first, LLM synthesis
+  after).
+
+Deliberately deferred: relevance/actionability axes on `Claim` (only after a
+benchmark failure proves the need), time-series/trend modelling, free-form BYOD
+CSV, broad ontology, and early Neo4j.

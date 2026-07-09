@@ -51,6 +51,7 @@ dev = [
     "ruff>=0.5",
     "fastapi>=0.111",
     "uvicorn[standard]>=0.30",
+    "pyyaml>=6",
 ]
 
 [project.scripts]
