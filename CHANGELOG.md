@@ -35,6 +35,13 @@ to [Semantic Versioning](https://semver.org/).
   roadmap stays the north star.
 
 ### Changed
+- **`explain` tiers are now relation-aware (PR4a).** A path's tier is
+  `weaker_of(hop-distance tier, weakest-edge ceiling)`: `ASSOCIATED_WITH`,
+  `SUGGESTS`, and `SUGGESTS_NEXT_TEST` cap the tier at `hypothesis` no matter how
+  few hops, while strong relations impose no ceiling. Relation type stays
+  independent of tier. This fixes the gap the seed graph surfaced — a 1-hop weak
+  association is no longer mislabelled `established` (e.g. the P53-independent
+  spontaneous route now reads `hypothesis`), directly serving benchmark Q9.
 - **Edge directionality is now preserved for reasoning.** The store records each
   edge's direction; `edges()`/`explain()` follow biological arrows by default
   (`direction="forward"`), so `explain` yields causal/downstream reach rather than

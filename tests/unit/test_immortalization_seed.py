@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from virtualcell.core.evidence import EvidenceTier
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
 from virtualcell.knowledge.sources.base import load_into
 from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
@@ -55,6 +56,16 @@ def test_spontaneous_route_is_weak_and_p53_independent() -> None:
         if edge.target_id == "mechanism:spontaneous_immortalization"
     }
     assert relations_into_spontaneous == {"associated_with"}
+
+    # The gap PR3 surfaced, now fixed by PR4a: this 1-hop weak edge must read as
+    # hypothesis, never established.
+    spon = next(
+        link
+        for link in explain(store, "gene:TERT", max_hops=1).links
+        if link.target_id == "mechanism:spontaneous_immortalization"
+    )
+    assert spon.hops == 1
+    assert spon.tier == EvidenceTier.HYPOTHESIS
 
     # No forbidden phrasing anywhere in the seed's text or edge evidence.
     texts = [f"{e.name} {e.description or ''}" for e in store.all_entities()]

@@ -92,6 +92,25 @@ def test_directed_edges_are_not_followed_backward(store) -> None:
     assert "gene:TP53" in any_ids
 
 
+def test_weak_relation_caps_tier_at_hypothesis() -> None:
+    store = InMemoryKnowledgeStore()
+    store.upsert(Protein(id="protein:A", name="A"))
+    store.upsert(Protein(id="protein:B", name="B"))
+    store.add_interaction(
+        Interaction(
+            source_id="protein:A",
+            target_id="protein:B",
+            relation=RelationType.ASSOCIATED_WITH,
+            confidence=0.6,
+        )
+    )
+    link = explain(store, "protein:A", max_hops=1).links[0]
+    # One hop would be established by distance, but a weak ASSOCIATED_WITH edge
+    # must cap the tier at hypothesis (the gap the seed graph surfaced).
+    assert link.hops == 1
+    assert link.tier == EvidenceTier.HYPOTHESIS
+
+
 def test_unknown_seed_raises(store) -> None:
     with pytest.raises(ValueError, match="entity not found"):
         explain(store, "gene:DOES_NOT_EXIST")

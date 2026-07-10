@@ -130,11 +130,13 @@ Development is **benchmark-first**: fix the questions the platform must answer
   - **Discovered gap (benchmark-first working):** `explain` derives tier from hop
     distance only, so a 1-hop weak `ASSOCIATED_WITH`/`SUGGESTS` edge is mislabelled
     `established`. Fixed in PR4 (relation-aware tier ceiling).
-- ▶ **PR4** — (1) **relation-aware tier ceiling** (the priority): a path's tier is
+- ✅ **PR4a — relation-aware tier ceiling.** A path's tier is now
   `weaker_of(hop_tier, weakest_edge_ceiling)`, where `ASSOCIATED_WITH`/`SUGGESTS`/
-  `SUGGESTS_NEXT_TEST` cap at `hypothesis` and `PROMOTES`/`INHIBITS`/`REGULATES`/
-  `INDICATES`/`CONTRADICTS` are strong; relation type stays independent of tier.
-  (2) `DecisionReport` contract (reuses `explain`'s `MechanisticLink`).
+  `SUGGESTS_NEXT_TEST` cap at `hypothesis` and strong relations impose no ceiling;
+  relation type stays independent of tier. Fixes the PR3 gap (the 1-hop spontaneous
+  route now reads `hypothesis`, not `established`).
+- ▶ **PR4b** — `DecisionReport` contract (reuses `explain`'s `MechanisticLink` for
+  the mechanistic chain), then the `explain`→`DecisionReport` formatter.
 - **PR5** — `ImmortalizationAssessmentAgent` v0: rule-based `baseline_status` first,
   then LLM synthesis. Handles the negative/limitation claims the graph can't hold
   (e.g. Q5: "TERT alone does not bypass the p16/RB checkpoint").
