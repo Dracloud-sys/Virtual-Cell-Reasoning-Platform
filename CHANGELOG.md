@@ -17,6 +17,15 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **Deterministic immortalization assessment builder (PR5a).**
+  `agents/immortalization/models.py` (enum-validated `ImmortalizationAssessmentInput`
+  over the benchmark marker vocabulary; retention split into its own `RetentionValue`)
+  and `rules.py` (`build_decision_report`). Status/flags come only from the
+  deterministic `baseline_status`; the builder assembles both-sided evidence,
+  missing axes, conflict explanation, overinterpretation risks, and the
+  validation-axes vs next-experiments split, leaving relevance scores `None`.
+  Mechanism/hypothesis intents raise `UnsupportedIntentError`. Benchmark
+  Q1-Q4/Q7/Q8/Q10 are run through the builder as a regression.
 - **`DecisionReport` output contract (PR4b).** `virtualcell.reasoning.decision`:
   the structured assessment output — conclusion, `candidate_status` + flags,
   supporting/contradicting `Claim`s, `mechanistic_chain` (reuses `explain`'s

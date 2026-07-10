@@ -149,9 +149,14 @@ Development is **benchmark-first**: fix the questions the platform must answer
   `None`. `AgentOutput` gained an optional `result: dict` so an agent preserves a
   structured `DecisionReport` instead of losing it to `notes`.
 - ▶ **PR5 (split per GPT review) — deterministic-first, LLM = presentation only.**
-  - **PR5a** — normalized input model (`ImmortalizationAssessmentInput`, benchmark
-    marker vocabulary only) + deterministic `DecisionReport` builder from
-    `baseline_status` (status/flags/evidence/missing-axes/risks/next-tests).
+  - ✅ **PR5a** — normalized input model (`ImmortalizationAssessmentInput`,
+    benchmark marker vocabulary only) + deterministic `build_decision_report`.
+    Status/flags come **only** from `baseline_status`; the builder adds both-sided
+    evidence, missing axes, conflict explanation, overinterpretation risk, and the
+    validation-axes vs next-experiments split. Mechanism/hypothesis intents are
+    rejected explicitly. Benchmark Q1-Q4/Q7/Q8/Q10 run through the builder as a
+    regression. (Retention needed its own `RetentionValue` vocab — `MarkerValue`
+    can't express `lost`; flagged for GPT review.)
   - **PR5b** — curated limitation catalog for mechanism questions (e.g. Q5 "TERT
     alone does not bypass p16/RB"); these negative claims live in a rule catalog,
     not the graph.
