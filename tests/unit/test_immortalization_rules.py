@@ -108,6 +108,12 @@ def test_q10_reports_both_sides_and_conflict() -> None:
     assert report.conflict_explanation
 
 
+def test_conflict_explanation_requires_actual_conflict() -> None:
+    # A conflicting intent with no measured markers must NOT fabricate a conflict.
+    empty = ImmortalizationAssessmentInput(intent="conflicting_evidence_assessment")
+    assert build_decision_report(empty).conflict_explanation == []
+
+
 def test_mechanism_intent_is_rejected_explicitly() -> None:
     q5 = next(q for q in _QUESTIONS if q["id"] == "IMM-Q5")
     with pytest.raises(UnsupportedIntentError):

@@ -37,8 +37,8 @@ _CONCLUSIONS = {
         "remain unverified."
     ),
     CandidateStatus.SENESCENCE_OR_STRESS_PRONE: (
-        "Senescence/stress signal predominates; not an immortalization candidate on "
-        "current evidence."
+        "Current evidence favors a senescence/stress-prone state and does not support "
+        "immortalization candidacy at this time; continued tracking may still be warranted."
     ),
     CandidateStatus.INSUFFICIENT_EVIDENCE: (
         "Insufficient evidence to judge: core senescence axes are unmeasured."
@@ -80,7 +80,13 @@ def _supporting(data: ImmortalizationAssessmentInput, status: CandidateStatus) -
     if data.DT_trend in (MarkerValue.STABLE, MarkerValue.IMPROVED):
         claims.append(_measurement("Doubling time is stable or improving."))
     if data.gammaH2AX == MarkerValue.LOW:
-        claims.append(_measurement("gammaH2AX is low, indicating low DNA damage."))
+        claims.append(_measurement("gammaH2AX is reported as low."))
+        claims.append(
+            _interpretation(
+                "Low gammaH2AX is consistent with a lower double-strand-break response "
+                "under the measured conditions."
+            )
+        )
     if data.SA_b_gal == MarkerValue.LOW:
         claims.append(_measurement("SA-b-Gal staining is low."))
     if data.p16 == MarkerValue.NORMAL:
@@ -102,7 +108,13 @@ def _contradicting(data: ImmortalizationAssessmentInput, status: CandidateStatus
     if data.DT_trend == MarkerValue.WORSENING:
         claims.append(_measurement("Doubling time is worsening."))
     if data.gammaH2AX == MarkerValue.HIGH:
-        claims.append(_measurement("gammaH2AX is high, indicating DNA damage."))
+        claims.append(_measurement("gammaH2AX is reported as high."))
+        claims.append(
+            _interpretation(
+                "Elevated gammaH2AX supports activation of a DNA-damage response, but "
+                "does not by itself establish senescence."
+            )
+        )
     if data.SA_b_gal == MarkerValue.HIGH:
         claims.append(_measurement("SA-b-Gal staining is high."))
     if data.p16 == MarkerValue.HIGH:
@@ -131,6 +143,12 @@ def _contradicting(data: ImmortalizationAssessmentInput, status: CandidateStatus
 
 def _conflict_explanation(data: ImmortalizationAssessmentInput) -> list[str]:
     if data.intent != AssessmentIntent.CONFLICTING_EVIDENCE_ASSESSMENT:
+        return []
+    # Only report a conflict when the data actually conflicts: an acute damage
+    # signal alongside markers that argue against established chronic senescence.
+    acute_stress = data.gammaH2AX == MarkerValue.HIGH or data.p21 == MarkerValue.HIGH
+    chronic_not_supported = data.SA_b_gal == MarkerValue.LOW or data.p16 == MarkerValue.NORMAL
+    if not (acute_stress and chronic_not_supported):
         return []
     return [
         "Acute DNA-damage markers (e.g. gammaH2AX, p21) conflict with low chronic-senescence "
