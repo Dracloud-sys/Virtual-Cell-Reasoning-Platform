@@ -51,6 +51,14 @@ class MarkerValue(StrEnum):
     UNKNOWN = "unknown"
 
 
+class ConstructType(StrEnum):
+    """Engineered immortalization construct (drives the mechanism-rule catalog)."""
+
+    TERT_ONLY = "TERT_only"
+    TERT_PLUS_CDK4 = "TERT_plus_CDK4"
+    UNKNOWN = "unknown"
+
+
 class RetentionValue(StrEnum):
     """Differentiation-retention vocabulary.
 
@@ -70,6 +78,9 @@ class ImmortalizationAssessmentInput(BaseModel):
     intent: AssessmentIntent
     species: str | None = None
     cell_type: str | None = None
+    # Named ``construct_type`` (not ``construct``) to avoid shadowing pydantic's
+    # deprecated ``BaseModel.construct``; flagged for GPT review.
+    construct_type: ConstructType = ConstructType.UNKNOWN
 
     # Field names deliberately mirror the benchmark marker vocabulary verbatim.
     PDL_trend: MarkerValue = MarkerValue.UNKNOWN

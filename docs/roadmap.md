@@ -157,12 +157,19 @@ Development is **benchmark-first**: fix the questions the platform must answer
     rejected explicitly. Benchmark Q1-Q4/Q7/Q8/Q10 run through the builder as a
     regression. (Retention needed its own `RetentionValue` vocab — `MarkerValue`
     can't express `lost`; flagged for GPT review.)
-  - **PR5b** — curated limitation catalog for mechanism questions (e.g. Q5 "TERT
-    alone does not bypass p16/RB"); these negative claims live in a rule catalog,
-    not the graph.
-  - **PR5c** — graph grounding (intent-scoped `explain` links) + the
-    `ImmortalizationAssessmentAgent` adapter + run the benchmark YAML end-to-end;
-    then an optional grounded LLM narrative that never changes status/tier.
+  - ✅ **PR5b** — typed `ConstructType` + Q5/Q6 mechanism-rule catalog
+    (`limitations.py`): curated, evidence-tiered supporting *and* limitation claims
+    (e.g. Q5 "TERT alone does not bypass p16/RB"; Q6 both arms + genomic-stability /
+    differentiation / non-tumorigenicity caveats). Negative claims the graph cannot
+    hold live here, not in the graph. Carries `seed_entity_ids` for PR5c to ground,
+    internal provenance only (no fabricated citations), and no candidate status.
+    (Field named `construct_type`, not `construct`, to avoid a pydantic shadow —
+    flagged for GPT review.)
+  - ▶ **PR5c** — graph grounding (intent-scoped `explain` links over the rule's
+    `seed_entity_ids`) + the `ImmortalizationAssessmentAgent` adapter (returns a
+    `DecisionReport` on `AgentOutput.result`) + run the full benchmark YAML
+    end-to-end (incl. Q5/Q6/Q9); then an optional grounded LLM narrative that never
+    changes status/tier. Q9 (PGC1A spontaneous route) lands here.
 
 Deferred to a later provenance PR (PR6+): per-edge `evidence_tier` on `Edge`
 (so a single-paper `PROMOTES` isn't treated as strong as a textbook one) — it

@@ -17,6 +17,14 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **Q5/Q6 mechanism-rule catalog (PR5b).** A typed `ConstructType` on the input
+  and `agents/immortalization/limitations.py`: curated, evidence-tiered supporting
+  *and* limitation claims for the TERT-only and TERT+CDK4 constructs (the negative
+  claims the graph cannot express, e.g. "TERT alone does not bypass p16/RB"; CDK4
+  is a *functional* bypass, "does not directly inhibit p16"; safety caveats on
+  genomic stability, differentiation, and non-tumorigenicity). `get_mechanism_rule`
+  returns the rule with `seed_entity_ids` for PR5c to ground; mechanism rules carry
+  no candidate status and only internal curated provenance. No graph/agent/LLM yet.
 - **Deterministic immortalization assessment builder (PR5a).**
   `agents/immortalization/models.py` (enum-validated `ImmortalizationAssessmentInput`
   over the benchmark marker vocabulary; retention split into its own `RetentionValue`)
