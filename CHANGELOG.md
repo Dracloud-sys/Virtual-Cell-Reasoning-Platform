@@ -7,13 +7,17 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **Immortalization seed graph — DRAFT, pending biologist review (PR3).** A
-  curated `ImmortalizationSeedSource` (24 nodes / 26 edges) over the ontology,
-  built with `virtualcell seed immortalization [--load ...] [--save ...]`. Added
-  `PROMOTES`/`INHIBITS` mechanistic relations. The reported spontaneous route is
-  seeded as `ASSOCIATED_WITH`/`SUGGESTS` and explicitly **P53-independent** (never
-  `CAUSES` / "P53 loss"). Surfaced a real gap for a later core fix: `explain`'s
-  tier is hop-based only, so a 1-hop weak association is mislabelled `established`.
+- **Immortalization seed graph — biologist-reviewed (PR3).** A curated
+  `ImmortalizationSeedSource` (26 nodes / 28 edges) over the ontology, built with
+  `virtualcell seed immortalization [--load ...] [--save ...]`. Added
+  `PROMOTES`/`INHIBITS` mechanistic relations. Review fixes: CDK4→p16 documented as
+  a functional bypass (not direct inhibition); differentiation edge redirected to
+  `assay INDICATES loss_of_differentiation`; single-marker confidences lowered;
+  telomere-length & TERT-activity added as next-tests; p16/p21 marker aliases; the
+  spontaneous route softened to a "recovery route" and kept `ASSOCIATED_WITH`/
+  `SUGGESTS`, explicitly **P53-independent** (never `CAUSES` / "P53 loss"). Surfaced
+  a real gap for PR4: `explain`'s tier is hop-based only, so a 1-hop weak
+  association is mislabelled `established`.
 - **Cell-engineering ontology v0 (PR2).** Extended the schema with five vertical
   node types (`CellLine`, `Marker`, `AssayResult`, `Phenotype`, `Mechanism`) and
   relations (`HAS_RESULT`, `INDICATES`, `SUPPORTS`, `CONTRADICTS`,

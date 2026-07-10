@@ -117,20 +117,27 @@ Development is **benchmark-first**: fix the questions the platform must answer
   `AssayResult`, `Phenotype`, `Mechanism`) + relations (`HAS_RESULT`,
   `INDICATES`, `SUPPORTS`, `CONTRADICTS`, `ASSOCIATED_WITH`, `SUGGESTS`,
   `SUGGESTS_NEXT_TEST`); `explain` reasons over them and persistence round-trips.
-- ◐ **PR3 (draft, pending biologist review)** — immortalization seed graph
-  (`ImmortalizationSeedSource`, `virtualcell seed immortalization`): 24 nodes /
-  26 edges over the ontology, added `PROMOTES`/`INHIBITS` mechanistic relations,
-  with the "P53-independent" spontaneous route seeded as `ASSOCIATED_WITH`/
-  `SUGGESTS` (never `CAUSES`).
-  - **Discovered gap (benchmark-first working):** `explain` derives a claim's
-    tier from hop distance only, so a 1-hop *weak* `ASSOCIATED_WITH`/`SUGGESTS`
-    edge is mislabelled `established`. Fix = make the path tier relation-aware
-    (weak relations cap the tier at `hypothesis`). This is a justified Phase-3
-    core change; do it around PR4.
-- **PR4** — `DecisionReport` contract (reuses `explain`'s `MechanisticLink` for
-  the mechanistic chain); fold in the relation-aware tier cap above.
-- **PR5** — `ImmortalizationAssessmentAgent` v0 (rule-based first, LLM synthesis
-  after).
+- ✅ **PR3 — immortalization seed graph (biologist-reviewed).**
+  `ImmortalizationSeedSource` / `virtualcell seed immortalization`: 26 nodes /
+  28 edges over the ontology (TERT / CDK4 / p16-RB / p53-p21 / PGC1A axes +
+  markers + safety next-tests incl. telomere-length & TERT-activity assays).
+  Added `PROMOTES`/`INHIBITS` mechanistic relations. Review fixes applied: CDK4→p16
+  documented as a *functional bypass* (not direct p16 inhibition); the
+  differentiation edge redirected to `assay INDICATES loss_of_differentiation`;
+  single-marker read confidences lowered; spontaneous route softened to a
+  "recovery route" description and kept `ASSOCIATED_WITH`/`SUGGESTS`, P53-independent;
+  p16/p21 given marker aliases.
+  - **Discovered gap (benchmark-first working):** `explain` derives tier from hop
+    distance only, so a 1-hop weak `ASSOCIATED_WITH`/`SUGGESTS` edge is mislabelled
+    `established`. Fixed in PR4 (relation-aware tier ceiling).
+- ▶ **PR4** — (1) **relation-aware tier ceiling** (the priority): a path's tier is
+  `weaker_of(hop_tier, weakest_edge_ceiling)`, where `ASSOCIATED_WITH`/`SUGGESTS`/
+  `SUGGESTS_NEXT_TEST` cap at `hypothesis` and `PROMOTES`/`INHIBITS`/`REGULATES`/
+  `INDICATES`/`CONTRADICTS` are strong; relation type stays independent of tier.
+  (2) `DecisionReport` contract (reuses `explain`'s `MechanisticLink`).
+- **PR5** — `ImmortalizationAssessmentAgent` v0: rule-based `baseline_status` first,
+  then LLM synthesis. Handles the negative/limitation claims the graph can't hold
+  (e.g. Q5: "TERT alone does not bypass the p16/RB checkpoint").
 
 Deliberately deferred: relevance/actionability axes on `Claim` (only after a
 benchmark failure proves the need), time-series/trend modelling, free-form BYOD

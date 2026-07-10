@@ -7,15 +7,20 @@ needed) and merges cleanly onto the molecular substrate.
 
 Evidence discipline (do not weaken):
 * Established mechanistic edges use ``PROMOTES`` / ``INHIBITS`` with high
-  confidence.
+  confidence; ``PROMOTES``/``INHIBITS`` encode biological *direction*, which is
+  independent of evidence tier (a weak association is not established just because
+  it is one hop away — the relation-aware tier ceiling lands in PR4).
 * The reported spontaneous route (Believer Meats, Nature Food 2025) is
   **P53-independent** and is seeded only as ``ASSOCIATED_WITH`` / ``SUGGESTS``
   with low confidence — never ``CAUSES``, never "P53 loss / without P53".
+* ``CDK4 INHIBITS p16-RB arrest`` is a *functional bypass* abstraction: CDK4
+  activity phosphorylates RB / releases E2F to overcome p16/RB-mediated G1 arrest;
+  CDK4 does not directly inhibit p16. (Kept as one edge for v0 minimality.)
 
 Signs (promote vs inhibit) are carried on the edge label, not composed by
 `explain`; the agent / LLM interprets them.
 
-*** This content is a DRAFT for domain-expert (biologist) review. ***
+*** This content is a DRAFT reviewed by a domain expert; refinements pending. ***
 """
 
 from __future__ import annotations
@@ -35,6 +40,10 @@ from virtualcell.knowledge.schema import (
 
 _CURATED = ["curated:immortalization_seed"]
 _SPONTANEOUS = ["hypothesis; Believer Meats, Nature Food 2025 (P53-independent)"]
+_BYPASS = [
+    "curated:immortalization_seed",
+    "functional bypass of p16/RB-mediated G1 arrest; CDK4 does not directly inhibit p16",
+]
 
 # Node ids (single source of truth, referenced by both node lists and edges).
 TERT, CDK4, CDKN2A, RB1, TP53, CDKN1A, PPARGC1A = (
@@ -52,27 +61,37 @@ SUST, SEN, GENOM, LOSSDIFF = (
     "phenotype:genomic_instability", "phenotype:loss_of_differentiation",
 )
 PDL, DT, H2AX, SABGAL = "marker:PDL", "marker:DT", "marker:gammaH2AX", "marker:SA_b_gal"
-KARYO, DIFF = "assay:karyotype", "assay:differentiation"
+KARYO, DIFF, TELOMERE_ASSAY, TERT_ASSAY = (
+    "assay:karyotype", "assay:differentiation", "assay:telomere_length", "assay:tert_activity",
+)
 
-# --- nodes: (id, name, description) ---------------------------------------
+_SPON_DESC = (
+    "Reported spontaneous immortalization-associated recovery route, not a general "
+    "causal mechanism; P53-independent (Believer Meats, Nature Food 2025)."
+)
+
+# --- nodes: genes carry (id, name, description, aliases) -------------------
 
 _GENES = [
-    (TERT, "TERT", "Telomerase reverse transcriptase (catalytic subunit)."),
-    (CDK4, "CDK4", "Cyclin-dependent kinase 4; drives G1/S with cyclin D."),
-    (CDKN2A, "CDKN2A", "p16INK4a; CDK4/6 inhibitor enforcing the p16-RB checkpoint."),
-    (RB1, "RB1", "Retinoblastoma protein; restrains G1/S until phosphorylated."),
-    (TP53, "TP53", "Tumor suppressor p53; DNA-damage response and arrest."),
-    (CDKN1A, "CDKN1A", "p21; p53-induced CDK inhibitor causing cell-cycle arrest."),
-    (PPARGC1A, "PPARGC1A", "PGC-1alpha; master regulator of mitochondrial biogenesis."),
+    (TERT, "TERT", "Telomerase reverse transcriptase (catalytic subunit).", ["hTERT"]),
+    (CDK4, "CDK4", "Cyclin-dependent kinase 4; drives G1/S with cyclin D.", []),
+    (CDKN2A, "CDKN2A", "p16INK4a; CDK4/6 inhibitor enforcing the p16-RB checkpoint.",
+     ["p16", "p16INK4A", "senescence marker"]),
+    (RB1, "RB1", "Retinoblastoma protein; restrains G1/S until phosphorylated.", ["pRB"]),
+    (TP53, "TP53", "Tumor suppressor p53; DNA-damage response and arrest.", ["p53"]),
+    (CDKN1A, "CDKN1A", "p21; p53-induced CDK inhibitor causing cell-cycle arrest.",
+     ["p21", "p21CIP1", "checkpoint marker"]),
+    (PPARGC1A, "PPARGC1A", "PGC-1alpha; master regulator of mitochondrial biogenesis.", ["PGC1A"]),
 ]
+# mechanisms carry (id, name, description)
 _MECHANISMS = [
-    (TELO, "Telomere maintenance"),
-    (REPSEN, "Replicative (telomeric) senescence"),
-    (P16, "p16-RB checkpoint arrest (G1/S)"),
-    (G1S, "G1/S cell-cycle progression"),
-    (DDR, "DNA damage response"),
-    (MITO, "Mitochondrial function"),
-    (SPON, "Spontaneous immortalization (P53-independent)"),
+    (TELO, "Telomere maintenance", ""),
+    (REPSEN, "Replicative (telomeric) senescence", ""),
+    (P16, "p16-RB checkpoint arrest (G1/S)", ""),
+    (G1S, "G1/S cell-cycle progression", ""),
+    (DDR, "DNA damage response", ""),
+    (MITO, "Mitochondrial function", ""),
+    (SPON, "Spontaneous immortalization-associated recovery (P53-independent)", _SPON_DESC),
 ]
 _PHENOTYPES = [
     (SUST, "Sustained proliferation (immortalization candidate)"),
@@ -89,6 +108,8 @@ _MARKERS = [
 _ASSAYS = [
     (KARYO, "Karyotype / genomic-stability assay"),
     (DIFF, "Differentiation assay (adipogenic / myogenic)"),
+    (TELOMERE_ASSAY, "Telomere length assay"),
+    (TERT_ASSAY, "TERT / telomerase activity assay"),
 ]
 
 # --- edges: (source, relation, target, confidence, evidence) --------------
@@ -102,15 +123,15 @@ _EDGES: list[tuple[str, RelationType, str, float, list[str]]] = [
     (REPSEN, _R.PROMOTES, SEN, 0.9, _CURATED),
     # p16-RB checkpoint arm.
     (CDKN2A, _R.PROMOTES, P16, 0.95, _CURATED),
-    (RB1, _R.PROMOTES, P16, 0.85, _CURATED),
+    (RB1, _R.PROMOTES, P16, 0.9, _CURATED),
     (P16, _R.INHIBITS, G1S, 0.9, _CURATED),
     (P16, _R.PROMOTES, SEN, 0.85, _CURATED),
-    # CDK4 bypasses p16-mediated arrest and drives G1/S (the key TERT+CDK4 insight).
-    (CDK4, _R.INHIBITS, P16, 0.9, _CURATED),
+    # CDK4 functionally bypasses p16-mediated arrest and drives G1/S (key TERT+CDK4 insight).
+    (CDK4, _R.INHIBITS, P16, 0.85, _BYPASS),
     (CDK4, _R.PROMOTES, G1S, 0.9, _CURATED),
     (G1S, _R.PROMOTES, SUST, 0.9, _CURATED),
     # p53 / p21 / DNA damage arm.
-    (TP53, _R.PROMOTES, DDR, 0.9, _CURATED),
+    (TP53, _R.PROMOTES, DDR, 0.85, _CURATED),
     (TP53, _R.REGULATES, CDKN1A, 0.9, _CURATED),
     (CDKN1A, _R.INHIBITS, G1S, 0.85, _CURATED),
     # PGC1A / mitochondria (established), then the weak spontaneous route.
@@ -118,30 +139,35 @@ _EDGES: list[tuple[str, RelationType, str, float, list[str]]] = [
     (TERT, _R.ASSOCIATED_WITH, SPON, 0.55, _SPONTANEOUS),
     (PPARGC1A, _R.ASSOCIATED_WITH, SPON, 0.55, _SPONTANEOUS),
     (SPON, _R.SUGGESTS, SUST, 0.5, _SPONTANEOUS),
-    # Marker readouts indicate mechanisms / phenotypes.
-    (PDL, _R.INDICATES, SUST, 0.8, _CURATED),
-    (DT, _R.INDICATES, SEN, 0.7, _CURATED),
+    # Marker readouts indicate mechanisms / phenotypes (single-marker reads are weak).
+    (PDL, _R.INDICATES, SUST, 0.7, _CURATED),
+    (DT, _R.INDICATES, SEN, 0.6, _CURATED),
     (H2AX, _R.INDICATES, DDR, 0.85, _CURATED),
-    (H2AX, _R.INDICATES, SEN, 0.75, _CURATED),
+    (H2AX, _R.INDICATES, SEN, 0.7, _CURATED),
     (SABGAL, _R.INDICATES, SEN, 0.85, _CURATED),
     # Caveats: immortalization != safety / function — what to check next.
     (SUST, _R.SUGGESTS_NEXT_TEST, KARYO, 0.8, _CURATED),
     (SUST, _R.SUGGESTS_NEXT_TEST, DIFF, 0.8, _CURATED),
-    (LOSSDIFF, _R.CONTRADICTS, DIFF, 0.7, _CURATED),
+    (SUST, _R.SUGGESTS_NEXT_TEST, TELOMERE_ASSAY, 0.8, _CURATED),
+    (SUST, _R.SUGGESTS_NEXT_TEST, TERT_ASSAY, 0.8, _CURATED),
+    # A (weak) differentiation assay result indicates loss of differentiation.
+    (DIFF, _R.INDICATES, LOSSDIFF, 0.7, _CURATED),
 ]
 
 
 class ImmortalizationSeedSource:
-    """Bundled curated seed graph for immortalization reasoning (v0 draft)."""
+    """Bundled curated seed graph for immortalization reasoning (v0)."""
 
     name = "immortalization_seed"
 
     def entities(self) -> Iterator[BioEntity]:
         src = {"source": self.name}
-        for eid, name, desc in _GENES:
-            yield Gene(id=eid, name=name, symbol=name, description=desc, properties=src)
-        for eid, name in _MECHANISMS:
-            yield Mechanism(id=eid, name=name, properties=src)
+        for eid, name, desc, aliases in _GENES:
+            yield Gene(
+                id=eid, name=name, symbol=name, description=desc, aliases=aliases, properties=src
+            )
+        for eid, name, desc in _MECHANISMS:
+            yield Mechanism(id=eid, name=name, description=desc or None, properties=src)
         for eid, name in _PHENOTYPES:
             yield Phenotype(id=eid, name=name, properties=src)
         for eid, name, modality in _MARKERS:
