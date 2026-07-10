@@ -135,11 +135,17 @@ Development is **benchmark-first**: fix the questions the platform must answer
   `SUGGESTS_NEXT_TEST` cap at `hypothesis` and strong relations impose no ceiling;
   relation type stays independent of tier. Fixes the PR3 gap (the 1-hop spontaneous
   route now reads `hypothesis`, not `established`).
-- ▶ **PR4b** — `DecisionReport` contract (reuses `explain`'s `MechanisticLink` for
-  the mechanistic chain), then the `explain`→`DecisionReport` formatter.
+- ✅ **PR4b — `DecisionReport` contract.** `reasoning/decision.py`: conclusion,
+  candidate_status + flags, supporting/contradicting `Claim`s, `mechanistic_chain`
+  (reuses `explain`'s `MechanisticLink` via `DecisionReport.scaffold`), uncertainty,
+  overinterpretation_risk, recommended_validation, next_experiment, and
+  experimental relevance scores. Shaped so every benchmark `required_output` is
+  representable. **Placed in `reasoning/` (not `core/contracts`) to keep `core`
+  free of a `reasoning` dependency — flagged for GPT review.**
 - **PR5** — `ImmortalizationAssessmentAgent` v0: rule-based `baseline_status` first,
-  then LLM synthesis. Handles the negative/limitation claims the graph can't hold
-  (e.g. Q5: "TERT alone does not bypass the p16/RB checkpoint").
+  then LLM synthesis; populates the `DecisionReport`. Handles the negative/limitation
+  claims the graph can't hold (e.g. Q5: "TERT alone does not bypass the p16/RB
+  checkpoint").
 
 Deliberately deferred: relevance/actionability axes on `Claim` (only after a
 benchmark failure proves the need), time-series/trend modelling, free-form BYOD

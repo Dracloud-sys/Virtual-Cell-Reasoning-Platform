@@ -7,6 +7,14 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`DecisionReport` output contract (PR4b).** `virtualcell.reasoning.decision`:
+  the structured assessment output — conclusion, `candidate_status` + flags,
+  supporting/contradicting `Claim`s, `mechanistic_chain` (reuses `explain`'s
+  `MechanisticLink` via `DecisionReport.scaffold`), uncertainty,
+  overinterpretation_risk, recommended_validation, next_experiment, and
+  experimental relevance scores — shaped so every benchmark `required_output` is
+  representable. Placed in `reasoning/` rather than `core/contracts` to keep
+  `core` free of a `reasoning` dependency.
 - **Immortalization seed graph — biologist-reviewed (PR3).** A curated
   `ImmortalizationSeedSource` (26 nodes / 28 edges) over the ontology, built with
   `virtualcell seed immortalization [--load ...] [--save ...]`. Added

@@ -9,7 +9,15 @@ deterministic offline backend formats the retrieved evidence directly.
 
 from __future__ import annotations
 
+from virtualcell.reasoning.decision import DecisionReport
 from virtualcell.reasoning.explain import Explanation, MechanisticLink, explain
 from virtualcell.reasoning.qa import Answer, QuestionAnswerer
 
-__all__ = ["Answer", "Explanation", "MechanisticLink", "QuestionAnswerer", "explain"]
+__all__ = [
+    "Answer",
+    "DecisionReport",
+    "Explanation",
+    "MechanisticLink",
+    "QuestionAnswerer",
+    "explain",
+]
