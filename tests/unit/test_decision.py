@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import pytest
+from pydantic import ValidationError
+
+from virtualcell.core.contracts import AgentOutput
 from virtualcell.core.evidence import Claim, EvidenceTier
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
 from virtualcell.knowledge.sources.base import load_into
 from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
-from virtualcell.reasoning.decision import DecisionReport
+from virtualcell.reasoning.decision import AssessmentFlag, CandidateStatus, DecisionReport
 from virtualcell.reasoning.explain import explain
 
 
@@ -72,4 +76,39 @@ def test_functionality_flag_is_representable() -> None:
         candidate_status="possible_candidate",
         flags=["functionality_compromised"],
     )
-    assert "functionality_compromised" in report.flags
+    assert AssessmentFlag.FUNCTIONALITY_COMPROMISED in report.flags
+
+
+def test_status_and_flags_are_enum_validated() -> None:
+    # A typo in the status must not slip through (GPT review item).
+    with pytest.raises(ValidationError):
+        DecisionReport(conclusion="x", candidate_status="possible_candidtae")
+    with pytest.raises(ValidationError):
+        DecisionReport(conclusion="x", flags=["not_a_flag"])
+    # Valid enum values (as strings) are accepted and coerced.
+    report = DecisionReport(conclusion="x", candidate_status="insufficient_evidence")
+    assert report.candidate_status is CandidateStatus.INSUFFICIENT_EVIDENCE
+
+
+def test_relevance_scores_are_bounded_and_default_none() -> None:
+    assert DecisionReport(conclusion="x").cell_type_relevance is None
+    with pytest.raises(ValidationError):
+        DecisionReport(conclusion="x", cell_type_relevance=1.5)
+
+
+def test_new_benchmark_fields_present() -> None:
+    report = DecisionReport(
+        conclusion="Conflicting acute-damage vs chronic-senescence signals.",
+        missing_axes=["p16", "telomere_length"],
+        conflict_explanation=["gammaH2AX/p21 up (acute) vs SA-b-Gal low, p16 normal (chronic)"],
+        limitations=["TERT alone does not bypass the p16/RB checkpoint."],
+    )
+    assert report.missing_axes == ["p16", "telomere_length"]
+    assert report.conflict_explanation and report.limitations
+
+
+def test_agent_output_preserves_structured_result() -> None:
+    report = DecisionReport(conclusion="ok", candidate_status="possible_candidate")
+    out = AgentOutput(agent="immortalization", result=report.model_dump())
+    # The full DecisionReport survives on the common agent contract, not just notes.
+    assert out.result["candidate_status"] == "possible_candidate"

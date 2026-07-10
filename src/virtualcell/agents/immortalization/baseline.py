@@ -11,25 +11,17 @@ stable | worsening | improved | normal | unknown`` (or absent / ``None``).
 
 from __future__ import annotations
 
-from enum import StrEnum
+# The status/flag vocabularies live with the DecisionReport contract so the
+# deterministic baseline and the report share one validated set of values.
+from virtualcell.reasoning.decision import AssessmentFlag, CandidateStatus
 
-# Orthogonal flags reported alongside (not instead of) the status.
-FLAG_FUNCTIONALITY_COMPROMISED = "functionality_compromised"
-FLAG_TREND_NEEDED = "trend_needed"
+__all__ = ["AssessmentFlag", "CandidateStatus", "baseline_status"]
 
 _UNKNOWN = (None, "unknown")
 _SENESCENCE_AXES = ("gammaH2AX", "SA_b_gal", "p16", "p21")
 
 
-class CandidateStatus(StrEnum):
-    """The v0 three-status vocabulary (deliberately coarse to avoid overcalling)."""
-
-    POSSIBLE_CANDIDATE = "possible_candidate"
-    SENESCENCE_OR_STRESS_PRONE = "senescence_or_stress_prone"
-    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
-
-
-def baseline_status(markers: dict) -> tuple[CandidateStatus, list[str]]:
+def baseline_status(markers: dict) -> tuple[CandidateStatus, list[AssessmentFlag]]:
     """Return the deterministic ``(status, flags)`` for a marker dict.
 
     Priority: a senescence/stress signal (that is not overridden by a strong
@@ -37,7 +29,7 @@ def baseline_status(markers: dict) -> tuple[CandidateStatus, list[str]]:
     one measured senescence axis is a ``possible_candidate``; otherwise there is
     not enough to judge.
     """
-    flags: list[str] = []
+    flags: list[AssessmentFlag] = []
     measured_senescence = [a for a in _SENESCENCE_AXES if markers.get(a) not in _UNKNOWN]
 
     # Functional stress holds even without molecular markers: a worsening doubling
@@ -59,9 +51,9 @@ def baseline_status(markers: dict) -> tuple[CandidateStatus, list[str]]:
 
     # Orthogonal flags.
     if markers.get("adipogenic_retention") == "lost":
-        flags.append(FLAG_FUNCTIONALITY_COMPROMISED)
+        flags.append(AssessmentFlag.FUNCTIONALITY_COMPROMISED)
     if markers.get("DT_trend") == "worsening" and markers.get("PDL_trend") == "increasing":
-        flags.append(FLAG_TREND_NEEDED)
+        flags.append(AssessmentFlag.TREND_NEEDED)
 
     if senescence_signal and not proliferation_signal:
         return CandidateStatus.SENESCENCE_OR_STRESS_PRONE, flags

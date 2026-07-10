@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **`DecisionReport` hardened + linked to `AgentOutput` (GPT review, pre-PR5).**
+  `candidate_status` and `flags` are now enum-validated (`CandidateStatus` /
+  `AssessmentFlag`, moved to `reasoning.decision` and reused by the deterministic
+  baseline) so a typo can't slip through; added `missing_axes`,
+  `conflict_explanation`, and `limitations` fields; relevance scores are bounded
+  to `[0, 1]`. `AgentOutput` gained an optional `result: dict` so an agent can
+  preserve a full structured `DecisionReport` (via `model_dump()`) instead of
+  losing it to the `notes` string.
+
 ### Added
 - **`DecisionReport` output contract (PR4b).** `virtualcell.reasoning.decision`:
   the structured assessment output — conclusion, `candidate_status` + flags,

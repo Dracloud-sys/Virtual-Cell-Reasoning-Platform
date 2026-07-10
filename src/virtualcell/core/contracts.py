@@ -43,3 +43,7 @@ class AgentOutput(BaseModel):
     claims: list[Claim] = Field(default_factory=list)
     confidence: float = Field(default=0.5, ge=0.0, le=1.0)
     notes: str | None = None
+    # Optional structured payload so an agent can preserve a richer typed result
+    # (e.g. a DecisionReport via ``report.model_dump()``) instead of losing it to
+    # the ``notes`` string. Kept as a plain dict to keep ``core`` dependency-free.
+    result: dict[str, Any] | None = None

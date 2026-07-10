@@ -8,6 +8,10 @@ and `DecisionReport` output land in later PRs; see
 
 from __future__ import annotations
 
-from virtualcell.agents.immortalization.baseline import CandidateStatus, baseline_status
+from virtualcell.agents.immortalization.baseline import (
+    AssessmentFlag,
+    CandidateStatus,
+    baseline_status,
+)
 
-__all__ = ["CandidateStatus", "baseline_status"]
+__all__ = ["AssessmentFlag", "CandidateStatus", "baseline_status"]

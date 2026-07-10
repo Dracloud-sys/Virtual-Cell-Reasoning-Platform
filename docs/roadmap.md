@@ -142,10 +142,26 @@ Development is **benchmark-first**: fix the questions the platform must answer
   experimental relevance scores. Shaped so every benchmark `required_output` is
   representable. **Placed in `reasoning/` (not `core/contracts`) to keep `core`
   free of a `reasoning` dependency — flagged for GPT review.**
-- **PR5** — `ImmortalizationAssessmentAgent` v0: rule-based `baseline_status` first,
-  then LLM synthesis; populates the `DecisionReport`. Handles the negative/limitation
-  claims the graph can't hold (e.g. Q5: "TERT alone does not bypass the p16/RB
-  checkpoint").
+- ✅ **PR4b-hardening (GPT review).** `DecisionReport` typed: `candidate_status`
+  and `flags` are enum-validated (`CandidateStatus` / `AssessmentFlag`, moved to
+  `reasoning.decision` and reused by the baseline); added `missing_axes`,
+  `conflict_explanation`, `limitations`; relevance scores bounded `[0,1]` and left
+  `None`. `AgentOutput` gained an optional `result: dict` so an agent preserves a
+  structured `DecisionReport` instead of losing it to `notes`.
+- ▶ **PR5 (split per GPT review) — deterministic-first, LLM = presentation only.**
+  - **PR5a** — normalized input model (`ImmortalizationAssessmentInput`, benchmark
+    marker vocabulary only) + deterministic `DecisionReport` builder from
+    `baseline_status` (status/flags/evidence/missing-axes/risks/next-tests).
+  - **PR5b** — curated limitation catalog for mechanism questions (e.g. Q5 "TERT
+    alone does not bypass p16/RB"); these negative claims live in a rule catalog,
+    not the graph.
+  - **PR5c** — graph grounding (intent-scoped `explain` links) + the
+    `ImmortalizationAssessmentAgent` adapter + run the benchmark YAML end-to-end;
+    then an optional grounded LLM narrative that never changes status/tier.
+
+Deferred to a later provenance PR (PR6+): per-edge `evidence_tier` on `Edge`
+(so a single-paper `PROMOTES` isn't treated as strong as a textbook one) — it
+touches persistence and every connector, so it waits until benchmarks demand it.
 
 Deliberately deferred: relevance/actionability axes on `Claim` (only after a
 benchmark failure proves the need), time-series/trend modelling, free-form BYOD

@@ -19,35 +19,63 @@ only once a benchmark failure proves the need (see roadmap Phase 3).
 
 from __future__ import annotations
 
+from enum import StrEnum
+
 from pydantic import BaseModel, Field
 
 from virtualcell.core.evidence import Claim
 from virtualcell.reasoning.explain import Explanation, MechanisticLink
 
 
+class CandidateStatus(StrEnum):
+    """The v0 three-status vocabulary (deliberately coarse to avoid overcalling).
+
+    Lives here (not in the agent) so both the deterministic baseline and the
+    :class:`DecisionReport` contract share one validated vocabulary.
+    """
+
+    POSSIBLE_CANDIDATE = "possible_candidate"
+    SENESCENCE_OR_STRESS_PRONE = "senescence_or_stress_prone"
+    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
+
+
+class AssessmentFlag(StrEnum):
+    """Orthogonal flags reported alongside (not instead of) the status."""
+
+    FUNCTIONALITY_COMPROMISED = "functionality_compromised"
+    TREND_NEEDED = "trend_needed"
+
+
 class DecisionReport(BaseModel):
-    """Structured, evidence-graded assessment output."""
+    """Structured, evidence-graded assessment output.
+
+    ``candidate_status`` / ``flags`` are enum-validated so a typo cannot slip
+    through; they are ``None`` / empty for pure mechanism questions.
+    """
 
     conclusion: str
-    # The immortalization 3-status vocabulary (possible_candidate /
-    # senescence_or_stress_prone / insufficient_evidence); None for pure mechanism
-    # questions. Orthogonal flags: functionality_compromised / trend_needed.
-    candidate_status: str | None = None
-    flags: list[str] = Field(default_factory=list)
+    candidate_status: CandidateStatus | None = None
+    flags: list[AssessmentFlag] = Field(default_factory=list)
 
     supporting_evidence: list[Claim] = Field(default_factory=list)
     contradicting_evidence: list[Claim] = Field(default_factory=list)
     mechanistic_chain: list[MechanisticLink] = Field(default_factory=list)
 
     uncertainty: list[str] = Field(default_factory=list)
+    missing_axes: list[str] = Field(default_factory=list)
+    conflict_explanation: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
     overinterpretation_risk: list[str] = Field(default_factory=list)
+    # `recommended_validation` = what to verify (the axis/goal);
+    # `next_experiment` = the concrete assay(s) to run.
     recommended_validation: list[str] = Field(default_factory=list)
     next_experiment: list[str] = Field(default_factory=list)
 
-    # Experimental internal relevance scores (not core Claim axes yet).
-    cell_type_relevance: float | None = None
-    species_relevance: float | None = None
-    actionability: float | None = None
+    # Experimental internal relevance scores (not core Claim axes yet); left None
+    # until a scoring formula exists — do not fabricate them.
+    cell_type_relevance: float | None = Field(default=None, ge=0.0, le=1.0)
+    species_relevance: float | None = Field(default=None, ge=0.0, le=1.0)
+    actionability: float | None = Field(default=None, ge=0.0, le=1.0)
 
     @classmethod
     def scaffold(
