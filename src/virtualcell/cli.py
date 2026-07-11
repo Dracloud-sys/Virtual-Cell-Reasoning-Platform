@@ -8,6 +8,7 @@ Usage:
     virtualcell ask "<query>"
     virtualcell qa "<natural-language question>"
     virtualcell explain <entity_id>
+    virtualcell assess immortalization --input assessment.json [--format json|text]
     virtualcell ingest reactome --path <UniProt2Reactome.txt> --save graph.json
     virtualcell ingest uniprot  --path <uniprotkb_export.tsv> --load graph.json --save graph.json
     virtualcell qa "..." --load graph.json
@@ -23,6 +24,7 @@ import argparse
 import asyncio
 import contextlib
 import sys
+from pathlib import Path
 
 from virtualcell import __version__
 from virtualcell.core.agent import AgentContext
@@ -126,6 +128,71 @@ def _cmd_qa(args: argparse.Namespace) -> int:
     print(f"\n[backend: {result.backend}]")
     if result.grounded_entity_ids:
         print(f"[grounded in: {', '.join(result.grounded_entity_ids)}]")
+    return 0
+
+
+def _print_assessment_text(report) -> None:
+    flags = ", ".join(f.value for f in report.flags) or "-"
+    print(f"status: {report.candidate_status}   flags: {flags}")
+    print(f"conclusion: {report.conclusion}")
+
+    def _block(label: str, items: list[str]) -> None:
+        if items:
+            print(f"{label}:")
+            for item in items:
+                print(f"  - {item}")
+
+    _block("supporting", [c.statement for c in report.supporting_evidence])
+    _block("contradicting", [c.statement for c in report.contradicting_evidence])
+    _block("missing axes", report.missing_axes)
+    _block("conflict", report.conflict_explanation)
+    _block("limitations", report.limitations)
+    _block("overinterpretation risk", report.overinterpretation_risk)
+    _block("recommended validation", report.recommended_validation)
+    _block("next experiment", report.next_experiment)
+
+
+def _cmd_assess(args: argparse.Namespace) -> int:
+    import json
+
+    from pydantic import ValidationError
+
+    from virtualcell.agents.immortalization.adapters import input_from_scenario
+    from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
+    from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
+
+    try:
+        payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"could not read input: {exc}")
+        return 1
+    if not isinstance(payload, dict) or "intent" not in payload:
+        print("input must be a JSON object with an 'intent' field")
+        return 1
+
+    # A store with the immortalization seed so mechanism/hypothesis reports ground;
+    # ``--load`` merges the seed onto an existing saved graph.
+    if args.load:
+        from virtualcell.knowledge.persistence import load_store
+
+        store = load_store(args.load)
+    else:
+        store = InMemoryKnowledgeStore()
+    load_into(ImmortalizationSeedSource(), store)
+
+    intent = payload["intent"]
+    scenario = {key: value for key, value in payload.items() if key != "intent"}
+    try:
+        data = input_from_scenario(intent, scenario)
+        report = ImmortalizationAssessmentAgent(store=store).assess(data)
+    except (ValueError, ValidationError) as exc:
+        print(f"assessment failed: {exc}")
+        return 1
+
+    if args.format == "json":
+        print(json.dumps(report.model_dump(mode="json"), indent=2))
+    else:
+        _print_assessment_text(report)
     return 0
 
 
@@ -238,6 +305,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_explain.add_argument("-k", type=int, default=25, help="max results to show")
     p_explain.add_argument("--load", help=load_help)
     p_explain.set_defaults(func=_cmd_explain)
+
+    p_assess = sub.add_parser(
+        "assess", help="run a domain assessment agent on a JSON input file"
+    )
+    p_assess.add_argument("domain", choices=["immortalization"])
+    p_assess.add_argument("--input", required=True, help="path to a JSON assessment input")
+    p_assess.add_argument("--format", choices=["json", "text"], default="text")
+    p_assess.add_argument("--load", help="merge the seed onto an existing saved graph JSON")
+    p_assess.set_defaults(func=_cmd_assess)
 
     p_seed = sub.add_parser("seed", help="build a bundled curated seed graph")
     p_seed.add_argument("name", choices=["immortalization"])
