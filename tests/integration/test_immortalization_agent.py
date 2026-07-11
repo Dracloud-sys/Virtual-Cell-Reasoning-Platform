@@ -50,6 +50,36 @@ _FORBIDDEN = [
 ]
 
 
+# Every benchmark `required_output` token must map to a representable DecisionReport
+# field, so a newly added token can't silently have no home. Nested per-claim tokens
+# (evidence_tier / citation_flag) are verified by the Q9-specific test instead.
+_REQUIRED_FIELD_MAP = {
+    "candidate_status": "candidate_status",
+    "supporting": "supporting_evidence",
+    "contradicting": "contradicting_evidence",
+    "overinterpretation_risk": "overinterpretation_risk",
+    "next_experiment": "next_experiment",
+    "mechanistic_chain": "mechanistic_chain",
+    "limitation": "limitations",
+    "caveat": "limitations",
+    "functionality_flag": "flags",
+    "missing_axes": "missing_axes",
+    "conflict_explanation": "conflict_explanation",
+    "claim_decomposition": "supporting_evidence",
+}
+_NESTED_TOKENS = {"evidence_tier", "citation_flag"}
+
+
+def test_required_output_tokens_map_to_report_fields() -> None:
+    fields = set(DecisionReport.model_fields)
+    for q in _QUESTIONS:
+        for token in q["required_output"]:
+            if token in _NESTED_TOKENS:
+                continue
+            assert token in _REQUIRED_FIELD_MAP, f"{q['id']}: unmapped required_output {token!r}"
+            assert _REQUIRED_FIELD_MAP[token] in fields, f"missing field for {token!r}"
+
+
 def _agent() -> ImmortalizationAssessmentAgent:
     store = InMemoryKnowledgeStore()
     load_into(ImmortalizationSeedSource(), store)
