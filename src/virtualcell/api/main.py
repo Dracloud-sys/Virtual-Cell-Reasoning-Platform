@@ -29,8 +29,13 @@ async def lifespan(app: FastAPI):
 
         store = load_store(graph_path)
     else:
+        from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
+
         store = InMemoryKnowledgeStore()
         load_into(SampleDataSource(), store)
+        # Also seed the immortalization graph so the mechanism/hypothesis reports of
+        # the ImmortalizationAssessmentAgent can be grounded via the API.
+        load_into(ImmortalizationSeedSource(), store)
     app.state.knowledge_store = store
     yield
 

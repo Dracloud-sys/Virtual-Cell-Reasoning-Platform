@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 import virtualcell.agents  # noqa: F401  (registers agents on import)
 from virtualcell.core.agent import AgentContext
@@ -31,4 +31,12 @@ async def run_agent(request: Request, name: str, body: RunRequest) -> AgentOutpu
         raise HTTPException(status_code=404, detail=f"unknown agent: {name}")
     context = AgentContext(services={"knowledge_store": request.app.state.knowledge_store})
     agent = registry.create(name, context)
-    return await agent.run(AgentInput(query=body.query, context=body.context))
+    try:
+        return await agent.run(AgentInput(query=body.query, context=body.context))
+    except (ValueError, ValidationError) as exc:
+        # Bad/insufficient input (e.g. missing intent, invalid marker, unsupported
+        # intent/construct) is a client error, not a server error.
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "invalid_assessment_input", "message": str(exc)},
+        ) from exc
