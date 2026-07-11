@@ -51,3 +51,32 @@ async def test_orchestrator_runs_registered_agent(store: InMemoryKnowledgeStore)
     orch = Orchestrator(registry=reg, context=AgentContext(services={"knowledge_store": store}))
     out = await orch.run("literature", AgentInput(query="MDM2"))
     assert out.claims
+
+
+def test_immortalization_agent_is_registered() -> None:
+    import virtualcell.agents  # noqa: F401  (registers agents on import)
+    from virtualcell.core.registry import registry
+
+    assert "immortalization_assessment" in registry.names()
+
+
+def test_immortalization_agent_resolves_store_from_context(
+    store: InMemoryKnowledgeStore,
+) -> None:
+    import virtualcell.agents  # noqa: F401
+    from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
+    from virtualcell.core.registry import registry
+
+    context = AgentContext(services={"knowledge_store": store})
+    agent = registry.create("immortalization_assessment", context)
+    assert isinstance(agent, ImmortalizationAssessmentAgent)
+    assert agent.store is store
+    # Direct construction with an explicit store still works.
+    assert ImmortalizationAssessmentAgent(store=store).store is store
+
+
+def test_immortalization_agent_requires_a_store() -> None:
+    from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
+
+    with pytest.raises(ValueError, match="knowledge_store"):
+        ImmortalizationAssessmentAgent()  # no store, no context services

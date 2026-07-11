@@ -95,7 +95,7 @@ def _print_report(report: DecisionReport) -> None:
 def main() -> None:
     store = InMemoryKnowledgeStore()
     load_into(ImmortalizationSeedSource(), store)
-    agent = ImmortalizationAssessmentAgent(store)
+    agent = ImmortalizationAssessmentAgent(store=store)
 
     for title, intent, scenario, note in CASES:
         print("=" * 78)

@@ -83,7 +83,7 @@ def test_required_output_tokens_map_to_report_fields() -> None:
 def _agent() -> ImmortalizationAssessmentAgent:
     store = InMemoryKnowledgeStore()
     load_into(ImmortalizationSeedSource(), store)
-    return ImmortalizationAssessmentAgent(store)
+    return ImmortalizationAssessmentAgent(store=store)
 
 
 def _report(q: dict) -> DecisionReport:

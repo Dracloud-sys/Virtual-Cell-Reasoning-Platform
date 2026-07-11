@@ -35,9 +35,19 @@ class ImmortalizationAssessmentAgent(BaseAgent):
     name = "immortalization_assessment"
     responsibilities = "Produce deterministic, evidence-graded immortalization DecisionReports."
 
-    def __init__(self, store: KnowledgeStore, context: AgentContext | None = None) -> None:
+    def __init__(
+        self, context: AgentContext | None = None, store: KnowledgeStore | None = None
+    ) -> None:
         super().__init__(context)
-        self.store = store
+        # Match the registry convention: a store may be injected directly (tests) or
+        # supplied through the agent context's services (registry / API).
+        resolved = store or self.context.services.get("knowledge_store")
+        if resolved is None:
+            raise ValueError(
+                "ImmortalizationAssessmentAgent requires a knowledge_store "
+                "(pass store=... or context.services['knowledge_store'])"
+            )
+        self.store = resolved
 
     def assess(self, data: ImmortalizationAssessmentInput) -> DecisionReport:
         """Dispatch to the right builder by intent; recompute nothing."""
