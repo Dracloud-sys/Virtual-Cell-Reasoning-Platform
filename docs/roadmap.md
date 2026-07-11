@@ -173,9 +173,16 @@ Development is **benchmark-first**: fix the questions the platform must answer
     cannot leak into a Q5/Q6 chain via a shared target; missing seed → `GroundingError`.
     (Target-only allowlisting proved insufficient — found by running the demo;
     flagged for GPT review.)
-  - ▶ **PR5c-2** — Q9 hypothesis policy: curated P53-independent wording + citation,
-    `ASSOCIATED_WITH`/`SUGGESTS`-only, forbidden-phrasing guard, status fixed to
-    `insufficient_evidence` by policy (not baseline).
+  - ✅ **PR5c-2** — Q9 hypothesis policy (`hypotheses.py`, `build_hypothesis_report`):
+    separates the established TERT/PGC1A supporting context from the weak reported
+    spontaneous route, preserves "P53-independent" (never P53 loss/knockout/absence),
+    never promotes `ASSOCIATED_WITH`/`SUGGESTS` to causation, keeps a required citation
+    on the reported-route claim, and fixes status to `insufficient_evidence` **by
+    policy** (not baseline). Grounding uses a per-target relation signature (not just a
+    target allowlist) so unrelated suggestions and the strong Q6 CDK4→G1/S→proliferation
+    path stay out. A `validate_hypothesis_report` guard scans assertion fields for
+    forbidden phrasing — it excludes the curated safety-guidance fields, which *name*
+    the forbidden phrases to prohibit them (spec conflict resolved; flagged for GPT).
   - **PR5c-3** — `ImmortalizationAssessmentAgent` adapter (dispatch by intent;
     `DecisionReport` on `AgentOutput.result`) + full Q1-Q10 end-to-end regression +
     one benchmark-scenario→input adapter.

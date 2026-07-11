@@ -17,6 +17,17 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **Q9 hypothesis policy (PR5c-2).** `agents/immortalization/hypotheses.py`
+  (`build_hypothesis_report`) handles the PGC1A/TERT spontaneous-immortalization
+  hypothesis: it separates the established TERT/PGC1A context from the weak reported
+  route, keeps "P53-independent" exactly (never P53 loss/knockout/absence), never
+  promotes `ASSOCIATED_WITH`/`SUGGESTS` to causation, keeps a required citation on the
+  reported-route claim, and fixes `candidate_status` to `insufficient_evidence` by
+  policy (not `baseline_status`). Grounding uses a per-target relation signature so the
+  spontaneous route and the strong Q6 CDK4→G1/S path cannot cross-contaminate. A
+  `validate_hypothesis_report` safety guard scans assertion fields for forbidden
+  phrasing (excluding the curated safety-guidance fields that name those phrases to
+  prohibit them).
 - **Q5/Q6 mechanism graph grounding (PR5c-1).** `agents/immortalization/grounding.py`
   (`build_mechanism_report`) combines the catalog's curated claims with intent-scoped
   `explain` paths over the rule's `seed_entity_ids` into a mechanism `DecisionReport`
