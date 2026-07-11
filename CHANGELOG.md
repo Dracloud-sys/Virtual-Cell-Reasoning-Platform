@@ -17,6 +17,13 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **Q5/Q6 mechanism graph grounding (PR5c-1).** `agents/immortalization/grounding.py`
+  (`build_mechanism_report`) combines the catalog's curated claims with intent-scoped
+  `explain` paths over the rule's `seed_entity_ids` into a mechanism `DecisionReport`
+  (no candidate status). A target allowlist plus a weak-relation path filter keep the
+  P53-independent spontaneous route (Q9's domain) from leaking into a Q5/Q6 chain via a
+  shared target; a missing seed raises `GroundingError`. Catalog claim tiers/citations
+  are preserved and paths are de-duplicated.
 - **Q5/Q6 mechanism-rule catalog (PR5b).** A typed `ConstructType` on the input
   and `agents/immortalization/limitations.py`: curated, evidence-tiered supporting
   *and* limitation claims for the TERT-only and TERT+CDK4 constructs (the negative

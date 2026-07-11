@@ -165,11 +165,21 @@ Development is **benchmark-first**: fix the questions the platform must answer
     internal provenance only (no fabricated citations), and no candidate status.
     (Field named `construct_type`, not `construct`, to avoid a pydantic shadow —
     flagged for GPT review.)
-  - ▶ **PR5c** — graph grounding (intent-scoped `explain` links over the rule's
-    `seed_entity_ids`) + the `ImmortalizationAssessmentAgent` adapter (returns a
-    `DecisionReport` on `AgentOutput.result`) + run the full benchmark YAML
-    end-to-end (incl. Q5/Q6/Q9); then an optional grounded LLM narrative that never
-    changes status/tier. Q9 (PGC1A spontaneous route) lands here.
+  - ✅ **PR5c-1** — Q5/Q6 graph grounding (`grounding.py`,
+    `build_mechanism_report`): combines the catalog's curated claims with
+    intent-scoped `explain` paths over the rule `seed_entity_ids` into a mechanism
+    `DecisionReport` (no candidate status). Uses a target allowlist **and** a
+    weak-relation path filter so the P53-independent spontaneous route (Q9's domain)
+    cannot leak into a Q5/Q6 chain via a shared target; missing seed → `GroundingError`.
+    (Target-only allowlisting proved insufficient — found by running the demo;
+    flagged for GPT review.)
+  - ▶ **PR5c-2** — Q9 hypothesis policy: curated P53-independent wording + citation,
+    `ASSOCIATED_WITH`/`SUGGESTS`-only, forbidden-phrasing guard, status fixed to
+    `insufficient_evidence` by policy (not baseline).
+  - **PR5c-3** — `ImmortalizationAssessmentAgent` adapter (dispatch by intent;
+    `DecisionReport` on `AgentOutput.result`) + full Q1-Q10 end-to-end regression +
+    one benchmark-scenario→input adapter.
+  - **PR5d** — optional grounded LLM narrative that never changes status/tier/citation.
 
 Deferred to a later provenance PR (PR6+): per-edge `evidence_tier` on `Edge`
 (so a single-paper `PROMOTES` isn't treated as strong as a textbook one) — it
