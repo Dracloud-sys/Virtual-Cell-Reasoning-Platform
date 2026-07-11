@@ -8,10 +8,30 @@ and `DecisionReport` output land in later PRs; see
 
 from __future__ import annotations
 
+from virtualcell.agents.immortalization.adapters import input_from_scenario
+from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
 from virtualcell.agents.immortalization.baseline import (
     AssessmentFlag,
     CandidateStatus,
     baseline_status,
 )
+from virtualcell.agents.immortalization.models import (
+    AssessmentIntent,
+    ConstructType,
+    ImmortalizationAssessmentInput,
+    MarkerValue,
+    RetentionValue,
+)
 
-__all__ = ["AssessmentFlag", "CandidateStatus", "baseline_status"]
+__all__ = [
+    "AssessmentFlag",
+    "AssessmentIntent",
+    "CandidateStatus",
+    "ConstructType",
+    "ImmortalizationAssessmentAgent",
+    "ImmortalizationAssessmentInput",
+    "MarkerValue",
+    "RetentionValue",
+    "baseline_status",
+    "input_from_scenario",
+]

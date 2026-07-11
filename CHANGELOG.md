@@ -17,6 +17,15 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **`ImmortalizationAssessmentAgent` + end-to-end benchmark (PR5c-3).** A single
+  `input_from_scenario` adapter (`adapters.py`, maps the benchmark `construct` key to
+  `construct_type`) and `ImmortalizationAssessmentAgent` (`agent.py`) that dispatches by
+  intent to the deterministic builder (Q1-Q4/Q7/Q8/Q10), the Q5/Q6 mechanism grounding,
+  or the Q9 hypothesis policy, and packages the `DecisionReport` onto `AgentOutput.result`
+  (`model_dump(mode="json")`, conclusion in `notes`, claim-mean confidence). The agent
+  recomputes nothing. All 10 benchmark questions now run end-to-end through
+  `assess()`/`run()`, with status-source boundaries pinned and a forbidden-phrasing safety
+  scan — **the deterministic immortalization prototype is complete** (LLM narrative is PR5d).
 - **Q9 hypothesis policy (PR5c-2).** `agents/immortalization/hypotheses.py`
   (`build_hypothesis_report`) handles the PGC1A/TERT spontaneous-immortalization
   hypothesis: it separates the established TERT/PGC1A context from the weak reported

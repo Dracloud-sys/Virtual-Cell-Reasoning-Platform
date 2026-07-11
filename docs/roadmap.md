@@ -183,10 +183,17 @@ Development is **benchmark-first**: fix the questions the platform must answer
     path stay out. A `validate_hypothesis_report` guard scans assertion fields for
     forbidden phrasing — it excludes the curated safety-guidance fields, which *name*
     the forbidden phrases to prohibit them (spec conflict resolved; flagged for GPT).
-  - **PR5c-3** — `ImmortalizationAssessmentAgent` adapter (dispatch by intent;
-    `DecisionReport` on `AgentOutput.result`) + full Q1-Q10 end-to-end regression +
-    one benchmark-scenario→input adapter.
-  - **PR5d** — optional grounded LLM narrative that never changes status/tier/citation.
+  - ✅ **PR5c-3** — `ImmortalizationAssessmentAgent` (`agent.py`) dispatches by
+    intent to the deterministic builder / mechanism grounding / hypothesis policy and
+    packages the `DecisionReport` onto `AgentOutput.result` (`model_dump(mode="json")`,
+    conclusion in `notes`, claim-mean confidence); a single `input_from_scenario`
+    adapter maps the benchmark `construct` key to `construct_type`. The agent
+    recomputes nothing. Full Q1-Q10 run end-to-end through `assess()`/`run()` as a
+    regression, with status-source boundaries pinned (baseline for assessments, `None`
+    for mechanism, policy `insufficient_evidence` for Q9) and a forbidden-phrasing
+    safety scan over assertion fields. **The deterministic immortalization prototype
+    is complete.**
+  - ▶ **PR5d** — optional grounded LLM narrative that never changes status/tier/citation.
 
 Deferred to a later provenance PR (PR6+): per-edge `evidence_tier` on `Edge`
 (so a single-paper `PROMOTES` isn't treated as strong as a textbook one) — it
