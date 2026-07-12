@@ -78,6 +78,13 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "UP", "B", "SIM", "N"]
 ignore = ["N818"]
 
+[tool.ruff.lint.per-file-ignores]
+# Immortalization models mirror the domain marker vocabulary verbatim (cumulative_PDL,
+# DT_hours, DT_fold_change, endogenous_TERT/CDK4, derived_*_trend): the mixedCase names
+# are intentional and must match the benchmark/biology, not Python casing conventions.
+"src/virtualcell/agents/immortalization/models.py" = ["N815"]
+"src/virtualcell/agents/immortalization/trajectory.py" = ["N815"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]

@@ -1,0 +1,198 @@
+# VCRP immortalization time-series benchmark v1 — machine-readable eval spec
+# Loadable by the eval harness. Prose expected-answers live in
+# immortalization_timeseries_v1.md.
+#
+# PR7 scope: raw per-passage DT/PDL series -> deterministic trajectory. The
+# `expected_trajectory` is fixed here; `expected_status`/`expected_flags` are the
+# candidate-status integration checks (PR7c). Snapshot markers, where present,
+# use the v0 vocabulary. `observations` mirror the PassageObservation contract.
+#
+# Every threshold is a v1 benchmark policy (TrajectoryThresholds), NOT a
+# universal biological law.
+
+version: 1
+domain: immortalization_timeseries
+trajectory_vocab:
+  - insufficient_series
+  - stable_growth
+  - progressive_slowdown
+  - plateau
+  - recovery_after_plateau
+  - transient_recovery
+  - re_arrest
+  - conflicting_trajectory
+# Core invariant: a time series alone never confirms immortalization.
+auto_fail_on: confirming_immortalization_from_series_alone
+
+questions:
+  - id: TS01
+    intent: immortalization_assessment
+    summary: Stable PDL gain with a stable doubling time.
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      observations:
+        - {passage: 20, cumulative_PDL: 20.0, DT_hours: 30}
+        - {passage: 25, cumulative_PDL: 24.0, DT_hours: 32}
+        - {passage: 30, cumulative_PDL: 28.0, DT_hours: 31}
+    expected_trajectory: stable_growth
+    expected_derived_PDL_trend: increasing
+    expected_derived_DT_trend: stable
+
+  - id: TS02
+    intent: immortalization_assessment
+    summary: PDL keeps rising but the doubling time progressively worsens.
+    scenario:
+      species: bovine
+      cell_type: preadipocyte
+      observations:
+        - {passage: 25, culture_day: 110, cumulative_PDL: 22.0, DT_hours: 42}
+        - {passage: 30, culture_day: 145, cumulative_PDL: 25.5, DT_hours: 80}
+        - {passage: 35, culture_day: 180, cumulative_PDL: 27.0, DT_hours: 100}
+    expected_trajectory: progressive_slowdown
+    expected_derived_PDL_trend: increasing
+    expected_derived_DT_trend: worsening
+    expected_status: senescence_or_stress_prone
+    expected_flags: [trend_needed]
+
+  - id: TS03
+    intent: immortalization_assessment
+    summary: Population doublings have essentially stopped.
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      observations:
+        - {passage: 28, cumulative_PDL: 25.0, DT_hours: 60}
+        - {passage: 33, cumulative_PDL: 25.3, DT_hours: 90}
+        - {passage: 38, cumulative_PDL: 25.5, DT_hours: 120}
+    expected_trajectory: plateau
+    expected_derived_PDL_trend: plateau
+
+  - id: TS04
+    intent: immortalization_assessment
+    summary: Plateau then a single observed increase — durability not established.
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      observations:
+        - {passage: 20, cumulative_PDL: 18.0, DT_hours: 34}
+        - {passage: 25, cumulative_PDL: 22.0, DT_hours: 36}
+        - {passage: 30, cumulative_PDL: 22.4, DT_hours: 70}
+        - {passage: 35, cumulative_PDL: 25.0, DT_hours: 40}
+    expected_trajectory: transient_recovery
+    key_point: durability_not_established
+
+  - id: TS05
+    intent: immortalization_assessment
+    summary: Plateau then two or more sustained increases with recovering DT.
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      observations:
+        - {passage: 20, cumulative_PDL: 20.0, DT_hours: 40}
+        - {passage: 25, cumulative_PDL: 20.3, DT_hours: 78}
+        - {passage: 30, cumulative_PDL: 23.0, DT_hours: 44}
+        - {passage: 35, cumulative_PDL: 26.0, DT_hours: 38}
+    expected_trajectory: recovery_after_plateau
+
+  - id: TS06
+    intent: immortalization_assessment
+    summary: Plateau, recovery, then arrest again.
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      observations:
+        - {passage: 20, cumulative_PDL: 20.0, DT_hours: 40}
+        - {passage: 25, cumulative_PDL: 20.2, DT_hours: 78}
+        - {passage: 30, cumulative_PDL: 23.0, DT_hours: 46}
+        - {passage: 35, cumulative_PDL: 23.3, DT_hours: 95}
+    expected_trajectory: re_arrest
+    expected_status: senescence_or_stress_prone
+
+  - id: TS07
+    intent: immortalization_assessment
+    summary: PDL stalls while the doubling time improves — directions disagree.
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      observations:
+        - {passage: 20, cumulative_PDL: 25.0, DT_hours: 100}
+        - {passage: 25, cumulative_PDL: 25.2, DT_hours: 70}
+        - {passage: 30, cumulative_PDL: 25.3, DT_hours: 45}
+    expected_trajectory: conflicting_trajectory
+
+  - id: TS08
+    intent: immortalization_assessment
+    summary: Only two timepoints — not enough to judge a trajectory.
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      observations:
+        - {passage: 20, cumulative_PDL: 20.0, DT_hours: 40}
+        - {passage: 25, cumulative_PDL: 24.0, DT_hours: 42}
+    expected_trajectory: insufficient_series
+    expected_quality_flags: [insufficient_timepoints]
+
+  - id: TS09
+    intent: immortalization_assessment
+    summary: Snapshot DT_trend says stable but the raw series says worsening.
+    scenario:
+      species: bovine
+      cell_type: preadipocyte
+      DT_trend: stable
+      PDL_trend: increasing
+      observations:
+        - {passage: 25, cumulative_PDL: 22.0, DT_hours: 42}
+        - {passage: 30, cumulative_PDL: 25.5, DT_hours: 80}
+        - {passage: 35, cumulative_PDL: 27.0, DT_hours: 100}
+    expected_trajectory: progressive_slowdown
+    expected_derived_DT_trend: worsening
+    expects_input_conflict: true
+
+  - id: TS10
+    intent: immortalization_vs_functionality
+    summary: Healthy trajectory but differentiation capacity is lost.
+    scenario:
+      species: bovine
+      cell_type: preadipocyte
+      gammaH2AX: low
+      adipogenic_retention: lost
+      observations:
+        - {passage: 20, cumulative_PDL: 20.0, DT_hours: 30}
+        - {passage: 25, cumulative_PDL: 24.0, DT_hours: 31}
+        - {passage: 30, cumulative_PDL: 28.0, DT_hours: 30}
+    expected_trajectory: stable_growth
+    expected_flags: [functionality_compromised]
+
+  - id: TS11
+    intent: immortalization_assessment
+    summary: Sustained recovery with favorable senescence markers.
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      PDL_trend: increasing
+      DT_trend: stable
+      gammaH2AX: low
+      SA_b_gal: low
+      p16: normal
+      observations:
+        - {passage: 20, cumulative_PDL: 20.0, DT_hours: 40}
+        - {passage: 25, cumulative_PDL: 20.3, DT_hours: 78}
+        - {passage: 30, cumulative_PDL: 23.0, DT_hours: 44}
+        - {passage: 35, cumulative_PDL: 26.0, DT_hours: 38}
+    expected_trajectory: recovery_after_plateau
+    acceptable_status: [possible_candidate, insufficient_evidence]
+
+  - id: TS12
+    intent: immortalization_assessment
+    summary: Sustained recovery but no senescence markers measured.
+    scenario:
+      species: bovine
+      cell_type: fibroblast
+      observations:
+        - {passage: 20, cumulative_PDL: 20.0, DT_hours: 40}
+        - {passage: 25, cumulative_PDL: 20.3, DT_hours: 78}
+        - {passage: 30, cumulative_PDL: 23.0, DT_hours: 44}
+        - {passage: 35, cumulative_PDL: 26.0, DT_hours: 38}
+    expected_trajectory: recovery_after_plateau
+    expected_status: insufficient_evidence

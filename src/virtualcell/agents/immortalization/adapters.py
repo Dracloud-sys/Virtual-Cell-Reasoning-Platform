@@ -25,13 +25,17 @@ _MARKER_FIELDS = (
     "adipogenic_retention",
 )
 # Keys consumed as typed fields (everything else is preserved in ``measurements``).
-_TOP_LEVEL = {*_MARKER_FIELDS, "species", "cell_type", "construct"}
+_TOP_LEVEL = {*_MARKER_FIELDS, "species", "cell_type", "construct", "observations"}
 
 
 def input_from_scenario(
     intent: str | AssessmentIntent, scenario: dict[str, Any]
 ) -> ImmortalizationAssessmentInput:
-    """Build an assessment input from an intent and a normalized scenario dict."""
+    """Build an assessment input from an intent and a normalized scenario dict.
+
+    A raw ``observations`` list (PR7 passage series) is routed to the typed field;
+    pydantic validates each entry as a :class:`PassageObservation`.
+    """
     markers = {key: scenario[key] for key in _MARKER_FIELDS if key in scenario}
     extras = {key: value for key, value in scenario.items() if key not in _TOP_LEVEL}
     return ImmortalizationAssessmentInput(
@@ -39,6 +43,7 @@ def input_from_scenario(
         species=scenario.get("species"),
         cell_type=scenario.get("cell_type"),
         construct_type=scenario.get("construct", "unknown"),
+        observations=scenario.get("observations", []),
         measurements=extras,
         **markers,
     )

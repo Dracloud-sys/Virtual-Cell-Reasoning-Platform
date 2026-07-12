@@ -20,7 +20,14 @@ from virtualcell.agents.immortalization.models import (
     ConstructType,
     ImmortalizationAssessmentInput,
     MarkerValue,
+    PassageObservation,
     RetentionValue,
+)
+from virtualcell.agents.immortalization.trajectory import (
+    SeriesQualityFlag,
+    TrajectoryAssessment,
+    TrajectoryState,
+    TrajectoryThresholds,
 )
 
 __all__ = [
@@ -31,7 +38,12 @@ __all__ = [
     "ImmortalizationAssessmentAgent",
     "ImmortalizationAssessmentInput",
     "MarkerValue",
+    "PassageObservation",
     "RetentionValue",
+    "SeriesQualityFlag",
+    "TrajectoryAssessment",
+    "TrajectoryState",
+    "TrajectoryThresholds",
     "baseline_status",
     "input_from_scenario",
 ]

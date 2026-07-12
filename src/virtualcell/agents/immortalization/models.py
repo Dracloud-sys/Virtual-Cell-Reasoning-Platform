@@ -10,7 +10,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class AssessmentIntent(StrEnum):
@@ -72,6 +72,33 @@ class RetentionValue(StrEnum):
     UNKNOWN = "unknown"
 
 
+class PassageObservation(BaseModel):
+    """A single passage-level measurement (PR7 raw time-series observation).
+
+    Raw quantitative values live *inside* the observation so they never collide
+    with the normalized enum markers on :class:`ImmortalizationAssessmentInput`
+    (``gammaH2AX="high"`` is a normalized snapshot; ``observations[0].gammaH2AX=2.4``
+    is a raw measurement). Quantitative markers with no defined unit/normalization
+    are preserved and surfaced only — PR7 does not auto-threshold them into
+    high/low. Field constraints reject impossible values (negative DT, fractions
+    outside 0-1) at construction, so bad input becomes a 422 / non-zero exit.
+    """
+
+    passage: int = Field(ge=0)
+    culture_day: float | None = Field(default=None, ge=0)
+    cumulative_PDL: float | None = Field(default=None, ge=0)
+    DT_hours: float | None = Field(default=None, gt=0)
+    proliferation_fraction: float | None = Field(default=None, ge=0, le=1)
+    viability_fraction: float | None = Field(default=None, ge=0, le=1)
+    gammaH2AX: float | None = None  # raw measurement, mirrors the marker name
+    SA_b_gal: float | None = None
+    p16: float | None = None
+    p21: float | None = None
+    endogenous_TERT: float | None = None
+    endogenous_CDK4: float | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class ImmortalizationAssessmentInput(BaseModel):
     """Enum-validated assessment input; a typo'd marker value is rejected."""
 
@@ -94,6 +121,23 @@ class ImmortalizationAssessmentInput(BaseModel):
     # Data not (yet) consumed by the baseline (e.g. DT_series, PPARG, OilRedO) is
     # preserved here rather than force-fit into the marker vocabulary.
     measurements: dict[str, Any] = Field(default_factory=dict)
+
+    # Optional passage-level raw time series (PR7). When present and sufficient, a
+    # deterministic trajectory is derived from it; snapshot markers above stay the
+    # v0 fallback. Order is preserved as given (the extractor sorts a copy).
+    observations: list[PassageObservation] = Field(default_factory=list)
+
+    @field_validator("observations")
+    @classmethod
+    def _reject_duplicate_passages(
+        cls, observations: list[PassageObservation]
+    ) -> list[PassageObservation]:
+        """A passage number may appear at most once — a duplicate is an input error."""
+        passages = [obs.passage for obs in observations]
+        duplicates = sorted({p for p in passages if passages.count(p) > 1})
+        if duplicates:
+            raise ValueError(f"duplicate passage number(s) in observations: {duplicates}")
+        return observations
 
     def marker_dict(self) -> dict[str, str]:
         """The marker mapping the deterministic ``baseline_status`` consumes."""
