@@ -23,14 +23,73 @@ from virtualcell.reasoning.explain import explain
 from virtualcell.reasoning.llm import LLMBackend, get_backend
 
 # Minimal stopword set for extracting searchable terms from a question.
-_STOPWORDS = frozenset({
-    "a", "an", "the", "and", "or", "of", "to", "in", "on", "for", "with", "is", "are",
-    "was", "were", "be", "been", "do", "does", "did", "what", "which", "who", "whom",
-    "how", "why", "when", "where", "whats", "it", "its", "this", "that", "these", "those",
-    "into", "from", "as", "at", "by", "about", "tell", "me", "you", "i", "we", "they",
-    "he", "she", "them", "his", "her", "their", "our", "your", "my", "can", "could",
-    "would", "should", "will", "if", "then",
-})
+_STOPWORDS = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "and",
+        "or",
+        "of",
+        "to",
+        "in",
+        "on",
+        "for",
+        "with",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "do",
+        "does",
+        "did",
+        "what",
+        "which",
+        "who",
+        "whom",
+        "how",
+        "why",
+        "when",
+        "where",
+        "whats",
+        "it",
+        "its",
+        "this",
+        "that",
+        "these",
+        "those",
+        "into",
+        "from",
+        "as",
+        "at",
+        "by",
+        "about",
+        "tell",
+        "me",
+        "you",
+        "i",
+        "we",
+        "they",
+        "he",
+        "she",
+        "them",
+        "his",
+        "her",
+        "their",
+        "our",
+        "your",
+        "my",
+        "can",
+        "could",
+        "would",
+        "should",
+        "will",
+        "if",
+        "then",
+    }
+)
 
 # Retrieval / grounding bounds, to keep the evidence block focused and prompts small.
 _MAX_SEED_ENTITIES = 8
@@ -98,8 +157,7 @@ class QuestionAnswerer:
             facts.append(
                 GroundedFact(
                     statement=(
-                        f"{entity.type.value.capitalize()} '{entity.name}' "
-                        f"(id={entity.id}){desc}"
+                        f"{entity.type.value.capitalize()} '{entity.name}' (id={entity.id}){desc}"
                     ),
                     tier=EvidenceTier.ESTABLISHED,
                     citation=f"kb:{entity.id}",

@@ -76,9 +76,7 @@ class InMemoryKnowledgeStore:
                 continue
             if neighbor_id not in self._entities:
                 continue
-            out.append(
-                Edge(relation=rel, target_id=neighbor_id, confidence=conf, forward=forward)
-            )
+            out.append(Edge(relation=rel, target_id=neighbor_id, confidence=conf, forward=forward))
         return out
 
     def search(self, query: str, k: int = 10) -> list[BioEntity]:

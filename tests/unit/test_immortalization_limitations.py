@@ -70,8 +70,6 @@ def test_claims_are_tiered_and_carry_no_fabricated_citations() -> None:
 def test_no_forbidden_phrasing_in_catalog() -> None:
     for construct in ("TERT_only", "TERT_plus_CDK4"):
         rule = _mech(construct)
-        blob = " ".join(
-            c.statement for c in [*rule.supporting_claims, *rule.limitations]
-        ).lower()
+        blob = " ".join(c.statement for c in [*rule.supporting_claims, *rule.limitations]).lower()
         for phrase in _FORBIDDEN:
             assert phrase not in blob, f"forbidden phrasing: {phrase!r}"

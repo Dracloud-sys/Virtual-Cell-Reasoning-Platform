@@ -77,8 +77,7 @@ _TERT_ONLY_RULE = MechanismRule(
         "p16 expression assay",
         "RB phosphorylation or G1/S checkpoint assay",
         "Long-term PDL and DT tracking",
-        "Evaluate CDK4 co-expression only if an active p16/RB checkpoint remains a "
-        "limiting axis.",
+        "Evaluate CDK4 co-expression only if an active p16/RB checkpoint remains a limiting axis.",
     ],
 )
 
@@ -97,12 +96,10 @@ _TERT_PLUS_CDK4_RULE = MechanismRule(
     supporting_claims=[
         _claim("TERT supports telomere maintenance."),
         _claim(
-            "CDK4 can functionally bypass p16/RB-mediated G1 arrest through the "
-            "RB-E2F/G1-S axis."
+            "CDK4 can functionally bypass p16/RB-mediated G1 arrest through the RB-E2F/G1-S axis."
         ),
         _claim(
-            "CDK4 functionally bypasses the p16/RB checkpoint; it does not directly "
-            "inhibit p16."
+            "CDK4 functionally bypasses the p16/RB checkpoint; it does not directly inhibit p16."
         ),
         _claim(
             "The combination addresses two distinct barriers: telomere-driven arrest "

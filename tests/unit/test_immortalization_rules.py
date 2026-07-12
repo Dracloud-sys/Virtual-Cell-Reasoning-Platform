@@ -29,7 +29,13 @@ _SPEC = yaml.safe_load(
 )
 _QUESTIONS = _SPEC["questions"]
 _MARKER_FIELDS = {
-    "PDL_trend", "DT_trend", "gammaH2AX", "SA_b_gal", "p16", "p21", "adipogenic_retention",
+    "PDL_trend",
+    "DT_trend",
+    "gammaH2AX",
+    "SA_b_gal",
+    "p16",
+    "p21",
+    "adipogenic_retention",
 }
 _ASSESSMENT_VALUES = {intent.value for intent in ASSESSMENT_INTENTS}
 _ASSESSMENT_QS = [q for q in _QUESTIONS if q["intent"] in _ASSESSMENT_VALUES]
@@ -59,7 +65,13 @@ def _by_id(qid: str):
 
 def test_scope_covers_the_expected_seven_questions() -> None:
     assert {q["id"] for q in _ASSESSMENT_QS} == {
-        "IMM-Q1", "IMM-Q2", "IMM-Q3", "IMM-Q4", "IMM-Q7", "IMM-Q8", "IMM-Q10"
+        "IMM-Q1",
+        "IMM-Q2",
+        "IMM-Q3",
+        "IMM-Q4",
+        "IMM-Q7",
+        "IMM-Q8",
+        "IMM-Q10",
     }
 
 

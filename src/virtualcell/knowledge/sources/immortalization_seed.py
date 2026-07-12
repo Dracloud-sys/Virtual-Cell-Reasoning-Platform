@@ -47,22 +47,35 @@ _BYPASS = [
 
 # Node ids (single source of truth, referenced by both node lists and edges).
 TERT, CDK4, CDKN2A, RB1, TP53, CDKN1A, PPARGC1A = (
-    "gene:TERT", "gene:CDK4", "gene:CDKN2A", "gene:RB1", "gene:TP53",
-    "gene:CDKN1A", "gene:PPARGC1A",
+    "gene:TERT",
+    "gene:CDK4",
+    "gene:CDKN2A",
+    "gene:RB1",
+    "gene:TP53",
+    "gene:CDKN1A",
+    "gene:PPARGC1A",
 )
 TELO, REPSEN, P16, G1S, DDR, MITO, SPON = (
-    "mechanism:telomere_maintenance", "mechanism:replicative_senescence",
-    "mechanism:p16_rb_arrest", "mechanism:g1s_progression",
-    "mechanism:dna_damage_response", "mechanism:mitochondrial_function",
+    "mechanism:telomere_maintenance",
+    "mechanism:replicative_senescence",
+    "mechanism:p16_rb_arrest",
+    "mechanism:g1s_progression",
+    "mechanism:dna_damage_response",
+    "mechanism:mitochondrial_function",
     "mechanism:spontaneous_immortalization",
 )
 SUST, SEN, GENOM, LOSSDIFF = (
-    "phenotype:sustained_proliferation", "phenotype:senescence",
-    "phenotype:genomic_instability", "phenotype:loss_of_differentiation",
+    "phenotype:sustained_proliferation",
+    "phenotype:senescence",
+    "phenotype:genomic_instability",
+    "phenotype:loss_of_differentiation",
 )
 PDL, DT, H2AX, SABGAL = "marker:PDL", "marker:DT", "marker:gammaH2AX", "marker:SA_b_gal"
 KARYO, DIFF, TELOMERE_ASSAY, TERT_ASSAY = (
-    "assay:karyotype", "assay:differentiation", "assay:telomere_length", "assay:tert_activity",
+    "assay:karyotype",
+    "assay:differentiation",
+    "assay:telomere_length",
+    "assay:tert_activity",
 )
 
 _SPON_DESC = (
@@ -75,12 +88,20 @@ _SPON_DESC = (
 _GENES = [
     (TERT, "TERT", "Telomerase reverse transcriptase (catalytic subunit).", ["hTERT"]),
     (CDK4, "CDK4", "Cyclin-dependent kinase 4; drives G1/S with cyclin D.", []),
-    (CDKN2A, "CDKN2A", "p16INK4a; CDK4/6 inhibitor enforcing the p16-RB checkpoint.",
-     ["p16", "p16INK4A", "senescence marker"]),
+    (
+        CDKN2A,
+        "CDKN2A",
+        "p16INK4a; CDK4/6 inhibitor enforcing the p16-RB checkpoint.",
+        ["p16", "p16INK4A", "senescence marker"],
+    ),
     (RB1, "RB1", "Retinoblastoma protein; restrains G1/S until phosphorylated.", ["pRB"]),
     (TP53, "TP53", "Tumor suppressor p53; DNA-damage response and arrest.", ["p53"]),
-    (CDKN1A, "CDKN1A", "p21; p53-induced CDK inhibitor causing cell-cycle arrest.",
-     ["p21", "p21CIP1", "checkpoint marker"]),
+    (
+        CDKN1A,
+        "CDKN1A",
+        "p21; p53-induced CDK inhibitor causing cell-cycle arrest.",
+        ["p21", "p21CIP1", "checkpoint marker"],
+    ),
     (PPARGC1A, "PPARGC1A", "PGC-1alpha; master regulator of mitochondrial biogenesis.", ["PGC1A"]),
 ]
 # mechanisms carry (id, name, description)

@@ -65,9 +65,7 @@ def test_q6_has_both_arms_within_the_allowlist() -> None:
 
 def test_cdk4_is_not_stated_as_directly_inhibiting_p16() -> None:
     report = _report("TERT_plus_CDK4")
-    text = " ".join(
-        [report.conclusion, *(c.statement for c in report.supporting_evidence)]
-    ).lower()
+    text = " ".join([report.conclusion, *(c.statement for c in report.supporting_evidence)]).lower()
     assert "directly inhibits p16" not in text
 
 

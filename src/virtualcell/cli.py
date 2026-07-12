@@ -107,8 +107,7 @@ def _cmd_explain(args: argparse.Namespace) -> int:
         return 1
 
     print(
-        f"Mechanistic reach of {result.seed_id} ({result.seed_name}), "
-        f"<= {result.max_hops} hop(s):"
+        f"Mechanistic reach of {result.seed_id} ({result.seed_name}), <= {result.max_hops} hop(s):"
     )
     for link in result.links:
         print(
@@ -306,9 +305,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_explain.add_argument("--load", help=load_help)
     p_explain.set_defaults(func=_cmd_explain)
 
-    p_assess = sub.add_parser(
-        "assess", help="run a domain assessment agent on a JSON input file"
-    )
+    p_assess = sub.add_parser("assess", help="run a domain assessment agent on a JSON input file")
     p_assess.add_argument("domain", choices=["immortalization"])
     p_assess.add_argument("--input", required=True, help="path to a JSON assessment input")
     p_assess.add_argument("--format", choices=["json", "text"], default="text")

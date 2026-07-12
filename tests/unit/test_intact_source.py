@@ -38,9 +38,7 @@ def test_edges_are_symmetric_interactions_with_score() -> None:
     assert all(i.relation == RelationType.INTERACTS_WITH for i in inter)
     assert all(i.evidence == ["intact"] for i in inter)
     p53_mdm2 = next(
-        i
-        for i in inter
-        if {i.source_id, i.target_id} == {"protein:P04637", "protein:Q00987"}
+        i for i in inter if {i.source_id, i.target_id} == {"protein:P04637", "protein:Q00987"}
     )
     assert p53_mdm2.confidence == pytest.approx(0.99)
 

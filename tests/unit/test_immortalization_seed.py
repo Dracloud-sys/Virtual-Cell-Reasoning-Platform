@@ -23,8 +23,14 @@ def test_seed_loads_expected_shape() -> None:
     store = _seeded()
     n_entities, n_interactions = load_into(ImmortalizationSeedSource(), InMemoryKnowledgeStore())
     assert (n_entities, n_interactions) == (26, 28)
-    for eid in ("gene:TERT", "gene:CDK4", "gene:CDKN2A", "mechanism:telomere_maintenance",
-                "phenotype:sustained_proliferation", "marker:gammaH2AX"):
+    for eid in (
+        "gene:TERT",
+        "gene:CDK4",
+        "gene:CDKN2A",
+        "mechanism:telomere_maintenance",
+        "phenotype:sustained_proliferation",
+        "marker:gammaH2AX",
+    ):
         assert store.get(eid) is not None
     # p16/p21 are searchable as markers via gene aliases.
     assert "p16" in store.get("gene:CDKN2A").aliases
@@ -96,7 +102,8 @@ def test_reviewed_edge_refinements() -> None:
 
     # CDK4 -> p16-RB arrest carries the "functional bypass" caveat in its evidence.
     cdk4_bypass = next(
-        i for i in interactions
+        i
+        for i in interactions
         if i.source_id == "gene:CDK4" and i.target_id == "mechanism:p16_rb_arrest"
     )
     assert any("bypass" in note for note in cdk4_bypass.evidence)
