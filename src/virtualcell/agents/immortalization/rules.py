@@ -11,12 +11,18 @@ fabricated citations.
 from __future__ import annotations
 
 from virtualcell.agents.immortalization.baseline import baseline_status
+from virtualcell.agents.immortalization.effective_markers import reconcile_markers
 from virtualcell.agents.immortalization.models import (
     ASSESSMENT_INTENTS,
     AssessmentIntent,
     ImmortalizationAssessmentInput,
     MarkerValue,
     RetentionValue,
+)
+from virtualcell.agents.immortalization.trajectory import (
+    TrajectoryAssessment,
+    TrajectoryState,
+    extract_trajectory,
 )
 from virtualcell.core.evidence import Claim, EvidenceTier
 from virtualcell.reasoning.decision import AssessmentFlag, CandidateStatus, DecisionReport
@@ -213,29 +219,64 @@ def _validation_and_experiments(
     return recommended, next_experiment
 
 
+def _trajectory_uncertainty(trajectory: TrajectoryAssessment) -> list[str]:
+    """Prominent, human-facing caveats derived from the trajectory state.
+
+    The trajectory is a proliferation course, not a verdict: recovery without
+    durability must not read as immortalization, and a re-arrest must not be
+    hidden by the fact that growth was once observed.
+    """
+    if trajectory.state == TrajectoryState.TRANSIENT_RECOVERY:
+        return ["Recovery is observed but durability is not yet established."]
+    if trajectory.state == TrajectoryState.RE_ARREST:
+        return ["Proliferation recovered then arrested again; a prior recovery is not durable."]
+    return []
+
+
 def build_decision_report(data: ImmortalizationAssessmentInput) -> DecisionReport:
-    """Assemble a deterministic DecisionReport for an assessment-intent input."""
+    """Assemble a deterministic DecisionReport for an assessment-intent input.
+
+    When a sufficient passage series is present, a deterministic trajectory is
+    derived and its PDL/DT trends take precedence over the snapshot trends (any
+    material disagreement is surfaced, never silently applied). The trajectory is
+    a proliferation course reported *alongside* — never *as* — the candidate
+    status: a time series alone never confirms immortalization, because the
+    baseline still requires a measured senescence axis for a candidate call.
+    """
     if data.intent not in ASSESSMENT_INTENTS:
         raise UnsupportedIntentError(
             f"intent {data.intent.value!r} is not handled by the deterministic assessment "
             "builder (mechanism/hypothesis intents arrive in a later PR)"
         )
 
-    status, flags = baseline_status(data.marker_dict())
-    missing = _missing_axes(data)
-    recommended, next_experiment = _validation_and_experiments(data, status, missing)
+    trajectory = extract_trajectory(data.observations) if data.observations else None
+    markers, derived_input, conflicts = reconcile_markers(data, trajectory)
+    # Judge the effective markers (snapshot with any series-derived trends applied);
+    # `baseline_status` and every evidence helper stay unchanged, just re-pointed.
+    effective = data.model_copy(
+        update={"PDL_trend": markers["PDL_trend"], "DT_trend": markers["DT_trend"]}
+    )
+
+    status, flags = baseline_status(effective.marker_dict())
+    missing = _missing_axes(effective)
+    recommended, next_experiment = _validation_and_experiments(effective, status, missing)
+    uncertainty = _trajectory_uncertainty(trajectory) if trajectory else []
 
     return DecisionReport(
         conclusion=_CONCLUSIONS[status],
         candidate_status=status,
         flags=flags,
-        supporting_evidence=_supporting(data, status),
-        contradicting_evidence=_contradicting(data, status),
+        supporting_evidence=_supporting(effective, status),
+        contradicting_evidence=_contradicting(effective, status),
         mechanistic_chain=[],  # graph grounding lands in PR5c
+        uncertainty=uncertainty,
         missing_axes=[_AXIS_LABEL[a] for a in missing],
-        conflict_explanation=_conflict_explanation(data),
-        overinterpretation_risk=_risks(data, status, flags),
+        conflict_explanation=_conflict_explanation(effective),
+        overinterpretation_risk=_risks(effective, status, flags),
         recommended_validation=recommended,
         next_experiment=next_experiment,
+        trajectory=trajectory.model_dump(mode="json") if trajectory else None,
+        derived_input=derived_input,
+        input_conflicts=conflicts,
         # relevance scores intentionally left None (no scoring formula yet).
     )

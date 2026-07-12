@@ -159,6 +159,25 @@ async def test_run_round_trip_assessment() -> None:
     ] + [c.statement for c in report.contradicting_evidence]
 
 
+async def test_run_result_carries_trajectory_for_a_series() -> None:
+    # A passage series flows through agent.run into AgentOutput.result.trajectory,
+    # and the report round-trips; confidence stays a valid mean.
+    agent = _agent()
+    payload = {
+        "intent": "immortalization_assessment",
+        "observations": [
+            {"passage": 25, "cumulative_PDL": 22.0, "DT_hours": 42},
+            {"passage": 30, "cumulative_PDL": 25.5, "DT_hours": 80},
+            {"passage": 35, "cumulative_PDL": 27.0, "DT_hours": 100},
+        ],
+    }
+    out = await agent.run(AgentInput(query="Assess", context={"assessment": payload}))
+    report = DecisionReport.model_validate(out.result)
+    assert out.result["trajectory"]["state"] == "progressive_slowdown"
+    assert report.derived_input["DT_trend"] == "worsening"
+    assert 0.0 <= out.confidence <= 1.0
+
+
 async def test_run_mechanism_status_is_json_null() -> None:
     agent = _agent()
     payload = {"intent": "mechanism_explanation", "construct": "TERT_plus_CDK4"}

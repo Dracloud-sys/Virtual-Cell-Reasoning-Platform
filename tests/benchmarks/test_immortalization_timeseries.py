@@ -17,6 +17,7 @@ import yaml
 
 from virtualcell.agents.immortalization.adapters import input_from_scenario
 from virtualcell.agents.immortalization.models import ImmortalizationAssessmentInput
+from virtualcell.agents.immortalization.rules import build_decision_report
 from virtualcell.agents.immortalization.trajectory import TrajectoryState, extract_trajectory
 
 SPEC = yaml.safe_load(
@@ -71,6 +72,47 @@ def test_extracted_trajectory_matches_expected(q: dict) -> None:
         assert {f.value for f in ta.quality_flags} >= set(q["expected_quality_flags"]), (
             f"{q['id']}: {ta.quality_flags}"
         )
+
+
+@pytest.mark.parametrize("q", QUESTIONS, ids=[q["id"] for q in QUESTIONS])
+def test_report_integrates_trajectory_and_status(q: dict) -> None:
+    """The DecisionReport carries the trajectory and the fixed candidate status.
+
+    Status is reported *alongside* the trajectory, never replaced by it.
+    """
+    data = input_from_scenario(q["intent"], q["scenario"])
+    report = build_decision_report(data)
+
+    # Trajectory is always attached (as a serialized dict) when a series is present.
+    assert report.trajectory is not None
+    assert report.trajectory["state"] == q["expected_trajectory"]
+
+    if "expected_status" in q:
+        assert report.candidate_status == q["expected_status"], f"{q['id']}"
+    if "acceptable_status" in q:
+        assert report.candidate_status in q["acceptable_status"], f"{q['id']}"
+    if "expected_flags" in q:
+        assert sorted(f.value for f in report.flags) == sorted(q["expected_flags"]), f"{q['id']}"
+    if q.get("expects_input_conflict"):
+        assert report.input_conflicts, f"{q['id']}: expected a surfaced snapshot/series conflict"
+        assert "DT_trend" in report.derived_input
+
+
+def test_series_alone_never_confirms_a_candidate() -> None:
+    """A healthy trajectory with no senescence axis stays insufficient_evidence:
+    sustained proliferation is necessary but not sufficient for candidacy."""
+    data = input_from_scenario(
+        "immortalization_assessment",
+        {
+            "observations": [
+                {"passage": p, "cumulative_PDL": 20 + i * 4, "DT_hours": 30}
+                for i, p in enumerate((20, 25, 30))
+            ]
+        },
+    )
+    report = build_decision_report(data)
+    assert report.trajectory["state"] == "stable_growth"
+    assert report.candidate_status == "insufficient_evidence"
 
 
 def test_extract_does_not_mutate_input_order() -> None:

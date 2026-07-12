@@ -130,3 +130,94 @@ def test_mechanism_intent_is_rejected_explicitly() -> None:
     q5 = next(q for q in _QUESTIONS if q["id"] == "IMM-Q5")
     with pytest.raises(UnsupportedIntentError):
         build_decision_report(_input_from_question(q5))
+
+
+# --- PR7c: time-series integration -------------------------------------------
+
+
+def _series_input(observations: list[dict], **snapshot) -> ImmortalizationAssessmentInput:
+    return ImmortalizationAssessmentInput(
+        intent="immortalization_assessment", observations=observations, **snapshot
+    )
+
+
+def test_snapshot_only_input_is_unchanged_by_pr7() -> None:
+    # No observations => no trajectory, no derived overrides, empty conflicts:
+    # a v0 snapshot report is byte-for-byte the prior behavior.
+    data = ImmortalizationAssessmentInput(
+        intent="immortalization_assessment", PDL_trend="plateau", DT_trend="worsening"
+    )
+    report = build_decision_report(data)
+    assert report.trajectory is None
+    assert report.derived_input == {}
+    assert report.input_conflicts == []
+    assert report.candidate_status == "senescence_or_stress_prone"
+
+
+def test_derived_trend_drives_status_from_raw_series() -> None:
+    # Raw DT 42->80->100 with rising PDL, NO snapshot trend supplied: the platform
+    # must derive worsening from the series and land senescence_or_stress_prone.
+    report = build_decision_report(
+        _series_input(
+            [
+                {"passage": 25, "cumulative_PDL": 22.0, "DT_hours": 42},
+                {"passage": 30, "cumulative_PDL": 25.5, "DT_hours": 80},
+                {"passage": 35, "cumulative_PDL": 27.0, "DT_hours": 100},
+            ]
+        )
+    )
+    assert report.trajectory["state"] == "progressive_slowdown"
+    assert report.derived_input["DT_trend"] == "worsening"
+    assert report.candidate_status == "senescence_or_stress_prone"
+    assert AssessmentFlag.TREND_NEEDED in report.flags
+
+
+def test_snapshot_series_conflict_is_surfaced_not_silent() -> None:
+    # User asserts DT_trend=stable; the raw series says worsening. The series wins,
+    # and the disagreement is reported explicitly.
+    report = build_decision_report(
+        _series_input(
+            [
+                {"passage": 25, "cumulative_PDL": 22.0, "DT_hours": 42},
+                {"passage": 30, "cumulative_PDL": 25.5, "DT_hours": 80},
+                {"passage": 35, "cumulative_PDL": 27.0, "DT_hours": 100},
+            ],
+            DT_trend="stable",
+            PDL_trend="increasing",
+        )
+    )
+    assert report.input_conflicts
+    assert "worsening" in report.input_conflicts[0]
+    assert report.candidate_status == "senescence_or_stress_prone"
+
+
+def test_trajectory_is_separate_from_candidate_status() -> None:
+    # A durable recovery is a proliferation course, not a candidacy verdict: with
+    # no senescence axis measured, the status stays insufficient_evidence.
+    report = build_decision_report(
+        _series_input(
+            [
+                {"passage": 20, "cumulative_PDL": 20.0, "DT_hours": 40},
+                {"passage": 25, "cumulative_PDL": 20.3, "DT_hours": 78},
+                {"passage": 30, "cumulative_PDL": 23.0, "DT_hours": 44},
+                {"passage": 35, "cumulative_PDL": 26.0, "DT_hours": 38},
+            ]
+        )
+    )
+    assert report.trajectory["state"] == "recovery_after_plateau"
+    assert report.candidate_status == "insufficient_evidence"
+
+
+def test_transient_recovery_flags_durability_uncertainty() -> None:
+    report = build_decision_report(
+        _series_input(
+            [
+                {"passage": 20, "cumulative_PDL": 18.0, "DT_hours": 34},
+                {"passage": 25, "cumulative_PDL": 22.0, "DT_hours": 36},
+                {"passage": 30, "cumulative_PDL": 22.4, "DT_hours": 70},
+                {"passage": 35, "cumulative_PDL": 25.0, "DT_hours": 40},
+            ]
+        )
+    )
+    assert report.trajectory["state"] == "transient_recovery"
+    assert any("durability" in u.lower() for u in report.uncertainty)

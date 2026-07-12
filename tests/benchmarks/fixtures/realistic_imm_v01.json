@@ -1,0 +1,14 @@
+{
+  "_note": "REALISTIC-IMM-V01 — a de-identified, normalized representative case (NOT company raw data). A bovine preadipocyte immortalization attempt entering replicative crisis: doublings still climb while the doubling time lengthens and p16/p21 rise. Used to check that raw passage series are actually consumed and that the report neither overcalls nor prematurely discards.",
+  "intent": "immortalization_assessment",
+  "species": "Bos taurus",
+  "cell_type": "preadipocyte",
+  "gammaH2AX": "low",
+  "p16": "high",
+  "p21": "high",
+  "observations": [
+    {"passage": 22, "culture_day": 96, "cumulative_PDL": 24.0, "DT_hours": 40, "endogenous_TERT": 0.2, "endogenous_CDK4": 1.0},
+    {"passage": 26, "culture_day": 128, "cumulative_PDL": 26.5, "DT_hours": 65, "proliferation_fraction": 0.42},
+    {"passage": 30, "culture_day": 165, "cumulative_PDL": 28.0, "DT_hours": 95, "proliferation_fraction": 0.28}
+  ]
+}

@@ -20,6 +20,7 @@ only once a benchmark failure proves the need (see roadmap Phase 3).
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -66,6 +67,16 @@ class DecisionReport(BaseModel):
     conflict_explanation: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
     overinterpretation_risk: list[str] = Field(default_factory=list)
+
+    # Passage-aware time-series evidence (PR7). ``trajectory`` is a serialized
+    # ``TrajectoryAssessment`` kept as a plain dict so this contract stays
+    # domain-agnostic (``reasoning`` must not depend on the immortalization agent).
+    # ``derived_input`` records which snapshot markers were replaced by a derived
+    # trend; ``input_conflicts`` surfaces where a provided snapshot disagreed with
+    # the raw series (the series-derived value was used, never silently).
+    trajectory: dict[str, Any] | None = None
+    derived_input: dict[str, str] = Field(default_factory=dict)
+    input_conflicts: list[str] = Field(default_factory=list)
     # `recommended_validation` = what to verify (the axis/goal);
     # `next_experiment` = the concrete assay(s) to run.
     recommended_validation: list[str] = Field(default_factory=list)
