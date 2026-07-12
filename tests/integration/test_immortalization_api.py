@@ -75,6 +75,27 @@ def test_hypothesis_request_preserves_p53_wording() -> None:
         assert "without p53" not in blob and "p53 loss" not in blob
 
 
+def test_observations_series_round_trips_with_trajectory() -> None:
+    with TestClient(app) as client:
+        resp = _run(
+            client,
+            {
+                "intent": "immortalization_assessment",
+                "observations": [
+                    {"passage": 25, "cumulative_PDL": 22.0, "DT_hours": 42},
+                    {"passage": 30, "cumulative_PDL": 25.5, "DT_hours": 80},
+                    {"passage": 35, "cumulative_PDL": 27.0, "DT_hours": 100},
+                ],
+            },
+        )
+        assert resp.status_code == 200
+        result = resp.json()["result"]
+        assert result["trajectory"]["state"] == "progressive_slowdown"
+        assert result["derived_input"]["DT_trend"] == "worsening"
+        assert result["candidate_status"] == "senescence_or_stress_prone"
+        DecisionReport.model_validate(result)
+
+
 def test_bad_requests_return_422() -> None:
     with TestClient(app) as client:
         # Missing assessment payload.
@@ -87,3 +108,21 @@ def test_bad_requests_return_422() -> None:
         # Invalid construct.
         bad_construct = _run(client, {"intent": "mechanism_explanation", "construct": "BOGUS"})
         assert bad_construct.status_code == 422
+        # Impossible observation (negative doubling time) is a client error, not a 500.
+        bad_dt = _run(
+            client,
+            {
+                "intent": "immortalization_assessment",
+                "observations": [{"passage": 25, "DT_hours": -5}],
+            },
+        )
+        assert bad_dt.status_code == 422
+        # Duplicate passage number is rejected too.
+        dup = _run(
+            client,
+            {
+                "intent": "immortalization_assessment",
+                "observations": [{"passage": 30, "DT_hours": 40}, {"passage": 30, "DT_hours": 80}],
+            },
+        )
+        assert dup.status_code == 422

@@ -34,6 +34,7 @@ status/flags/tiers/citations come from the layers below:
 ```
 ImmortalizationAssessmentAgent
 ├── deterministic assessment builder   (baseline_status + evidence assembly)
+├── passage trajectory engine          (extract_trajectory + reconcile_markers)
 ├── mechanism-rule grounding           (Q5/Q6: curated claims + graph paths)
 └── hypothesis safety policy           (Q9: P53-independent, no causal overreach)
 ```
@@ -42,6 +43,14 @@ Run it in Python (`agent.assess(...)` / `agent.run(...)`), via the API
 (`POST /agents/immortalization_assessment/run`), or the CLI
 (`virtualcell assess immortalization --input assessment.json`). The optional LLM
 narrative layer is out of scope here (it may never change status/tier/citation).
+
+When the input carries an `observations` array (raw per-passage DT/PDL series),
+the trajectory engine derives the trend deterministically, classifies the
+proliferation course (`stable_growth` … `re_arrest` / `conflicting_trajectory`),
+and — if the derived trend disagrees with a provided snapshot label — uses the
+series value and records the disagreement in `input_conflicts`. The trajectory is
+reported alongside, never as, the candidate status. See
+`examples/03_passage_trajectory_assessment.py`.
 
 ## Planned agents (later releases)
 

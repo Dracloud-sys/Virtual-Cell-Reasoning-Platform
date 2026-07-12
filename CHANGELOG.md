@@ -17,6 +17,23 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **Passage-aware time-series assessment (PR7).** Typed `PassageObservation` series
+  (`observations`) carry raw per-passage measurements — DT hours, cumulative PDL,
+  proliferation/viability fraction, endogenous TERT/CDK4, quantitative markers —
+  with field constraints (negative DT, out-of-range fractions, duplicate passages
+  are input errors → `422` / non-zero CLI exit). `trajectory.py::extract_trajectory`
+  deterministically classifies the proliferation course into 8 states via explicit
+  `TrajectoryThresholds` (a v1 policy, not a biological law), sorting a copy so the
+  input is never mutated and smoothing single DT outliers with a median early/late
+  window. `effective_markers.py::reconcile_markers` lets a sufficient series' derived
+  PDL/DT trend override the snapshot label, recording it in `derived_input` and
+  surfacing any material disagreement in `input_conflicts` (the series value is used,
+  never silently). `DecisionReport` gained `trajectory` (serialized dict, keeping
+  `reasoning` domain-agnostic), `derived_input`, and `input_conflicts`; the trajectory
+  is reported *alongside*, never *as*, the candidate status — a time series alone never
+  confirms immortalization. New benchmark `immortalization_timeseries_v1.{md,yaml}`
+  (TS01–TS12) + the de-identified `REALISTIC-IMM-V01` case + `examples/03_passage_trajectory_assessment.py`.
+  The existing API/CLI accept the `observations` array unchanged.
 - **Product-surface integration (PR6).** The `ImmortalizationAssessmentAgent` is now
   registered in the agent registry (`immortalization_assessment`) and reachable via
   the API (`POST /agents/immortalization_assessment/run`) and the CLI

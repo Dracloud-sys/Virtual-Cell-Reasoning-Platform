@@ -200,15 +200,28 @@ Development is **benchmark-first**: fix the questions the platform must answer
   (`virtualcell assess immortalization --input <json>`), with the API/CLI seeding the
   immortalization graph so mechanism/hypothesis reports ground. Docs synced to the
   implemented capabilities and CI normalized (`ruff format`).
-- ▶ **PR7 — Passage-aware time-series assessment.** Raw DT/PDL series, passage-aware
-  trajectory, and richer marker axes surfaced during real-case validation
-  (e.g. `REALISTIC-IMM-V01`: raw DT hours, proliferation fraction, endogenous
-  TERT/CDK4 level are currently lost to single-snapshot labels).
+- ✅ **PR7 — Passage-aware time-series assessment.** Typed `PassageObservation`
+  series (raw DT hours, cumulative PDL, proliferation/viability fraction, endogenous
+  TERT/CDK4) feed a deterministic `extract_trajectory` that classifies the
+  proliferation course into 8 states (`stable_growth`, `progressive_slowdown`,
+  `plateau`, `transient_recovery`, `recovery_after_plateau`, `re_arrest`,
+  `conflicting_trajectory`, `insufficient_series`) via explicit `TrajectoryThresholds`.
+  A sufficient series' derived PDL/DT trend overrides the snapshot label — surfacing
+  any material disagreement as an `input_conflict` — and the `DecisionReport` carries
+  the trajectory alongside (never as) the candidate status. Time-series benchmark
+  `immortalization_timeseries_v1.{md,yaml}` (TS01–TS12) + the `REALISTIC-IMM-V01`
+  representative case. A series alone never confirms immortalization. Reachable
+  unchanged through the existing API/CLI (they just accept an `observations` array).
+- ▶ **PR7+ / next** — remaining marker axes used only for *presentation* today
+  (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
+  need assay-aware normalization before they can move status; and the optional
+  grounded **PR5d** LLM narrative (never changes status/tier/citation) is still open.
 
 Deferred to a later provenance PR (PR6+): per-edge `evidence_tier` on `Edge`
 (so a single-paper `PROMOTES` isn't treated as strong as a textbook one) — it
 touches persistence and every connector, so it waits until benchmarks demand it.
 
 Deliberately deferred: relevance/actionability axes on `Claim` (only after a
-benchmark failure proves the need), time-series/trend modelling, free-form BYOD
-CSV, broad ontology, and early Neo4j.
+benchmark failure proves the need), free-form BYOD CSV / arbitrary column mapping,
+broad ontology, and early Neo4j. (Deterministic passage-series trend modelling
+landed in PR7; ML change-point detection and multi-condition comparison remain out.)

@@ -52,6 +52,35 @@ def test_assess_text_output(tmp_path, capsys) -> None:
     assert "status: insufficient_evidence" in out
 
 
+def test_assess_observations_series_includes_trajectory(tmp_path, capsys) -> None:
+    path = _write(
+        tmp_path,
+        {
+            "intent": "immortalization_assessment",
+            "observations": [
+                {"passage": 25, "cumulative_PDL": 22.0, "DT_hours": 42},
+                {"passage": 30, "cumulative_PDL": 25.5, "DT_hours": 80},
+                {"passage": 35, "cumulative_PDL": 27.0, "DT_hours": 100},
+            ],
+        },
+    )
+    rc = main(["assess", "immortalization", "--input", path, "--format", "json"])
+    assert rc == 0
+    report = DecisionReport.model_validate(json.loads(capsys.readouterr().out))
+    assert report.trajectory["state"] == "progressive_slowdown"
+    assert report.derived_input["DT_trend"] == "worsening"
+
+
+def test_assess_invalid_observation_exits_nonzero(tmp_path, capsys) -> None:
+    # A negative doubling time is an input error -> non-zero exit, not a traceback.
+    path = _write(
+        tmp_path,
+        {"intent": "immortalization_assessment", "observations": [{"passage": 25, "DT_hours": -5}]},
+    )
+    rc = main(["assess", "immortalization", "--input", path])
+    assert rc == 1
+
+
 def test_assess_missing_file_exits_nonzero(capsys) -> None:
     rc = main(["assess", "immortalization", "--input", "does-not-exist.json"])
     assert rc == 1

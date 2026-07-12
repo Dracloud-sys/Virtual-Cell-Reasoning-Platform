@@ -85,9 +85,20 @@ come from the deterministic layers below and are packaged onto `AgentOutput.resu
 ```
 ImmortalizationAssessmentAgent
 ├── deterministic assessment builder   (baseline_status + evidence assembly)
+├── passage trajectory engine          (PR7: extract_trajectory + reconcile_markers)
 ├── mechanism-rule grounding           (Q5/Q6: curated claims + explain paths)
 └── hypothesis safety policy           (Q9: P53-independent, no causal overreach)
 ```
+
+The trajectory engine (`trajectory.py`, `effective_markers.py`) is a *pre-processing*
+stage, not a new judge: a raw `observations` series is classified into one of eight
+trajectory states under explicit `TrajectoryThresholds`, and its derived PDL/DT trend
+replaces the snapshot marker the assessment builder consumes (any material
+disagreement is surfaced as an `input_conflict`, never applied silently).
+`baseline_status` is unchanged; the `DecisionReport` carries the trajectory as a
+plain dict so `reasoning.decision` stays free of any dependency on the agent. A
+time series alone never confirms a candidate — the baseline still requires a
+measured senescence axis.
 
 ## Orchestration (`virtualcell.orchestration`)
 

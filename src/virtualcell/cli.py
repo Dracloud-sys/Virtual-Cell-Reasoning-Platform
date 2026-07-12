@@ -133,6 +133,13 @@ def _cmd_qa(args: argparse.Namespace) -> int:
 def _print_assessment_text(report) -> None:
     flags = ", ".join(f.value for f in report.flags) or "-"
     print(f"status: {report.candidate_status}   flags: {flags}")
+    if report.trajectory is not None:
+        t = report.trajectory
+        print(
+            f"trajectory: {t['state']} "
+            f"(PDL {t['derived_PDL_trend']}, DT {t['derived_DT_trend']}, "
+            f"DT_fold {t['DT_fold_change']})"
+        )
     print(f"conclusion: {report.conclusion}")
 
     def _block(label: str, items: list[str]) -> None:
@@ -141,6 +148,8 @@ def _print_assessment_text(report) -> None:
             for item in items:
                 print(f"  - {item}")
 
+    _block("input conflicts", report.input_conflicts)
+    _block("uncertainty", report.uncertainty)
     _block("supporting", [c.statement for c in report.supporting_evidence])
     _block("contradicting", [c.statement for c in report.contradicting_evidence])
     _block("missing axes", report.missing_axes)

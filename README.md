@@ -30,6 +30,7 @@ Where a data-driven model (e.g. AlphaCell, STATE) predicts *what* changes under 
 - **Natural-language Q&A** grounded in the graph (`virtualcell qa`, `POST /reasoning/qa`): retrieves relevant subgraph → answers via **Anthropic Claude**, with a deterministic **offline fallback** so it runs with no API key.
 - **Evidence-graded `explain`** primitive (`virtualcell explain`, `GET /reasoning/explain/{id}`): relation-aware, direction-preserving multi-hop reach with tier downgrade.
 - **Deterministic immortalization assessment** (cell-engineering vertical): the `ImmortalizationAssessmentAgent` turns normalized experiment markers into a structured, evidence-graded `DecisionReport` — candidate status, both-sided evidence, mechanism reports (TERT / TERT+CDK4), and a P53-independent-safe hypothesis policy. Runnable in Python, via the API (`POST /agents/immortalization_assessment/run`), and the CLI (`virtualcell assess immortalization`).
+- **Passage-aware time-series trajectory** (PR7): an optional `observations` array of raw per-passage measurements (DT hours, cumulative PDL, …) is turned by a deterministic engine into a trajectory — `stable_growth`, `progressive_slowdown`, `plateau`, `transient_recovery`, `recovery_after_plateau`, `re_arrest`, `conflicting_trajectory`. A sufficient series' derived trend overrides a hand-written snapshot label and any disagreement is reported as an `input_conflict`; the trajectory is shown alongside, never as, the candidate status (a series alone never confirms immortalization).
 - FastAPI app exposing `/health`, knowledge, agent, and reasoning endpoints.
 - `pytest` suite, `ruff`-clean (`ruff check` + `ruff format`) codebase, GitHub Actions CI.
 
@@ -76,6 +77,22 @@ ruff format --check .
   "species": "Bos taurus", "cell_type": "preadipocyte",
   "PDL_trend": "increasing", "DT_trend": "worsening",
   "p16": "high", "p21": "high", "gammaH2AX": "normal", "SA_b_gal": "normal"
+}
+```
+
+Or supply a **raw passage series** (PR7) and let the platform derive the trend —
+the report then carries a `trajectory` and, if a snapshot label disagrees, an
+`input_conflict`:
+
+```json
+{
+  "intent": "immortalization_assessment",
+  "species": "Bos taurus", "cell_type": "preadipocyte",
+  "observations": [
+    {"passage": 25, "cumulative_PDL": 22.0, "DT_hours": 42},
+    {"passage": 30, "cumulative_PDL": 25.5, "DT_hours": 80},
+    {"passage": 35, "cumulative_PDL": 27.0, "DT_hours": 100}
+  ]
 }
 ```
 
