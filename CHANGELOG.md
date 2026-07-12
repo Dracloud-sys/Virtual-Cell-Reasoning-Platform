@@ -17,6 +17,15 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **Product-surface integration (PR6).** The `ImmortalizationAssessmentAgent` is now
+  registered in the agent registry (`immortalization_assessment`) and reachable via
+  the API (`POST /agents/immortalization_assessment/run`) and the CLI
+  (`virtualcell assess immortalization --input <json>`, JSON or text output). The
+  agent constructor follows the registry convention (store from
+  `context.services['knowledge_store']`), the API/CLI seed the immortalization graph
+  so mechanism/hypothesis reports ground, and invalid assessment input returns HTTP
+  `422` (structured detail) instead of `500`. Docs synced to the implemented
+  capabilities; `ruff format` applied so `ruff format --check` passes in CI.
 - **`ImmortalizationAssessmentAgent` + end-to-end benchmark (PR5c-3).** A single
   `input_from_scenario` adapter (`adapters.py`, maps the benchmark `construct` key to
   `construct_type`) and `ImmortalizationAssessmentAgent` (`agent.py`) that dispatches by

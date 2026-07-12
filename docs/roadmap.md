@@ -193,7 +193,17 @@ Development is **benchmark-first**: fix the questions the platform must answer
     for mechanism, policy `insufficient_evidence` for Q9) and a forbidden-phrasing
     safety scan over assertion fields. **The deterministic immortalization prototype
     is complete.**
-  - ▶ **PR5d** — optional grounded LLM narrative that never changes status/tier/citation.
+  - **PR5d** — optional grounded LLM narrative that never changes status/tier/citation.
+- ✅ **PR6 — Product-surface integration.** The `ImmortalizationAssessmentAgent` is
+  registered (`immortalization_assessment`), reachable via the API
+  (`POST /agents/immortalization_assessment/run`, bad input → `422`) and the CLI
+  (`virtualcell assess immortalization --input <json>`), with the API/CLI seeding the
+  immortalization graph so mechanism/hypothesis reports ground. Docs synced to the
+  implemented capabilities and CI normalized (`ruff format`).
+- ▶ **PR7 — Passage-aware time-series assessment.** Raw DT/PDL series, passage-aware
+  trajectory, and richer marker axes surfaced during real-case validation
+  (e.g. `REALISTIC-IMM-V01`: raw DT hours, proliferation fraction, endogenous
+  TERT/CDK4 level are currently lost to single-snapshot labels).
 
 Deferred to a later provenance PR (PR6+): per-edge `evidence_tier` on `Edge`
 (so a single-paper `PROMOTES` isn't treated as strong as a textbook one) — it

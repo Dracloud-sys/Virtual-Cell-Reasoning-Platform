@@ -28,10 +28,12 @@ Where a data-driven model (e.g. AlphaCell, STATE) predicts *what* changes under 
 - A working **in-memory knowledge graph** — genes/proteins/pathways with neighbor/search queries, zero external dependencies.
 - **Real data ingestion**: `Reactome` and `UniProt` connectors, with cross-source protein enrichment (`virtualcell ingest`).
 - **Natural-language Q&A** grounded in the graph (`virtualcell qa`, `POST /reasoning/qa`): retrieves relevant subgraph → answers via **Anthropic Claude**, with a deterministic **offline fallback** so it runs with no API key.
+- **Evidence-graded `explain`** primitive (`virtualcell explain`, `GET /reasoning/explain/{id}`): relation-aware, direction-preserving multi-hop reach with tier downgrade.
+- **Deterministic immortalization assessment** (cell-engineering vertical): the `ImmortalizationAssessmentAgent` turns normalized experiment markers into a structured, evidence-graded `DecisionReport` — candidate status, both-sided evidence, mechanism reports (TERT / TERT+CDK4), and a P53-independent-safe hypothesis policy. Runnable in Python, via the API (`POST /agents/immortalization_assessment/run`), and the CLI (`virtualcell assess immortalization`).
 - FastAPI app exposing `/health`, knowledge, agent, and reasoning endpoints.
-- `pytest` suite, `ruff`-clean codebase, GitHub Actions CI.
+- `pytest` suite, `ruff`-clean (`ruff check` + `ruff format`) codebase, GitHub Actions CI.
 
-Specialized agents beyond the reference Literature agent are present as **stubs**; the mechanistic multi-hop `explain` primitive is the next step (see roadmap).
+The Literature and Immortalization Assessment agents are functional; other specialized domain agents remain interface stubs.
 
 ## Quickstart
 
@@ -55,10 +57,26 @@ virtualcell ingest intact   --path data/intact.txt --min-score 0.5 --load graph.
 virtualcell explain gene:TERT --load graph.json
 virtualcell qa "What does TERT do?" --load graph.json
 
-# Run the API, tests, lint
+# Deterministic immortalization assessment from a JSON input
+virtualcell assess immortalization --input assessment.json            # human-readable
+virtualcell assess immortalization --input assessment.json --format json
+
+# Run the API, tests, lint, format check
 uvicorn virtualcell.api.main:app --reload
 pytest
 ruff check .
+ruff format --check .
+```
+
+`assessment.json` is a normalized marker payload, e.g.:
+
+```json
+{
+  "intent": "immortalization_assessment",
+  "species": "Bos taurus", "cell_type": "preadipocyte",
+  "PDL_trend": "increasing", "DT_trend": "worsening",
+  "p16": "high", "p21": "high", "gammaH2AX": "normal", "SA_b_gal": "normal"
+}
 ```
 
 ### Notebooks / Kaggle

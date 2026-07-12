@@ -68,6 +68,27 @@ The first roadmap stage and the only fully working subsystem in v0.1.
 - **`sources`** — connectors that ingest external datasets (Gene Ontology,
   Reactome, UniProt, ...) behind a common `DataSource` protocol.
 
+## Reasoning (`virtualcell.reasoning`)
+
+- **`explain`** — evidence-graded multi-hop mechanistic reach: direction-preserving
+  traversal with a tier that is `weaker_of(hop-distance, weakest-edge ceiling)`, so
+  weak associative relations never read as established.
+- **`decision`** — the `DecisionReport` output contract (conclusion, candidate
+  status, both-sided `Claim`s, `mechanistic_chain`, risks, next experiments).
+- **`qa`** — natural-language answers grounded in the graph (Claude or offline).
+
+## Cell-engineering vertical (`virtualcell.agents.immortalization`)
+
+The functional domain agent. It recomputes nothing — status/flags/tiers/citations
+come from the deterministic layers below and are packaged onto `AgentOutput.result`:
+
+```
+ImmortalizationAssessmentAgent
+├── deterministic assessment builder   (baseline_status + evidence assembly)
+├── mechanism-rule grounding           (Q5/Q6: curated claims + explain paths)
+└── hypothesis safety policy           (Q9: P53-independent, no causal overreach)
+```
+
 ## Orchestration (`virtualcell.orchestration`)
 
 A LangGraph graph that routes a request through the relevant agents and merges
@@ -80,8 +101,12 @@ modeled dynamically over time; concrete engines arrive in later releases.
 
 ## API & CLI (`virtualcell.api`, `virtualcell.cli`)
 
-FastAPI exposes health and knowledge endpoints. The CLI provides quick local
-access to knowledge-base operations.
+FastAPI exposes `/health`, knowledge, reasoning (`/reasoning/qa`,
+`/reasoning/explain`), and agent (`/agents`, `/agents/{name}/run`) endpoints;
+registered agents — including `immortalization_assessment` — are reachable
+generically, and bad assessment input returns `422`. The CLI mirrors this with
+`search`/`neighbors`/`qa`/`explain`/`ingest`/`seed` and
+`assess immortalization --input <json>`.
 
 ## Extension model
 

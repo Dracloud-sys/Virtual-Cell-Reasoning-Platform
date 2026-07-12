@@ -10,20 +10,38 @@ declares the same contract (see `virtualcell.core.agent.BaseAgent`):
 - **reasoning** — implemented in `run()`
 - **confidence** — `estimate_confidence()`
 
-## Agents in v0.1
+## Agents
 
-All except Literature are interface stubs; Literature is wired to the knowledge base
-as the reference implementation.
+**Literature** and **Immortalization Assessment** are functional; the other domain
+agents are interface stubs.
 
-| Agent | Responsibility (summary) | Roadmap stage |
-|-------|--------------------------|---------------|
-| Genome | Sequence, gene models, variant context | 1, 3 |
-| Transcription | Transcription & RNA-level regulation | 3 |
-| Protein Interaction | Protein–protein interaction reasoning | 7 |
-| Metabolism | Metabolic network and flux reasoning | 6 |
-| Signaling | Cell signaling cascade reasoning | 4 |
-| Literature | Mine/query knowledge base for supporting evidence | 2 |
-| Validation | Check consistency and evidence tiers of outputs | cross-cutting |
+| Agent | Responsibility (summary) | Status |
+|-------|--------------------------|--------|
+| Immortalization Assessment | Turn normalized experiment markers into an evidence-graded `DecisionReport` | **functional** |
+| Literature | Mine/query knowledge base for supporting evidence | **functional** |
+| Genome | Sequence, gene models, variant context | stub |
+| Transcription | Transcription & RNA-level regulation | stub |
+| Protein Interaction | Protein–protein interaction reasoning | stub |
+| Metabolism | Metabolic network and flux reasoning | stub |
+| Signaling | Cell signaling cascade reasoning | stub |
+| Validation | Check consistency and evidence tiers of outputs | stub |
+
+### Immortalization Assessment agent
+
+`ImmortalizationAssessmentAgent` dispatches by intent and recomputes nothing —
+status/flags/tiers/citations come from the layers below:
+
+```
+ImmortalizationAssessmentAgent
+├── deterministic assessment builder   (baseline_status + evidence assembly)
+├── mechanism-rule grounding           (Q5/Q6: curated claims + graph paths)
+└── hypothesis safety policy           (Q9: P53-independent, no causal overreach)
+```
+
+Run it in Python (`agent.assess(...)` / `agent.run(...)`), via the API
+(`POST /agents/immortalization_assessment/run`), or the CLI
+(`virtualcell assess immortalization --input assessment.json`). The optional LLM
+narrative layer is out of scope here (it may never change status/tier/citation).
 
 ## Planned agents (later releases)
 
