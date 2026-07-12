@@ -28,6 +28,7 @@ from virtualcell.agents.immortalization.trajectory import (
     TrajectoryAssessment,
     TrajectoryState,
     TrajectoryThresholds,
+    extract_trajectory,
 )
 
 __all__ = [
@@ -45,5 +46,6 @@ __all__ = [
     "TrajectoryState",
     "TrajectoryThresholds",
     "baseline_status",
+    "extract_trajectory",
     "input_from_scenario",
 ]

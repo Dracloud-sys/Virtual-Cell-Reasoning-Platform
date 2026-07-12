@@ -3,7 +3,9 @@
 PR7a validates the *data contract*: the spec is well-formed, its trajectory
 vocabulary matches the enum, and every scenario (raw ``observations`` plus any
 snapshot markers) parses into a typed :class:`ImmortalizationAssessmentInput`.
-Trajectory-state assertions are added in PR7b once the extraction engine exists.
+PR7b adds the trajectory-state assertions: the deterministic engine must
+reproduce every ``expected_trajectory`` (and the derived trends / quality flags
+where fixed).
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ import yaml
 
 from virtualcell.agents.immortalization.adapters import input_from_scenario
 from virtualcell.agents.immortalization.models import ImmortalizationAssessmentInput
-from virtualcell.agents.immortalization.trajectory import TrajectoryState
+from virtualcell.agents.immortalization.trajectory import TrajectoryState, extract_trajectory
 
 SPEC = yaml.safe_load(
     (Path(__file__).parent / "immortalization_timeseries_v1.yaml").read_text(encoding="utf-8")
@@ -51,3 +53,32 @@ def test_scenario_parses_into_typed_input(q: dict) -> None:
     assert [o.passage for o in data.observations] == [
         o["passage"] for o in q["scenario"]["observations"]
     ]
+
+
+@pytest.mark.parametrize("q", QUESTIONS, ids=[q["id"] for q in QUESTIONS])
+def test_extracted_trajectory_matches_expected(q: dict) -> None:
+    """The deterministic engine reproduces the benchmark's fixed trajectory."""
+    data = input_from_scenario(q["intent"], q["scenario"])
+    ta = extract_trajectory(data.observations)
+
+    assert ta.state.value == q["expected_trajectory"], f"{q['id']}: {ta.state.value}"
+
+    if "expected_derived_PDL_trend" in q:
+        assert ta.derived_PDL_trend.value == q["expected_derived_PDL_trend"], f"{q['id']}"
+    if "expected_derived_DT_trend" in q:
+        assert ta.derived_DT_trend.value == q["expected_derived_DT_trend"], f"{q['id']}"
+    if "expected_quality_flags" in q:
+        assert {f.value for f in ta.quality_flags} >= set(q["expected_quality_flags"]), (
+            f"{q['id']}: {ta.quality_flags}"
+        )
+
+
+def test_extract_does_not_mutate_input_order() -> None:
+    """Sorting happens on a copy — the caller's observation list is untouched."""
+    data = input_from_scenario(
+        "immortalization_assessment",
+        {"observations": [{"passage": 35}, {"passage": 25}, {"passage": 30}]},
+    )
+    before = [o.passage for o in data.observations]
+    extract_trajectory(data.observations)
+    assert [o.passage for o in data.observations] == before == [35, 25, 30]
