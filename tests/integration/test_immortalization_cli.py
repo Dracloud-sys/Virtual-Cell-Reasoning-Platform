@@ -71,6 +71,26 @@ def test_assess_observations_series_includes_trajectory(tmp_path, capsys) -> Non
     assert report.derived_input["DT_trend"] == "worsening"
 
 
+def test_assess_text_output_surfaces_blocked_override(tmp_path, capsys) -> None:
+    path = _write(
+        tmp_path,
+        {
+            "intent": "immortalization_assessment",
+            "PDL_trend": "plateau",
+            "observations": [
+                {"passage": 20, "cumulative_PDL": 25.0, "DT_hours": 40},
+                {"passage": 25, "cumulative_PDL": 24.0, "DT_hours": 42},
+                {"passage": 30, "cumulative_PDL": 26.0, "DT_hours": 41},
+            ],
+        },
+    )
+    rc = main(["assess", "immortalization", "--input", path])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "blocked overrides" in out
+    assert "usable timepoints" in out
+
+
 def test_assess_invalid_observation_exits_nonzero(tmp_path, capsys) -> None:
     # A negative doubling time is an input error -> non-zero exit, not a traceback.
     path = _write(

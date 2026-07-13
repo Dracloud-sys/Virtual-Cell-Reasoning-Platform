@@ -140,6 +140,10 @@ def _print_assessment_text(report) -> None:
             f"(PDL {t['derived_PDL_trend']}, DT {t['derived_DT_trend']}, "
             f"DT_fold {t['DT_fold_change']})"
         )
+        print(
+            f"usable timepoints: PDL={t['usable_PDL_timepoints']} DT={t['usable_DT_timepoints']}"
+            f"   applied: {report.derived_input or '-'}"
+        )
     print(f"conclusion: {report.conclusion}")
 
     def _block(label: str, items: list[str]) -> None:
@@ -149,6 +153,7 @@ def _print_assessment_text(report) -> None:
                 print(f"  - {item}")
 
     _block("input conflicts", report.input_conflicts)
+    _block("blocked overrides", report.blocked_overrides)
     _block("uncertainty", report.uncertainty)
     _block("supporting", [c.statement for c in report.supporting_evidence])
     _block("contradicting", [c.statement for c in report.contradicting_evidence])

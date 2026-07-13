@@ -221,3 +221,70 @@ def test_transient_recovery_flags_durability_uncertainty() -> None:
     )
     assert report.trajectory["state"] == "transient_recovery"
     assert any("durability" in u.lower() for u in report.uncertainty)
+
+
+# --- PR7 hardening: quality gating at the report level ------------------------
+
+
+def test_non_monotonic_pdl_does_not_flip_status_and_is_surfaced() -> None:
+    # A corrupt (non-monotonic) PDL series must NOT override the snapshot plateau
+    # into increasing; the snapshot judgment stands and the block is reported.
+    report = build_decision_report(
+        _series_input(
+            [
+                {"passage": 20, "cumulative_PDL": 25.0, "DT_hours": 40},
+                {"passage": 25, "cumulative_PDL": 24.0, "DT_hours": 42},  # PDL drops
+                {"passage": 30, "cumulative_PDL": 26.0, "DT_hours": 41},
+            ],
+            PDL_trend="plateau",
+        )
+    )
+    assert "non_monotonic_pdl" in report.trajectory["quality_flags"]
+    assert "PDL_trend" not in report.derived_input  # override withheld
+    assert report.blocked_overrides
+    assert report.candidate_status == "senescence_or_stress_prone"  # snapshot plateau kept
+
+
+def test_sparse_series_does_not_override_status() -> None:
+    report = build_decision_report(
+        _series_input(
+            [
+                {"passage": 1, "cumulative_PDL": 1.0, "DT_hours": 40},
+                {"passage": 10, "cumulative_PDL": 1.8, "DT_hours": 41},
+                {"passage": 20, "cumulative_PDL": 2.6, "DT_hours": 42},
+            ],
+            PDL_trend="increasing",
+        )
+    )
+    assert "sparse_passage_sampling" in report.trajectory["quality_flags"]
+    assert "PDL_trend" not in report.derived_input
+    assert any("sparse" in b.lower() for b in report.blocked_overrides)
+
+
+def test_terminal_dt_deterioration_surfaced_in_uncertainty() -> None:
+    obs = [{"passage": i + 1, "cumulative_PDL": 1.0 + i, "DT_hours": 40} for i in range(10)] + [
+        {"passage": 11, "cumulative_PDL": 11.0, "DT_hours": 400}
+    ]
+    report = build_decision_report(_series_input(obs))
+    assert report.trajectory["terminal_dt_deterioration"] is True
+    assert any("recent" in u.lower() and "deterior" in u.lower() for u in report.uncertainty)
+
+
+def test_conflict_explanation_names_only_measured_markers() -> None:
+    # SA-b-Gal low + p16 high + p21 high: the conflict is driven by low SA-b-Gal,
+    # and must NOT cite "normal p16" while p16 is measured high.
+    report = build_decision_report(
+        ImmortalizationAssessmentInput(
+            intent="conflicting_evidence_assessment",
+            SA_b_gal="low",
+            p16="high",
+            p21="high",
+        )
+    )
+    text = " ".join(report.conflict_explanation).lower()
+    assert text  # a conflict is reported
+    assert "normal p16" not in text
+    assert "low sa-b-gal" in text
+    # And it does not contradict the contradicting-evidence block.
+    contra = " ".join(c.statement.lower() for c in report.contradicting_evidence)
+    assert "p16 is elevated" in contra

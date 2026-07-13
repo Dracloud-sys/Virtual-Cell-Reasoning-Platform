@@ -212,6 +212,18 @@ Development is **benchmark-first**: fix the questions the platform must answer
   `immortalization_timeseries_v1.{md,yaml}` (TS01–TS12) + the `REALISTIC-IMM-V01`
   representative case. A series alone never confirms immortalization. Reachable
   unchanged through the existing API/CLI (they just accept an `observations` array).
+- ✅ **PR7 hardening (real long-culture validation).** Axis-specific quality gating:
+  `usable_PDL_timepoints` / `usable_DT_timepoints` are counted separately, a derived
+  trend is produced only when its own axis has enough usable points, and low-quality
+  axes (`non_monotonic_pdl`, `sparse_passage_sampling`) are blocked from overriding
+  the snapshot — the reason is surfaced in `blocked_overrides`. Classification is
+  terminal-anchored (`re_arrest` only when the series *ends* arrested; `plateau_interval`
+  is the terminal flat run only). The DT trend uses the full stable band, with an
+  explicit `unknown` zone (1.25–1.50) instead of rounding to stable, and threshold
+  ordering is validated. A recent-window `terminal_dt_deterioration` signal surfaces
+  late deterioration a whole-series median would dilute. Conflict explanations name
+  only the markers that actually contributed. `LONGSERIES-IMM-V01` adversarial fixture
+  added. `baseline_status` unchanged.
 - ▶ **PR7+ / next** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional

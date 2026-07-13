@@ -1,0 +1,19 @@
+{
+  "_note": "LONGSERIES-IMM-V01 — a synthetic, de-identified abstraction of a real long-culture pattern (NO company identifiers or raw data). A line with an early plateau/recovery/plateau crisis (passages 1-4) followed by long sustained terminal growth (passages 5-11), with a single terminal doubling-time spike. The ORIGINAL engine mislabeled this as re_arrest (an early F->G->F was found); the hardened engine anchors on the terminal (growing) state and separately surfaces the recent DT deterioration.",
+  "intent": "immortalization_assessment",
+  "species": "Bos taurus",
+  "cell_type": "fibroblast",
+  "observations": [
+    {"passage": 1, "cumulative_PDL": 1.0, "DT_hours": 40},
+    {"passage": 2, "cumulative_PDL": 1.2, "DT_hours": 40},
+    {"passage": 3, "cumulative_PDL": 3.0, "DT_hours": 40},
+    {"passage": 4, "cumulative_PDL": 3.2, "DT_hours": 40},
+    {"passage": 5, "cumulative_PDL": 5.0, "DT_hours": 40},
+    {"passage": 6, "cumulative_PDL": 7.0, "DT_hours": 40},
+    {"passage": 7, "cumulative_PDL": 9.0, "DT_hours": 40},
+    {"passage": 8, "cumulative_PDL": 11.0, "DT_hours": 40},
+    {"passage": 9, "cumulative_PDL": 13.0, "DT_hours": 40},
+    {"passage": 10, "cumulative_PDL": 15.0, "DT_hours": 40},
+    {"passage": 11, "cumulative_PDL": 17.0, "DT_hours": 300}
+  ]
+}

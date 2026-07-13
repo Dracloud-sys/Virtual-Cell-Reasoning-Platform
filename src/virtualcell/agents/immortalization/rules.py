@@ -152,14 +152,24 @@ def _conflict_explanation(data: ImmortalizationAssessmentInput) -> list[str]:
         return []
     # Only report a conflict when the data actually conflicts: an acute damage
     # signal alongside markers that argue against established chronic senescence.
-    acute_stress = data.gammaH2AX == MarkerValue.HIGH or data.p21 == MarkerValue.HIGH
-    chronic_not_supported = data.SA_b_gal == MarkerValue.LOW or data.p16 == MarkerValue.NORMAL
-    if not (acute_stress and chronic_not_supported):
+    # Name only the markers that actually contribute, so the sentence never cites a
+    # marker whose measured value contradicts it (e.g. "normal p16" while p16=high).
+    acute = []
+    if data.gammaH2AX == MarkerValue.HIGH:
+        acute.append("high gammaH2AX")
+    if data.p21 == MarkerValue.HIGH:
+        acute.append("high p21")
+    chronic_not_supported = []
+    if data.SA_b_gal == MarkerValue.LOW:
+        chronic_not_supported.append("low SA-b-Gal")
+    if data.p16 == MarkerValue.NORMAL:
+        chronic_not_supported.append("normal p16")
+    if not (acute and chronic_not_supported):
         return []
     return [
-        "Acute DNA-damage markers (e.g. gammaH2AX, p21) conflict with low chronic-senescence "
-        "markers (e.g. SA-b-Gal, normal p16); distinguish acute stress from established "
-        "senescence before concluding."
+        f"Acute DNA-damage markers ({', '.join(acute)}) conflict with markers that argue "
+        f"against established chronic senescence ({', '.join(chronic_not_supported)}); "
+        "distinguish acute stress from established senescence before concluding."
     ]
 
 
@@ -220,17 +230,26 @@ def _validation_and_experiments(
 
 
 def _trajectory_uncertainty(trajectory: TrajectoryAssessment) -> list[str]:
-    """Prominent, human-facing caveats derived from the trajectory state.
+    """Prominent, human-facing caveats derived from the trajectory.
 
     The trajectory is a proliferation course, not a verdict: recovery without
-    durability must not read as immortalization, and a re-arrest must not be
-    hidden by the fact that growth was once observed.
+    durability must not read as immortalization, a re-arrest must not be hidden by
+    the fact that growth was once observed, and a recent doubling-time
+    deterioration must not be diluted by an otherwise-benign whole-series trend.
     """
+    notes: list[str] = []
     if trajectory.state == TrajectoryState.TRANSIENT_RECOVERY:
-        return ["Recovery is observed but durability is not yet established."]
+        notes.append("Recovery is observed but durability is not yet established.")
     if trajectory.state == TrajectoryState.RE_ARREST:
-        return ["Proliferation recovered then arrested again; a prior recovery is not durable."]
-    return []
+        notes.append(
+            "Proliferation recovered then arrested again; a prior recovery is not durable."
+        )
+    if trajectory.terminal_dt_deterioration:
+        notes.append(
+            "The most recent doubling-time observations worsened sharply relative to the "
+            "preceding window; recent deterioration may not be reflected in the overall trend."
+        )
+    return notes
 
 
 def build_decision_report(data: ImmortalizationAssessmentInput) -> DecisionReport:
@@ -250,9 +269,10 @@ def build_decision_report(data: ImmortalizationAssessmentInput) -> DecisionRepor
         )
 
     trajectory = extract_trajectory(data.observations) if data.observations else None
-    markers, derived_input, conflicts = reconcile_markers(data, trajectory)
-    # Judge the effective markers (snapshot with any series-derived trends applied);
-    # `baseline_status` and every evidence helper stay unchanged, just re-pointed.
+    markers, derived_input, conflicts, blocked = reconcile_markers(data, trajectory)
+    # Judge the effective markers (snapshot with any series-derived, quality-passing
+    # trends applied); `baseline_status` and every evidence helper stay unchanged,
+    # just re-pointed. A blocked derived trend leaves the snapshot in place.
     effective = data.model_copy(
         update={"PDL_trend": markers["PDL_trend"], "DT_trend": markers["DT_trend"]}
     )
@@ -278,5 +298,6 @@ def build_decision_report(data: ImmortalizationAssessmentInput) -> DecisionRepor
         trajectory=trajectory.model_dump(mode="json") if trajectory else None,
         derived_input=derived_input,
         input_conflicts=conflicts,
+        blocked_overrides=blocked,
         # relevance scores intentionally left None (no scoring formula yet).
     )

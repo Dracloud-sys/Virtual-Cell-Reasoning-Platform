@@ -35,13 +35,24 @@
 
 ---
 
-## 2. 판정 우선순위
+## 2. 판정 우선순위 (terminal-anchored, hardening)
 
-복합 trajectory를 단순 현재 상태로 덮어쓰지 않도록 crisis/recovery 계열을 먼저 탐지한다.
+복합 trajectory를 단순 현재 상태로 덮어쓰지 않되, **최종(terminal) 상태를 과거 국소 패턴보다 우선**한다.
+
+- **`re_arrest`는 series가 실제로 flat으로 끝날 때만** 생성한다. 과거에 F→G→F가 있었더라도 terminal run이
+  성장(G)이면 `re_arrest`가 아니라 `recovery_after_plateau`/성장 계열로 분류한다.
+- `plateau_interval`은 **terminal flat run만** 나타낸다 (중간 성장 구간을 포함하지 않는다).
+- historical crisis와 current state는 `rationale`에서 구분한다.
+- 최근 DT 악화가 전체 early/late median에 희석될 수 있으므로, recent window가 선행 window 대비 worsening fold
+  이상이면 `terminal_dt_deterioration`으로 표시하고 report `uncertainty`에 노출한다 (status를 강제로 바꾸지는 않음).
+
+탐지 순서(terminal run 기준):
 
 ```
-re_arrest → recovery_after_plateau → transient_recovery → plateau
-→ progressive_slowdown → stable_growth → conflicting_trajectory → insufficient_series
+terminal flat  : re_arrest (직전 plateau→recovery 존재 시) → conflicting(DT 개선) → plateau
+terminal growth: recovery_after_plateau / transient_recovery (직전 plateau 존재 시)
+                 → progressive_slowdown (DT worsening) → stable_growth
+usable PDL < 3 : insufficient_series
 ```
 
 ---
@@ -52,10 +63,33 @@ re_arrest → recovery_after_plateau → transient_recovery → plateau
 |---|---|
 | 음수/0 이하 DT | 입력 오류 (모델 검증) |
 | passage 중복 | 입력 오류 (모델 검증) |
-| PDL 소폭 감소 | quality flag (`non_monotonic_pdl`) |
-| 시점 2개 이하 | 입력 허용 + `insufficient_timepoints` |
+| PDL 소폭 감소 | quality flag (`non_monotonic_pdl`) → **PDL override 차단** |
+| usable PDL < 3 | `insufficient_series` + `insufficient_timepoints` |
 | 일부 DT 누락 | 부분 계산 + `missing_dt` |
+| 일부 PDL 누락 | 부분 계산 + `missing_pdl` |
+| 큰 passage 간격 (> `max_supported_passage_gap`) | `sparse_passage_sampling` → **PDL override 차단** |
 | 정렬되지 않은 입력 | 내부 정렬(원본 불변) |
+
+### 축별(axis-specific) gating (hardening)
+
+품질 게이팅은 **전체 trajectory가 아니라 PDL/DT 축별로** 적용한다.
+
+- **usable count 분리**: `usable_PDL_timepoints`, `usable_DT_timepoints`를 전체 관측 수와 별도로 센다.
+  trajectory state는 usable PDL ≥ `min_timepoints`, DT trend는 usable DT ≥ `min_timepoints`일 때만 도출한다.
+- **blocking vs warning**: `non_monotonic_pdl`, `sparse_passage_sampling`은 해당 축(PDL)의 snapshot override를
+  **차단**(blocking)한다. `irregular_passage_intervals`, `missing_*`는 경고(warning)이며 자체로 전체 trajectory를
+  폐기하지 않는다. 차단된 derived trend는 `derived_input`에 적용된 것처럼 표시하지 않고, 사유를 `blocked_overrides`
+  (구조화 최상위 필드)에 노출한다.
+- **DT 임계값 stable band**: `fold ≤ improving`(=0.75) → improved; `|fold−1| ≤ stable_relative`(=0.25) → stable;
+  `fold ≥ worsening`(=1.50) → worsening; **stable band 상한(1.25)과 worsening(1.50) 사이는 `unknown`**(stable로
+  반올림하지 않음). 임계값 순서는 Pydantic으로 검증한다.
+- **DT unknown ≠ stable**: DT를 도출할 수 없으면 `derived_DT_trend=unknown`이며 snapshot DT를 override하지 않는다.
+  PDL만 증가하고 DT가 unknown이면 state는 `stable_growth`(API 호환을 위해 이름 유지)이되, rationale은
+  "PDL increases, but doubling-time stability is unverified."로 DT 안정성을 단정하지 않는다.
+
+> `possible_outlier` / `sparse_late_passage`는 v1에서 **의도적으로 미도입**했다. 단일 spike는 early/late median
+> 창이 이미 흡수하며, 전역 median/MAD outlier 규칙은 실제 terminal deterioration **추세**를 outlier로 오탐한다.
+> 모든 선언된 `SeriesQualityFlag`는 실제로 생성된다.
 
 ---
 

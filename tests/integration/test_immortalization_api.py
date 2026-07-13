@@ -96,6 +96,32 @@ def test_observations_series_round_trips_with_trajectory() -> None:
         DecisionReport.model_validate(result)
 
 
+def test_blocked_override_and_usable_counts_round_trip() -> None:
+    # A non-monotonic PDL series: the API result exposes the derived trend, the
+    # blocked override + reason, and the per-axis usable timepoint counts.
+    with TestClient(app) as client:
+        resp = _run(
+            client,
+            {
+                "intent": "immortalization_assessment",
+                "PDL_trend": "plateau",
+                "observations": [
+                    {"passage": 20, "cumulative_PDL": 25.0, "DT_hours": 40},
+                    {"passage": 25, "cumulative_PDL": 24.0, "DT_hours": 42},
+                    {"passage": 30, "cumulative_PDL": 26.0, "DT_hours": 41},
+                ],
+            },
+        )
+        assert resp.status_code == 200
+        result = resp.json()["result"]
+        assert "non_monotonic_pdl" in result["trajectory"]["quality_flags"]
+        assert result["blocked_overrides"]
+        assert "PDL_trend" not in result["derived_input"]
+        assert result["trajectory"]["usable_PDL_timepoints"] == 3
+        assert result["candidate_status"] == "senescence_or_stress_prone"
+        DecisionReport.model_validate(result)
+
+
 def test_bad_requests_return_422() -> None:
     with TestClient(app) as client:
         # Missing assessment payload.

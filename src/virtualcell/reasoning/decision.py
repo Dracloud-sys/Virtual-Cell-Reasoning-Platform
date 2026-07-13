@@ -73,10 +73,13 @@ class DecisionReport(BaseModel):
     # domain-agnostic (``reasoning`` must not depend on the immortalization agent).
     # ``derived_input`` records which snapshot markers were replaced by a derived
     # trend; ``input_conflicts`` surfaces where a provided snapshot disagreed with
-    # the raw series (the series-derived value was used, never silently).
+    # the raw series (the series-derived value was used, never silently);
+    # ``blocked_overrides`` records where a derived trend was withheld from status
+    # because its axis failed a quality gate (the snapshot value was kept instead).
     trajectory: dict[str, Any] | None = None
     derived_input: dict[str, str] = Field(default_factory=dict)
     input_conflicts: list[str] = Field(default_factory=list)
+    blocked_overrides: list[str] = Field(default_factory=list)
     # `recommended_validation` = what to verify (the axis/goal);
     # `next_experiment` = the concrete assay(s) to run.
     recommended_validation: list[str] = Field(default_factory=list)

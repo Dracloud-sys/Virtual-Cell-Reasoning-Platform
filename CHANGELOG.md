@@ -17,6 +17,26 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **PR7 trajectory hardening (real long-culture validation).** Quality gating is now
+  **axis-specific**: `TrajectoryAssessment` exposes `usable_PDL_timepoints` /
+  `usable_DT_timepoints`, a derived trend is produced only when its own axis meets
+  `min_timepoints`, and a partial-missing axis flags `MISSING_DT` / `MISSING_PDL`.
+  Low-quality axes are blocked from overriding the snapshot — `NON_MONOTONIC_PDL` and
+  the new `SPARSE_PASSAGE_SAMPLING` (policy `max_supported_passage_gap`) withhold a
+  PDL override, with the reason recorded in the new `DecisionReport.blocked_overrides`;
+  the snapshot value is kept and is *not* shown in `derived_input`. Classification is
+  **terminal-anchored**: `re_arrest` is returned only when the series actually ends
+  arrested (a historical F→G→F followed by terminal growth is `recovery_after_plateau`,
+  not `re_arrest`), and `plateau_interval` is the terminal flat run only. The DT trend
+  uses the full stable band with an explicit `unknown` zone between the stable band and
+  the worsening threshold (no more silent "1.49× is stable"), and `TrajectoryThresholds`
+  validates its ordering. A recent-window `terminal_dt_deterioration` signal surfaces
+  late DT worsening a whole-series median would dilute (reported in `uncertainty`).
+  Conflict explanations name only the markers that actually contributed (no more
+  "normal p16" while p16 is measured high). `SPARSE_LATE_PASSAGE` / `POSSIBLE_OUTLIER`
+  removed (every declared quality flag is now produced). `baseline_status` unchanged;
+  `LONGSERIES-IMM-V01` adversarial fixture added; API/CLI unchanged but now expose the
+  usable counts and blocked overrides.
 - **Passage-aware time-series assessment (PR7).** Typed `PassageObservation` series
   (`observations`) carry raw per-passage measurements — DT hours, cumulative PDL,
   proliferation/viability fraction, endogenous TERT/CDK4, quantitative markers —
