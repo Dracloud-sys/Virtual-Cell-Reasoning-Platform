@@ -138,6 +138,24 @@ def test_sparse_uniform_gaps_flagged_not_irregular() -> None:
     assert ta.total_PDL_gain == 1.6
 
 
+def test_sparse_is_judged_on_the_pdl_axis_not_all_observations() -> None:
+    # PDL is measured only at passages 1/15/30 (gaps 14, 15) while DT is dense at
+    # every passage. A dense DT axis must not mask the sparse PDL sampling.
+    obs = [
+        PassageObservation(passage=p, cumulative_PDL={1: 1.0, 15: 5.0, 30: 9.0}.get(p), DT_hours=40)
+        for p in range(1, 31)
+    ]
+    ta = extract_trajectory(obs)
+    assert ta.usable_PDL_timepoints == 3
+    assert SeriesQualityFlag.SPARSE_PASSAGE_SAMPLING in ta.quality_flags
+
+
+def test_dense_pdl_axis_is_not_flagged_sparse() -> None:
+    # Every passage carries PDL with a gap of 5 (< max_supported_passage_gap): no flag.
+    ta = extract_trajectory(_series([(20, 20.0, 40), (25, 24.0, 41), (30, 28.0, 42)]))
+    assert SeriesQualityFlag.SPARSE_PASSAGE_SAMPLING not in ta.quality_flags
+
+
 # --- Medium 4: DT stable band vs the ambiguous zone --------------------------
 
 

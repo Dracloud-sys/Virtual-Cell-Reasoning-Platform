@@ -261,6 +261,19 @@ def test_sparse_series_does_not_override_status() -> None:
     assert any("sparse" in b.lower() for b in report.blocked_overrides)
 
 
+def test_sparse_pdl_blocks_override_even_with_dense_dt() -> None:
+    # PDL sampled sparsely (passages 1/15/30) while DT is dense: the sparse-PDL flag
+    # must still block the PDL override so the snapshot judgment is not flipped.
+    obs = [
+        {"passage": p, "cumulative_PDL": {1: 1.0, 15: 5.0, 30: 9.0}.get(p), "DT_hours": 40}
+        for p in range(1, 31)
+    ]
+    report = build_decision_report(_series_input(obs, PDL_trend="plateau"))
+    assert "sparse_passage_sampling" in report.trajectory["quality_flags"]
+    assert "PDL_trend" not in report.derived_input
+    assert any("sparse" in b.lower() for b in report.blocked_overrides)
+
+
 def test_terminal_dt_deterioration_surfaced_in_uncertainty() -> None:
     obs = [{"passage": i + 1, "cumulative_PDL": 1.0 + i, "DT_hours": 40} for i in range(10)] + [
         {"passage": 11, "cumulative_PDL": 11.0, "DT_hours": 400}

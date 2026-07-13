@@ -67,7 +67,7 @@ usable PDL < 3 : insufficient_series
 | usable PDL < 3 | `insufficient_series` + `insufficient_timepoints` |
 | 일부 DT 누락 | 부분 계산 + `missing_dt` |
 | 일부 PDL 누락 | 부분 계산 + `missing_pdl` |
-| 큰 passage 간격 (> `max_supported_passage_gap`) | `sparse_passage_sampling` → **PDL override 차단** |
+| 큰 PDL passage 간격 (> `max_supported_passage_gap`) | `sparse_passage_sampling` → **PDL override 차단** |
 | 정렬되지 않은 입력 | 내부 정렬(원본 불변) |
 
 ### 축별(axis-specific) gating (hardening)
@@ -80,6 +80,9 @@ usable PDL < 3 : insufficient_series
   **차단**(blocking)한다. `irregular_passage_intervals`, `missing_*`는 경고(warning)이며 자체로 전체 trajectory를
   폐기하지 않는다. 차단된 derived trend는 `derived_input`에 적용된 것처럼 표시하지 않고, 사유를 `blocked_overrides`
   (구조화 최상위 필드)에 노출한다.
+- **sparse는 PDL 축 기준**: `sparse_passage_sampling`은 전체 관측이 아니라 **PDL을 담은 passage들 사이의 간격**으로
+  판정한다. 따라서 DT가 매 passage 촘촘히 측정돼도 PDL이 드문드문(예: passage 1/15/30) 측정됐다면 sparse로 잡혀
+  PDL override가 차단된다. (`irregular_passage_intervals`는 전체 관측 cadence 기준의 경고로 유지.)
 - **DT 임계값 stable band**: `fold ≤ improving`(=0.75) → improved; `|fold−1| ≤ stable_relative`(=0.25) → stable;
   `fold ≥ worsening`(=1.50) → worsening; **stable band 상한(1.25)과 worsening(1.50) 사이는 `unknown`**(stable로
   반올림하지 않음). 임계값 순서는 Pydantic으로 검증한다.

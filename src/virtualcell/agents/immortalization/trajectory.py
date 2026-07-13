@@ -197,14 +197,14 @@ def extract_trajectory(
     first_passage = ordered[0].passage if ordered else None
     last_passage = ordered[-1].passage if ordered else None
 
-    # Passage-spacing quality: irregular (uneven) is distinct from sparse (uniformly
-    # large). Sparse sampling makes an absolute PDL-gain plateau low-confidence.
+    # Passage-cadence quality: irregular (uneven) spacing is a general warning over
+    # all observations. Sparse *PDL* sampling is judged per axis below (a large gap
+    # between the PDL-carrying passages is what makes an absolute PDL-gain judgment
+    # low-confidence), so a dense DT axis cannot mask a sparsely-sampled PDL series.
     passages = [o.passage for o in ordered]
     deltas = [b - a for a, b in zip(passages, passages[1:], strict=False)]
     if deltas and max(deltas) > 1.5 * min(deltas):
         flags.append(SeriesQualityFlag.IRREGULAR_PASSAGE_INTERVALS)
-    if deltas and max(deltas) > t.max_supported_passage_gap:
-        flags.append(SeriesQualityFlag.SPARSE_PASSAGE_SAMPLING)
 
     # DT features (median-smoothed early vs late). Usable = observations that
     # actually carry a DT; a trend needs >= min_timepoints usable DT points.
@@ -238,6 +238,12 @@ def extract_trajectory(
     total_pdl_gain = None
     if usable_pdl >= 2:
         total_pdl_gain = pdl[-1][1] - pdl[0][1]
+        pdl_gaps = [b - a for (a, _), (b, _) in zip(pdl, pdl[1:], strict=False)]
+        # Sparse PDL sampling: a large gap between PDL-carrying passages makes the
+        # absolute PDL-gain judgment low-confidence, regardless of how densely other
+        # axes were measured. This is the flag that gates the PDL override downstream.
+        if max(pdl_gaps) > t.max_supported_passage_gap:
+            flags.append(SeriesQualityFlag.SPARSE_PASSAGE_SAMPLING)
         if any(b < a for (_, a), (_, b) in zip(pdl, pdl[1:], strict=False)):
             flags.append(SeriesQualityFlag.NON_MONOTONIC_PDL)
 
