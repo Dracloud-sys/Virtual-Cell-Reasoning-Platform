@@ -43,8 +43,10 @@
   성장(G)이면 `re_arrest`가 아니라 `recovery_after_plateau`/성장 계열로 분류한다.
 - `plateau_interval`은 **terminal flat run만** 나타낸다 (중간 성장 구간을 포함하지 않는다).
 - historical crisis와 current state는 `rationale`에서 구분한다.
-- 최근 DT 악화가 전체 early/late median에 희석될 수 있으므로, recent window가 선행 window 대비 worsening fold
-  이상이면 `terminal_dt_deterioration`으로 표시하고 report `uncertainty`에 노출한다 (status를 강제로 바꾸지는 않음).
+- 마지막 DT 1점이 전체 early/late median에 희석될 수 있으므로, **최종 DT 관측이 선행 관측들의 중앙값 대비
+  worsening fold 이상**이면 `terminal_dt_spike`로 표시하고 report `uncertainty`에 노출한다(status를 강제로 바꾸지
+  않음). 이는 단일 terminal point 신호이며 multi-point window trend가 아니다. 선행 집합을 만들 usable DT가 부족한
+  (< `min_timepoints`+1) 짧은 series에서는 신호를 생성하지 않는다.
 
 탐지 순서(terminal run 기준):
 

@@ -220,8 +220,8 @@ Development is **benchmark-first**: fix the questions the platform must answer
   terminal-anchored (`re_arrest` only when the series *ends* arrested; `plateau_interval`
   is the terminal flat run only). The DT trend uses the full stable band, with an
   explicit `unknown` zone (1.25–1.50) instead of rounding to stable, and threshold
-  ordering is validated. A recent-window `terminal_dt_deterioration` signal surfaces
-  late deterioration a whole-series median would dilute. Conflict explanations name
+  ordering is validated. A single-terminal-point `terminal_dt_spike` signal surfaces
+  a late DT spike a whole-series median would dilute. Conflict explanations name
   only the markers that actually contributed. `LONGSERIES-IMM-V01` adversarial fixture
   added. `baseline_status` unchanged.
 - ▶ **PR7+ / next** — remaining marker axes used only for *presentation* today

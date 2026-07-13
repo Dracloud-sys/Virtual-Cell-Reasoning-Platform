@@ -261,6 +261,76 @@ def test_sparse_series_does_not_override_status() -> None:
     assert any("sparse" in b.lower() for b in report.blocked_overrides)
 
 
+def test_insufficient_pdl_does_not_block_a_valid_dt_trend() -> None:
+    # usable PDL = 2, usable DT = 3: the DT axis is fully sampled and worsening, so
+    # it must drive the assessment even though PDL is too thin for a trajectory.
+    report = build_decision_report(
+        _series_input(
+            [
+                {"passage": 1, "cumulative_PDL": 1.0, "DT_hours": 30},
+                {"passage": 2, "DT_hours": 60},
+                {"passage": 3, "cumulative_PDL": 3.0, "DT_hours": 90},
+            ],
+            PDL_trend="increasing",
+            DT_trend="stable",
+        )
+    )
+    assert report.trajectory["state"] == "insufficient_series"  # PDL-axis verdict
+    assert report.derived_input.get("DT_trend") == "worsening"  # DT still applied
+    assert "PDL_trend" not in report.derived_input  # PDL snapshot kept
+    assert report.candidate_status == "senescence_or_stress_prone"
+
+
+def test_insufficient_dt_does_not_block_a_valid_pdl_trend() -> None:
+    # usable DT = 2, usable PDL = 3: PDL trend applies; DT stays the snapshot value
+    # and is not asserted as verified.
+    report = build_decision_report(
+        _series_input(
+            [
+                {"passage": 1, "cumulative_PDL": 1.0, "DT_hours": 30},
+                {"passage": 2, "cumulative_PDL": 2.0},
+                {"passage": 3, "cumulative_PDL": 3.0, "DT_hours": 60},
+            ],
+            DT_trend="stable",
+        )
+    )
+    assert report.derived_input.get("PDL_trend") == "increasing"
+    assert "DT_trend" not in report.derived_input  # DT underdetermined, snapshot kept
+
+
+def test_sparse_pdl_blocks_pdl_only_dt_still_applies() -> None:
+    # PDL sampled sparsely (blocked) while DT is dense and worsening (applied).
+    obs = [
+        {
+            "passage": p,
+            "cumulative_PDL": {1: 1.0, 15: 5.0, 30: 9.0}.get(p),
+            "DT_hours": 30 + p * 3,
+        }
+        for p in range(1, 31)
+    ]
+    report = build_decision_report(_series_input(obs, PDL_trend="plateau", DT_trend="stable"))
+    assert "sparse_passage_sampling" in report.trajectory["quality_flags"]
+    assert "PDL_trend" not in report.derived_input  # PDL blocked
+    assert report.derived_input.get("DT_trend") == "worsening"  # DT applied
+    assert any("sparse" in b.lower() for b in report.blocked_overrides)
+
+
+def test_dt_unknown_pdl_sufficient_applies_pdl_only() -> None:
+    report = build_decision_report(
+        _series_input(
+            [
+                {"passage": 1, "cumulative_PDL": 1.0},
+                {"passage": 2, "cumulative_PDL": 2.0},
+                {"passage": 3, "cumulative_PDL": 3.0},
+            ],
+            DT_trend="stable",
+        )
+    )
+    assert report.derived_input.get("PDL_trend") == "increasing"
+    assert "DT_trend" not in report.derived_input  # DT unknown -> snapshot kept, not verified
+    assert "missing_dt" in report.trajectory["quality_flags"]
+
+
 def test_sparse_pdl_blocks_override_even_with_dense_dt() -> None:
     # PDL sampled sparsely (passages 1/15/30) while DT is dense: the sparse-PDL flag
     # must still block the PDL override so the snapshot judgment is not flipped.
@@ -274,13 +344,13 @@ def test_sparse_pdl_blocks_override_even_with_dense_dt() -> None:
     assert any("sparse" in b.lower() for b in report.blocked_overrides)
 
 
-def test_terminal_dt_deterioration_surfaced_in_uncertainty() -> None:
+def test_terminal_dt_spike_surfaced_in_uncertainty() -> None:
     obs = [{"passage": i + 1, "cumulative_PDL": 1.0 + i, "DT_hours": 40} for i in range(10)] + [
         {"passage": 11, "cumulative_PDL": 11.0, "DT_hours": 400}
     ]
     report = build_decision_report(_series_input(obs))
-    assert report.trajectory["terminal_dt_deterioration"] is True
-    assert any("recent" in u.lower() and "deterior" in u.lower() for u in report.uncertainty)
+    assert report.trajectory["terminal_dt_spike"] is True
+    assert any("terminal spike" in u.lower() for u in report.uncertainty)
 
 
 def test_conflict_explanation_names_only_measured_markers() -> None:

@@ -234,8 +234,8 @@ def _trajectory_uncertainty(trajectory: TrajectoryAssessment) -> list[str]:
 
     The trajectory is a proliferation course, not a verdict: recovery without
     durability must not read as immortalization, a re-arrest must not be hidden by
-    the fact that growth was once observed, and a recent doubling-time
-    deterioration must not be diluted by an otherwise-benign whole-series trend.
+    the fact that growth was once observed, and a terminal doubling-time spike must
+    not be diluted by an otherwise-benign whole-series trend.
     """
     notes: list[str] = []
     if trajectory.state == TrajectoryState.TRANSIENT_RECOVERY:
@@ -244,10 +244,11 @@ def _trajectory_uncertainty(trajectory: TrajectoryAssessment) -> list[str]:
         notes.append(
             "Proliferation recovered then arrested again; a prior recovery is not durable."
         )
-    if trajectory.terminal_dt_deterioration:
+    if trajectory.terminal_dt_spike:
         notes.append(
-            "The most recent doubling-time observations worsened sharply relative to the "
-            "preceding window; recent deterioration may not be reflected in the overall trend."
+            "The final doubling-time observation rose sharply above the preceding "
+            "observations' median; this terminal spike may not be reflected in the overall "
+            "trend — re-measure to confirm whether it is an outlier or the onset of deterioration."
         )
     return notes
 

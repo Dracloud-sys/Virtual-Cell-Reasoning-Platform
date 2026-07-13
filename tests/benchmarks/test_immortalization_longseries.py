@@ -30,10 +30,10 @@ def test_terminal_growth_is_not_re_arrest() -> None:
     assert report.trajectory["state"] == "recovery_after_plateau"
 
 
-def test_recent_deterioration_is_surfaced_not_hidden() -> None:
+def test_terminal_dt_spike_is_surfaced_not_hidden() -> None:
     report = _report()
-    assert report.trajectory["terminal_dt_deterioration"] is True
-    assert any("recent" in u.lower() for u in report.uncertainty)
+    assert report.trajectory["terminal_dt_spike"] is True
+    assert any("terminal spike" in u.lower() for u in report.uncertainty)
 
 
 def test_series_alone_still_does_not_confirm_a_candidate() -> None:

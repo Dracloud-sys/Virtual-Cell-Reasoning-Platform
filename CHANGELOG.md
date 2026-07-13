@@ -7,6 +7,17 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Python-level contract notes (PR7 hardening — HTTP API/CLI stay additive-compatible).**
+  These are internal Python signatures, not the HTTP/CLI surface (which only *gained*
+  fields): (1) `immortalization.effective_markers.reconcile_markers()` returns a 4-tuple
+  `(markers, derived_input, input_conflicts, blocked_overrides)` — was a 3-tuple pre-hardening;
+  (2) it no longer globally early-returns on `state == insufficient_series` — each axis is
+  reconciled on its own derived value, so a valid DT trend applies even when PDL is too thin;
+  (3) `SeriesQualityFlag` dropped `SPARSE_LATE_PASSAGE` / `POSSIBLE_OUTLIER` and added
+  `SPARSE_PASSAGE_SAMPLING`; (4) `TrajectoryAssessment.terminal_dt_deterioration` was renamed
+  to `terminal_dt_spike` (its computation — final DT vs preceding median — is unchanged; the
+  name now reflects that it is a single-terminal-point signal, not a window trend). No
+  compatibility wrapper is provided; in-process callers should update to the new shapes.
 - **`DecisionReport` hardened + linked to `AgentOutput` (GPT review, pre-PR5).**
   `candidate_status` and `flags` are now enum-validated (`CandidateStatus` /
   `AssessmentFlag`, moved to `reasoning.decision` and reused by the deterministic
@@ -30,8 +41,8 @@ to [Semantic Versioning](https://semver.org/).
   not `re_arrest`), and `plateau_interval` is the terminal flat run only. The DT trend
   uses the full stable band with an explicit `unknown` zone between the stable band and
   the worsening threshold (no more silent "1.49× is stable"), and `TrajectoryThresholds`
-  validates its ordering. A recent-window `terminal_dt_deterioration` signal surfaces
-  late DT worsening a whole-series median would dilute (reported in `uncertainty`).
+  validates its ordering. A single-terminal-point `terminal_dt_spike` signal surfaces
+  a late DT spike a whole-series median would dilute (reported in `uncertainty`).
   Conflict explanations name only the markers that actually contributed (no more
   "normal p16" while p16 is measured high). `SPARSE_LATE_PASSAGE` / `POSSIBLE_OUTLIER`
   removed (every declared quality flag is now produced). `baseline_status` unchanged;

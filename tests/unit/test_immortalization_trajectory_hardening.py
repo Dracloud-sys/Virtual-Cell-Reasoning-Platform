@@ -190,12 +190,12 @@ def test_dt_all_missing_pdl_increasing_rationale() -> None:
     assert "stable or improving doubling time" not in joined
 
 
-# --- Medium 6: terminal deterioration surfaced despite a benign overall trend -
+# --- Medium: terminal DT spike (single-terminal-point signal, honestly named) ----
 
 
-def test_terminal_dt_deterioration_flagged_when_overall_trend_dilutes_it() -> None:
+def test_terminal_dt_spike_flagged_when_overall_trend_dilutes_it() -> None:
     # Long, DT-stable series with a single terminal spike: the whole-series median
-    # stays stable, but the recent-window signal must fire.
+    # stays stable, but the terminal-point signal must fire (the case this guards).
     dts = [40] * 10 + [400]
     series = [
         PassageObservation(passage=i + 1, cumulative_PDL=1.0 + i, DT_hours=d)
@@ -203,14 +203,32 @@ def test_terminal_dt_deterioration_flagged_when_overall_trend_dilutes_it() -> No
     ]
     ta = extract_trajectory(series)
     assert ta.derived_DT_trend is MarkerValue.STABLE  # overall trend not worsening
-    assert ta.terminal_dt_deterioration is True  # but recent deterioration is surfaced
+    assert ta.terminal_dt_spike is True  # but the terminal spike is surfaced
 
 
-def test_no_terminal_deterioration_on_a_steady_series() -> None:
+def test_terminal_dt_spike_flagged_on_a_sustained_recent_ramp() -> None:
+    # A sustained recent deterioration also ends high, so the terminal-point signal
+    # fires here too (it is a superset of the single-spike case).
+    dts = [40, 40, 40, 40, 40, 40, 103, 180, 233, 297, 334]
+    series = [
+        PassageObservation(passage=i + 1, cumulative_PDL=1.0 + i, DT_hours=d)
+        for i, d in enumerate(dts)
+    ]
+    assert extract_trajectory(series).terminal_dt_spike is True
+
+
+def test_no_terminal_dt_spike_on_a_steady_series() -> None:
     series = [
         PassageObservation(passage=i + 1, cumulative_PDL=1.0 + i, DT_hours=40) for i in range(6)
     ]
-    assert extract_trajectory(series).terminal_dt_deterioration is False
+    assert extract_trajectory(series).terminal_dt_spike is False
+
+
+def test_no_terminal_dt_spike_when_the_preceding_set_is_too_short() -> None:
+    # A 3-point series (usable DT < min_timepoints + 1) cannot form a preceding set,
+    # so a high final point does NOT manufacture a terminal-spike signal.
+    series = _series([(1, 1.0, 40), (2, 2.0, 40), (3, 3.0, 400)])
+    assert extract_trajectory(series).terminal_dt_spike is False
 
 
 # --- Medium 4 (validation): threshold ordering -------------------------------

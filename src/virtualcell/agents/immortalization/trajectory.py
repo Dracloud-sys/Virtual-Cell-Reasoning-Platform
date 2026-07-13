@@ -20,8 +20,9 @@ Hardening (post real long-culture validation):
   a terminal sustained growth wins over historical crisis.
 * Sparse passage sampling (large absolute gaps) is flagged; downstream, that
   blocks a PDL-derived status override rather than trusting an absolute PDL gain.
-* A recent-window signal (``terminal_dt_deterioration``) surfaces terminal DT
-  worsening that a whole-series early/late median could dilute.
+* A single-terminal-point signal (``terminal_dt_spike``) surfaces a final DT
+  observation that stands sharply above the preceding median — worsening that a
+  whole-series early/late median could dilute. It is a spike signal, not a trend.
 """
 
 from __future__ import annotations
@@ -123,9 +124,10 @@ class TrajectoryAssessment(BaseModel):
     total_PDL_gain: float | None = None
     plateau_interval: tuple[int, int] | None = None
     recovery_interval: tuple[int, int] | None = None
-    # Recent DT window worsened sharply vs the preceding window; surfaced as an
-    # uncertainty even when the whole-series trend does not (yet) read worsening.
-    terminal_dt_deterioration: bool = False
+    # The *final* DT observation stands sharply above the preceding observations'
+    # median — a single terminal spike, not a multi-point window trend. Surfaced as
+    # an uncertainty even when the whole-series early/late median dilutes it.
+    terminal_dt_spike: bool = False
     quality_flags: list[SeriesQualityFlag] = Field(default_factory=list)
     rationale: list[str] = Field(default_factory=list)
 
@@ -220,15 +222,17 @@ def extract_trajectory(
         fold = late_dt / early_dt
     dt_trend = _dt_trend(fold, t)
 
-    # Recent-window deterioration: the last DT vs the median of the preceding DTs.
-    # Needs a real preceding window (>= min_timepoints preceding points) so it only
-    # fires on longer series, where a whole-series median could dilute a late spike.
-    terminal_det = False
+    # Terminal DT spike: the single final DT observation vs the median of the
+    # preceding ones. Reuses the worsening fold (no new constant). Requires >=
+    # min_timepoints preceding points (so >= min_timepoints + 1 usable DT) so a very
+    # short series cannot manufacture a signal. This is a single-terminal-point
+    # signal, NOT a multi-point recent-window trend.
+    terminal_spike = False
     if usable_dt >= t.min_timepoints + 1:
         preceding = [v for _, v in dt[:-1]]
         prec_median = median(preceding)
         if prec_median > 0 and dt[-1][1] >= t.worsening_dt_fold_change * prec_median:
-            terminal_det = True
+            terminal_spike = True
 
     # PDL features. Usable = observations that carry a cumulative PDL.
     pdl = [(o.passage, o.cumulative_PDL) for o in ordered if o.cumulative_PDL is not None]
@@ -258,7 +262,7 @@ def extract_trajectory(
         "DT_fold_change": round(fold, 2) if fold is not None else None,
         "total_PDL_gain": round(total_pdl_gain, 3) if total_pdl_gain is not None else None,
         "derived_DT_trend": dt_trend,
-        "terminal_dt_deterioration": terminal_det,
+        "terminal_dt_spike": terminal_spike,
         "quality_flags": flags,
     }
 

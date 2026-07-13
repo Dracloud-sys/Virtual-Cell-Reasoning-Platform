@@ -23,7 +23,6 @@ from virtualcell.agents.immortalization.models import ImmortalizationAssessmentI
 from virtualcell.agents.immortalization.trajectory import (
     SeriesQualityFlag,
     TrajectoryAssessment,
-    TrajectoryState,
 )
 
 # The adverse pole of each trend: a worsening doubling time, or stalled doublings.
@@ -63,7 +62,11 @@ def reconcile_markers(
     conflicts: list[str] = []
     blocked: list[str] = []
 
-    if trajectory is None or trajectory.state == TrajectoryState.INSUFFICIENT_SERIES:
+    # No series at all -> nothing to reconcile. NOTE: we deliberately do NOT early-return
+    # on ``state == INSUFFICIENT_SERIES``: that state is a *PDL-axis* verdict (too few
+    # usable PDL points), and a fully-sampled DT axis can still carry a valid derived
+    # trend. Each axis is evaluated on its own derived value, not the overall state.
+    if trajectory is None:
         return markers, derived_input, conflicts, blocked
 
     qflags = set(trajectory.quality_flags)

@@ -33,12 +33,33 @@ def test_no_trajectory_leaves_snapshot_unchanged() -> None:
     assert blocked == []
 
 
-def test_insufficient_series_does_not_override() -> None:
+def test_insufficient_pdl_state_still_applies_a_valid_dt_trend() -> None:
+    # ``insufficient_series`` is a PDL-axis verdict (too few usable PDL points); a
+    # fully-sampled DT axis with a derived trend must still be applied. The overall
+    # state does NOT globally veto reconciliation.
     data = _input(DT_trend="stable")
-    traj = _traj(TrajectoryState.INSUFFICIENT_SERIES, dt=MarkerValue.WORSENING)
+    traj = _traj(
+        TrajectoryState.INSUFFICIENT_SERIES,
+        pdl=MarkerValue.UNKNOWN,  # PDL insufficient
+        dt=MarkerValue.WORSENING,  # DT sufficient
+    )
     markers, derived, conflicts, blocked = reconcile_markers(data, traj)
-    assert markers["DT_trend"] == MarkerValue.STABLE  # not overridden
+    assert markers["DT_trend"] == MarkerValue.WORSENING  # DT applied
+    assert derived == {"DT_trend": "worsening"}
+    assert conflicts  # stable -> worsening is an adverse crossing
+    assert "PDL_trend" not in derived  # PDL derived was unknown, snapshot kept
+
+
+def test_both_axes_unknown_changes_nothing() -> None:
+    # A short series that derives neither trend leaves the snapshot untouched, with
+    # no spurious blocked messages (nothing was derived to block).
+    data = _input(DT_trend="stable", PDL_trend="increasing")
+    traj = _traj(TrajectoryState.INSUFFICIENT_SERIES)
+    markers, derived, conflicts, blocked = reconcile_markers(data, traj)
+    assert markers["DT_trend"] == MarkerValue.STABLE
+    assert markers["PDL_trend"] == MarkerValue.INCREASING
     assert derived == {}
+    assert blocked == []
 
 
 def test_derived_trend_overrides_and_is_recorded() -> None:
