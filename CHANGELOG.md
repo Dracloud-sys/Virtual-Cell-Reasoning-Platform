@@ -7,17 +7,20 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
-- **Python-level contract notes (PR7 hardening — HTTP API/CLI stay additive-compatible).**
-  These are internal Python signatures, not the HTTP/CLI surface (which only *gained*
-  fields): (1) `immortalization.effective_markers.reconcile_markers()` returns a 4-tuple
-  `(markers, derived_input, input_conflicts, blocked_overrides)` — was a 3-tuple pre-hardening;
-  (2) it no longer globally early-returns on `state == insufficient_series` — each axis is
-  reconciled on its own derived value, so a valid DT trend applies even when PDL is too thin;
-  (3) `SeriesQualityFlag` dropped `SPARSE_LATE_PASSAGE` / `POSSIBLE_OUTLIER` and added
-  `SPARSE_PASSAGE_SAMPLING`; (4) `TrajectoryAssessment.terminal_dt_deterioration` was renamed
-  to `terminal_dt_spike` (its computation — final DT vs preceding median — is unchanged; the
-  name now reflects that it is a single-terminal-point signal, not a window trend). No
-  compatibility wrapper is provided; in-process callers should update to the new shapes.
+- **Contract notes (PR7 hardening).** Relative to the last *released* version, the PR7
+  output is additive. However, one change happened *within* the unreleased PR7 line and
+  affects both the Python API and the HTTP/CLI JSON: the `DecisionReport.trajectory`
+  key `terminal_dt_deterioration` was renamed to `terminal_dt_spike` (its computation —
+  final DT vs the preceding observations' median — is unchanged; the name now reflects
+  that it is a single-terminal-point signal, not a window trend). Clients built against an
+  intermediate PR7 commit must update that key. Because PR7 is still `Unreleased`, no
+  compatibility alias is added. Purely Python-level (in-process) changes, with no HTTP/CLI
+  effect: (1) `immortalization.effective_markers.reconcile_markers()` returns a 4-tuple
+  `(markers, derived_input, input_conflicts, blocked_overrides)` — was a 3-tuple; (2) it no
+  longer globally early-returns on `state == insufficient_series`, so each axis is reconciled
+  on its own derived value (a valid DT trend applies even when PDL is too thin); (3)
+  `SeriesQualityFlag` dropped `SPARSE_LATE_PASSAGE` / `POSSIBLE_OUTLIER` and added
+  `SPARSE_PASSAGE_SAMPLING`. In-process callers should update to the new shapes.
 - **`DecisionReport` hardened + linked to `AgentOutput` (GPT review, pre-PR5).**
   `candidate_status` and `flags` are now enum-validated (`CandidateStatus` /
   `AssessmentFlag`, moved to `reasoning.decision` and reused by the deterministic
