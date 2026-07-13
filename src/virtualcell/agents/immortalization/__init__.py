@@ -8,7 +8,14 @@ and `DecisionReport` output land in later PRs; see
 
 from __future__ import annotations
 
-from virtualcell.agents.immortalization.adapters import input_from_scenario
+from virtualcell.agents.immortalization.adapters import (
+    CanonicalAdapterError,
+    canonical_to_passage_observation,
+    input_from_scenario,
+    passage_observation_to_canonical,
+    passage_series_to_run,
+    run_to_passage_series,
+)
 from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
 from virtualcell.agents.immortalization.baseline import (
     AssessmentFlag,
@@ -34,6 +41,7 @@ from virtualcell.agents.immortalization.trajectory import (
 __all__ = [
     "AssessmentFlag",
     "AssessmentIntent",
+    "CanonicalAdapterError",
     "CandidateStatus",
     "ConstructType",
     "ImmortalizationAssessmentAgent",
@@ -46,6 +54,10 @@ __all__ = [
     "TrajectoryState",
     "TrajectoryThresholds",
     "baseline_status",
+    "canonical_to_passage_observation",
     "extract_trajectory",
     "input_from_scenario",
+    "passage_observation_to_canonical",
+    "passage_series_to_run",
+    "run_to_passage_series",
 ]

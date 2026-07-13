@@ -100,6 +100,37 @@ plain dict so `reasoning.decision` stays free of any dependency on the agent. A
 time series alone never confirms a candidate — the baseline still requires a
 measured senescence axis.
 
+## Canonical experiment schema (`virtualcell.core.experiment`)
+
+A **source-neutral data contract** that virtual-cell *simulation* output and
+*experiment* data both converge to before any vertical reasoning. The pipeline the
+platform is building toward is:
+
+```
+Canonical Experiment Schema   = source-neutral data contract  (core.experiment)
+        │  (per-vertical adapter)
+Immortalization adapter       = canonical data -> the first vertical's input
+        │
+Trajectory / reconciliation   = immortalization-specific deterministic reasoning
+        │
+DecisionReport                = reasoning output contract
+        │
+(optional) LLM narrative      = presentation only, never changes status/tier/citation
+```
+
+`core.experiment` is deliberately domain-agnostic (`OriginKind` ⟂ `AcquisitionMode`,
+a discriminated `TimePoint`, scalar `Measurement` + `Provenance`, `Observation`,
+`ExperimentRun`) and imports nothing from `agents`/`reasoning`. The immortalization
+**adapter** (`agents/immortalization/adapters.py`,
+`passage_observation_to_canonical` / `canonical_to_passage_observation` /
+`passage_series_to_run` / `run_to_passage_series`) maps canonical runs to and from
+`PassageObservation`; it only reshapes data and performs no trajectory extraction,
+reconciliation, or status judgment.
+
+Scope today: this is the *foundation contract plus the first adapter*. It does **not**
+yet connect a real simulator, robot, or LIMS, and the existing immortalization
+input/API/CLI are unchanged — the canonical schema is additive, not a migration.
+
 ## Orchestration (`virtualcell.orchestration`)
 
 A LangGraph graph that routes a request through the relevant agents and merges

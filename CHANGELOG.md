@@ -31,6 +31,21 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **Canonical experiment schema + immortalization adapter (PR8a, additive).** A new
+  source-neutral contract `virtualcell.core.experiment` — `ExperimentRun` / `Observation`
+  / scalar `Measurement` (+ `MeasurementQuality`) / `Provenance`, a discriminated
+  `TimePoint` union (passage / elapsed_time / simulation_step / timezone-aware timestamp),
+  and orthogonal `OriginKind` (simulation|experiment) ⟂ `AcquisitionMode`
+  (manual|instrument|robotic|imported). It stays in `core` and imports nothing from
+  `agents`/`reasoning`. An immortalization adapter (`agents/immortalization/adapters.py`:
+  `passage_observation_to_canonical`, `canonical_to_passage_observation`,
+  `passage_series_to_run`, `run_to_passage_series`) maps canonical runs to/from
+  `PassageObservation` — reshaping only, no reasoning; a canonical run can therefore feed
+  the existing `extract_trajectory` pipeline. This is additive: the existing
+  immortalization input, API, and CLI are unchanged, and no path is migrated onto the
+  canonical schema. The adapter carries only the two trajectory-relevant measurements
+  (`cumulative_PDL`, `DT_hours`); other `PassageObservation` fields are not yet mapped
+  (documented loss). No simulator/robot/LIMS connector, ingest, normalization, or LLM.
 - **PR7 trajectory hardening (real long-culture validation).** Quality gating is now
   **axis-specific**: `TrajectoryAssessment` exposes `usable_PDL_timepoints` /
   `usable_DT_timepoints`, a derived trend is produced only when its own axis meets
