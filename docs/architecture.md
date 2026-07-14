@@ -146,10 +146,16 @@ Knowledge graph                 = reviewed / approved biological claims only
 ```
 
 PR8b implements the discovery slice: `literature.contracts` (query, article metadata,
-source-anchored candidates, transparent relevance, verification status, and the
-`LiteratureEvidenceBundle`); a bounded, injectable `EuropePmcProvider` over the official
-public API (no scraping, no paywall circumvention); and deterministic query building,
-deduplication, and relevance scoring. `LiteratureDiscoveryAgent` returns the typed bundle
+source-anchored candidates with deterministic ids, transparent relevance, verification
+status, and the `LiteratureEvidenceBundle`); a bounded, injectable `EuropePmcProvider` over
+the official public API (no scraping, no paywall circumvention); and deterministic query
+building, deduplication, and relevance scoring. Dedup merges on strong ids (PMCID/PMID/DOI)
+and only falls back to title when it does not contradict a strong id — distinct papers are
+never merged away. `QueryMode` (default `terms` = AND of word tokens for recall; `phrase`
+for exact-phrase precision) is recorded in provenance. A machine-readable `DiscoveryRunStatus`
+(`success`/`zero_results`/`provider_error`) distinguishes an empty result from a failure — the
+CLI exits non-zero only on `provider_error` — and `VerificationDecision` is the authoritative
+status a candidate is checked against. `LiteratureDiscoveryAgent` returns the typed bundle
 in `AgentOutput.result` and **no biological `Claim`s** — discovery metadata is not
 evidence, and `AgentOutput.confidence` is not the relevance score. Nothing here writes to
 the KnowledgeStore. Source-grounded extraction (JATS/tables + an optional structured LLM

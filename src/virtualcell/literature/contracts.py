@@ -36,10 +36,24 @@ _MIN_YEAR = 1500
 _MAX_YEAR = 2100
 
 
+class QueryMode(StrEnum):
+    """How ``query_text`` is turned into a provider query.
+
+    ``terms`` (default) ANDs the sanitized word tokens — robust recall for a
+    natural-language research question. ``phrase`` searches the exact phrase — high
+    precision for a deliberate keyword phrase but low recall on prose. Neither mode
+    invents synonyms, and both are deterministic for a given input.
+    """
+
+    TERMS = "terms"
+    PHRASE = "phrase"
+
+
 class LiteratureQuery(BaseModel):
     """A research question plus structured filters. Unbounded search is disallowed."""
 
     query_text: str
+    query_mode: QueryMode = QueryMode.TERMS
     species: list[str] = Field(default_factory=list)
     cell_types: list[str] = Field(default_factory=list)
     genes: list[str] = Field(default_factory=list)
@@ -168,6 +182,7 @@ class ProviderProvenance(BaseModel):
 
     provider: str
     query_sent: str
+    query_mode: str | None = None
     retrieved_at: datetime
     hit_count: int | None = None
     page_size: int | None = None

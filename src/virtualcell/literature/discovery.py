@@ -17,6 +17,7 @@ from virtualcell.literature.contracts import (
     DiscoveryRunStatus,
     LiteratureEvidenceBundle,
     LiteratureQuery,
+    QueryMode,
     RelevanceComponent,
     RelevanceResult,
     normalize_title,
@@ -28,9 +29,10 @@ _CRITICAL = ("species", "cell_types", "genes")
 
 
 class BuiltQuery(BaseModel):
-    """A provider query string plus the expansions actually applied (audit trail)."""
+    """A provider query string plus the mode and expansions applied (audit trail)."""
 
     query_string: str
+    query_mode: QueryMode
     expansions: dict[str, list[str]] = Field(default_factory=dict)
 
 
@@ -47,13 +49,25 @@ def _or_group(terms: list[str]) -> tuple[str, list[str]] | None:
     return "(" + " OR ".join(quoted) + ")", used
 
 
+def _query_text_clause(query: LiteratureQuery) -> str:
+    """The ``query_text`` clause, per the chosen (deterministic) mode."""
+    if query.query_mode == QueryMode.PHRASE:
+        return f'("{_sanitize(query.query_text)}")'
+    # TERMS: AND the sanitized word tokens for recall on natural-language questions.
+    tokens = [s for tok in query.query_text.split() if (s := _sanitize(tok))]
+    if not tokens:  # query_text is validated to have content, but stay defensive
+        return f'("{_sanitize(query.query_text)}")'
+    return "(" + " AND ".join(f'"{t}"' for t in tokens) + ")"
+
+
 def build_europe_pmc_query(query: LiteratureQuery) -> BuiltQuery:
     """Build a deterministic Europe PMC query from a :class:`LiteratureQuery`.
 
-    Only the caller-provided synonyms are used (joined with OR) — the builder never
-    invents species/cell-type synonyms — and every expansion applied is recorded.
+    ``query_text`` is turned into a clause per :class:`QueryMode` (terms vs phrase);
+    only caller-provided synonyms are OR-joined (the builder never invents synonyms),
+    and both the mode and every expansion applied are recorded.
     """
-    parts: list[str] = [f'("{_sanitize(query.query_text)}")']
+    parts: list[str] = [_query_text_clause(query)]
     expansions: dict[str, list[str]] = {}
     for field, terms in (
         ("species", query.species),
@@ -73,7 +87,9 @@ def build_europe_pmc_query(query: LiteratureQuery) -> BuiltQuery:
         parts.append(f"PUB_YEAR:[{lo} TO {hi}]")
     if query.open_access_only:
         parts.append("OPEN_ACCESS:Y")
-    return BuiltQuery(query_string=" AND ".join(parts), expansions=expansions)
+    return BuiltQuery(
+        query_string=" AND ".join(parts), query_mode=query.query_mode, expansions=expansions
+    )
 
 
 # --- deduplication -----------------------------------------------------------

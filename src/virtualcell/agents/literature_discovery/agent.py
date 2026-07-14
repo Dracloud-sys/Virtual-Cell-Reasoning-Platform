@@ -26,6 +26,7 @@ from virtualcell.literature.providers.base import LiteratureProvider, ProviderEr
 from virtualcell.literature.providers.europe_pmc import EuropePmcProvider
 
 _QUERY_FIELDS = (
+    "query_mode",
     "species",
     "cell_types",
     "genes",

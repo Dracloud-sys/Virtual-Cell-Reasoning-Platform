@@ -220,6 +220,7 @@ def _cmd_literature_discover(args: argparse.Namespace) -> int:
     from virtualcell.literature.providers.base import ProviderError
 
     context = {
+        "query_mode": args.query_mode,
         "species": args.species or [],
         "cell_types": args.cell_type or [],
         "genes": args.gene or [],
@@ -395,6 +396,12 @@ def build_parser() -> argparse.ArgumentParser:
         "discover", help="discover external papers (metadata + relevance; no claims)"
     )
     p_disc.add_argument("--query", required=True, help="research question / query text")
+    p_disc.add_argument(
+        "--query-mode",
+        choices=["terms", "phrase"],
+        default="terms",
+        help="terms = AND word tokens (recall); phrase = exact phrase (precision)",
+    )
     p_disc.add_argument("--species", action="append", help="species filter (repeatable)")
     p_disc.add_argument("--cell-type", action="append", help="cell-type filter (repeatable)")
     p_disc.add_argument("--gene", action="append", help="gene filter (repeatable)")

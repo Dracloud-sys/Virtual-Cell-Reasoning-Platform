@@ -158,6 +158,7 @@ class EuropePmcProvider:
         provenance = ProviderProvenance(
             provider=self.name,
             query_sent=query_string,
+            query_mode=query.query_mode.value,
             retrieved_at=retrieved_at,
             hit_count=hit_count,
             page_size=page_size,

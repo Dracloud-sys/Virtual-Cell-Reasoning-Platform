@@ -95,7 +95,6 @@ def test_deterministic_provider_query_generation() -> None:
     built2 = build_europe_pmc_query(_query(open_access_only=True, year_from=2010, year_to=2020))
     assert built1.query_string == built2.query_string  # deterministic
     q = built1.query_string
-    assert '("spontaneous immortalization")' in q
     assert '"Bos taurus" OR "bovine"' in q
     assert '"TERT" OR "CDK4"' in q
     assert "PUB_YEAR:[2010 TO 2020]" in q
@@ -104,8 +103,21 @@ def test_deterministic_provider_query_generation() -> None:
     assert built1.expansions["species"] == ["Bos taurus", "bovine"]
 
 
+def test_terms_mode_ands_tokens_for_recall() -> None:
+    # Default mode ANDs the query_text word tokens (natural-language recall).
+    built = build_europe_pmc_query(_query())  # default QueryMode.TERMS
+    assert built.query_mode.value == "terms"
+    assert '("spontaneous" AND "immortalization")' in built.query_string
+
+
+def test_phrase_mode_keeps_the_exact_phrase() -> None:
+    built = build_europe_pmc_query(_query(query_mode="phrase"))
+    assert built.query_mode.value == "phrase"
+    assert '("spontaneous immortalization")' in built.query_string
+
+
 def test_query_builder_sanitizes_quotes() -> None:
-    built = build_europe_pmc_query(LiteratureQuery(query_text='TERT "escape"'))
+    built = build_europe_pmc_query(LiteratureQuery(query_text='TERT "escape"', query_mode="phrase"))
     assert '"' not in built.query_string.replace('("', "").replace('")', "")
 
 
@@ -208,7 +220,7 @@ def test_provider_error_carries_query_context() -> None:
         provider.search(_query())
     except ProviderError as exc:
         assert exc.provider == "europe_pmc"
-        assert exc.query_sent and "spontaneous immortalization" in exc.query_sent
+        assert exc.query_sent and "spontaneous" in exc.query_sent
     else:  # pragma: no cover
         raise AssertionError("expected ProviderError")
 
