@@ -1,0 +1,266 @@
+"""Tests for deterministic discovery: query building, connector, dedup, relevance.
+
+No network: the Europe PMC connector is driven by an injected fake transport.
+"""
+
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from virtualcell.literature.contracts import (
+    ArticleIdentifier,
+    ArticleRecord,
+    LiteratureQuery,
+)
+from virtualcell.literature.discovery import (
+    build_europe_pmc_query,
+    deduplicate_articles,
+    discover,
+    score_relevance,
+)
+from virtualcell.literature.providers.base import HttpResponse, ProviderError
+from virtualcell.literature.providers.europe_pmc import EuropePmcProvider
+
+
+class _FakeTransport:
+    """Returns queued responses (or raises a queued exception) per call, in order."""
+
+    def __init__(self, responses: list) -> None:
+        self._responses = list(responses)
+        self.calls: list[str] = []
+
+    def get(self, url: str, *, headers=None, timeout: float = 10.0) -> HttpResponse:
+        self.calls.append(url)
+        item = self._responses[min(len(self.calls) - 1, len(self._responses) - 1)]
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+
+def _result(**over) -> dict:
+    base = {
+        "id": "PMC111",
+        "source": "PMC",
+        "pmid": "111",
+        "pmcid": "PMC111",
+        "doi": "10.1000/A",
+        "title": "TERT and CDK4 in bovine preadipocyte senescence escape",
+        "abstractText": (
+            "Bovine preadipocyte cells expressing TERT escaped senescence after long culture."
+        ),
+        "authorString": "Kim J, Lee S.",
+        "journalInfo": {"journal": {"title": "J Cell Sci"}},
+        "pubYear": "2022",
+        "pubTypeList": {"pubType": ["research-article"]},
+        "publicationStatus": "ppublish",
+        "isOpenAccess": "Y",
+        "inPMC": "Y",
+        "hasSuppl": "Y",
+    }
+    base.update(over)
+    return base
+
+
+def _page(results: list[dict], *, hit_count=3, next_cursor="C2") -> HttpResponse:
+    body = {
+        "hitCount": hit_count,
+        "nextCursorMark": next_cursor,
+        "resultList": {"result": results},
+    }
+    return HttpResponse(status_code=200, text=json.dumps(body))
+
+
+_EMPTY_PAGE = _page([], next_cursor="C2")
+
+
+def _query(**over) -> LiteratureQuery:
+    kw = {
+        "query_text": "spontaneous immortalization",
+        "species": ["Bos taurus", "bovine"],
+        "cell_types": ["preadipocyte"],
+        "genes": ["TERT", "CDK4"],
+        "max_results": 25,
+    }
+    kw.update(over)
+    return LiteratureQuery(**kw)
+
+
+# --- query builder -----------------------------------------------------------
+
+
+def test_deterministic_provider_query_generation() -> None:
+    built1 = build_europe_pmc_query(_query(open_access_only=True, year_from=2010, year_to=2020))
+    built2 = build_europe_pmc_query(_query(open_access_only=True, year_from=2010, year_to=2020))
+    assert built1.query_string == built2.query_string  # deterministic
+    q = built1.query_string
+    assert '("spontaneous immortalization")' in q
+    assert '"Bos taurus" OR "bovine"' in q
+    assert '"TERT" OR "CDK4"' in q
+    assert "PUB_YEAR:[2010 TO 2020]" in q
+    assert "OPEN_ACCESS:Y" in q
+    # Only caller-provided synonyms are recorded; none are invented.
+    assert built1.expansions["species"] == ["Bos taurus", "bovine"]
+
+
+def test_query_builder_sanitizes_quotes() -> None:
+    built = build_europe_pmc_query(LiteratureQuery(query_text='TERT "escape"'))
+    assert '"' not in built.query_string.replace('("', "").replace('")', "")
+
+
+# --- connector ---------------------------------------------------------------
+
+
+def test_mocked_search_maps_fields() -> None:
+    transport = _FakeTransport([_page([_result()]), _EMPTY_PAGE])
+    provider = EuropePmcProvider(transport)
+    result = provider.search(_query())
+    assert result.provenance.provider == "europe_pmc"
+    assert result.provenance.hit_count == 3
+    art = result.articles[0]
+    assert art.identifiers.pmcid == "PMC111"
+    assert art.is_open_access is True
+    assert art.has_full_text is True
+    assert art.has_supplementary is True
+    assert art.publication_year == 2022
+    assert art.authors == ["Kim J", "Lee S"]
+
+
+def test_bounded_max_results() -> None:
+    many = [_result(id=str(i), pmid=str(i), pmcid=None, doi=f"10.1/{i}") for i in range(10)]
+    transport = _FakeTransport([_page(many, hit_count=10, next_cursor="C2"), _EMPTY_PAGE])
+    provider = EuropePmcProvider(transport)
+    result = provider.search(_query(max_results=3))
+    assert len(result.articles) == 3  # capped at max_results
+
+
+def test_provider_http_failure_is_not_a_silent_empty_result() -> None:
+    transport = _FakeTransport([HttpResponse(status_code=500, text="")])
+    provider = EuropePmcProvider(transport, retries=0)
+    with pytest.raises(ProviderError):
+        provider.search(_query())
+
+
+def test_zero_results_is_not_an_error() -> None:
+    transport = _FakeTransport([_page([], hit_count=0, next_cursor="*")])
+    provider = EuropePmcProvider(transport)
+    result = provider.search(_query())
+    assert result.articles == []
+    assert result.provenance.hit_count == 0
+
+
+def test_transport_error_retries_then_raises() -> None:
+    transport = _FakeTransport(
+        [ProviderError("boom"), ProviderError("boom"), ProviderError("boom")]
+    )
+    provider = EuropePmcProvider(transport, retries=2)
+    with pytest.raises(ProviderError):
+        provider.search(_query())
+    assert len(transport.calls) == 3  # initial + 2 retries
+
+
+def test_pagination_stops_and_records_pages() -> None:
+    page1 = _page([_result(id=str(i), pmid=str(i), pmcid=None, doi=f"10.1/{i}") for i in range(2)])
+    transport = _FakeTransport([page1, _EMPTY_PAGE])
+    provider = EuropePmcProvider(transport)
+    result = provider.search(_query(max_results=25))
+    assert result.provenance.pages_fetched == 2  # fetched a second (empty) page, then stopped
+    assert len(result.articles) == 2
+
+
+# --- deduplication -----------------------------------------------------------
+
+
+def _rec(pmid=None, pmcid=None, doi=None, title="A paper", **over) -> ArticleRecord:
+    return ArticleRecord(
+        identifiers=ArticleIdentifier(pmid=pmid, pmcid=pmcid, doi=doi), title=title, **over
+    )
+
+
+def test_dedup_by_strong_identifier() -> None:
+    # Same paper indexed twice: once with PMCID+PMID, once with only PMID.
+    merged = deduplicate_articles(
+        [_rec(pmid="111", pmcid="PMC111", doi="10.1/a"), _rec(pmid="111", abstract="filled in")]
+    )
+    assert len(merged) == 1
+    assert merged[0].identifiers.pmcid == "PMC111"
+    assert merged[0].abstract == "filled in"  # gap filled from the duplicate
+
+
+def test_dedup_by_normalized_doi() -> None:
+    merged = deduplicate_articles(
+        [_rec(doi="10.1000/ABC"), _rec(doi="https://doi.org/10.1000/abc")]
+    )
+    assert len(merged) == 1
+
+
+def test_title_fallback_dedup() -> None:
+    merged = deduplicate_articles([_rec(title="TERT Escape!"), _rec(title="tert   escape")])
+    assert len(merged) == 1
+
+
+def test_distinct_papers_are_not_merged() -> None:
+    merged = deduplicate_articles(
+        [_rec(pmid="1", title="Paper A"), _rec(pmid="2", title="Paper B")]
+    )
+    assert len(merged) == 2
+
+
+def test_retracted_metadata_is_preserved() -> None:
+    transport = _FakeTransport(
+        [_page([_result(pubTypeList={"pubType": ["Retracted Publication"]})]), _EMPTY_PAGE]
+    )
+    provider = EuropePmcProvider(transport)
+    assert provider.search(_query()).articles[0].is_retracted is True
+
+
+# --- relevance ---------------------------------------------------------------
+
+
+def test_relevance_breakdown_is_transparent() -> None:
+    art = _rec(
+        pmid="1",
+        title="TERT in bovine preadipocyte senescence",
+        abstract="bovine preadipocyte TERT CDK4 escape",
+        has_full_text=True,
+    )
+    rel = score_relevance(art, _query())
+    names = {c.name for c in rel.breakdown}
+    assert {"query_terms", "title_match", "species", "genes", "availability"} <= names
+    assert rel.total_score > 0
+    assert "tert" in [m.lower() for m in rel.matched_terms] or "bovine" in rel.matched_terms
+    assert rel.missing_critical_filters == []  # species/cell_types/genes all matched
+
+
+def test_missing_critical_filter_is_flagged() -> None:
+    art = _rec(pmid="1", title="An unrelated study", abstract="nothing relevant here")
+    rel = score_relevance(art, _query())
+    assert set(rel.missing_critical_filters) == {"species", "cell_types", "genes"}
+
+
+def test_relevance_is_not_an_evidence_tier() -> None:
+    # RelevanceResult exposes only search-relevance fields — no confidence/tier that
+    # could be mistaken for scientific strength.
+    art = _rec(pmid="1", title="TERT bovine", abstract="bovine TERT")
+    rel = score_relevance(art, _query())
+    fields = set(type(rel).model_fields)
+    assert "confidence" not in fields and "tier" not in fields and "evidence" not in fields
+
+
+def test_discover_returns_relevance_ranked_bundle() -> None:
+    high = _result(pmid="1", pmcid=None, doi="10.1/1")
+    low = _result(
+        pmid="2",
+        pmcid=None,
+        doi="10.1/2",
+        title="Unrelated topic",
+        abstractText="no relevant terms",
+        isOpenAccess="N",
+        inPMC="N",
+        hasSuppl="N",
+    )
+    transport = _FakeTransport([_page([low, high], hit_count=2), _EMPTY_PAGE])
+    bundle = discover(_query(), EuropePmcProvider(transport))
+    assert [r.article.pmid for r in bundle.relevance] == ["1", "2"]  # ranked high-first
+    assert bundle.claims == [] and bundle.measurements == []  # discovery only
