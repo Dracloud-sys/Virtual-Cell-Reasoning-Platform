@@ -13,8 +13,11 @@ from virtualcell.literature.contracts import (
     ArticleIdentifier,
     ArticleRecord,
     LiteratureQuery,
+    PublicationNotice,
+    PublicationNoticeKind,
 )
 from virtualcell.literature.discovery import (
+    QueryBuildError,
     build_europe_pmc_query,
     deduplicate_articles,
     discover,
@@ -108,6 +111,40 @@ def test_terms_mode_ands_tokens_for_recall() -> None:
     built = build_europe_pmc_query(_query())  # default QueryMode.TERMS
     assert built.query_mode.value == "terms"
     assert '("spontaneous" AND "immortalization")' in built.query_string
+
+
+def test_terms_mode_drops_stopwords_from_a_prose_question() -> None:
+    built = build_europe_pmc_query(
+        LiteratureQuery(query_text="Find papers about TERT in bovine cells")
+    )
+    assert built.tokens_kept == ["TERT", "bovine", "cells"]
+    assert set(built.tokens_dropped) == {"Find", "papers", "about", "in"}
+    assert built.query_string == '("TERT" AND "bovine" AND "cells")'
+
+
+def test_terms_mode_preserves_gene_symbols_across_punctuation() -> None:
+    built = build_europe_pmc_query(LiteratureQuery(query_text="TERT/CDK4-mediated immortalization"))
+    assert built.tokens_kept == ["TERT", "CDK4", "mediated", "immortalization"]
+
+
+def test_terms_mode_preserves_marker_tokens() -> None:
+    built = build_europe_pmc_query(LiteratureQuery(query_text="p16, p21 and SA-beta-gal"))
+    assert "p16" in built.tokens_kept and "p21" in built.tokens_kept
+    assert "and" in [t.lower() for t in built.tokens_dropped]
+
+
+def test_stopword_only_query_is_rejected() -> None:
+    with pytest.raises(QueryBuildError, match="no searchable tokens"):
+        build_europe_pmc_query(LiteratureQuery(query_text="find the papers about it"))
+
+
+def test_token_provenance_is_recorded_on_the_search() -> None:
+    transport = _FakeTransport([_page([_result()]), _EMPTY_PAGE])
+    query = LiteratureQuery(query_text="Find papers about TERT")
+    prov = EuropePmcProvider(transport).search(query).provenance
+    assert prov.query_tokens_kept == ["TERT"]
+    assert set(prov.query_tokens_dropped) == {"Find", "papers", "about"}
+    assert prov.query_mode == "terms"
 
 
 def test_phrase_mode_keeps_the_exact_phrase() -> None:
@@ -349,6 +386,76 @@ def test_distinct_papers_are_not_merged() -> None:
         [_rec(pmid="1", title="Paper A"), _rec(pmid="2", title="Paper B")]
     )
     assert len(result.articles) == 2
+
+
+def test_merge_preserves_notices_from_the_secondary_record() -> None:
+    correction = PublicationNotice(kind=PublicationNoticeKind.CORRECTION, reference="9")
+    result = deduplicate_articles(
+        [_rec(pmid="1"), _rec(pmid="1", notices=[correction])]  # notice only on the 2nd
+    )
+    assert result.articles[0].notices == [correction]  # not lost by the merge
+
+
+def test_merge_unions_publication_types_without_duplicates() -> None:
+    result = deduplicate_articles(
+        [
+            _rec(pmid="1", publication_types=["research-article", "review"]),
+            _rec(pmid="1", publication_types=["review", "preprint"]),
+        ]
+    )
+    assert result.articles[0].publication_types == ["research-article", "review", "preprint"]
+
+
+def test_merge_deduplicates_identical_notices() -> None:
+    notice = PublicationNotice(kind=PublicationNoticeKind.RETRACTION, reference="7")
+    result = deduplicate_articles(
+        [_rec(pmid="1", notices=[notice]), _rec(pmid="1", notices=[notice])]
+    )
+    assert len(result.articles[0].notices) == 1
+
+
+def test_merge_reports_conflicting_scalar_metadata() -> None:
+    result = deduplicate_articles(
+        [_rec(pmid="1", title="Title A"), _rec(pmid="1", title="Title B")]
+    )
+    assert result.articles[0].title == "Title A"  # first wins, not silently overwritten
+    assert any("conflicting title" in c for c in result.conflicts)
+
+
+def test_merge_keeps_retraction_flag_and_notice_consistent() -> None:
+    retracted = _rec(
+        pmid="1",
+        is_retracted=True,
+        notices=[PublicationNotice(kind=PublicationNoticeKind.RETRACTION)],
+    )
+    result = deduplicate_articles([_rec(pmid="1"), retracted])
+    assert result.articles[0].is_retracted is True
+    assert result.articles[0].notices[0].kind is PublicationNoticeKind.RETRACTION
+
+
+# --- provider response shape --------------------------------------------------
+
+
+def test_non_object_result_list_is_a_provider_error() -> None:
+    body = json.dumps({"hitCount": 1, "resultList": []})  # resultList must be an object
+    transport = _FakeTransport([HttpResponse(status_code=200, text=body)])
+    with pytest.raises(ProviderError, match="resultList"):
+        EuropePmcProvider(transport).search(_query())
+
+
+def test_non_list_result_is_a_provider_error() -> None:
+    body = json.dumps({"hitCount": 1, "resultList": {"result": "broken"}})
+    transport = _FakeTransport([HttpResponse(status_code=200, text=body)])
+    with pytest.raises(ProviderError, match="was not a list"):
+        EuropePmcProvider(transport).search(_query())
+
+
+def test_non_object_row_is_skipped_not_fatal() -> None:
+    body = json.dumps({"hitCount": 1, "resultList": {"result": ["broken-row"]}})
+    transport = _FakeTransport([HttpResponse(status_code=200, text=body)])
+    result = EuropePmcProvider(transport).search(_query())
+    assert result.articles == []
+    assert result.warnings and "skipped malformed record" in result.warnings[0]
 
 
 def test_retracted_metadata_is_preserved() -> None:

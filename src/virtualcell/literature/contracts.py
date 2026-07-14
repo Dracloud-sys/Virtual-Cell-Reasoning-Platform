@@ -9,12 +9,16 @@ whole point of the pipeline:
    :class:`ExtractedClaimCandidate`, :class:`AuthorInterpretationCandidate`) — what
    a paper *appears* to report, each anchored to a :class:`SourceLocator`. A
    candidate is a proposal, not a fact.
-3. **Verification** (:class:`VerificationDecision`) — a deterministic gate that
-   decides whether a candidate is confirmed against its source text.
+3. **Verification** (:class:`VerificationDecision`) — a gate that decides whether a
+   candidate is confirmed against its source text. This is the **single
+   authoritative home of verification status**: a candidate carries none of its own,
+   and one with no decision is implicitly unverified.
 
 ``extraction_confidence`` (how sure the extractor is about the mapping),
-``verification_status`` (whether the source confirms it), and a downstream
+``VerificationDecision.status`` (whether the source confirms it), and a downstream
 evidence tier (how strongly reasoning should weight it) are three independent axes.
+A candidate's ``candidate_id`` is derived from its asserted content and source — it
+is never assigned, so a decision can never be pinned to a forged or drifted proposal.
 """
 
 from __future__ import annotations
@@ -183,6 +187,10 @@ class ProviderProvenance(BaseModel):
     provider: str
     query_sent: str
     query_mode: str | None = None
+    # Which query_text tokens were searched and which were dropped (e.g. stopwords),
+    # so a surprising result set can be explained from the audit trail alone.
+    query_tokens_kept: list[str] = Field(default_factory=list)
+    query_tokens_dropped: list[str] = Field(default_factory=list)
     retrieved_at: datetime
     hit_count: int | None = None
     page_size: int | None = None
@@ -274,28 +282,44 @@ class SourceLocator(BaseModel):
         return self
 
 
+# Operational fields excluded from the identity hash: they describe *how sure* an
+# extractor was, not *what was claimed*, so they must not fork a candidate's identity.
+_ID_EXCLUDED_FIELDS = frozenset({"candidate_id", "extraction_confidence"})
+
+
 def _deterministic_candidate_id(model: BaseModel) -> str:
-    """A stable SHA-256 id over a candidate's *content* (excluding the id and the
-    mutable verification status), so re-running extraction on the same source span
-    yields the same id — an auditable, reproducible reference."""
-    payload = model.model_dump(mode="json", exclude={"candidate_id", "verification_status"})
+    """A stable SHA-256 id over a candidate's asserted content + source identity.
+
+    ``extraction_confidence`` is excluded (re-scoring the same proposal must not
+    change its id). ``extraction_method`` is **included**: a deterministic parse and
+    an LLM proposal of the same fact are different *proposals* with different trust
+    characteristics, and verification must be able to accept one and reject the other
+    independently — merging them would hide which extractor produced what.
+    """
+    payload = model.model_dump(mode="json", exclude=set(_ID_EXCLUDED_FIELDS))
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()[:32]
 
 
 class _Candidate(BaseModel):
-    """Shared candidate behavior: a content-derived ``candidate_id`` and a
-    proposal-time ``verification_status`` (authoritative status lives on the
-    :class:`VerificationDecision`)."""
+    """Shared candidate behavior: an extraction *proposal* with a content-derived id.
+
+    A candidate deliberately carries **no verification status** — status has exactly
+    one authoritative home, :class:`VerificationDecision`. A candidate with no
+    decision is implicitly unverified.
+    """
 
     candidate_id: str = ""
     extraction_method: ExtractionMethod
     extraction_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
-    verification_status: VerificationStatus = VerificationStatus.PENDING_REVIEW
 
     @model_validator(mode="after")
     def _ensure_candidate_id(self) -> _Candidate:
+        expected = _deterministic_candidate_id(self)
         if not self.candidate_id:
-            self.candidate_id = _deterministic_candidate_id(self)
+            self.candidate_id = expected
+        elif self.candidate_id != expected:
+            # Ids are derived, never assigned: a forged/stale id is rejected.
+            raise ValueError("candidate_id does not match the candidate's content")
         return self
 
 
@@ -359,18 +383,36 @@ class RelevanceResult(BaseModel):
 # --- verification & bundle ---------------------------------------------------
 
 
-class VerificationDecision(BaseModel):
-    """The deterministic gate's decision about one candidate, referenced by id.
+class CandidateKind(StrEnum):
+    """Which candidate collection a decision refers to."""
 
-    ``VerificationDecision`` is the *authoritative* source of a candidate's verified
-    status; a candidate carries only a proposal-time status, and the bundle rejects
-    any disagreement (see :meth:`LiteratureEvidenceBundle._check_candidate_linkage`).
+    CLAIM = "claim"
+    MEASUREMENT = "measurement"
+    AUTHOR_INTERPRETATION = "author_interpretation"
+
+
+class VerificationDecision(BaseModel):
+    """The gate's decision about one candidate — the *only* home of verified status.
+
+    A candidate carries no status of its own; one with no decision is implicitly
+    unverified. At most one decision may exist per candidate.
     """
 
     candidate_id: str
-    candidate_kind: str  # "measurement" | "claim" | "author_interpretation"
+    candidate_kind: CandidateKind
     status: VerificationStatus
     reasons: list[str] = Field(default_factory=list)
+    verifier: str  # who/what decided, e.g. "deterministic_source_match" or "human:alice"
+    method: str | None = None
+    verified_at: datetime
+    source_text_hash: str | None = None  # the source span the decision was made against
+
+    @field_validator("verified_at")
+    @classmethod
+    def _require_tz(cls, v: datetime) -> datetime:
+        if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
+            raise ValueError("verified_at must be timezone-aware")
+        return v
 
 
 class DiscoveryRunStatus(StrEnum):
@@ -406,21 +448,32 @@ class LiteratureEvidenceBundle(BaseModel):
 
     @model_validator(mode="after")
     def _check_candidate_linkage(self) -> LiteratureEvidenceBundle:
-        candidates = [*self.claims, *self.measurements, *self.author_interpretations]
-        ids = [c.candidate_id for c in candidates]
-        duplicates = sorted({i for i in ids if ids.count(i) > 1})
-        if duplicates:
-            raise ValueError(f"duplicate candidate_id(s): {duplicates}")
-        status_by_id = {c.candidate_id: c.verification_status for c in candidates}
+        kind_of: dict[str, CandidateKind] = {}
+        for kind, items in (
+            (CandidateKind.CLAIM, self.claims),
+            (CandidateKind.MEASUREMENT, self.measurements),
+            (CandidateKind.AUTHOR_INTERPRETATION, self.author_interpretations),
+        ):
+            for candidate in items:
+                if candidate.candidate_id in kind_of:
+                    raise ValueError(f"duplicate candidate_id: {candidate.candidate_id!r}")
+                kind_of[candidate.candidate_id] = kind
+
+        decided: set[str] = set()
         for decision in self.verification_decisions:
-            if decision.candidate_id not in status_by_id:
+            if decision.candidate_id not in kind_of:
                 raise ValueError(
                     f"verification decision references unknown candidate_id "
                     f"{decision.candidate_id!r}"
                 )
-            if status_by_id[decision.candidate_id] != decision.status:
+            if kind_of[decision.candidate_id] is not decision.candidate_kind:
                 raise ValueError(
-                    f"candidate {decision.candidate_id!r} verification_status disagrees with "
-                    "its VerificationDecision (the decision is authoritative)"
+                    f"decision candidate_kind {decision.candidate_kind.value!r} does not match "
+                    f"candidate {decision.candidate_id!r}"
                 )
+            if decision.candidate_id in decided:
+                raise ValueError(
+                    f"more than one verification decision for candidate {decision.candidate_id!r}"
+                )
+            decided.add(decision.candidate_id)
         return self

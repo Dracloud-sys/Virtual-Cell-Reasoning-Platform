@@ -28,11 +28,25 @@ from virtualcell.literature.providers.base import LiteratureProvider
 _CRITICAL = ("species", "cell_types", "genes")
 
 
+# A conservative, deterministic English function-word/query-frame list. It contains no
+# biology: gene symbols, markers and numbers are never dropped.
+_STOPWORDS = frozenset(
+    """
+    a an the and or of in on at for with to from by is are was were be been being
+    do does did can could would should will what which who how why when where that
+    this these those it its as into about find finds paper papers study studies
+    show shows please we i us using use related regarding any all
+    """.split()  # noqa: SIM905 - a readable word list, not a literal to hand-maintain
+)
+
+
 class BuiltQuery(BaseModel):
-    """A provider query string plus the mode and expansions applied (audit trail)."""
+    """A provider query string plus the mode, tokens and expansions applied (audit trail)."""
 
     query_string: str
     query_mode: QueryMode
+    tokens_kept: list[str] = Field(default_factory=list)
+    tokens_dropped: list[str] = Field(default_factory=list)
     expansions: dict[str, list[str]] = Field(default_factory=dict)
 
 
@@ -49,25 +63,47 @@ def _or_group(terms: list[str]) -> tuple[str, list[str]] | None:
     return "(" + " OR ".join(quoted) + ")", used
 
 
-def _query_text_clause(query: LiteratureQuery) -> str:
-    """The ``query_text`` clause, per the chosen (deterministic) mode."""
-    if query.query_mode == QueryMode.PHRASE:
-        return f'("{_sanitize(query.query_text)}")'
-    # TERMS: AND the sanitized word tokens for recall on natural-language questions.
-    tokens = [s for tok in query.query_text.split() if (s := _sanitize(tok))]
-    if not tokens:  # query_text is validated to have content, but stay defensive
-        return f'("{_sanitize(query.query_text)}")'
-    return "(" + " AND ".join(f'"{t}"' for t in tokens) + ")"
+class QueryBuildError(ValueError):
+    """Raised when a query_text has no searchable tokens left after normalization."""
+
+
+def _split_tokens(text: str) -> list[str]:
+    """Normalize punctuation and split into alphanumeric tokens.
+
+    Separators (``/``, ``-``, commas, …) split, so ``TERT/CDK4-mediated`` yields
+    ``TERT``, ``CDK4``, ``mediated`` and ``SA-beta-gal`` yields its parts — each is a
+    real index term. Digits are preserved (``p16``, ``p21`` survive intact).
+    """
+    return [t for t in re.split(r"[^A-Za-z0-9]+", text) if len(t) >= 2]
+
+
+def _terms_clause(query: LiteratureQuery) -> tuple[str, list[str], list[str]]:
+    """TERMS mode: AND the meaningful tokens, dropping deterministic stopwords."""
+    tokens = _split_tokens(query.query_text)
+    kept = [t for t in tokens if t.lower() not in _STOPWORDS]
+    dropped = [t for t in tokens if t.lower() in _STOPWORDS]
+    if not kept:
+        raise QueryBuildError(
+            "query_text has no searchable tokens after stopword removal "
+            f"(dropped: {dropped}); use query_mode='phrase' or a more specific query"
+        )
+    return "(" + " AND ".join(f'"{t}"' for t in kept) + ")", kept, dropped
 
 
 def build_europe_pmc_query(query: LiteratureQuery) -> BuiltQuery:
     """Build a deterministic Europe PMC query from a :class:`LiteratureQuery`.
 
-    ``query_text`` is turned into a clause per :class:`QueryMode` (terms vs phrase);
-    only caller-provided synonyms are OR-joined (the builder never invents synonyms),
-    and both the mode and every expansion applied are recorded.
+    ``query_text`` becomes a clause per :class:`QueryMode`: ``terms`` normalizes
+    punctuation, drops a fixed English stopword list and ANDs what remains (so a prose
+    question does not turn every function word into a filter); ``phrase`` keeps the
+    exact phrase. Only caller-provided synonyms are OR-joined (no invented synonyms),
+    and the mode, kept/dropped tokens and expansions are all recorded.
     """
-    parts: list[str] = [_query_text_clause(query)]
+    if query.query_mode == QueryMode.PHRASE:
+        clause, kept, dropped = f'("{_sanitize(query.query_text)}")', [], []
+    else:
+        clause, kept, dropped = _terms_clause(query)
+    parts: list[str] = [clause]
     expansions: dict[str, list[str]] = {}
     for field, terms in (
         ("species", query.species),
@@ -88,7 +124,11 @@ def build_europe_pmc_query(query: LiteratureQuery) -> BuiltQuery:
     if query.open_access_only:
         parts.append("OPEN_ACCESS:Y")
     return BuiltQuery(
-        query_string=" AND ".join(parts), query_mode=query.query_mode, expansions=expansions
+        query_string=" AND ".join(parts),
+        query_mode=query.query_mode,
+        tokens_kept=kept,
+        tokens_dropped=dropped,
+        expansions=expansions,
     )
 
 
@@ -122,25 +162,49 @@ def _strong_conflict(a: ArticleRecord, b: ArticleRecord) -> list[str]:
     return reasons
 
 
-def _merge(primary: ArticleRecord, other: ArticleRecord) -> ArticleRecord:
-    """Fill gaps in ``primary`` from ``other`` without overwriting present fields."""
+def _union(first: list, second: list) -> list:
+    """Order-preserving union (first wins ordering; duplicates dropped)."""
+    merged = list(first)
+    for item in second:
+        if item not in merged:
+            merged.append(item)
+    return merged
+
+
+def _merge(primary: ArticleRecord, other: ArticleRecord) -> tuple[ArticleRecord, list[str]]:
+    """Merge ``other`` into ``primary``, returning the record and any conflict notes.
+
+    Gaps are filled but present values are never overwritten; **list metadata is
+    unioned** (a correction notice found only on the second record must survive), and
+    a disagreement between two present scalars is reported rather than hidden.
+    """
+    warnings: list[str] = []
     update: dict = {}
+
     ident = primary.identifiers.model_copy()
     for attr in ("doi", "pmid", "pmcid", "provider_id"):
         if getattr(ident, attr) is None and getattr(other.identifiers, attr) is not None:
             setattr(ident, attr, getattr(other.identifiers, attr))
     update["identifiers"] = ident
+
     for attr in ("title", "abstract", "journal", "publication_year", "publication_status"):
-        if getattr(primary, attr) in (None, "") and getattr(other, attr) not in (None, ""):
-            update[attr] = getattr(other, attr)
+        mine, theirs = getattr(primary, attr), getattr(other, attr)
+        if mine in (None, "") and theirs not in (None, ""):
+            update[attr] = theirs
+        elif mine not in (None, "") and theirs not in (None, "") and mine != theirs:
+            warnings.append(f"conflicting {attr} while merging duplicates; kept {mine!r}")
+
     if not primary.authors and other.authors:
         update["authors"] = other.authors
+    # List metadata is unioned so a signal present on only one record is not lost.
+    update["publication_types"] = _union(primary.publication_types, other.publication_types)
+    update["notices"] = _union(primary.notices, other.notices)
     # Retraction / availability are OR-merged: a positive signal from either wins.
     update["is_retracted"] = primary.is_retracted or other.is_retracted
     update["has_full_text"] = primary.has_full_text or other.has_full_text
     update["has_supplementary"] = primary.has_supplementary or other.has_supplementary
     update["is_open_access"] = primary.is_open_access or other.is_open_access
-    return primary.model_copy(update=update)
+    return primary.model_copy(update=update), warnings
 
 
 class DedupResult(BaseModel):
@@ -184,7 +248,8 @@ def deduplicate_articles(articles: list[ArticleRecord]) -> DedupResult:
         else:
             for reason in _strong_conflict(result[found], article):
                 conflicts.append(f"merged records with conflicting identifiers: {reason}")
-            result[found] = _merge(result[found], article)
+            result[found], merge_warnings = _merge(result[found], article)
+            conflicts.extend(merge_warnings)
 
         for key in _strong_keys(result[found]):
             strong_index.setdefault(key, found)

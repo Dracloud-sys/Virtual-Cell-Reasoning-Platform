@@ -138,7 +138,41 @@ def test_candidate_id_is_deterministic_and_content_derived() -> None:
     c = _measurement(value=9.9)
     assert a.candidate_id and a.candidate_id == b.candidate_id  # same content -> same id
     assert a.candidate_id != c.candidate_id  # different content -> different id
-    assert a.verification_status is VerificationStatus.PENDING_REVIEW
+
+
+def test_candidate_id_ignores_operational_fields() -> None:
+    # extraction_confidence describes how sure the extractor was, not what was
+    # claimed — re-scoring the same proposal must not fork its identity.
+    assert (
+        _measurement(extraction_confidence=0.5).candidate_id
+        == _measurement(extraction_confidence=0.9).candidate_id
+    )
+
+
+def test_candidate_id_changes_with_source() -> None:
+    other_source = SourceLocator(
+        article=ArticleIdentifier(pmid="2"),  # different article
+        source_kind=SourceKind.TABLE,
+        source_text="TERT 2.4",
+    )
+    assert _measurement().candidate_id != _measurement(source_locator=other_source).candidate_id
+
+
+def test_forged_candidate_id_is_rejected() -> None:
+    with pytest.raises(ValidationError, match="does not match"):
+        _measurement(candidate_id="forged")
+
+
+def test_candidate_id_survives_json_round_trip() -> None:
+    a = _measurement()
+    restored = ExtractedMeasurementCandidate.model_validate(a.model_dump(mode="json"))
+    assert restored.candidate_id == a.candidate_id
+    assert restored == a
+
+
+def test_candidate_carries_no_verification_status() -> None:
+    # Status has exactly one home: VerificationDecision. A candidate is a proposal.
+    assert "verification_status" not in ExtractedMeasurementCandidate.model_fields
 
 
 def test_two_candidates_from_one_source_have_distinct_ids() -> None:
@@ -173,6 +207,18 @@ def _bundle(**over) -> LiteratureEvidenceBundle:
     return LiteratureEvidenceBundle(**kw)
 
 
+def _decision(candidate_id: str, *, kind="measurement", **over) -> VerificationDecision:
+    kw = dict(
+        candidate_id=candidate_id,
+        candidate_kind=kind,
+        status=VerificationStatus.MACHINE_VERIFIED,
+        verifier="deterministic_source_match",
+        verified_at=datetime(2024, 1, 1, tzinfo=UTC),
+    )
+    kw.update(over)
+    return VerificationDecision(**kw)
+
+
 def test_bundle_rejects_duplicate_candidate_ids() -> None:
     m = _measurement()
     with pytest.raises(ValidationError, match="duplicate candidate_id"):
@@ -181,45 +227,41 @@ def test_bundle_rejects_duplicate_candidate_ids() -> None:
 
 def test_bundle_rejects_decision_for_unknown_candidate() -> None:
     with pytest.raises(ValidationError, match="unknown candidate_id"):
-        _bundle(
-            verification_decisions=[
-                VerificationDecision(
-                    candidate_id="missing",
-                    candidate_kind="measurement",
-                    status=VerificationStatus.MACHINE_VERIFIED,
-                )
-            ]
-        )
+        _bundle(verification_decisions=[_decision("missing")])
 
 
-def test_bundle_rejects_status_disagreement() -> None:
-    m = _measurement()  # pending_review
-    with pytest.raises(ValidationError, match="disagrees"):
+def test_candidate_without_a_decision_is_allowed_and_unverified() -> None:
+    bundle = _bundle(measurements=[_measurement()])
+    assert bundle.verification_decisions == []  # no decision => implicitly unverified
+
+
+def test_verified_decision_on_an_undecorated_candidate_is_allowed() -> None:
+    # The real verifier flow: the candidate is just a proposal; the decision alone
+    # carries the verified status.
+    m = _measurement()
+    bundle = _bundle(measurements=[m], verification_decisions=[_decision(m.candidate_id)])
+    assert bundle.verification_decisions[0].status is VerificationStatus.MACHINE_VERIFIED
+    assert LiteratureEvidenceBundle.model_validate(bundle.model_dump(mode="json")) == bundle
+
+
+def test_bundle_rejects_duplicate_decisions_for_one_candidate() -> None:
+    m = _measurement()
+    with pytest.raises(ValidationError, match="more than one verification decision"):
         _bundle(
             measurements=[m],
-            verification_decisions=[
-                VerificationDecision(
-                    candidate_id=m.candidate_id,
-                    candidate_kind="measurement",
-                    status=VerificationStatus.MACHINE_VERIFIED,  # candidate is still pending
-                )
-            ],
+            verification_decisions=[_decision(m.candidate_id), _decision(m.candidate_id)],
         )
 
 
-def test_bundle_accepts_consistent_decision() -> None:
-    m = _measurement(verification_status=VerificationStatus.MACHINE_VERIFIED)
-    bundle = _bundle(
-        measurements=[m],
-        verification_decisions=[
-            VerificationDecision(
-                candidate_id=m.candidate_id,
-                candidate_kind="measurement",
-                status=VerificationStatus.MACHINE_VERIFIED,
-            )
-        ],
-    )
-    assert LiteratureEvidenceBundle.model_validate(bundle.model_dump(mode="json")) == bundle
+def test_bundle_rejects_wrong_candidate_kind() -> None:
+    m = _measurement()
+    with pytest.raises(ValidationError, match="candidate_kind"):
+        _bundle(measurements=[m], verification_decisions=[_decision(m.candidate_id, kind="claim")])
+
+
+def test_decision_verified_at_requires_timezone() -> None:
+    with pytest.raises(ValidationError):
+        _decision("x", verified_at=datetime(2024, 1, 1))
 
 
 def test_provider_provenance_requires_timezone() -> None:

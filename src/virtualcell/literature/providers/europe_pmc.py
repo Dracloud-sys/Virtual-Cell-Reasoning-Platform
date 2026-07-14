@@ -37,7 +37,7 @@ from virtualcell.literature.contracts import (
     PublicationNotice,
     PublicationNoticeKind,
 )
-from virtualcell.literature.discovery import build_europe_pmc_query
+from virtualcell.literature.discovery import BuiltQuery, build_europe_pmc_query
 from virtualcell.literature.providers.base import (
     HttpResponse,
     HttpTransport,
@@ -110,12 +110,26 @@ class EuropePmcProvider:
             raise ProviderError("europe_pmc response was not a JSON object")
         return data
 
+    @staticmethod
+    def _results(data: dict) -> list:
+        """Validate the nested response shape; a bad shape is a provider failure.
+
+        (A bad *row* inside a well-shaped list is skippable — see ``_search``.)
+        """
+        result_list = data.get("resultList", {})
+        if not isinstance(result_list, dict):
+            raise ProviderError("europe_pmc resultList was not an object")
+        results = result_list.get("result", []) or []
+        if not isinstance(results, list):
+            raise ProviderError("europe_pmc resultList.result was not a list")
+        return results
+
     # -- search -------------------------------------------------------------
 
     def search(self, query: LiteratureQuery) -> LiteratureSearchResult:
         built = build_europe_pmc_query(query)
         try:
-            return self._search(query, built.query_string)
+            return self._search(query, built)
         except ProviderError as exc:
             # Attach provider/query context so callers stay provider-agnostic.
             if exc.query_sent is None:
@@ -124,7 +138,7 @@ class EuropePmcProvider:
                 exc.provider = self.name
             raise
 
-    def _search(self, query: LiteratureQuery, query_string: str) -> LiteratureSearchResult:
+    def _search(self, query: LiteratureQuery, built: BuiltQuery) -> LiteratureSearchResult:
         retrieved_at = datetime.now(UTC)
         page_size = min(query.max_results, _PAGE_SIZE_CAP)
         articles: list[ArticleRecord] = []
@@ -135,16 +149,19 @@ class EuropePmcProvider:
 
         while len(articles) < query.max_results and pages < self.max_pages:
             url = (
-                f"{_BASE}/search?query={quote(query_string)}"
+                f"{_BASE}/search?query={quote(built.query_string)}"
                 f"&format=json&resultType=core&pageSize={page_size}&cursorMark={quote(cursor)}"
             )
             data = self._parse(self._fetch(url).text)
             hit_count = data.get("hitCount", hit_count)
-            results = data.get("resultList", {}).get("result", []) or []
+            results = self._results(data)
             for raw in results:
+                if not isinstance(raw, dict):
+                    warnings.append(f"skipped malformed record: expected an object, got {raw!r}")
+                    continue
                 try:
                     articles.append(_to_record(raw, retrieved_at))
-                except (ValidationError, ValueError, KeyError, TypeError) as exc:
+                except (ValidationError, ValueError, KeyError, TypeError, AttributeError) as exc:
                     # A single malformed row is skipped with a warning, not fatal.
                     warnings.append(f"skipped malformed record: {exc}")
                 if len(articles) >= query.max_results:
@@ -157,8 +174,10 @@ class EuropePmcProvider:
 
         provenance = ProviderProvenance(
             provider=self.name,
-            query_sent=query_string,
-            query_mode=query.query_mode.value,
+            query_sent=built.query_string,
+            query_mode=built.query_mode.value,
+            query_tokens_kept=built.tokens_kept,
+            query_tokens_dropped=built.tokens_dropped,
             retrieved_at=retrieved_at,
             hit_count=hit_count,
             page_size=page_size,
