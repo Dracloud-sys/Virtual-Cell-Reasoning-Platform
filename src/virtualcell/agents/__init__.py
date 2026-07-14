@@ -10,6 +10,7 @@ from __future__ import annotations
 from virtualcell.agents.genome.agent import GenomeAgent
 from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
 from virtualcell.agents.literature.agent import LiteratureAgent
+from virtualcell.agents.literature_discovery.agent import LiteratureDiscoveryAgent
 from virtualcell.agents.metabolism.agent import MetabolismAgent
 from virtualcell.agents.protein_interaction.agent import ProteinInteractionAgent
 from virtualcell.agents.signaling.agent import SignalingAgent
@@ -23,6 +24,7 @@ registry.register("protein_interaction", ProteinInteractionAgent)
 registry.register("metabolism", MetabolismAgent)
 registry.register("signaling", SignalingAgent)
 registry.register("literature", LiteratureAgent)
+registry.register("literature_discovery", LiteratureDiscoveryAgent)
 registry.register("validation", ValidationAgent)
 registry.register("immortalization_assessment", ImmortalizationAssessmentAgent)
 
@@ -30,6 +32,7 @@ __all__ = [
     "GenomeAgent",
     "ImmortalizationAssessmentAgent",
     "LiteratureAgent",
+    "LiteratureDiscoveryAgent",
     "MetabolismAgent",
     "ProteinInteractionAgent",
     "SignalingAgent",

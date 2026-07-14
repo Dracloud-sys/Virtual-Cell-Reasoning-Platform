@@ -131,6 +131,32 @@ Scope today: this is the *foundation contract plus the first adapter*. It does *
 yet connect a real simulator, robot, or LIMS, and the existing immortalization
 input/API/CLI are unchanged — the canonical schema is additive, not a migration.
 
+## Literature discovery (`virtualcell.literature`)
+
+Automated literature evidence, with one rule above all: **finding/reading a paper is
+not the same as that paper being verified evidence.** The layers are kept distinct so
+a discovery result — or an LLM's reading — can never leak into the graph as fact:
+
+```
+LiteratureAgent (existing)      = retrieval over already-ingested KnowledgeStore entities
+LiteratureDiscoveryAgent (new)  = external paper discovery -> metadata + evidence *candidates*
+Verification layer              = deterministic gate: does a candidate match its source text?
+Canonical ExperimentRun         = verified quantitative observations only
+Knowledge graph                 = reviewed / approved biological claims only
+```
+
+PR8b implements the discovery slice: `literature.contracts` (query, article metadata,
+source-anchored candidates, transparent relevance, verification status, and the
+`LiteratureEvidenceBundle`); a bounded, injectable `EuropePmcProvider` over the official
+public API (no scraping, no paywall circumvention); and deterministic query building,
+deduplication, and relevance scoring. `LiteratureDiscoveryAgent` returns the typed bundle
+in `AgentOutput.result` and **no biological `Claim`s** — discovery metadata is not
+evidence, and `AgentOutput.confidence` is not the relevance score. Nothing here writes to
+the KnowledgeStore. Source-grounded extraction (JATS/tables + an optional structured LLM
+extractor behind a strict schema), the deterministic verification gate, and conversion of
+*verified* measurements to canonical runs are the next slices (PR8c/PR8d); their contracts
+already exist in the bundle. A paper is never treated as true merely because it was read.
+
 ## Orchestration (`virtualcell.orchestration`)
 
 A LangGraph graph that routes a request through the relevant agents and merges

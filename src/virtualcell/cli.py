@@ -209,6 +209,62 @@ def _cmd_assess(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_literature_discover(args: argparse.Namespace) -> int:
+    import json
+
+    from virtualcell.agents.literature_discovery.agent import (
+        LiteratureDiscoveryAgent,
+        LiteratureQueryError,
+    )
+    from virtualcell.core.contracts import AgentInput
+    from virtualcell.literature.providers.base import ProviderError
+
+    context = {
+        "species": args.species or [],
+        "cell_types": args.cell_type or [],
+        "genes": args.gene or [],
+        "phenotypes": args.phenotype or [],
+        "assays": args.assay or [],
+        "year_from": args.year_from,
+        "year_to": args.year_to,
+        "open_access_only": args.open_access_only,
+        "max_results": args.max_results,
+    }
+    agent = LiteratureDiscoveryAgent()
+    try:
+        output = asyncio.run(agent.run(AgentInput(query=args.query, context=context)))
+    except LiteratureQueryError as exc:
+        print(f"invalid query: {exc}")
+        return 1
+    except ProviderError as exc:  # pragma: no cover - defensive; agent already catches
+        print(f"provider error: {exc}")
+        return 1
+
+    result = output.result or {}
+    if args.output:
+        Path(args.output).write_text(
+            json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        print(f"wrote discovery bundle to {args.output}")
+        return 0
+    if args.format == "json":
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0
+
+    prov = result.get("provider_provenance", {})
+    print(
+        f"provider: {prov.get('provider')}   hits: {prov.get('hit_count')}   note: {output.notes}"
+    )
+    for rel in result.get("relevance", []):
+        ident = rel.get("article", {})
+        key = (
+            ident.get("pmcid") or ident.get("pmid") or ident.get("doi") or ident.get("provider_id")
+        )
+        missing = rel.get("missing_critical_filters") or "-"
+        print(f"  [{rel.get('total_score'):.2f}] {key}   missing: {missing}")
+    return 0
+
+
 def _cmd_seed(args: argparse.Namespace) -> int:
     from virtualcell.knowledge.sources.base import load_into
 
@@ -325,6 +381,25 @@ def build_parser() -> argparse.ArgumentParser:
     p_assess.add_argument("--format", choices=["json", "text"], default="text")
     p_assess.add_argument("--load", help="merge the seed onto an existing saved graph JSON")
     p_assess.set_defaults(func=_cmd_assess)
+
+    p_lit = sub.add_parser("literature", help="external literature discovery")
+    lit_sub = p_lit.add_subparsers(dest="literature_command", required=True)
+    p_disc = lit_sub.add_parser(
+        "discover", help="discover external papers (metadata + relevance; no claims)"
+    )
+    p_disc.add_argument("--query", required=True, help="research question / query text")
+    p_disc.add_argument("--species", action="append", help="species filter (repeatable)")
+    p_disc.add_argument("--cell-type", action="append", help="cell-type filter (repeatable)")
+    p_disc.add_argument("--gene", action="append", help="gene filter (repeatable)")
+    p_disc.add_argument("--phenotype", action="append", help="phenotype filter (repeatable)")
+    p_disc.add_argument("--assay", action="append", help="assay filter (repeatable)")
+    p_disc.add_argument("--year-from", type=int)
+    p_disc.add_argument("--year-to", type=int)
+    p_disc.add_argument("--open-access-only", action="store_true")
+    p_disc.add_argument("--max-results", type=int, default=25)
+    p_disc.add_argument("--format", choices=["json", "text"], default="text")
+    p_disc.add_argument("--output", help="write the discovery bundle as UTF-8 JSON to this path")
+    p_disc.set_defaults(func=_cmd_literature_discover)
 
     p_seed = sub.add_parser("seed", help="build a bundled curated seed graph")
     p_seed.add_argument("name", choices=["immortalization"])

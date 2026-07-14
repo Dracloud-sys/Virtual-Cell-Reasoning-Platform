@@ -31,6 +31,24 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **Automated literature discovery — first slice (PR8b).** A new `virtualcell.literature`
+  package that keeps *finding/reading a paper* strictly separate from *verified evidence*.
+  Contracts (`contracts.py`): `LiteratureQuery` (non-empty, bounded), `ArticleRecord`
+  (metadata only — never a biological claim), source-anchored extraction candidates
+  (`ExtractedMeasurement`/`Claim`/`AuthorInterpretation`, each with a `SourceLocator` + text
+  hash, defaulting to `pending_review`), a transparent `RelevanceResult` breakdown (search
+  relevance only), `VerificationStatus`/`VerificationDecision`, and `LiteratureEvidenceBundle`.
+  A bounded, injectable `EuropePmcProvider` (`providers/`) over the official public REST API
+  (no scraping, no paywall circumvention; stdlib `urllib` transport, capped pages/results,
+  bounded retry, explicit timeout, descriptive User-Agent; provider error ≠ zero results).
+  Deterministic `discovery.py`: query building (phrase-quoted, sanitized, only caller-provided
+  synonyms, expansions recorded), dedup (PMCID > PMID > normalized DOI > title fallback), and
+  additive relevance scoring. `LiteratureDiscoveryAgent` (registered as `literature_discovery`)
+  + `virtualcell literature discover` CLI return the typed bundle in `AgentOutput.result` with
+  **no biological `Claim`s** and confidence 0.0 (not the relevance score). The existing
+  `LiteratureAgent` (KnowledgeStore retrieval) is unchanged. Extraction/verification/canonical
+  conversion are the next slices; nothing here writes to the KnowledgeStore. Tests use a fake
+  transport/provider — no network, no LLM.
 - **Canonical experiment schema + immortalization adapter (PR8a, additive).** A new
   source-neutral contract `virtualcell.core.experiment` — `ExperimentRun` / `Observation`
   / scalar `Measurement` (+ `MeasurementQuality`) / `Provenance`, a discriminated

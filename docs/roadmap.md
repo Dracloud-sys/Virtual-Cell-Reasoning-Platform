@@ -224,7 +224,22 @@ Development is **benchmark-first**: fix the questions the platform must answer
   a late DT spike a whole-series median would dilute. Conflict explanations name
   only the markers that actually contributed. `LONGSERIES-IMM-V01` adversarial fixture
   added. `baseline_status` unchanged.
-- ▶ **PR7+ / next** — remaining marker axes used only for *presentation* today
+- ✅ **PR8a — Canonical experiment schema + immortalization adapter (additive).**
+  A source-neutral `core.experiment` contract (`ExperimentRun`/`Observation`/scalar
+  `Measurement`/`Provenance`, a discriminated `TimePoint`, orthogonal
+  `OriginKind` ⟂ `AcquisitionMode`) that simulation and experiment data converge to,
+  plus an immortalization adapter to/from `PassageObservation`. No path migrated.
+- ✅ **PR8b — Automated literature discovery (first slice).** `virtualcell.literature`:
+  contracts (query, article metadata, source-anchored candidates, transparent relevance,
+  verification status, `LiteratureEvidenceBundle`); a bounded, injectable `EuropePmcProvider`
+  over the official public API; deterministic query building / dedup / relevance; and a
+  `LiteratureDiscoveryAgent` (+ `virtualcell literature discover` CLI) returning the typed
+  bundle — **no biological claims, no KnowledgeStore writes**. Discovery is not evidence.
+- ▶ **PR8c/PR8d — extraction + verification + canonical conversion.** Source-grounded
+  JATS/table extraction with an optional strict-schema LLM extractor; a deterministic
+  verification gate; conversion of *verified* measurements to canonical `ExperimentRun`s;
+  reviewed ingestion. Contracts already exist in the bundle.
+- ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional
   grounded **PR5d** LLM narrative (never changes status/tier/citation) is still open.
