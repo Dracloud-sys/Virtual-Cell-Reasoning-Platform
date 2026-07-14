@@ -241,15 +241,22 @@ def _cmd_literature_discover(args: argparse.Namespace) -> int:
         return 1
 
     result = output.result or {}
+    # A provider/network failure exits non-zero so an automation pipeline never reads
+    # it as success; a legitimate zero-result run still exits 0.
+    failed = result.get("run_status") == "provider_error"
+    exit_code = 1 if failed else 0
     if args.output:
         Path(args.output).write_text(
             json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8"
         )
         print(f"wrote discovery bundle to {args.output}")
-        return 0
+        return exit_code
     if args.format == "json":
         print(json.dumps(result, indent=2, ensure_ascii=False))
-        return 0
+        return exit_code
+    if failed:
+        print(f"provider error: {output.notes}")
+        return exit_code
 
     prov = result.get("provider_provenance", {})
     print(

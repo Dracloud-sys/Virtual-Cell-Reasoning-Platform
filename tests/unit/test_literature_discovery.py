@@ -169,6 +169,88 @@ def test_pagination_stops_and_records_pages() -> None:
     assert len(result.articles) == 2
 
 
+# --- provider failure semantics & retry --------------------------------------
+
+
+def test_malformed_json_is_a_provider_error() -> None:
+    transport = _FakeTransport([HttpResponse(status_code=200, text="not json")])
+    with pytest.raises(ProviderError, match="malformed JSON"):
+        EuropePmcProvider(transport).search(_query())
+
+
+def test_transient_status_is_retried_then_succeeds() -> None:
+    transport = _FakeTransport(
+        [HttpResponse(status_code=503, text=""), _page([_result()]), _EMPTY_PAGE]
+    )
+    provider = EuropePmcProvider(transport, retries=2, sleeper=lambda _: None)
+    result = provider.search(_query())
+    assert len(result.articles) == 1
+    assert len(transport.calls) == 3  # 503 retried, then page, then empty page
+
+
+def test_client_4xx_is_not_retried() -> None:
+    transport = _FakeTransport([HttpResponse(status_code=400, text="")])
+    provider = EuropePmcProvider(transport, retries=3, sleeper=lambda _: None)
+    with pytest.raises(ProviderError):
+        provider.search(_query())
+    assert len(transport.calls) == 1  # 4xx: no retry
+
+
+def test_negative_config_is_rejected() -> None:
+    with pytest.raises(ValueError):
+        EuropePmcProvider(retries=-1)
+
+
+def test_provider_error_carries_query_context() -> None:
+    transport = _FakeTransport([HttpResponse(status_code=500, text="")])
+    provider = EuropePmcProvider(transport, retries=0)
+    try:
+        provider.search(_query())
+    except ProviderError as exc:
+        assert exc.provider == "europe_pmc"
+        assert exc.query_sent and "spontaneous immortalization" in exc.query_sent
+    else:  # pragma: no cover
+        raise AssertionError("expected ProviderError")
+
+
+def test_full_text_404_returns_none() -> None:
+    transport = _FakeTransport([HttpResponse(status_code=404, text="")])
+    provider = EuropePmcProvider(transport)
+    assert provider.fetch_open_full_text(ArticleIdentifier(pmcid="PMC1")) is None
+
+
+def test_malformed_row_is_skipped_with_warning() -> None:
+    # A row with no identifiers cannot build an ArticleRecord; it is skipped, not fatal.
+    good = _result()
+    bad = _result(id=None, pmid=None, pmcid=None, doi=None)
+    transport = _FakeTransport([_page([good, bad], hit_count=2), _EMPTY_PAGE])
+    result = EuropePmcProvider(transport).search(_query())
+    assert len(result.articles) == 1
+    assert result.warnings and "skipped" in result.warnings[0]
+
+
+# --- correction / retraction notices -----------------------------------------
+
+
+def test_retraction_notice_sets_flag() -> None:
+    raw = _result(
+        commentCorrectionList={"commentCorrection": [{"type": "Retraction", "id": "999"}]}
+    )
+    transport = _FakeTransport([_page([raw]), _EMPTY_PAGE])
+    art = EuropePmcProvider(transport).search(_query()).articles[0]
+    assert art.is_retracted is True
+    assert art.notices[0].kind.value == "retraction"
+    assert art.notices[0].reference == "999"
+
+
+def test_correction_is_preserved_but_not_a_retraction() -> None:
+    raw = _result(commentCorrectionList={"commentCorrection": [{"type": "Correction", "id": "5"}]})
+    transport = _FakeTransport([_page([raw]), _EMPTY_PAGE])
+    art = EuropePmcProvider(transport).search(_query()).articles[0]
+    assert art.is_retracted is False  # a correction is not a retraction
+    assert art.notices[0].kind.value == "correction"
+
+
 # --- deduplication -----------------------------------------------------------
 
 

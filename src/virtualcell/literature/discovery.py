@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from virtualcell.literature.contracts import (
     ArticleRecord,
+    DiscoveryRunStatus,
     LiteratureEvidenceBundle,
     LiteratureQuery,
     RelevanceComponent,
@@ -270,10 +271,12 @@ def discover(query: LiteratureQuery, provider: LiteratureProvider) -> Literature
         key=lambda r: r.total_score,
         reverse=True,
     )
+    status = DiscoveryRunStatus.SUCCESS if deduped.articles else DiscoveryRunStatus.ZERO_RESULTS
     return LiteratureEvidenceBundle(
         query=query,
         provider_provenance=result.provenance,
+        run_status=status,
         articles=deduped.articles,
         relevance=relevance,
-        warnings=deduped.conflicts,
+        warnings=[*result.warnings, *deduped.conflicts],
     )

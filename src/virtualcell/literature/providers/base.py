@@ -31,7 +31,18 @@ _DEFAULT_TIMEOUT = 10.0
 
 
 class ProviderError(RuntimeError):
-    """A transport/provider failure — distinct from a search that returned no hits."""
+    """A transport/provider failure — distinct from a search that returned no hits.
+
+    Carries optional ``provider``/``query_sent`` context so a caller can build a
+    provider-agnostic failure record without knowing any provider's query syntax.
+    """
+
+    def __init__(
+        self, message: str, *, provider: str | None = None, query_sent: str | None = None
+    ) -> None:
+        super().__init__(message)
+        self.provider = provider
+        self.query_sent = query_sent
 
 
 @dataclass(frozen=True)

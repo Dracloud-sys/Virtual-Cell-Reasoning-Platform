@@ -78,13 +78,13 @@ async def test_agent_returns_typed_bundle_not_claims() -> None:
 
 
 async def test_agent_distinguishes_provider_failure_from_zero_results() -> None:
-    # Provider failure: a warning is present and notes flag the provider error.
+    # Provider failure: run_status is authoritative (not merely a warning string).
     failed = await _agent(_FakeProvider(error=ProviderError("boom"))).run(AgentInput(query="x"))
-    assert failed.result["warnings"]
+    assert failed.result["run_status"] == "provider_error"
     assert failed.notes.startswith("provider_error")
-    # Zero results: a clean empty bundle, no warning.
+    # Zero results: a clean empty bundle with a distinct, non-error status.
     empty = await _agent(_FakeProvider([])).run(AgentInput(query="x"))
-    assert empty.result["warnings"] == []
+    assert empty.result["run_status"] == "zero_results"
     assert empty.result["articles"] == []
     assert "0 article" in empty.notes
 
@@ -140,6 +140,28 @@ def test_cli_literature_discover_text_output(capsys, monkeypatch) -> None:
     rc = main(["literature", "discover", "--query", "TERT senescence"])
     assert rc == 0
     assert "provider: fake" in capsys.readouterr().out
+
+
+def test_cli_provider_failure_exits_nonzero(capsys, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "virtualcell.agents.literature_discovery.agent.EuropePmcProvider",
+        lambda: _FakeProvider(error=ProviderError("network down")),
+    )
+    from virtualcell.cli import main
+
+    rc = main(["literature", "discover", "--query", "TERT"])
+    assert rc == 1  # provider failure must not read as success
+
+
+def test_cli_zero_results_exits_zero(capsys, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "virtualcell.agents.literature_discovery.agent.EuropePmcProvider",
+        lambda: _FakeProvider([]),
+    )
+    from virtualcell.cli import main
+
+    rc = main(["literature", "discover", "--query", "TERT"])
+    assert rc == 0  # a legitimate zero-result run is a success
 
 
 def test_agent_is_registered() -> None:

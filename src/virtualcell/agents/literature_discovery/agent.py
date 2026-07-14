@@ -16,11 +16,12 @@ from pydantic import ValidationError
 from virtualcell.core.agent import AgentContext, BaseAgent
 from virtualcell.core.contracts import AgentInput, AgentOutput
 from virtualcell.literature.contracts import (
+    DiscoveryRunStatus,
     LiteratureEvidenceBundle,
     LiteratureQuery,
     ProviderProvenance,
 )
-from virtualcell.literature.discovery import build_europe_pmc_query, discover
+from virtualcell.literature.discovery import discover
 from virtualcell.literature.providers.base import LiteratureProvider, ProviderError
 from virtualcell.literature.providers.europe_pmc import EuropePmcProvider
 
@@ -71,9 +72,11 @@ class LiteratureDiscoveryAgent(BaseAgent):
         except ProviderError as exc:
             bundle = self._failure_bundle(query, exc)
 
-        provider_failed = bool(bundle.warnings)
-        if provider_failed:
-            notes = f"provider_error: {bundle.warnings[0]}"
+        # Run status — not the presence of warnings — is the authoritative signal.
+        if bundle.run_status is DiscoveryRunStatus.PROVIDER_ERROR:
+            notes = f"provider_error: {bundle.warnings[0] if bundle.warnings else 'unknown'}"
+        elif bundle.run_status is DiscoveryRunStatus.ZERO_RESULTS:
+            notes = "0 articles discovered"
         else:
             notes = f"{len(bundle.articles)} article(s) discovered"
         return AgentOutput(
@@ -87,12 +90,16 @@ class LiteratureDiscoveryAgent(BaseAgent):
     def _failure_bundle(
         self, query: LiteratureQuery, error: ProviderError
     ) -> LiteratureEvidenceBundle:
-        built = build_europe_pmc_query(query)
+        # Provider-agnostic: use the context the ProviderError carries (or fall back
+        # to the raw query text) rather than any provider-specific query builder.
         provenance = ProviderProvenance(
-            provider=getattr(self.provider, "name", "unknown"),
-            query_sent=built.query_string,
+            provider=error.provider or getattr(self.provider, "name", "unknown"),
+            query_sent=error.query_sent or query.query_text,
             retrieved_at=datetime.now(UTC),
         )
         return LiteratureEvidenceBundle(
-            query=query, provider_provenance=provenance, warnings=[str(error)]
+            query=query,
+            provider_provenance=provenance,
+            run_status=DiscoveryRunStatus.PROVIDER_ERROR,
+            warnings=[str(error)],
         )

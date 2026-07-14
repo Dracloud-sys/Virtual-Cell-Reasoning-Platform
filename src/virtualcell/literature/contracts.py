@@ -120,12 +120,29 @@ class ArticleIdentifier(BaseModel):
         return self
 
 
+class PublicationNoticeKind(StrEnum):
+    """A publication-integrity notice. A correction/erratum/EoC is NOT a retraction."""
+
+    RETRACTION = "retraction"
+    CORRECTION = "correction"
+    ERRATUM = "erratum"
+    EXPRESSION_OF_CONCERN = "expression_of_concern"
+
+
+class PublicationNotice(BaseModel):
+    """A minimal typed record of a correction/retraction notice (not the full payload)."""
+
+    kind: PublicationNoticeKind
+    reference: str | None = None  # e.g. the corrective article's id, if given
+
+
 class ArticleRecord(BaseModel):
     """Bibliographic metadata for one article. NOT a biological claim.
 
     A record with no abstract or no authors is still a valid record; the pipeline
     must not fabricate content to fill gaps. Retraction/correction signals from the
-    provider are preserved so downstream review can see them.
+    provider are preserved (``notices``) so downstream review can see them, and a
+    correction is never conflated with a retraction (``is_retracted``).
     """
 
     identifiers: ArticleIdentifier
@@ -140,6 +157,7 @@ class ArticleRecord(BaseModel):
     has_full_text: bool = False
     has_supplementary: bool = False
     is_retracted: bool = False
+    notices: list[PublicationNotice] = Field(default_factory=list)
     provider: str | None = None
     source_url: str | None = None
     retrieved_at: datetime | None = None
@@ -164,10 +182,15 @@ class ProviderProvenance(BaseModel):
 
 
 class LiteratureSearchResult(BaseModel):
-    """The raw (pre-dedup) result a provider returns for one query."""
+    """The raw (pre-dedup) result a provider returns for one query.
+
+    ``warnings`` carries non-fatal issues (e.g. a malformed row skipped rather than
+    failing the whole search); a hard provider failure raises instead.
+    """
 
     provenance: ProviderProvenance
     articles: list[ArticleRecord] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 
 # --- source anchoring & extraction candidates -------------------------------
@@ -335,16 +358,27 @@ class VerificationDecision(BaseModel):
     reasons: list[str] = Field(default_factory=list)
 
 
+class DiscoveryRunStatus(StrEnum):
+    """Machine-readable run outcome so a zero-result run is not confused with failure."""
+
+    SUCCESS = "success"
+    ZERO_RESULTS = "zero_results"
+    PROVIDER_ERROR = "provider_error"
+
+
 class LiteratureEvidenceBundle(BaseModel):
     """The full, auditable output of a literature run.
 
     Discovery fields (query/provenance/articles/relevance) are populated in PR8b;
     the extraction/verification/canonical fields have stable contracts and are
     filled by later slices. This bundle is never auto-written to the KnowledgeStore.
+    ``run_status`` is the authoritative success/failure signal — callers must not
+    infer failure from the presence of ``warnings``.
     """
 
     query: LiteratureQuery
     provider_provenance: ProviderProvenance
+    run_status: DiscoveryRunStatus = DiscoveryRunStatus.SUCCESS
     articles: list[ArticleRecord] = Field(default_factory=list)
     relevance: list[RelevanceResult] = Field(default_factory=list)
     claims: list[ExtractedClaimCandidate] = Field(default_factory=list)

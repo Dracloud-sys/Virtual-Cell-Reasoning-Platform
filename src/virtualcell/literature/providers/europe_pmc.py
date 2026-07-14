@@ -21,8 +21,12 @@ Verified endpoints (see the API docs / a live `resultType=core` response):
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from datetime import UTC, datetime
+from time import sleep
 from urllib.parse import quote
+
+from pydantic import ValidationError
 
 from virtualcell.literature.contracts import (
     ArticleIdentifier,
@@ -30,9 +34,12 @@ from virtualcell.literature.contracts import (
     LiteratureQuery,
     LiteratureSearchResult,
     ProviderProvenance,
+    PublicationNotice,
+    PublicationNoticeKind,
 )
 from virtualcell.literature.discovery import build_europe_pmc_query
 from virtualcell.literature.providers.base import (
+    HttpResponse,
     HttpTransport,
     ProviderError,
     UrllibTransport,
@@ -40,6 +47,9 @@ from virtualcell.literature.providers.base import (
 
 _BASE = "https://www.ebi.ac.uk/europepmc/webservices/rest"
 _PAGE_SIZE_CAP = 100
+# Transient statuses worth a bounded retry (rate limit + server errors). Other 4xx
+# are client errors and are not retried.
+_RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 
 
 class EuropePmcProvider:
@@ -54,49 +64,89 @@ class EuropePmcProvider:
         max_pages: int = 5,
         retries: int = 2,
         timeout: float = 10.0,
+        backoff: float = 0.0,
+        sleeper: Callable[[float], None] = sleep,
     ) -> None:
+        if min(max_pages, retries, timeout, backoff) < 0:
+            raise ValueError("max_pages, retries, timeout and backoff must be non-negative")
         self.transport = transport or UrllibTransport()
         self.max_pages = max_pages
         self.retries = retries
         self.timeout = timeout
+        self.backoff = backoff
+        self.sleeper = sleeper
 
     # -- networking ---------------------------------------------------------
 
-    def _get_with_retry(self, url: str):
+    def _fetch(self, url: str, *, ok_statuses: frozenset[int] = frozenset()) -> HttpResponse:
+        """Fetch with bounded retry on transport errors and transient statuses.
+
+        A non-retryable HTTP error raises ``ProviderError``; statuses in
+        ``ok_statuses`` (e.g. 404 for missing full text) are returned to the caller.
+        """
         last: ProviderError | None = None
-        for _ in range(self.retries + 1):
+        for attempt in range(self.retries + 1):
             try:
-                return self.transport.get(url, timeout=self.timeout)
-            except ProviderError as exc:  # transport failure; bounded retry
+                response = self.transport.get(url, timeout=self.timeout)
+            except ProviderError as exc:
                 last = exc
-        assert last is not None
-        raise last
+            else:
+                if response.ok or response.status_code in ok_statuses:
+                    return response
+                if response.status_code not in _RETRYABLE_STATUS:
+                    raise ProviderError(f"europe_pmc returned HTTP {response.status_code}")
+                last = ProviderError(f"europe_pmc returned HTTP {response.status_code}")
+            if attempt < self.retries:
+                self.sleeper(self.backoff * (attempt + 1))
+        raise last or ProviderError("europe_pmc request failed")
+
+    @staticmethod
+    def _parse(text: str) -> dict:
+        try:
+            data = json.loads(text)
+        except (ValueError, TypeError) as exc:
+            raise ProviderError(f"europe_pmc returned malformed JSON: {exc}") from exc
+        if not isinstance(data, dict):
+            raise ProviderError("europe_pmc response was not a JSON object")
+        return data
 
     # -- search -------------------------------------------------------------
 
     def search(self, query: LiteratureQuery) -> LiteratureSearchResult:
         built = build_europe_pmc_query(query)
+        try:
+            return self._search(query, built.query_string)
+        except ProviderError as exc:
+            # Attach provider/query context so callers stay provider-agnostic.
+            if exc.query_sent is None:
+                exc.query_sent = built.query_string
+            if exc.provider is None:
+                exc.provider = self.name
+            raise
+
+    def _search(self, query: LiteratureQuery, query_string: str) -> LiteratureSearchResult:
         retrieved_at = datetime.now(UTC)
         page_size = min(query.max_results, _PAGE_SIZE_CAP)
         articles: list[ArticleRecord] = []
+        warnings: list[str] = []
         hit_count: int | None = None
         cursor = "*"
         pages = 0
 
         while len(articles) < query.max_results and pages < self.max_pages:
             url = (
-                f"{_BASE}/search?query={quote(built.query_string)}"
+                f"{_BASE}/search?query={quote(query_string)}"
                 f"&format=json&resultType=core&pageSize={page_size}&cursorMark={quote(cursor)}"
             )
-            response = self._get_with_retry(url)
-            if not response.ok:
-                # A non-2xx status is a provider failure, never a silent empty result.
-                raise ProviderError(f"europe_pmc search returned HTTP {response.status_code}")
-            data = json.loads(response.text)
+            data = self._parse(self._fetch(url).text)
             hit_count = data.get("hitCount", hit_count)
             results = data.get("resultList", {}).get("result", []) or []
             for raw in results:
-                articles.append(_to_record(raw, retrieved_at))
+                try:
+                    articles.append(_to_record(raw, retrieved_at))
+                except (ValidationError, ValueError, KeyError, TypeError) as exc:
+                    # A single malformed row is skipped with a warning, not fatal.
+                    warnings.append(f"skipped malformed record: {exc}")
                 if len(articles) >= query.max_results:
                     break
             pages += 1
@@ -107,13 +157,15 @@ class EuropePmcProvider:
 
         provenance = ProviderProvenance(
             provider=self.name,
-            query_sent=built.query_string,
+            query_sent=query_string,
             retrieved_at=retrieved_at,
             hit_count=hit_count,
             page_size=page_size,
             pages_fetched=pages,
         )
-        return LiteratureSearchResult(provenance=provenance, articles=articles[: query.max_results])
+        return LiteratureSearchResult(
+            provenance=provenance, articles=articles[: query.max_results], warnings=warnings
+        )
 
     def fetch_record(self, identifier: ArticleIdentifier) -> ArticleRecord:
         """Fetch a single record by identifier via a targeted search."""
@@ -126,10 +178,8 @@ class EuropePmcProvider:
         else:
             raise ProviderError("fetch_record requires a pmcid, pmid, or doi")
         url = f"{_BASE}/search?query={quote(term)}&format=json&resultType=core&pageSize=1"
-        response = self._get_with_retry(url)
-        if not response.ok:
-            raise ProviderError(f"europe_pmc fetch_record returned HTTP {response.status_code}")
-        results = json.loads(response.text).get("resultList", {}).get("result", []) or []
+        data = self._parse(self._fetch(url).text)
+        results = data.get("resultList", {}).get("result", []) or []
         if not results:
             raise ProviderError(f"no record found for {identifier!r}")
         return _to_record(results[0], datetime.now(UTC))
@@ -139,11 +189,9 @@ class EuropePmcProvider:
         if not identifier.pmcid:
             return None
         url = f"{_BASE}/PMC/{quote(identifier.pmcid)}/fullTextXML"
-        response = self._get_with_retry(url)
+        response = self._fetch(url, ok_statuses=frozenset({404}))
         if response.status_code == 404:
             return None
-        if not response.ok:
-            raise ProviderError(f"europe_pmc full text returned HTTP {response.status_code}")
         return response.text
 
 
@@ -176,15 +224,36 @@ def _publication_types(raw: dict) -> list[str]:
     return [t for t in (raw.get("pubTypeList", {}).get("pubType", []) or []) if t]
 
 
-def _is_retracted(raw: dict) -> bool:
-    types = {t.lower() for t in _publication_types(raw)}
-    if any("retract" in t for t in types):
-        return True
-    status = (raw.get("publicationStatus") or "").lower()
-    if "retract" in status:
-        return True
+# Order matters: check the more specific "expression of concern" before "concern".
+_NOTICE_KINDS = (
+    ("retract", PublicationNoticeKind.RETRACTION),
+    ("erratum", PublicationNoticeKind.ERRATUM),
+    ("expression of concern", PublicationNoticeKind.EXPRESSION_OF_CONCERN),
+    ("concern", PublicationNoticeKind.EXPRESSION_OF_CONCERN),
+    ("correct", PublicationNoticeKind.CORRECTION),
+)
+
+
+def _notices(raw: dict) -> list[PublicationNotice]:
+    notices: list[PublicationNotice] = []
     comments = raw.get("commentCorrectionList", {}).get("commentCorrection", []) or []
-    return any("retract" in (c.get("type") or "").lower() for c in comments)
+    for comment in comments:
+        text = (comment.get("type") or "").lower()
+        for needle, kind in _NOTICE_KINDS:
+            if needle in text:
+                reference = comment.get("id") or comment.get("reference")
+                notices.append(PublicationNotice(kind=kind, reference=reference))
+                break
+    return notices
+
+
+def _is_retracted(raw: dict, notices: list[PublicationNotice]) -> bool:
+    # A retraction notice, pub-type, or status — but NOT a correction/erratum/EoC.
+    if any(n.kind is PublicationNoticeKind.RETRACTION for n in notices):
+        return True
+    if any("retract" in t.lower() for t in _publication_types(raw)):
+        return True
+    return "retract" in (raw.get("publicationStatus") or "").lower()
 
 
 def _journal(raw: dict) -> str | None:
@@ -202,6 +271,7 @@ def _source_url(raw: dict) -> str | None:
 
 
 def _to_record(raw: dict, retrieved_at: datetime) -> ArticleRecord:
+    notices = _notices(raw)
     return ArticleRecord(
         identifiers=ArticleIdentifier(
             doi=raw.get("doi"),
@@ -219,7 +289,8 @@ def _to_record(raw: dict, retrieved_at: datetime) -> ArticleRecord:
         is_open_access=_yn(raw.get("isOpenAccess")),
         has_full_text=_yn(raw.get("inPMC")) or _yn(raw.get("inEPMC")),
         has_supplementary=_yn(raw.get("hasSuppl")),
-        is_retracted=_is_retracted(raw),
+        is_retracted=_is_retracted(raw, notices),
+        notices=notices,
         provider="europe_pmc",
         source_url=_source_url(raw),
         retrieved_at=retrieved_at,
