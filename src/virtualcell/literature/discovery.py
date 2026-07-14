@@ -78,8 +78,9 @@ def build_europe_pmc_query(query: LiteratureQuery) -> BuiltQuery:
 # --- deduplication -----------------------------------------------------------
 
 
-def _identity_keys(article: ArticleRecord) -> list[tuple[str, str]]:
-    """Identity keys in priority order: PMCID, PMID, normalized DOI, then title."""
+def _strong_keys(article: ArticleRecord) -> list[tuple[str, str]]:
+    """Strong identity keys (PMCID, PMID, normalized DOI). ``provider_id`` is
+    deliberately excluded — it is provider-scoped, not a cross-provider identity."""
     keys: list[tuple[str, str]] = []
     ident = article.identifiers
     if ident.pmcid:
@@ -88,10 +89,20 @@ def _identity_keys(article: ArticleRecord) -> list[tuple[str, str]]:
         keys.append(("pmid", ident.pmid))
     if ident.normalized_doi:
         keys.append(("doi", ident.normalized_doi))
-    title = normalize_title(article.title)
-    if title:
-        keys.append(("title", title))
     return keys
+
+
+def _strong_conflict(a: ArticleRecord, b: ArticleRecord) -> list[str]:
+    """Reasons two records have *conflicting* strong ids (same field, different value)."""
+    reasons: list[str] = []
+    ai, bi = a.identifiers, b.identifiers
+    if ai.pmid and bi.pmid and ai.pmid != bi.pmid:
+        reasons.append(f"pmid {ai.pmid} != {bi.pmid}")
+    if ai.pmcid and bi.pmcid and ai.pmcid != bi.pmcid:
+        reasons.append(f"pmcid {ai.pmcid} != {bi.pmcid}")
+    if ai.normalized_doi and bi.normalized_doi and ai.normalized_doi != bi.normalized_doi:
+        reasons.append(f"doi {ai.normalized_doi} != {bi.normalized_doi}")
+    return reasons
 
 
 def _merge(primary: ArticleRecord, other: ArticleRecord) -> ArticleRecord:
@@ -115,29 +126,55 @@ def _merge(primary: ArticleRecord, other: ArticleRecord) -> ArticleRecord:
     return primary.model_copy(update=update)
 
 
-def deduplicate_articles(articles: list[ArticleRecord]) -> list[ArticleRecord]:
-    """Merge records that refer to the same paper (PMCID > PMID > DOI > title).
+class DedupResult(BaseModel):
+    """Deduplicated articles plus any identity conflicts surfaced during merging."""
 
-    Title matching is a last-resort fallback and can over-merge two distinct papers
-    that share a normalized title — real duplicates almost always share a stronger
-    id, so this is an accepted, documented limitation of the fallback.
+    articles: list[ArticleRecord] = Field(default_factory=list)
+    conflicts: list[str] = Field(default_factory=list)
+
+
+def deduplicate_articles(articles: list[ArticleRecord]) -> DedupResult:
+    """Merge records that refer to the same paper.
+
+    A **strong** identifier match (PMCID / PMID / normalized DOI) merges records.
+    The **title** fallback merges only when it does *not* contradict a strong id —
+    two papers with the same title but different PMIDs/DOIs stay separate (the
+    original bug silently dropped one). Merging fills gaps without overwriting a
+    present identifier; where two merged records disagree on a strong id (e.g. same
+    DOI, different PMID) the conflict is reported rather than hidden.
     """
     result: list[ArticleRecord] = []
-    index: dict[tuple[str, str], int] = {}
+    strong_index: dict[tuple[str, str], int] = {}
+    title_index: dict[str, int] = {}
+    conflicts: list[str] = []
+
     for article in articles:
         found: int | None = None
-        for key in _identity_keys(article):
-            if key in index:
-                found = index[key]
+        for key in _strong_keys(article):
+            if key in strong_index:
+                found = strong_index[key]
                 break
+        if found is None:
+            title = normalize_title(article.title)
+            if title and title in title_index:
+                candidate = title_index[title]
+                if not _strong_conflict(result[candidate], article):
+                    found = candidate
+
         if found is None:
             result.append(article)
             found = len(result) - 1
         else:
+            for reason in _strong_conflict(result[found], article):
+                conflicts.append(f"merged records with conflicting identifiers: {reason}")
             result[found] = _merge(result[found], article)
-        for key in _identity_keys(result[found]):
-            index.setdefault(key, found)
-    return result
+
+        for key in _strong_keys(result[found]):
+            strong_index.setdefault(key, found)
+        title = normalize_title(result[found].title)
+        if title:
+            title_index.setdefault(title, found)
+    return DedupResult(articles=result, conflicts=conflicts)
 
 
 # --- relevance (search relevance only) --------------------------------------
@@ -229,13 +266,14 @@ def discover(query: LiteratureQuery, provider: LiteratureProvider) -> Literature
     result = provider.search(query)
     deduped = deduplicate_articles(result.articles)
     relevance = sorted(
-        (score_relevance(a, query) for a in deduped),
+        (score_relevance(a, query) for a in deduped.articles),
         key=lambda r: r.total_score,
         reverse=True,
     )
     return LiteratureEvidenceBundle(
         query=query,
         provider_provenance=result.provenance,
-        articles=deduped,
+        articles=deduped.articles,
         relevance=relevance,
+        warnings=deduped.conflicts,
     )

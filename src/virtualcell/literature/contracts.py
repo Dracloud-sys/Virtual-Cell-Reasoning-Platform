@@ -20,17 +20,20 @@ evidence tier (how strongly reasoning should weight it) are three independent ax
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from virtualcell.core.experiment import ExperimentRun
 
 # --- query -------------------------------------------------------------------
 
 _MAX_RESULTS_CAP = 200
+_MIN_YEAR = 1500
+_MAX_YEAR = 2100
 
 
 class LiteratureQuery(BaseModel):
@@ -49,10 +52,30 @@ class LiteratureQuery(BaseModel):
 
     @field_validator("query_text")
     @classmethod
-    def _query_text_not_blank(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("query_text must not be empty")
+    def _query_text_has_content(cls, v: str) -> str:
+        # A query that sanitizes to nothing searchable (e.g. '""') is rejected here,
+        # not turned into an empty provider query downstream.
+        if not any(ch.isalnum() for ch in v):
+            raise ValueError("query_text must contain searchable characters")
         return v
+
+    @field_validator("species", "cell_types", "genes", "phenotypes", "assays")
+    @classmethod
+    def _drop_blank_terms(cls, v: list[str]) -> list[str]:
+        return [t for t in v if t and t.strip()]
+
+    @model_validator(mode="after")
+    def _validate_years(self) -> LiteratureQuery:
+        for year in (self.year_from, self.year_to):
+            if year is not None and not (_MIN_YEAR <= year <= _MAX_YEAR):
+                raise ValueError(f"year must be within [{_MIN_YEAR}, {_MAX_YEAR}]")
+        if (
+            self.year_from is not None
+            and self.year_to is not None
+            and self.year_from > self.year_to
+        ):
+            raise ValueError("year_from must be <= year_to")
+        return self
 
 
 # --- article identity & metadata --------------------------------------------
@@ -87,6 +110,14 @@ class ArticleIdentifier(BaseModel):
     @property
     def normalized_doi(self) -> str | None:
         return normalize_doi(self.doi)
+
+    @model_validator(mode="after")
+    def _require_one_identifier(self) -> ArticleIdentifier:
+        if not any([self.doi, self.pmid, self.pmcid, self.provider_id]):
+            raise ValueError(
+                "ArticleIdentifier requires at least one of doi/pmid/pmcid/provider_id"
+            )
+        return self
 
 
 class ArticleRecord(BaseModel):
@@ -164,15 +195,18 @@ class VerificationStatus(StrEnum):
 
 
 def hash_source_text(text: str) -> str:
-    """A stable content hash so a later verifier can detect source drift."""
+    """A stable SHA-256 content hash so a later verifier can detect source drift."""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 class SourceLocator(BaseModel):
-    """Where a candidate came from — every candidate must carry one.
+    """Where a candidate came from — every candidate must carry one, anchored to an
+    auditable article identifier.
 
     ``source_text`` holds only the short span needed to verify the candidate; the
-    full article is never copied into a candidate/claim.
+    full article is never copied. ``source_text_hash`` (SHA-256) is populated
+    automatically from ``source_text``; a caller-supplied hash that disagrees with
+    the text is rejected, so a stale hash can never accompany changed text.
     """
 
     article: ArticleIdentifier
@@ -192,12 +226,42 @@ class SourceLocator(BaseModel):
             raise ValueError("source_text must not be empty")
         return v
 
-    def with_hash(self) -> SourceLocator:
-        """Return a copy with ``source_text_hash`` populated from ``source_text``."""
-        return self.model_copy(update={"source_text_hash": hash_source_text(self.source_text)})
+    @model_validator(mode="after")
+    def _sync_hash(self) -> SourceLocator:
+        expected = hash_source_text(self.source_text)
+        if self.source_text_hash is None:
+            self.source_text_hash = expected
+        elif self.source_text_hash != expected:
+            raise ValueError("source_text_hash does not match source_text")
+        return self
 
 
-class ExtractedClaimCandidate(BaseModel):
+def _deterministic_candidate_id(model: BaseModel) -> str:
+    """A stable SHA-256 id over a candidate's *content* (excluding the id and the
+    mutable verification status), so re-running extraction on the same source span
+    yields the same id — an auditable, reproducible reference."""
+    payload = model.model_dump(mode="json", exclude={"candidate_id", "verification_status"})
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()[:32]
+
+
+class _Candidate(BaseModel):
+    """Shared candidate behavior: a content-derived ``candidate_id`` and a
+    proposal-time ``verification_status`` (authoritative status lives on the
+    :class:`VerificationDecision`)."""
+
+    candidate_id: str = ""
+    extraction_method: ExtractionMethod
+    extraction_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+    verification_status: VerificationStatus = VerificationStatus.PENDING_REVIEW
+
+    @model_validator(mode="after")
+    def _ensure_candidate_id(self) -> _Candidate:
+        if not self.candidate_id:
+            self.candidate_id = _deterministic_candidate_id(self)
+        return self
+
+
+class ExtractedClaimCandidate(_Candidate):
     """A qualitative subject-predicate-object claim proposed from a source."""
 
     subject: str
@@ -205,12 +269,9 @@ class ExtractedClaimCandidate(BaseModel):
     object: str
     qualifiers: dict[str, str] = Field(default_factory=dict)
     source_locator: SourceLocator
-    extraction_method: ExtractionMethod
-    extraction_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
-    verification_status: VerificationStatus = VerificationStatus.PENDING_REVIEW
 
 
-class ExtractedMeasurementCandidate(BaseModel):
+class ExtractedMeasurementCandidate(_Candidate):
     """A quantitative observation proposed from a source. Only this — once
     verified — becomes a canonical measurement."""
 
@@ -226,20 +287,14 @@ class ExtractedMeasurementCandidate(BaseModel):
     assay: str | None = None
     statistic: str | None = None
     source_locator: SourceLocator
-    extraction_method: ExtractionMethod
-    extraction_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
-    verification_status: VerificationStatus = VerificationStatus.PENDING_REVIEW
 
 
-class AuthorInterpretationCandidate(BaseModel):
+class AuthorInterpretationCandidate(_Candidate):
     """An author's interpretation (Discussion/Conclusion) — kept apart from raw
     observation so a narrative ("cells escaped senescence") is never stored as data."""
 
     statement: str
     source_locator: SourceLocator
-    extraction_method: ExtractionMethod
-    extraction_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
-    verification_status: VerificationStatus = VerificationStatus.PENDING_REVIEW
 
 
 # --- relevance (search relevance only, NOT scientific strength) --------------
@@ -267,10 +322,15 @@ class RelevanceResult(BaseModel):
 
 
 class VerificationDecision(BaseModel):
-    """The deterministic gate's decision about one candidate, with reasons."""
+    """The deterministic gate's decision about one candidate, referenced by id.
 
+    ``VerificationDecision`` is the *authoritative* source of a candidate's verified
+    status; a candidate carries only a proposal-time status, and the bundle rejects
+    any disagreement (see :meth:`LiteratureEvidenceBundle._check_candidate_linkage`).
+    """
+
+    candidate_id: str
     candidate_kind: str  # "measurement" | "claim" | "author_interpretation"
-    source_locator: SourceLocator
     status: VerificationStatus
     reasons: list[str] = Field(default_factory=list)
 
@@ -294,3 +354,24 @@ class LiteratureEvidenceBundle(BaseModel):
     canonical_runs: list[ExperimentRun] = Field(default_factory=list)
     unresolved: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _check_candidate_linkage(self) -> LiteratureEvidenceBundle:
+        candidates = [*self.claims, *self.measurements, *self.author_interpretations]
+        ids = [c.candidate_id for c in candidates]
+        duplicates = sorted({i for i in ids if ids.count(i) > 1})
+        if duplicates:
+            raise ValueError(f"duplicate candidate_id(s): {duplicates}")
+        status_by_id = {c.candidate_id: c.verification_status for c in candidates}
+        for decision in self.verification_decisions:
+            if decision.candidate_id not in status_by_id:
+                raise ValueError(
+                    f"verification decision references unknown candidate_id "
+                    f"{decision.candidate_id!r}"
+                )
+            if status_by_id[decision.candidate_id] != decision.status:
+                raise ValueError(
+                    f"candidate {decision.candidate_id!r} verification_status disagrees with "
+                    "its VerificationDecision (the decision is authoritative)"
+                )
+        return self

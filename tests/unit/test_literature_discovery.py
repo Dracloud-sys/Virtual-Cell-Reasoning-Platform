@@ -172,39 +172,89 @@ def test_pagination_stops_and_records_pages() -> None:
 # --- deduplication -----------------------------------------------------------
 
 
-def _rec(pmid=None, pmcid=None, doi=None, title="A paper", **over) -> ArticleRecord:
+def _rec(
+    pmid=None, pmcid=None, doi=None, provider_id=None, title="A paper", **over
+) -> ArticleRecord:
+    if not any([pmid, pmcid, doi, provider_id]):
+        provider_id = "auto"  # satisfy the >=1-id rule; provider_id is not a strong key
     return ArticleRecord(
-        identifiers=ArticleIdentifier(pmid=pmid, pmcid=pmcid, doi=doi), title=title, **over
+        identifiers=ArticleIdentifier(pmid=pmid, pmcid=pmcid, doi=doi, provider_id=provider_id),
+        title=title,
+        **over,
     )
 
 
 def test_dedup_by_strong_identifier() -> None:
     # Same paper indexed twice: once with PMCID+PMID, once with only PMID.
-    merged = deduplicate_articles(
+    result = deduplicate_articles(
         [_rec(pmid="111", pmcid="PMC111", doi="10.1/a"), _rec(pmid="111", abstract="filled in")]
     )
-    assert len(merged) == 1
-    assert merged[0].identifiers.pmcid == "PMC111"
-    assert merged[0].abstract == "filled in"  # gap filled from the duplicate
+    assert len(result.articles) == 1
+    assert result.articles[0].identifiers.pmcid == "PMC111"
+    assert result.articles[0].abstract == "filled in"  # gap filled from the duplicate
 
 
 def test_dedup_by_normalized_doi() -> None:
-    merged = deduplicate_articles(
+    result = deduplicate_articles(
         [_rec(doi="10.1000/ABC"), _rec(doi="https://doi.org/10.1000/abc")]
     )
-    assert len(merged) == 1
+    assert len(result.articles) == 1
 
 
-def test_title_fallback_dedup() -> None:
-    merged = deduplicate_articles([_rec(title="TERT Escape!"), _rec(title="tert   escape")])
-    assert len(merged) == 1
+def test_different_pmid_same_title_stays_separate() -> None:
+    # The bug this fixes: distinct papers must NOT be merged on title alone.
+    result = deduplicate_articles(
+        [
+            _rec(pmid="111", doi="10.1/a", title="Identical title"),
+            _rec(pmid="222", doi="10.1/b", title="Identical title"),
+        ]
+    )
+    assert len(result.articles) == 2
+
+
+def test_different_doi_same_title_stays_separate() -> None:
+    result = deduplicate_articles(
+        [_rec(doi="10.1/a", title="Same title"), _rec(doi="10.1/b", title="Same title")]
+    )
+    assert len(result.articles) == 2
+
+
+def test_same_pmid_different_metadata_merges() -> None:
+    result = deduplicate_articles(
+        [_rec(pmid="111", title="Title one"), _rec(pmid="111", abstract="extra")]
+    )
+    assert len(result.articles) == 1
+
+
+def test_transitive_merge_via_shared_ids() -> None:
+    # A (pmcid only) + B (pmcid + pmid) + C (pmid only) -> one record.
+    result = deduplicate_articles(
+        [_rec(pmcid="PMC1"), _rec(pmcid="PMC1", pmid="111"), _rec(pmid="111")]
+    )
+    assert len(result.articles) == 1
+
+
+def test_title_fallback_only_without_strong_ids() -> None:
+    result = deduplicate_articles(
+        [_rec(provider_id="x", title="TERT Escape!"), _rec(provider_id="y", title="tert   escape")]
+    )
+    assert len(result.articles) == 1  # no strong ids -> title fallback merges
+
+
+def test_conflicting_strong_ids_merge_but_report_conflict() -> None:
+    # Same DOI, different PMID: they share a strong id so they merge, but the PMID
+    # conflict is surfaced rather than silently overwritten.
+    result = deduplicate_articles([_rec(doi="10.1/a", pmid="111"), _rec(doi="10.1/a", pmid="222")])
+    assert len(result.articles) == 1
+    assert result.articles[0].identifiers.pmid == "111"  # first wins, not overwritten
+    assert any("pmid" in c for c in result.conflicts)
 
 
 def test_distinct_papers_are_not_merged() -> None:
-    merged = deduplicate_articles(
+    result = deduplicate_articles(
         [_rec(pmid="1", title="Paper A"), _rec(pmid="2", title="Paper B")]
     )
-    assert len(merged) == 2
+    assert len(result.articles) == 2
 
 
 def test_retracted_metadata_is_preserved() -> None:
