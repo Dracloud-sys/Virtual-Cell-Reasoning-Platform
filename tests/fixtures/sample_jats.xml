@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<article xmlns:xlink="http://www.w3.org/1999/xlink">
+  <front><article-meta>
+    <abstract><p>TERT expression <italic>increased</italic> after long-term culture.</p></abstract>
+    <permissions><license xlink:href="https://creativecommons.org/licenses/by/4.0/">
+      <license-p>CC BY 4.0</license-p></license></permissions>
+  </article-meta></front>
+  <body>
+    <sec id="s1"><title>Results</title>
+      <p>Cells at <italic>passage 35</italic> showed 2.4-fold TERT.</p></sec>
+    <sec id="s2"><title>Discussion</title><p>Cells escaped senescence.</p></sec>
+  </body>
+  <back>
+    <table-wrap id="T1">
+      <caption><p>Marker levels</p></caption>
+      <table>
+        <thead><tr><th>Marker</th><th>P3</th><th>P35</th></tr></thead>
+        <tbody>
+          <tr><td>TERT</td><td>1.0</td><td>2.4</td></tr>
+          <tr><td>CDK4</td><td>1.0</td><td>1.1 &#177; 0.2</td></tr>
+          <tr><td>SA_b_gal</td><td>low</td><td>increased</td></tr>
+        </tbody>
+      </table>
+      <table-wrap-foot><p>Values are fold change vs P3.</p></table-wrap-foot>
+    </table-wrap>
+  </back>
+</article>

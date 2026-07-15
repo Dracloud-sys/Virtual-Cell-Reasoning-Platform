@@ -52,6 +52,11 @@ _QUERY_FIELDS = (
     "max_results",
 )
 _DEFAULT_EXTRACT_ARTICLES = 5
+_MAX_EXTRACT_ARTICLES = 20
+# The exception boundary for an optional third-party extractor. Deliberately explicit:
+# a broad `except Exception` would also swallow MemoryError, and BaseException would
+# swallow KeyboardInterrupt/SystemExit.
+_EXTRACTOR_ERRORS = (ValueError, TypeError, KeyError, AttributeError, RuntimeError)
 
 
 class LiteratureQueryError(ValueError):
@@ -88,23 +93,47 @@ class LiteratureDiscoveryAgent(BaseAgent):
         """An extraction task, only when the caller asked for one with targets."""
         if not inputs.context.get("extract"):
             return None
+        payload = {
+            "target_measurements": inputs.context.get("target_measurements", []),
+            "target_contexts": inputs.context.get("target_contexts", []),
+        }
+        if "max_candidates" in inputs.context:
+            payload["max_candidates"] = inputs.context["max_candidates"]
         try:
-            return ExtractionTask(
-                target_measurements=inputs.context.get("target_measurements", []),
-                target_contexts=inputs.context.get("target_contexts", []),
-            )
+            return ExtractionTask(**payload)
         except ValidationError as exc:
             raise LiteratureQueryError(f"invalid extraction task: {exc}") from exc
 
+    @staticmethod
+    def _extract_limit(inputs: AgentInput) -> int:
+        """Bounded article count — an unbounded or nonsensical value is a caller error."""
+        raw = inputs.context.get("max_extract_articles", _DEFAULT_EXTRACT_ARTICLES)
+        try:
+            limit = int(raw)
+        except (TypeError, ValueError) as exc:
+            raise LiteratureQueryError(f"max_extract_articles must be an integer: {raw!r}") from exc
+        if not 1 <= limit <= _MAX_EXTRACT_ARTICLES:
+            raise LiteratureQueryError(
+                f"max_extract_articles must be within [1, {_MAX_EXTRACT_ARTICLES}], got {limit}"
+            )
+        return limit
+
     def _document_for(self, record: ArticleRecord) -> tuple[ArticleDocument | None, str | None]:
-        """Fetch + parse a document, falling back to the abstract. Never raises."""
-        xml = None
+        """Fetch + parse a document, falling back to the abstract. Never raises.
+
+        A fetch failure *or* a parse failure falls back to the abstract when the
+        record has one — the original problem is preserved as a warning, and a
+        malformed full text is never recorded as a successful full-text parse. Only a
+        document with neither full text nor an abstract is skipped.
+        """
+        problem: str | None = None
+        xml: str | None = None
         if record.is_open_access and record.has_full_text:
             try:
                 xml = self.provider.fetch_open_full_text(record.identifiers)
             except ProviderError as exc:
-                return None, f"full text unavailable ({exc})"
-        if xml:
+                problem = f"full text unavailable ({exc})"
+        if xml and problem is None:
             try:
                 return (
                     parse_jats(
@@ -117,8 +146,11 @@ class LiteratureDiscoveryAgent(BaseAgent):
                     None,
                 )
             except JatsParseError as exc:
-                return None, f"could not parse full text ({exc})"
-        return document_from_abstract(record), None
+                problem = f"could not parse full text ({exc})"
+        if record.abstract:
+            suffix = "; fell back to the abstract" if problem else None
+            return document_from_abstract(record), f"{problem}{suffix}" if problem else None
+        return None, problem or "no open-access full text and no abstract"
 
     def _extract(
         self, bundle: LiteratureEvidenceBundle, task: ExtractionTask, limit: int
@@ -128,25 +160,38 @@ class LiteratureDiscoveryAgent(BaseAgent):
         Every candidate is unverified: this never produces a VerificationDecision or a
         canonical run, and nothing is written to the KnowledgeStore.
         """
-        by_id = {a.identifiers.provider_id or a.identifiers.pmid: a for a in bundle.articles}
-        ranked = [
-            by_id[key]
-            for rel in bundle.relevance
-            if (key := rel.article.provider_id or rel.article.pmid) in by_id
-        ][:limit]
+        # One shared identity policy (PMCID > PMID > DOI > provider-scoped id), the same
+        # one dedup uses. Ranking by score avoids a lookup table whose keys could
+        # collide (two DOI-only records previously collapsed onto one key, silently
+        # dropping a paper and extracting the other twice).
+        scores = {rel.article.stable_key(): rel.total_score for rel in bundle.relevance}
+        ranked = sorted(
+            bundle.articles,
+            key=lambda a: scores.get(a.identifiers.stable_key(a.provider), 0.0),
+            reverse=True,
+        )[:limit]
 
         documents, warnings = [], list(bundle.warnings)
         measurements, claims, interpretations = [], [], []
         seen: set[str] = set()
 
         for record in ranked:
+            label = record.identifiers.stable_key(record.provider)
             document, problem = self._document_for(record)
+            if problem:
+                warnings.append(f"{label}: {problem}")
             if document is None:
-                warnings.append(f"{record.identifiers.pmid or record.identifiers.doi}: {problem}")
                 continue
+
             result = extract_deterministic(document, task)
             if self.extractor is not None:
-                proposed = self.extractor.extract(document, task)
+                # An optional extractor is untrusted *and* fallible: a failure is
+                # isolated to this document, keeping deterministic results intact.
+                try:
+                    proposed = self.extractor.extract(document, task)
+                except _EXTRACTOR_ERRORS as exc:
+                    warnings.append(f"{label}: structured extractor failed ({exc})")
+                    proposed = LiteratureExtractionResult()
                 result = LiteratureExtractionResult(
                     measurements=[*result.measurements, *proposed.measurements],
                     claims=[*result.claims, *proposed.claims],
@@ -160,6 +205,11 @@ class LiteratureDiscoveryAgent(BaseAgent):
             documents.append(document.metadata())
             warnings.extend(accepted.warnings)
             warnings.extend(f"rejected candidate — {reason}" for reason in rejected)
+
+            # Cap order (deterministic and documented): accept -> de-duplicate by
+            # candidate_id -> apply the per-document cap. Deterministic candidates are
+            # added before any LLM proposals, so the cap never silently prefers an LLM.
+            kept = 0
             for bucket, items in (
                 (measurements, accepted.measurements),
                 (claims, accepted.claims),
@@ -168,8 +218,12 @@ class LiteratureDiscoveryAgent(BaseAgent):
                 for candidate in items:
                     if candidate.candidate_id in seen:
                         continue  # identical proposal from another pass
+                    if kept >= task.max_candidates:
+                        warnings.append(f"{label}: stopped at max_candidates={task.max_candidates}")
+                        break
                     seen.add(candidate.candidate_id)
                     bucket.append(candidate)
+                    kept += 1
 
         # Rebuilt (not mutated) so the bundle's linkage validation runs.
         return LiteratureEvidenceBundle(
@@ -186,15 +240,17 @@ class LiteratureDiscoveryAgent(BaseAgent):
         )
 
     async def run(self, inputs: AgentInput) -> AgentOutput:
+        # Validate the whole request before doing any I/O, so a bad bound fails fast.
         query = self.build_query(inputs)
         task = self.build_task(inputs)
+        limit = self._extract_limit(inputs) if task is not None else 0
+
         try:
             bundle = discover(query, self.provider)
         except ProviderError as exc:
             bundle = self._failure_bundle(query, exc)
 
         if task is not None and bundle.run_status is not DiscoveryRunStatus.PROVIDER_ERROR:
-            limit = int(inputs.context.get("max_extract_articles", _DEFAULT_EXTRACT_ARTICLES))
             bundle = self._extract(bundle, task, limit)
 
         # Run status — not the presence of warnings — is the authoritative signal.

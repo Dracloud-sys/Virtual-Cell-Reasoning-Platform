@@ -129,6 +129,22 @@ class ArticleIdentifier(BaseModel):
     def normalized_doi(self) -> str | None:
         return normalize_doi(self.doi)
 
+    def stable_key(self, provider: str | None = None) -> str:
+        """One stable identity for this article, shared by dedup and the agent.
+
+        Priority mirrors deduplication: PMCID > PMID > normalized DOI >
+        provider-scoped provider_id. The key is namespaced so a PMID can never
+        collide with a DOI, and a bare ``provider_id`` is scoped by provider because
+        it is only unique *within* that provider.
+        """
+        if self.pmcid:
+            return f"pmcid:{self.pmcid}"
+        if self.pmid:
+            return f"pmid:{self.pmid}"
+        if self.normalized_doi:
+            return f"doi:{self.normalized_doi}"
+        return f"provider:{provider or '?'}:{self.provider_id}"
+
     @model_validator(mode="after")
     def _require_one_identifier(self) -> ArticleIdentifier:
         if not any([self.doi, self.pmid, self.pmcid, self.provider_id]):
@@ -260,6 +276,10 @@ class SourceLocator(BaseModel):
     section_title: str | None = None
     table_id: str | None = None
     figure_id: str | None = None
+    # Exact table coordinates. Acceptance requires every table constraint to hold on
+    # the SAME cell, so a locator cannot be assembled from parts of different cells.
+    row_index: int | None = Field(default=None, ge=0)
+    column_index: int | None = Field(default=None, ge=0)
     row_label: str | None = None
     column_label: str | None = None
     source_text: str

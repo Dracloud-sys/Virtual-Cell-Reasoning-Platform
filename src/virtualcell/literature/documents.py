@@ -24,7 +24,7 @@ import re
 from datetime import UTC, datetime
 from xml.etree import ElementTree  # noqa: S405 - entity constructs refused before parsing
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from virtualcell.literature.contracts import (
     ArticleIdentifier,
@@ -77,7 +77,12 @@ class ArticleSection(BaseModel):
 
 
 class ArticleDocument(BaseModel):
-    """A parsed document. Kept in-process: only :meth:`metadata` enters a bundle."""
+    """A parsed document. Kept in-process: only :meth:`metadata` enters a bundle.
+
+    Known limitations (deliberately not guessed at): table ``rowspan``/``colspan`` and
+    composite/multi-row headers are not reconstructed, and a unit written only in a
+    column header is **not** inherited by that column's cells.
+    """
 
     article: ArticleIdentifier
     source_format: SourceFormat
@@ -90,6 +95,21 @@ class ArticleDocument(BaseModel):
     sections: list[ArticleSection] = Field(default_factory=list)
     tables: list[ArticleTable] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+
+    @field_validator("retrieved_at")
+    @classmethod
+    def _require_tz(cls, v: datetime) -> datetime:
+        if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
+            raise ValueError("retrieved_at must be timezone-aware")
+        return v
+
+    def section(self, *, title: str | None = None, section_id: str | None = None):
+        for candidate in self.sections:
+            if section_id is not None and candidate.section_id == section_id:
+                return candidate
+            if title is not None and candidate.title == title:
+                return candidate
+        return None
 
     def metadata(self) -> DocumentMetadata:
         return DocumentMetadata(
@@ -236,7 +256,9 @@ def parse_jats(
                 warnings.append(f"truncated at {limits.max_sections} sections")
                 break
             title_el = _child(sec, "title")
-            paragraphs = [_text(p) for p in _find_all(sec, "p")]
+            # Only this section's own paragraphs: a nested <sec> is emitted as its own
+            # section, so pulling descendant <p> here would duplicate its text.
+            paragraphs = [_text(p) for p in sec if _strip_ns(p.tag) == "p"]
             sections.append(
                 ArticleSection(
                     section_id=sec.get("id") or f"sec-{index + 1}",
