@@ -333,21 +333,39 @@ class ExtractedClaimCandidate(_Candidate):
     source_locator: SourceLocator
 
 
+class ParseStatus(StrEnum):
+    """Whether a numeric value could be taken from the raw source text."""
+
+    PARSED = "parsed"
+    UNPARSED = "unparsed"
+
+
 class ExtractedMeasurementCandidate(_Candidate):
     """A quantitative observation proposed from a source. Only this — once
-    verified — becomes a canonical measurement."""
+    verified — becomes a canonical measurement.
+
+    The value is kept *split*: ``raw_value`` is always the verbatim source text, and
+    a number is only promoted to ``parsed_value`` when it is unambiguous. A
+    comparator (``<0.05``) and an uncertainty (``2.4 ± 0.3``) are separate fields, so
+    a bound is never stored as a point estimate and an error is never lost. Text with
+    no number (``increased``, ``NS``) stays ``UNPARSED`` — a number is never invented.
+    """
 
     sample_group: str | None = None
     species: str | None = None
     cell_type: str | None = None
     time_point: str | None = None  # verbatim as written; interpreted at conversion
     measurement_name: str
-    value: float | int | str | None = None
+    raw_value: str | None = None
+    parsed_value: float | None = None
+    comparator: str | None = None  # "<", ">", "<=", ">=", "~"
+    uncertainty: float | None = None
     unit: str | None = None
     normalization: str | None = None
     control: str | None = None
     assay: str | None = None
     statistic: str | None = None
+    parse_status: ParseStatus = ParseStatus.UNPARSED
     source_locator: SourceLocator
 
 
@@ -415,6 +433,40 @@ class VerificationDecision(BaseModel):
         return v
 
 
+class SourceFormat(StrEnum):
+    """What a fetched document was parsed from."""
+
+    JATS_XML = "jats_xml"
+    ABSTRACT = "abstract"
+
+
+class DocumentMetadata(BaseModel):
+    """Auditable *metadata* about a fetched document — never its body.
+
+    The bundle carries this, not the parsed text: the full article is never copied
+    into an agent output. ``content_hash`` lets a later run detect that the source
+    changed since extraction.
+    """
+
+    article: ArticleIdentifier
+    source_format: SourceFormat
+    content_hash: str
+    provider: str | None = None
+    source_url: str | None = None
+    retrieved_at: datetime
+    license: str | None = None
+    section_count: int = 0
+    table_count: int = 0
+    warnings: list[str] = Field(default_factory=list)
+
+    @field_validator("retrieved_at")
+    @classmethod
+    def _require_tz(cls, v: datetime) -> datetime:
+        if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
+            raise ValueError("retrieved_at must be timezone-aware")
+        return v
+
+
 class DiscoveryRunStatus(StrEnum):
     """Machine-readable run outcome so a zero-result run is not confused with failure."""
 
@@ -438,6 +490,7 @@ class LiteratureEvidenceBundle(BaseModel):
     run_status: DiscoveryRunStatus = DiscoveryRunStatus.SUCCESS
     articles: list[ArticleRecord] = Field(default_factory=list)
     relevance: list[RelevanceResult] = Field(default_factory=list)
+    documents: list[DocumentMetadata] = Field(default_factory=list)
     claims: list[ExtractedClaimCandidate] = Field(default_factory=list)
     measurements: list[ExtractedMeasurementCandidate] = Field(default_factory=list)
     author_interpretations: list[AuthorInterpretationCandidate] = Field(default_factory=list)
