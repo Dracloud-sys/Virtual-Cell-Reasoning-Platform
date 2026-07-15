@@ -230,6 +230,9 @@ def _cmd_literature_discover(args: argparse.Namespace) -> int:
         "year_to": args.year_to,
         "open_access_only": args.open_access_only,
         "max_results": args.max_results,
+        "extract": args.extract,
+        "target_measurements": args.target_measurement or [],
+        "max_extract_articles": args.max_extract_articles,
     }
     agent = LiteratureDiscoveryAgent()
     try:
@@ -411,6 +414,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_disc.add_argument("--year-to", type=int)
     p_disc.add_argument("--open-access-only", action="store_true")
     p_disc.add_argument("--max-results", type=int, default=25)
+    p_disc.add_argument(
+        "--extract",
+        action="store_true",
+        help="also extract UNVERIFIED candidates from open-access full text",
+    )
+    p_disc.add_argument(
+        "--target-measurement",
+        action="append",
+        help="measurement to extract, e.g. TERT (repeatable; required with --extract)",
+    )
+    p_disc.add_argument("--max-extract-articles", type=int, default=5)
     p_disc.add_argument("--format", choices=["json", "text"], default="text")
     p_disc.add_argument("--output", help="write the discovery bundle as UTF-8 JSON to this path")
     p_disc.set_defaults(func=_cmd_literature_discover)

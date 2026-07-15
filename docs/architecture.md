@@ -145,6 +145,21 @@ Canonical ExperimentRun         = verified quantitative observations only
 Knowledge graph                 = reviewed / approved biological claims only
 ```
 
+PR8c adds **source-grounded extraction**, still strictly upstream of evidence.
+`literature.documents` parses open-access JATS safely (DOCTYPE/ENTITY declarations
+refused, bounded size/sections/tables/cells, typed `JatsParseError`, no-body treated as
+a warning), keeping the parsed body in-process — only `DocumentMetadata` (identifier,
+`content_hash`, counts, warnings) enters a bundle, never the full text.
+`literature.extraction` extracts only what an `ExtractionTask` asks for (a table cell
+becomes a candidate only when an axis label matches a requested measurement), keeps
+values split (`raw_value` / `parsed_value` / `comparator` / `uncertainty` / `unit` /
+`parse_status`) so a bound is never a point estimate and qualitative text never gains a
+number, and puts every extractor — including the optional `StructuredLiteratureExtractor`
+(LLM) — behind `accept_candidates`, which re-checks each locator and number against the
+real document. That is extraction *integrity*, not verification: **all PR8c candidates
+are unverified**, `verification_decisions` and `canonical_runs` stay empty, and the
+verification gate + canonical conversion are PR8d.
+
 PR8b implements the discovery slice: `literature.contracts` (query, article metadata,
 source-anchored candidates with deterministic ids, transparent relevance, verification
 status, and the `LiteratureEvidenceBundle`); a bounded, injectable `EuropePmcProvider` over

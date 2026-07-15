@@ -31,6 +31,26 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **Source-grounded literature extraction (PR8c).** `literature.documents` parses
+  open-access JATS safely: DOCTYPE/ENTITY declarations are refused before parsing (so
+  neither a billion-laughs bomb nor an external/entity-smuggled reference can resolve —
+  ElementTree never fetches remote resources), size and section/table/row/cell counts are
+  bounded, malformed/oversized XML raises a typed `JatsParseError`, and a well-formed
+  document with no `<body>` is a warning rather than an error. Inline-tag text, section/
+  table order, captions, footnotes and row/column labels are preserved; the parsed body
+  stays in-process and only `DocumentMetadata` (identifier, `content_hash`, counts,
+  warnings) enters a bundle. `literature.extraction` is targeted by an `ExtractionTask`
+  (a cell becomes a candidate only when an axis label matches a requested measurement),
+  keeps values split (`raw_value`/`parsed_value`/`comparator`/`uncertainty`/`unit`/
+  `parse_status`) so `<0.05` stays a bound and `increased`/`NS` never gain a number, and
+  gates every extractor behind `accept_candidates`, which re-checks locators and numbers
+  against the real document — a fabricated span, unknown table, wrong label or
+  hallucinated value is rejected. `StructuredLiteratureExtractor` is a separate typed
+  protocol (the narrative `LLMBackend.answer` is deliberately not reused); only a fake
+  extractor is used in tests and **no production Anthropic adapter is implemented yet**.
+  The discovery agent/CLI gained opt-in extraction (`--extract --target-measurement …`).
+  All PR8c candidates are **unverified**: `verification_decisions` and `canonical_runs`
+  stay empty and nothing is written to the KnowledgeStore (PR8d owns verification).
 - **Automated literature discovery — first slice (PR8b).** A new `virtualcell.literature`
   package that keeps *finding/reading a paper* strictly separate from *verified evidence*.
   Contracts (`contracts.py`): `LiteratureQuery` (non-empty, bounded), `ArticleRecord`
