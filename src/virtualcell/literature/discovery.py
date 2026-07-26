@@ -331,6 +331,7 @@ def score_relevance(article: ArticleRecord, query: LiteratureQuery) -> Relevance
     missing = [name for name in _CRITICAL if getattr(query, name) and not group_matched.get(name)]
     return RelevanceResult(
         article=article.identifiers,
+        provider=article.provider,
         total_score=round(sum(c.score for c in components), 3),
         matched_terms=sorted(set(matched_all)),
         missing_critical_filters=missing,

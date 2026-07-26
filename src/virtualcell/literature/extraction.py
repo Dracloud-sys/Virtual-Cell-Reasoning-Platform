@@ -36,7 +36,7 @@ from virtualcell.literature.contracts import (
     SourceKind,
     SourceLocator,
 )
-from virtualcell.literature.documents import ArticleDocument
+from virtualcell.literature.documents import ArticleDocument, TableCell
 
 
 class StatisticKind(StrEnum):
@@ -99,7 +99,11 @@ class ExtractionTask(BaseModel):
     # inventing policy. Supplying it produces an explicit warning rather than being
     # silently ignored; a real context policy is future work.
     target_contexts: list[str] = Field(default_factory=list)
+    # Per-*document* cap (kept name for compatibility) and a run-wide cap across all
+    # documents and candidate buckets. The agent enforces both; the deterministic
+    # extractor honours the per-document cap on its own output.
     max_candidates: int = Field(default=200, ge=1, le=2000)
+    max_total_candidates: int = Field(default=1000, ge=1, le=10000)
 
 
 class LiteratureExtractionResult(BaseModel):
@@ -311,8 +315,10 @@ def extract_deterministic(
 # --- source anchoring (extraction integrity, NOT verification) ---------------
 
 
-def _table_locator_errors(document: ArticleDocument, locator: SourceLocator) -> list[str]:
-    """Every table constraint must hold on the *same* cell.
+def _matched_table_cell(
+    document: ArticleDocument, locator: SourceLocator
+) -> tuple[TableCell | None, list[str]]:
+    """Return the single cell that satisfies *all* the locator's table constraints.
 
     Checking text / row_label / column_label independently would accept a locator
     assembled from parts of different cells (cite TERT's 2.4 while claiming column B,
@@ -320,15 +326,15 @@ def _table_locator_errors(document: ArticleDocument, locator: SourceLocator) -> 
     """
     table = next((t for t in document.tables if t.table_id == locator.table_id), None)
     if table is None:
-        return [f"unknown table_id {locator.table_id!r}"]
+        return None, [f"unknown table_id {locator.table_id!r}"]
 
     candidates = table.cells
     if locator.row_index is not None or locator.column_index is not None:
         if locator.row_index is None or locator.column_index is None:
-            return ["a table locator must give both row_index and column_index, or neither"]
+            return None, ["a table locator must give both row_index and column_index, or neither"]
         cell = table.cell(locator.row_index, locator.column_index)
         if cell is None:
-            return [
+            return None, [
                 f"no cell at (row {locator.row_index}, column {locator.column_index}) "
                 f"in table {locator.table_id!r}"
             ]
@@ -342,11 +348,15 @@ def _table_locator_errors(document: ArticleDocument, locator: SourceLocator) -> 
         and (locator.column_label is None or c.column_label == locator.column_label)
     ]
     if not matches:
-        return [
+        return None, [
             f"no single cell in table {locator.table_id!r} satisfies the locator's "
             "coordinates, row/column labels and source_text together"
         ]
-    return []
+    return matches[0], []
+
+
+def _table_locator_errors(document: ArticleDocument, locator: SourceLocator) -> list[str]:
+    return _matched_table_cell(document, locator)[1]
 
 
 def _prose_locator_errors(document: ArticleDocument, locator: SourceLocator) -> list[str]:
@@ -385,20 +395,66 @@ def _value_is_in_source(candidate: ExtractedMeasurementCandidate) -> bool:
     """A parsed number must actually appear in the candidate's own source span."""
     if candidate.parsed_value is None:
         return True
-    numbers = {
-        float(n.replace(",", ".")) for n in _NUMBER.findall(candidate.source_locator.source_text)
-    }
+    numbers = {float(n) for n in _NUMBER.findall(candidate.source_locator.source_text)}
     return any(abs(candidate.parsed_value - n) < 1e-9 for n in numbers)
 
 
+def _name_matches_label(name: str, label: str | None) -> bool:
+    """Does a measurement name correspond to a cell axis label, the same way the
+    deterministic extractor assigned it (target token contained in the label)?"""
+    return _match_target(label, [name]) is not None
+
+
+def _measurement_target_errors(
+    document: ArticleDocument,
+    candidate: ExtractedMeasurementCandidate,
+    task: ExtractionTask,
+) -> list[str]:
+    """Extraction-integrity gate on the candidate's *meaning* — the same target
+    boundary the deterministic extractor obeys, applied to every extractor.
+
+    An LLM must not smuggle in an unrequested measurement, rename the cited cell, or
+    invent a sample_group: the name must be a requested target and must match one of
+    the cited cell's axis labels, and a stated group must match the *opposite* axis of
+    the SAME cell. This is not verification — it does not judge whether the source
+    supports the claim, only that the claim is about the cell it cites.
+    """
+    if _match_target(candidate.measurement_name, task.target_measurements) is None:
+        return [
+            f"measurement_name {candidate.measurement_name!r} is not a requested target "
+            f"({task.target_measurements})"
+        ]
+    locator = candidate.source_locator
+    if locator.source_kind is not SourceKind.TABLE:
+        return []  # prose candidates are anchored by text; no axis to check
+    cell, errors = _matched_table_cell(document, locator)
+    if errors or cell is None:
+        return []  # locator errors are reported by the locator check; avoid duplicates
+
+    name_on_row = _name_matches_label(candidate.measurement_name, cell.row_label)
+    name_on_col = _name_matches_label(candidate.measurement_name, cell.column_label)
+    if not (name_on_row or name_on_col):
+        return ["measurement_name does not match the cited cell's row or column label"]
+    if candidate.sample_group is not None:
+        # The group must be the label on the axis the measurement name did NOT match.
+        opposite = cell.column_label if name_on_row else cell.row_label
+        if _normalize(candidate.sample_group) != _normalize(opposite):
+            return ["sample_group does not match the cited cell's opposite-axis label"]
+    return []
+
+
 def accept_candidates(
-    document: ArticleDocument, result: LiteratureExtractionResult
+    document: ArticleDocument,
+    result: LiteratureExtractionResult,
+    task: ExtractionTask | None = None,
 ) -> tuple[LiteratureExtractionResult, list[str]]:
-    """Keep only candidates whose source span really exists in ``document``.
+    """Keep only candidates whose source span really exists in ``document`` (and, when
+    ``task`` is given, whose *meaning* matches the cited cell and the requested targets).
 
     This is the acceptance boundary every extractor (including an LLM) must pass: a
-    fabricated locator, or a number that is not present in the cited span, is
-    rejected here. Passing does NOT mean the candidate is verified — that is PR8d.
+    fabricated locator, a number absent from the cited span, or a candidate about an
+    unrequested/mismatched measurement is rejected here. Passing does NOT mean the
+    candidate is verified — that is PR8d.
     """
     accepted = LiteratureExtractionResult(warnings=list(result.warnings))
     rejected: list[str] = []
@@ -410,6 +466,8 @@ def accept_candidates(
                 f"parsed_value {measurement.parsed_value!r} does not appear in the "
                 "cited source text"
             ]
+        if not errors and task is not None:
+            errors = _measurement_target_errors(document, measurement, task)
         if errors:
             rejected.append(f"measurement {measurement.measurement_name!r}: {'; '.join(errors)}")
         else:

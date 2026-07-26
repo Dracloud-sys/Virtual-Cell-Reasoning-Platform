@@ -31,6 +31,20 @@ to [Semantic Versioning](https://semver.org/).
   losing it to the `notes` string.
 
 ### Added
+- **PR8c extraction hardening.** The acceptance boundary is now **task-aware**:
+  `accept_candidates(document, result, task)` rejects any measurement candidate whose
+  `measurement_name` is not a requested target or does not match the cited cell's axis
+  (with `sample_group` on the opposite axis of the *same* cell), so an LLM cannot smuggle
+  in an unrequested or renamed measurement. `SourceLocator` gained `row_index`/`column_index`
+  and every table constraint must hold on one cell. `RelevanceResult` now carries `provider`,
+  so a provider_id-only article's score resolves and the agent ranks it correctly (was: 0);
+  ranking, dedup and the agent share one `ArticleIdentifier.stable_key`
+  (PMCID > PMID > DOI > provider-scoped id) and same-provider_id-across-providers no longer
+  collides. `ExtractionTask` gained a run-wide `max_total_candidates` alongside the
+  per-document `max_candidates`; the agent applies both (accept → dedup → per-document →
+  global). Statistic columns / values are split as before. Documented invariant: a
+  `statistic`-tagged candidate is not a biological measurement and is out of scope for PR8d
+  canonical mapping.
 - **Source-grounded literature extraction (PR8c).** `literature.documents` parses
   open-access JATS safely: DOCTYPE/ENTITY declarations are refused before parsing (so
   neither a billion-laughs bomb nor an external/entity-smuggled reference can resolve —

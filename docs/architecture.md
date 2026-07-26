@@ -150,15 +150,42 @@ PR8c adds **source-grounded extraction**, still strictly upstream of evidence.
 refused, bounded size/sections/tables/cells, typed `JatsParseError`, no-body treated as
 a warning), keeping the parsed body in-process — only `DocumentMetadata` (identifier,
 `content_hash`, counts, warnings) enters a bundle, never the full text.
-`literature.extraction` extracts only what an `ExtractionTask` asks for (a table cell
-becomes a candidate only when an axis label matches a requested measurement), keeps
-values split (`raw_value` / `parsed_value` / `comparator` / `uncertainty` / `unit` /
-`parse_status`) so a bound is never a point estimate and qualitative text never gains a
-number, and puts every extractor — including the optional `StructuredLiteratureExtractor`
-(LLM) — behind `accept_candidates`, which re-checks each locator and number against the
-real document. That is extraction *integrity*, not verification: **all PR8c candidates
-are unverified**, `verification_decisions` and `canonical_runs` stay empty, and the
-verification gate + canonical conversion are PR8d.
+`literature.extraction` extracts only what an `ExtractionTask` asks for and puts every
+extractor — including the optional `StructuredLiteratureExtractor` (LLM) — behind the
+same `accept_candidates(document, result, task)` gate. That is extraction *integrity*,
+not verification: **all PR8c candidates are unverified**, `verification_decisions` and
+`canonical_runs` stay empty, and the verification gate + canonical conversion are PR8d.
+
+Extraction policies (deterministic, and applied to every extractor):
+
+- **Targeting.** A table cell becomes a measurement candidate only when an axis label
+  matches a requested measurement; a candidate whose `measurement_name` is not a
+  requested target, or does not match its cited cell's row/column label (with the
+  `sample_group` on the opposite axis of the *same* cell), is rejected. "The paper has
+  a number" is never sufficient.
+- **Exact-cell anchoring.** `SourceLocator` carries `row_index`/`column_index`, and all
+  of {coordinates, row/column label, source_text, and any parsed number} must hold on
+  one and the same cell — a locator cannot be assembled from parts of different cells.
+- **Statistical columns.** p-value / adjusted-p / q-value+FDR / CI / n / SD·SEM·error
+  columns are recognised and never extracted as a biological measurement. A candidate
+  that explicitly targets a statistic axis is kept but tagged `statistic` — it is *not*
+  a biological measurement and is out of scope for PR8d canonical mapping.
+- **Value discipline.** Values are split (`raw_value`/`parsed_value`/`comparator`/
+  `uncertainty`/`unit`/`parse_status`): a bound (`<0.05`) keeps its comparator, an error
+  (`2.4 ± 0.3`) is kept apart, qualitative text (`increased`/`NS`) stays UNPARSED, and
+  `1,234` is left UNPARSED (ambiguous separator). No number is ever invented.
+- **`target_contexts` is reserved** — it does not filter extraction in this version
+  (supplying it emits a warning).
+- **Source-kind anchoring.** Abstract locators check the abstract only; section locators
+  must name a section and match its text; figure/supplementary locators are rejected as
+  unsupported by the current parser.
+- **Bounds.** `ExtractionTask.max_candidates` is a per-*document* cap and
+  `max_total_candidates` a run-wide cap; the agent applies both in a fixed order
+  (accept → de-duplicate by `candidate_id` → per-document cap → global cap), with an
+  optional extractor's failure isolated to its own document.
+
+**PR8d invariant.** A candidate tagged `statistic` is a statistic *about* a measurement,
+not a measurement, and must never be converted to a canonical `ExperimentRun`.
 
 PR8b implements the discovery slice: `literature.contracts` (query, article metadata,
 source-anchored candidates with deterministic ids, transparent relevance, verification

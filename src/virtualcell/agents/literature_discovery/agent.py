@@ -97,8 +97,9 @@ class LiteratureDiscoveryAgent(BaseAgent):
             "target_measurements": inputs.context.get("target_measurements", []),
             "target_contexts": inputs.context.get("target_contexts", []),
         }
-        if "max_candidates" in inputs.context:
-            payload["max_candidates"] = inputs.context["max_candidates"]
+        for field in ("max_candidates", "max_total_candidates"):
+            if field in inputs.context:
+                payload[field] = inputs.context[field]
         try:
             return ExtractionTask(**payload)
         except ValidationError as exc:
@@ -161,10 +162,11 @@ class LiteratureDiscoveryAgent(BaseAgent):
         canonical run, and nothing is written to the KnowledgeStore.
         """
         # One shared identity policy (PMCID > PMID > DOI > provider-scoped id), the same
-        # one dedup uses. Ranking by score avoids a lookup table whose keys could
-        # collide (two DOI-only records previously collapsed onto one key, silently
-        # dropping a paper and extracting the other twice).
-        scores = {rel.article.stable_key(): rel.total_score for rel in bundle.relevance}
+        # one dedup uses, and — crucially — the same one the relevance score carries, so
+        # a provider_id-only record resolves to its score instead of falling to 0.
+        # Ranking sorts by score (Python's sort is stable, so equal scores keep the
+        # discovery order) rather than a lookup table whose keys could collide.
+        scores = {rel.stable_key(): rel.total_score for rel in bundle.relevance}
         ranked = sorted(
             bundle.articles,
             key=lambda a: scores.get(a.identifiers.stable_key(a.provider), 0.0),
@@ -174,8 +176,12 @@ class LiteratureDiscoveryAgent(BaseAgent):
         documents, warnings = [], list(bundle.warnings)
         measurements, claims, interpretations = [], [], []
         seen: set[str] = set()
+        total_kept = 0
+        global_capped = False
 
         for record in ranked:
+            if global_capped:
+                break
             label = record.identifiers.stable_key(record.provider)
             document, problem = self._document_for(record)
             if problem:
@@ -201,14 +207,16 @@ class LiteratureDiscoveryAgent(BaseAgent):
                     ],
                     warnings=[*result.warnings, *proposed.warnings],
                 )
-            accepted, rejected = accept_candidates(document, result)
+            # Task-aware acceptance: every candidate (deterministic OR LLM) must be
+            # source-anchored AND about a requested target on the cell it cites.
+            accepted, rejected = accept_candidates(document, result, task)
             documents.append(document.metadata())
             warnings.extend(accepted.warnings)
             warnings.extend(f"rejected candidate — {reason}" for reason in rejected)
 
             # Cap order (deterministic and documented): accept -> de-duplicate by
-            # candidate_id -> apply the per-document cap. Deterministic candidates are
-            # added before any LLM proposals, so the cap never silently prefers an LLM.
+            # candidate_id -> per-document cap -> global run cap. Deterministic
+            # candidates come before any LLM proposals, so a cap never prefers an LLM.
             kept = 0
             for bucket, items in (
                 (measurements, accepted.measurements),
@@ -218,12 +226,21 @@ class LiteratureDiscoveryAgent(BaseAgent):
                 for candidate in items:
                     if candidate.candidate_id in seen:
                         continue  # identical proposal from another pass
+                    if total_kept >= task.max_total_candidates:
+                        warnings.append(
+                            f"stopped at max_total_candidates={task.max_total_candidates}"
+                        )
+                        global_capped = True
+                        break
                     if kept >= task.max_candidates:
                         warnings.append(f"{label}: stopped at max_candidates={task.max_candidates}")
                         break
                     seen.add(candidate.candidate_id)
                     bucket.append(candidate)
                     kept += 1
+                    total_kept += 1
+                if global_capped or kept >= task.max_candidates:
+                    break
 
         # Rebuilt (not mutated) so the bundle's linkage validation runs.
         return LiteratureEvidenceBundle(

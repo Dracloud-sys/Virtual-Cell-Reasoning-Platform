@@ -412,10 +412,17 @@ class RelevanceResult(BaseModel):
     only — never reused as evidence strength or claim confidence."""
 
     article: ArticleIdentifier
+    # The article's provider, kept so a provider-scoped identity (a provider_id-only
+    # record) resolves to the same ``stable_key`` the agent uses for ranking.
+    provider: str | None = None
     total_score: float
     matched_terms: list[str] = Field(default_factory=list)
     missing_critical_filters: list[str] = Field(default_factory=list)
     breakdown: list[RelevanceComponent] = Field(default_factory=list)
+
+    def stable_key(self) -> str:
+        """The shared identity key for this scored article (provider included)."""
+        return self.article.stable_key(self.provider)
 
 
 # --- verification & bundle ---------------------------------------------------

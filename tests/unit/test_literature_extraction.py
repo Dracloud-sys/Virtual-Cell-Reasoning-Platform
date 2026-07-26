@@ -230,13 +230,22 @@ def test_max_candidates_bounds_are_validated(bad) -> None:
 # --- acceptance boundary (extraction integrity) ------------------------------
 
 
-def _candidate(article, source_text: str, parsed_value: float | None = None, **loc_over):
+def _candidate(
+    article,
+    source_text: str,
+    parsed_value: float | None = None,
+    *,
+    measurement_name: str = "TERT",
+    sample_group: str | None = None,
+    **loc_over,
+):
     loc_kw = dict(
         article=article, source_kind=SourceKind.TABLE, table_id="T1", source_text=source_text
     )
     loc_kw.update(loc_over)
     return ExtractedMeasurementCandidate(
-        measurement_name="TERT",
+        measurement_name=measurement_name,
+        sample_group=sample_group,
         raw_value=source_text,
         parsed_value=parsed_value,
         parse_status=ParseStatus.PARSED if parsed_value is not None else ParseStatus.UNPARSED,
@@ -426,6 +435,141 @@ def test_unsupported_source_kinds_are_rejected(doc, article_identifier, kind) ->
     accepted, rejected = accept_candidates(doc, LiteratureExtractionResult(claims=[bad]))
     assert accepted.claims == []
     assert any("not supported by the current parser" in r for r in rejected)
+
+
+# --- task-aware acceptance (target boundary for every extractor) -------------
+
+
+def test_deterministic_candidates_pass_the_task_gate(doc) -> None:
+    result = extract_deterministic(doc, _task())
+    accepted, rejected = accept_candidates(doc, result, _task())
+    assert rejected == []
+    assert len(accepted.measurements) == len(result.measurements)
+
+
+def test_unrequested_measurement_name_is_rejected(doc, article_identifier) -> None:
+    forged = _candidate(
+        article_identifier,
+        "2.4",
+        2.4,
+        measurement_name="NOT_REQUESTED",
+        row_index=0,
+        column_index=2,
+        row_label="TERT",
+        column_label="P35",
+    )
+    accepted, rejected = accept_candidates(
+        doc,
+        LiteratureExtractionResult(measurements=[forged]),
+        ExtractionTask(target_measurements=["TERT"]),
+    )
+    assert accepted.measurements == []
+    assert any("not a requested target" in r for r in rejected)
+
+
+def test_measurement_name_not_matching_the_cited_cell_is_rejected(doc, article_identifier) -> None:
+    # CDK4 is a requested target, but the cited cell is TERT/P35.
+    forged = _candidate(
+        article_identifier,
+        "2.4",
+        2.4,
+        measurement_name="CDK4",
+        row_index=0,
+        column_index=2,
+        row_label="TERT",
+        column_label="P35",
+    )
+    accepted, rejected = accept_candidates(
+        doc,
+        LiteratureExtractionResult(measurements=[forged]),
+        ExtractionTask(target_measurements=["TERT", "CDK4"]),
+    )
+    assert accepted.measurements == []
+    assert any("does not match the cited cell" in r for r in rejected)
+
+
+def test_fabricated_sample_group_is_rejected(doc, article_identifier) -> None:
+    forged = _candidate(
+        article_identifier,
+        "2.4",
+        2.4,
+        sample_group="fabricated",
+        row_index=0,
+        column_index=2,
+        row_label="TERT",
+        column_label="P35",
+    )
+    accepted, rejected = accept_candidates(
+        doc, LiteratureExtractionResult(measurements=[forged]), _task()
+    )
+    assert accepted.measurements == []
+    assert any("sample_group does not match" in r for r in rejected)
+
+
+def test_row_oriented_target_is_accepted(doc, article_identifier) -> None:
+    good = _candidate(
+        article_identifier,
+        "2.4",
+        2.4,
+        sample_group="P35",
+        row_index=0,
+        column_index=2,
+        row_label="TERT",
+        column_label="P35",
+    )
+    accepted, rejected = accept_candidates(
+        doc,
+        LiteratureExtractionResult(measurements=[good]),
+        ExtractionTask(target_measurements=["TERT"]),
+    )
+    assert len(accepted.measurements) == 1 and rejected == []
+
+
+def test_column_oriented_target_is_accepted(article_identifier) -> None:
+    # Table with markers as COLUMNS and groups as rows.
+    doc = _table_doc(
+        article_identifier,
+        "<thead><tr><th>Group</th><th>TERT</th></tr></thead>"
+        "<tbody><tr><td>P35</td><td>2.4</td></tr></tbody>",
+    )
+    good = ExtractedMeasurementCandidate(
+        measurement_name="TERT",
+        sample_group="P35",
+        raw_value="2.4",
+        parsed_value=2.4,
+        parse_status=ParseStatus.PARSED,
+        extraction_method=ExtractionMethod.LLM_STRUCTURED,
+        source_locator=SourceLocator(
+            article=article_identifier,
+            source_kind=SourceKind.TABLE,
+            table_id="T1",
+            row_index=0,
+            column_index=1,
+            row_label="P35",
+            column_label="TERT",
+            source_text="2.4",
+        ),
+    )
+    accepted, rejected = accept_candidates(
+        doc,
+        LiteratureExtractionResult(measurements=[good]),
+        ExtractionTask(target_measurements=["TERT"]),
+    )
+    assert len(accepted.measurements) == 1 and rejected == []
+
+
+def test_explicit_statistic_target_passes_the_task_gate(article_identifier) -> None:
+    doc = _table_doc(
+        article_identifier,
+        "<thead><tr><th>Marker</th><th>P value</th></tr></thead>"
+        "<tbody><tr><td>TERT</td><td>0.03</td></tr></tbody>",
+    )
+    result = extract_deterministic(doc, ExtractionTask(target_measurements=["P value"]))
+    accepted, rejected = accept_candidates(
+        doc, result, ExtractionTask(target_measurements=["P value"])
+    )
+    assert len(accepted.measurements) == 1 and rejected == []
+    assert accepted.measurements[0].statistic == "p_value"
 
 
 # --- structured LLM boundary --------------------------------------------------

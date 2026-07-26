@@ -34,14 +34,21 @@ from virtualcell.literature.providers.base import ProviderError
 _IDENT = ArticleIdentifier(pmcid="PMC1", pmid="1", provider_id="PMC1")
 
 
-def _record(identifiers=_IDENT, *, abstract="bovine preadipocyte TERT escape", full=True):
+def _record(
+    identifiers=_IDENT,
+    *,
+    title="TERT in bovine preadipocyte senescence",
+    abstract="bovine preadipocyte TERT escape",
+    full=True,
+    provider="fake",
+):
     return ArticleRecord(
         identifiers=identifiers,
-        title="TERT in bovine preadipocyte senescence",
+        title=title,
         abstract=abstract,
         is_open_access=full,
         has_full_text=full,
-        provider="fake",
+        provider=provider,
         source_url="https://europepmc.org/article/PMC/PMC1",
         retrieved_at=datetime(2024, 1, 1, tzinfo=UTC),
     )
@@ -116,20 +123,22 @@ class _ExplodingExtractor:
         raise RuntimeError("model unavailable")
 
 
-class _FloodingExtractor:
-    """Returns far more candidates than the cap allows."""
+class _ConfidenceDuplicateExtractor:
+    """Returns many candidates that differ only in extraction_confidence — an identity
+    field is excluded from candidate_id, so these all collapse to ONE candidate."""
 
-    name = "flooding"
+    name = "dupes"
 
     def extract(self, document, task) -> LiteratureExtractionResult:
         return LiteratureExtractionResult(
             measurements=[
                 ExtractedMeasurementCandidate(
                     measurement_name="TERT",
+                    sample_group="P35",
                     raw_value="2.4",
                     parsed_value=2.4,
                     parse_status="parsed",
-                    extraction_confidence=i / 1000,  # vary a non-identity field
+                    extraction_confidence=i / 1000,  # varies a non-identity field only
                     extraction_method=ExtractionMethod.LLM_STRUCTURED,
                     source_locator=SourceLocator(
                         article=document.article,
@@ -147,6 +156,23 @@ class _FloodingExtractor:
         )
 
 
+# A table with many distinct marker rows, so deterministic extraction alone yields
+# many DISTINCT candidates (real flooding, not identity-duplicated).
+_MARKERS = [f"M{i}" for i in range(1, 7)]
+_BIG_TABLE = (
+    '<article><back><table-wrap id="T1"><table>'
+    "<thead><tr><th>Marker</th><th>P35</th></tr></thead><tbody>"
+    + "".join(f"<tr><td>{m}</td><td>{i + 1}.0</td></tr>" for i, m in enumerate(_MARKERS))
+    + "</tbody></table></table-wrap></back></article>"
+)
+
+
+def _big_inputs(**over) -> AgentInput:
+    context = {"extract": True, "target_measurements": _MARKERS}
+    context.update(over)
+    return AgentInput(query="markers", context=context)
+
+
 def _agent(provider, extractor=None) -> LiteratureDiscoveryAgent:
     services = {"literature_provider": provider}
     if extractor is not None:
@@ -160,8 +186,10 @@ def _inputs(**over) -> AgentInput:
     return AgentInput(query="TERT bovine preadipocyte", context=context)
 
 
-async def _bundle(provider, extractor=None, **over) -> LiteratureEvidenceBundle:
-    out = await _agent(provider, extractor).run(_inputs(**over))
+async def _bundle(
+    provider, extractor=None, *, over_inputs=_inputs, **over
+) -> LiteratureEvidenceBundle:
+    out = await _agent(provider, extractor).run(over_inputs(**over))
     return LiteratureEvidenceBundle.model_validate(out.result)
 
 
@@ -226,6 +254,42 @@ async def test_provider_id_only_article_is_extracted(jats_xml) -> None:
     assert [d.article.provider_id for d in bundle.documents] == ["X1"]
 
 
+async def test_provider_id_only_ranking_picks_the_higher_score(jats_xml) -> None:
+    # A provider_id-only record's relevance score must resolve (was: 0, so the wrong
+    # paper won). The higher-scoring paper is selected when only one is extracted.
+    records = [
+        _record(
+            ArticleIdentifier(provider_id="A"), title="Unrelated", abstract="nothing", full=False
+        ),
+        _record(
+            ArticleIdentifier(provider_id="B"),
+            title="TERT bovine preadipocyte",
+            abstract="TERT bovine preadipocyte escape",
+            full=False,
+        ),
+    ]
+    out = await _agent(_FakeProvider(jats_xml, records=records)).run(
+        _inputs(max_extract_articles=1)
+    )
+    bundle = LiteratureEvidenceBundle.model_validate(out.result)
+    assert [d.article.provider_id for d in bundle.documents] == ["B"]
+
+
+async def test_same_provider_id_from_different_providers_do_not_collide(jats_xml) -> None:
+    # Distinct titles (so title-fallback dedup keeps both) but the SAME provider_id.
+    records = [
+        _record(
+            ArticleIdentifier(provider_id="7"), title="TERT paper one", full=False, provider="p1"
+        ),
+        _record(
+            ArticleIdentifier(provider_id="7"), title="TERT paper two", full=False, provider="p2"
+        ),
+    ]
+    bundle = await _bundle(_FakeProvider(jats_xml, records=records), max_extract_articles=5)
+    # Namespaced by provider (provider:p1:7 vs provider:p2:7), so both are extracted.
+    assert len(bundle.documents) == 2
+
+
 # --- abstract fallback --------------------------------------------------------
 
 
@@ -272,6 +336,39 @@ async def test_llm_candidates_are_accepted_only_when_source_anchored(jats_xml) -
     assert any("rejected candidate" in w for w in bundle.warnings)
 
 
+async def test_llm_candidate_for_an_unrequested_target_is_rejected(jats_xml) -> None:
+    class _OffTarget:
+        name = "off_target"
+
+        def extract(self, document, task) -> LiteratureExtractionResult:
+            # Cites the real TERT/P35 cell but names a measurement no one requested.
+            return LiteratureExtractionResult(
+                measurements=[
+                    ExtractedMeasurementCandidate(
+                        measurement_name="NOT_REQUESTED",
+                        raw_value="2.4",
+                        parsed_value=2.4,
+                        parse_status="parsed",
+                        extraction_method=ExtractionMethod.LLM_STRUCTURED,
+                        source_locator=SourceLocator(
+                            article=document.article,
+                            source_kind=SourceKind.TABLE,
+                            table_id="T1",
+                            row_index=0,
+                            column_index=2,
+                            row_label="TERT",
+                            column_label="P35",
+                            source_text="2.4",
+                        ),
+                    )
+                ]
+            )
+
+    bundle = await _bundle(_FakeProvider(jats_xml), _OffTarget())
+    assert all(m.measurement_name != "NOT_REQUESTED" for m in bundle.measurements)
+    assert any("not a requested target" in w for w in bundle.warnings)
+
+
 async def test_llm_failure_is_isolated_and_keeps_deterministic_results(jats_xml) -> None:
     bundle = await _bundle(_FakeProvider(jats_xml), _ExplodingExtractor())
     assert bundle.measurements, "deterministic candidates must survive an extractor failure"
@@ -279,10 +376,48 @@ async def test_llm_failure_is_isolated_and_keeps_deterministic_results(jats_xml)
     assert any("structured extractor failed" in w for w in bundle.warnings)
 
 
-async def test_oversized_llm_output_is_capped(jats_xml) -> None:
-    bundle = await _bundle(_FakeProvider(jats_xml), _FloodingExtractor(), max_candidates=3)
+async def test_confidence_only_duplicates_collapse_to_one(jats_xml) -> None:
+    bundle = await _bundle(_FakeProvider(jats_xml), _ConfidenceDuplicateExtractor())
+    llm = [m for m in bundle.measurements if m.extraction_method.value == "llm_structured"]
+    assert len(llm) == 1  # 50 confidence-varied proposals share one candidate_id
+
+
+async def test_distinct_candidates_hit_the_per_document_cap() -> None:
+    # A single big table yields 6 distinct deterministic candidates; the per-document
+    # cap keeps 3.
+    bundle = await _bundle(_FakeProvider(_BIG_TABLE), max_candidates=3, over_inputs=_big_inputs)
     assert len(bundle.measurements) == 3
     assert any("max_candidates" in w for w in bundle.warnings)
+
+
+async def test_global_cap_spans_documents() -> None:
+    # Two documents, each with 6 distinct candidates and a per-document cap of 10 (never
+    # hit), but a global cap of 8: 6 from the first document, 2 from the second.
+    records = [
+        _record(ArticleIdentifier(doi="10.1/a"), full=True),
+        _record(ArticleIdentifier(doi="10.1/b"), full=True),
+    ]
+    bundle = await _bundle(
+        _FakeProvider(_BIG_TABLE, records=records),
+        max_candidates=10,
+        max_total_candidates=8,
+        over_inputs=_big_inputs,
+    )
+    assert len(bundle.measurements) == 8
+    assert any("max_total_candidates" in w for w in bundle.warnings)
+
+
+async def test_cap_order_is_deterministic_across_runs() -> None:
+    records = [
+        _record(ArticleIdentifier(doi="10.1/a"), full=True),
+        _record(ArticleIdentifier(doi="10.1/b"), full=True),
+    ]
+    kw = dict(max_candidates=10, max_total_candidates=8, over_inputs=_big_inputs)
+    first = await _bundle(_FakeProvider(_BIG_TABLE, records=list(records)), **kw)
+    second = await _bundle(_FakeProvider(_BIG_TABLE, records=list(records)), **kw)
+    assert [m.candidate_id for m in first.measurements] == [
+        m.candidate_id for m in second.measurements
+    ]
 
 
 async def test_one_documents_llm_failure_does_not_block_another(jats_xml) -> None:
