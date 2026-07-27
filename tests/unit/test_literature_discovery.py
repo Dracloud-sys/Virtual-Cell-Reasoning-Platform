@@ -372,6 +372,50 @@ def test_title_fallback_only_without_strong_ids() -> None:
     assert len(result.articles) == 1  # no strong ids -> title fallback merges
 
 
+def test_same_provider_and_provider_id_merge_despite_different_titles() -> None:
+    # provider_id is now a strong (provider-scoped) key: same provider + id => one record.
+    result = deduplicate_articles(
+        [
+            _rec(provider_id="7", title="Title A", provider="p1"),
+            _rec(provider_id="7", title="Title B", provider="p1"),
+        ]
+    )
+    assert len(result.articles) == 1
+
+
+def test_same_provider_id_from_different_providers_stay_separate() -> None:
+    result = deduplicate_articles(
+        [
+            _rec(provider_id="7", title="Paper A", provider="p1"),
+            _rec(provider_id="7", title="Paper B", provider="p2"),
+        ]
+    )
+    assert len(result.articles) == 2  # namespaced by provider
+
+
+def test_shared_provider_id_with_conflicting_strong_ids_is_reported() -> None:
+    result = deduplicate_articles(
+        [
+            _rec(provider_id="7", pmid="111", provider="p1"),
+            _rec(provider_id="7", pmid="222", provider="p1"),
+        ]
+    )
+    assert len(result.articles) == 1  # merged on the shared provider-scoped id
+    assert any("pmid" in c for c in result.conflicts)  # but the pmid conflict is surfaced
+
+
+def test_no_duplicate_stable_keys_after_dedup() -> None:
+    articles = [
+        _rec(provider_id="7", title="A", provider="p1"),
+        _rec(provider_id="7", title="B", provider="p1"),
+        _rec(pmid="1", title="C"),
+        _rec(doi="10.1/x", title="D"),
+    ]
+    deduped = deduplicate_articles(articles).articles
+    keys = [a.identifiers.stable_key(a.provider) for a in deduped]
+    assert len(keys) == len(set(keys))  # every surviving record has a unique identity
+
+
 def test_conflicting_strong_ids_merge_but_report_conflict() -> None:
     # Same DOI, different PMID: they share a strong id so they merge, but the PMID
     # conflict is surfaced rather than silently overwritten.
@@ -500,8 +544,9 @@ def test_relevance_is_not_an_evidence_tier() -> None:
 
 
 def test_discover_returns_relevance_ranked_bundle() -> None:
-    high = _result(pmid="1", pmcid=None, doi="10.1/1")
+    high = _result(id="1", pmid="1", pmcid=None, doi="10.1/1")
     low = _result(
+        id="2",
         pmid="2",
         pmcid=None,
         doi="10.1/2",

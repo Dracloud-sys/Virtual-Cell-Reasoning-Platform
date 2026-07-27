@@ -375,10 +375,12 @@ def test_unknown_table_id_is_rejected(doc, article_identifier) -> None:
 
 
 def test_hallucinated_number_not_in_the_cited_span_is_rejected(doc, article_identifier) -> None:
+    # The locator cites the real "2.4" cell but the candidate claims 9.9 — a
+    # conservative re-parse of the raw value disagrees.
     result = LiteratureExtractionResult(measurements=[_candidate(article_identifier, "2.4", 9.9)])
     accepted, rejected = accept_candidates(doc, result)
     assert accepted.measurements == []
-    assert any("does not appear in the cited source text" in r for r in rejected)
+    assert any("parsed_value disagrees" in r for r in rejected)
 
 
 # --- source-kind anchoring ----------------------------------------------------
@@ -570,6 +572,166 @@ def test_explicit_statistic_target_passes_the_task_gate(article_identifier) -> N
     )
     assert len(accepted.measurements) == 1 and rejected == []
     assert accepted.measurements[0].statistic == "p_value"
+
+
+# --- value integrity (parse contract enforced on every extractor) ------------
+
+
+def _valued(article, *, source_text, table_html=None, **fields):
+    """Build a measurement candidate citing a single-cell table, with value fields
+    controllable so an LLM's bypass attempts can be exercised."""
+    from xml.sax.saxutils import escape
+
+    html = table_html or (
+        "<thead><tr><th>Marker</th><th>P35</th></tr></thead>"
+        f"<tbody><tr><td>TERT</td><td>{escape(source_text)}</td></tr></tbody>"
+    )
+    doc = _table_doc(article, html)
+    kw = dict(
+        measurement_name="TERT",
+        raw_value=source_text,
+        parse_status=ParseStatus.PARSED,
+        extraction_method=ExtractionMethod.LLM_STRUCTURED,
+        source_locator=SourceLocator(
+            article=article,
+            source_kind=SourceKind.TABLE,
+            table_id="T1",
+            row_index=0,
+            column_index=1,
+            row_label="TERT",
+            column_label="P35",
+            source_text=source_text,
+        ),
+    )
+    kw.update(fields)
+    return doc, ExtractedMeasurementCandidate(**kw)
+
+
+def _rejected(doc, candidate) -> list[str]:
+    accepted, rejected = accept_candidates(
+        doc, LiteratureExtractionResult(measurements=[candidate]), _task()
+    )
+    assert accepted.measurements == []
+    return rejected
+
+
+def test_fabricated_raw_value_is_rejected(article_identifier) -> None:
+    doc, candidate = _valued(
+        article_identifier, source_text="2.4", raw_value="fabricated", parsed_value=2.4
+    )
+    assert any(
+        "raw_value does not equal the cited cell text" in r for r in _rejected(doc, candidate)
+    )
+
+
+def test_ambiguous_comma_submitted_as_a_number_is_rejected(article_identifier) -> None:
+    # "1,234" must stay UNPARSED for every extractor; claiming 1.0 is rejected.
+    doc, candidate = _valued(article_identifier, source_text="1,234", parsed_value=1.0)
+    assert any("re-parse" in r for r in _rejected(doc, candidate))
+
+
+def test_uncertainty_submitted_as_the_primary_value_is_rejected(article_identifier) -> None:
+    doc, candidate = _valued(article_identifier, source_text="2.4 ± 0.3", parsed_value=0.3)
+    assert any("parsed_value disagrees" in r for r in _rejected(doc, candidate))
+
+
+def test_tampered_comparator_is_rejected(article_identifier) -> None:
+    doc, candidate = _valued(
+        article_identifier, source_text="<0.05", parsed_value=0.05, comparator=None
+    )
+    assert any("comparator disagrees" in r for r in _rejected(doc, candidate))
+
+
+def test_tampered_unit_is_rejected(article_identifier) -> None:
+    doc, candidate = _valued(article_identifier, source_text="42 h", parsed_value=42.0, unit="day")
+    assert any("unit disagrees" in r for r in _rejected(doc, candidate))
+
+
+def test_parse_status_value_contradiction_is_rejected(article_identifier) -> None:
+    # parse_status=UNPARSED but a value is present -> re-parse of "increased" disagrees.
+    doc, candidate = _valued(
+        article_identifier,
+        source_text="increased",
+        parsed_value=2.4,
+        parse_status=ParseStatus.UNPARSED,
+    )
+    assert _rejected(doc, candidate)
+
+
+def test_valid_deterministic_and_llm_values_pass(article_identifier) -> None:
+    for source, _value in (("2.4", 2.4), ("2.4-fold", 2.4), ("<0.05", 0.05)):
+        doc, _ = _valued(article_identifier, source_text=source)
+        parsed = parse_value_text(source)
+        good = ExtractedMeasurementCandidate(
+            measurement_name="TERT",
+            raw_value=source,
+            parsed_value=parsed.parsed_value,
+            comparator=parsed.comparator,
+            uncertainty=parsed.uncertainty,
+            unit=parsed.unit,
+            parse_status=parsed.parse_status,
+            extraction_method=ExtractionMethod.LLM_STRUCTURED,
+            source_locator=SourceLocator(
+                article=article_identifier,
+                source_kind=SourceKind.TABLE,
+                table_id="T1",
+                row_index=0,
+                column_index=1,
+                row_label="TERT",
+                column_label="P35",
+                source_text=source,
+            ),
+        )
+        accepted, rejected = accept_candidates(
+            doc, LiteratureExtractionResult(measurements=[good]), _task()
+        )
+        assert len(accepted.measurements) == 1 and rejected == [], (source, rejected)
+
+
+# --- ambiguous measurement axis ----------------------------------------------
+
+
+def test_both_axes_matching_is_rejected_in_acceptance(article_identifier) -> None:
+    doc = _table_doc(
+        article_identifier,
+        "<thead><tr><th>Marker</th><th>TERT expression</th></tr></thead>"
+        "<tbody><tr><td>TERT</td><td>2.4</td></tr></tbody>",
+    )
+    candidate = ExtractedMeasurementCandidate(
+        measurement_name="TERT",
+        raw_value="2.4",
+        parsed_value=2.4,
+        parse_status=ParseStatus.PARSED,
+        extraction_method=ExtractionMethod.LLM_STRUCTURED,
+        source_locator=SourceLocator(
+            article=article_identifier,
+            source_kind=SourceKind.TABLE,
+            table_id="T1",
+            row_index=0,
+            column_index=1,
+            row_label="TERT",
+            column_label="TERT expression",
+            source_text="2.4",
+        ),
+    )
+    accepted, rejected = accept_candidates(
+        doc,
+        LiteratureExtractionResult(measurements=[candidate]),
+        ExtractionTask(target_measurements=["TERT"]),
+    )
+    assert accepted.measurements == []
+    assert any("ambiguous" in r for r in rejected)
+
+
+def test_both_axes_matching_is_skipped_by_deterministic_extractor(article_identifier) -> None:
+    doc = _table_doc(
+        article_identifier,
+        "<thead><tr><th>Marker</th><th>TERT expression</th></tr></thead>"
+        "<tbody><tr><td>TERT</td><td>2.4</td></tr></tbody>",
+    )
+    result = extract_deterministic(doc, ExtractionTask(target_measurements=["TERT"]))
+    assert result.measurements == []
+    assert any("both axes" in w for w in result.warnings)
 
 
 # --- structured LLM boundary --------------------------------------------------

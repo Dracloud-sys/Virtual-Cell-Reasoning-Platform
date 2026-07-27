@@ -250,17 +250,32 @@ def extract_deterministic(
         )
 
     seen_statistic_columns: set[str] = set()
+    seen_ambiguous: set[str] = set()
     for table in document.tables:
         for cell in table.cells:
             if len(result.measurements) >= task.max_candidates:
                 result.warnings.append(f"stopped at max_candidates={task.max_candidates}")
                 return result
-            target = _match_target(cell.row_label, task.target_measurements)
-            group = cell.column_label
-            if target is None:
-                target = _match_target(cell.column_label, task.target_measurements)
-                group = cell.row_label
-            if target is None or not cell.text.strip():
+            row_target = _match_target(cell.row_label, task.target_measurements)
+            col_target = _match_target(cell.column_label, task.target_measurements)
+            if row_target is not None and col_target is not None:
+                # Both axes name a target: which is the measurement is ambiguous. Do
+                # not guess an axis — skip and record it once per table position.
+                key = f"{table.table_id}:{cell.row_index}:{cell.column_index}"
+                if key not in seen_ambiguous:
+                    seen_ambiguous.add(key)
+                    result.warnings.append(
+                        f"table {table.table_id}: cell at (row {cell.row_index}, column "
+                        f"{cell.column_index}) matches a target on both axes; not extracted"
+                    )
+                continue
+            if row_target is not None:
+                target, group = row_target, cell.column_label
+            elif col_target is not None:
+                target, group = col_target, cell.row_label
+            else:
+                continue
+            if not cell.text.strip():
                 continue
             # Skip the label cell itself (its text is the row label, not a value).
             if _normalize(cell.text) == _normalize(cell.row_label) and cell.column_index == 0:
@@ -391,12 +406,46 @@ def _locator_errors(document: ArticleDocument, locator: SourceLocator) -> list[s
     ]
 
 
-def _value_is_in_source(candidate: ExtractedMeasurementCandidate) -> bool:
-    """A parsed number must actually appear in the candidate's own source span."""
-    if candidate.parsed_value is None:
+def _floats_equal(a: float | None, b: float | None) -> bool:
+    if a is None and b is None:
         return True
-    numbers = {float(n) for n in _NUMBER.findall(candidate.source_locator.source_text)}
-    return any(abs(candidate.parsed_value - n) < 1e-9 for n in numbers)
+    if a is None or b is None:
+        return False
+    return abs(a - b) < 1e-9
+
+
+def _value_integrity_errors(candidate: ExtractedMeasurementCandidate) -> list[str]:
+    """The value-parsing contract, enforced on *every* extractor (LLM included).
+
+    ``raw_value`` must be the verbatim cited text, and re-running the conservative
+    ``parse_value_text`` on it must reproduce the candidate's parsed_value /
+    comparator / uncertainty / unit / parse_status. So an LLM cannot invent a raw
+    value, turn an ambiguous ``1,234`` into a number, promote an uncertainty to the
+    primary value, or ship a parse_status that contradicts its own value.
+    """
+    raw = candidate.raw_value
+    if raw is None:
+        return ["measurement has no raw_value to verify"]
+    locator = candidate.source_locator
+    errors: list[str] = []
+    if locator.source_kind is SourceKind.TABLE:
+        if raw.strip() != locator.source_text.strip():
+            errors.append("raw_value does not equal the cited cell text")
+    elif raw not in locator.source_text:
+        errors.append("raw_value is not a verbatim span of the cited source text")
+
+    reparse = parse_value_text(raw)
+    if candidate.parse_status is not reparse.parse_status:
+        errors.append("parse_status disagrees with a conservative re-parse of raw_value")
+    if not _floats_equal(candidate.parsed_value, reparse.parsed_value):
+        errors.append("parsed_value disagrees with a conservative re-parse of raw_value")
+    if not _floats_equal(candidate.uncertainty, reparse.uncertainty):
+        errors.append("uncertainty disagrees with a conservative re-parse of raw_value")
+    if candidate.comparator != reparse.comparator:
+        errors.append("comparator disagrees with a conservative re-parse of raw_value")
+    if candidate.unit != reparse.unit:
+        errors.append("unit disagrees with a conservative re-parse of raw_value")
+    return errors
 
 
 def _name_matches_label(name: str, label: str | None) -> bool:
@@ -433,6 +482,8 @@ def _measurement_target_errors(
 
     name_on_row = _name_matches_label(candidate.measurement_name, cell.row_label)
     name_on_col = _name_matches_label(candidate.measurement_name, cell.column_label)
+    if name_on_row and name_on_col:
+        return ["measurement axis is ambiguous (name matches both the row and column label)"]
     if not (name_on_row or name_on_col):
         return ["measurement_name does not match the cited cell's row or column label"]
     if candidate.sample_group is not None:
@@ -461,11 +512,8 @@ def accept_candidates(
 
     for measurement in result.measurements:
         errors = _locator_errors(document, measurement.source_locator)
-        if not errors and not _value_is_in_source(measurement):
-            errors = [
-                f"parsed_value {measurement.parsed_value!r} does not appear in the "
-                "cited source text"
-            ]
+        if not errors:
+            errors = _value_integrity_errors(measurement)
         if not errors and task is not None:
             errors = _measurement_target_errors(document, measurement, task)
         if errors:

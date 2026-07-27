@@ -136,8 +136,10 @@ def build_europe_pmc_query(query: LiteratureQuery) -> BuiltQuery:
 
 
 def _strong_keys(article: ArticleRecord) -> list[tuple[str, str]]:
-    """Strong identity keys (PMCID, PMID, normalized DOI). ``provider_id`` is
-    deliberately excluded — it is provider-scoped, not a cross-provider identity."""
+    """Strong identity keys (PMCID, PMID, normalized DOI, and provider-scoped
+    provider_id). ``provider_id`` is included but *namespaced by provider*, so the
+    same id from two providers stays distinct — matching ``stable_key`` exactly, so
+    discovery, dedup and the agent share one identity policy."""
     keys: list[tuple[str, str]] = []
     ident = article.identifiers
     if ident.pmcid:
@@ -146,6 +148,8 @@ def _strong_keys(article: ArticleRecord) -> list[tuple[str, str]]:
         keys.append(("pmid", ident.pmid))
     if ident.normalized_doi:
         keys.append(("doi", ident.normalized_doi))
+    if ident.provider_id:
+        keys.append(("provider_id", f"{article.provider or '?'}:{ident.provider_id}"))
     return keys
 
 

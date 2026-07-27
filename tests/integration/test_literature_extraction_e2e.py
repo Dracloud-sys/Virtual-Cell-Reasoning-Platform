@@ -407,6 +407,45 @@ async def test_global_cap_spans_documents() -> None:
     assert any("max_total_candidates" in w for w in bundle.warnings)
 
 
+class _ClaimExtractor:
+    """Adds two abstract-anchored claim candidates (valid source spans)."""
+
+    name = "claims"
+
+    def extract(self, document, task) -> LiteratureExtractionResult:
+        from virtualcell.literature.contracts import ExtractedClaimCandidate
+
+        def claim(obj: str):
+            return ExtractedClaimCandidate(
+                subject="TERT",
+                predicate="increased",
+                object=obj,
+                extraction_method=ExtractionMethod.LLM_STRUCTURED,
+                source_locator=SourceLocator(
+                    article=document.article,
+                    source_kind=SourceKind.ABSTRACT,
+                    source_text="TERT expression increased",
+                ),
+            )
+
+        return LiteratureExtractionResult(claims=[claim("after culture"), claim("with passage")])
+
+
+async def test_global_cap_sums_across_candidate_buckets(jats_xml) -> None:
+    # Target CDK4 -> 2 deterministic measurements; the extractor adds 2 claims. With a
+    # global cap of 3, the total across buckets is 3 (measurements first, then a claim).
+    bundle = await _bundle(
+        _FakeProvider(jats_xml),
+        _ClaimExtractor(),
+        target_measurements=["CDK4"],
+        max_total_candidates=3,
+    )
+    total = len(bundle.measurements) + len(bundle.claims) + len(bundle.author_interpretations)
+    assert total == 3
+    assert bundle.measurements and bundle.claims  # the cap spanned both buckets
+    assert any("max_total_candidates" in w for w in bundle.warnings)
+
+
 async def test_cap_order_is_deterministic_across_runs() -> None:
     records = [
         _record(ArticleIdentifier(doi="10.1/a"), full=True),
