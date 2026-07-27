@@ -431,6 +431,75 @@ class _ClaimExtractor:
         return LiteratureExtractionResult(claims=[claim("after culture"), claim("with passage")])
 
 
+class _ThreeBucketExtractor:
+    """Returns one claim and one author interpretation, both abstract-anchored."""
+
+    name = "three_bucket"
+
+    def extract(self, document, task) -> LiteratureExtractionResult:
+        from virtualcell.literature.contracts import (
+            AuthorInterpretationCandidate,
+            ExtractedClaimCandidate,
+        )
+
+        locator = SourceLocator(
+            article=document.article,
+            source_kind=SourceKind.ABSTRACT,
+            source_text="TERT expression increased",
+        )
+        return LiteratureExtractionResult(
+            claims=[
+                ExtractedClaimCandidate(
+                    subject="TERT",
+                    predicate="increased",
+                    object="after culture",
+                    extraction_method=ExtractionMethod.LLM_STRUCTURED,
+                    source_locator=locator,
+                )
+            ],
+            author_interpretations=[
+                AuthorInterpretationCandidate(
+                    statement="TERT expression increased",
+                    extraction_method=ExtractionMethod.LLM_STRUCTURED,
+                    source_locator=locator,
+                )
+            ],
+        )
+
+
+async def test_global_cap_spans_all_three_buckets(jats_xml) -> None:
+    # Target CDK4 -> 2 deterministic measurements; the extractor adds 1 claim and 1
+    # author interpretation. With a global cap of 3, the total across ALL THREE buckets
+    # is 3 (measurements, then a claim), and the interpretation is dropped by the cap.
+    async def bundle_at(cap):
+        return await _bundle(
+            _FakeProvider(jats_xml),
+            _ThreeBucketExtractor(),
+            target_measurements=["CDK4"],
+            max_total_candidates=cap,
+        )
+
+    capped = await bundle_at(3)
+    total = len(capped.measurements) + len(capped.claims) + len(capped.author_interpretations)
+    assert total == 3
+    assert capped.author_interpretations == []  # the global cap reached the third bucket
+    assert any("max_total_candidates" in w for w in capped.warnings)
+
+    # With enough room, all three buckets are populated (proving the cap, not the data,
+    # was the limiter above).
+    full = await bundle_at(10)
+    assert full.measurements and full.claims and full.author_interpretations
+
+    # Deterministic across runs.
+    again = await bundle_at(3)
+    assert [m.candidate_id for m in capped.measurements] == [
+        m.candidate_id for m in again.measurements
+    ]
+
+    # Cap never flips a candidate's verification state.
+    assert capped.verification_decisions == [] and capped.canonical_runs == []
+
+
 async def test_global_cap_sums_across_candidate_buckets(jats_xml) -> None:
     # Target CDK4 -> 2 deterministic measurements; the extractor adds 2 claims. With a
     # global cap of 3, the total across buckets is 3 (measurements first, then a claim).

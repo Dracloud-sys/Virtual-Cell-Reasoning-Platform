@@ -416,6 +416,77 @@ def test_no_duplicate_stable_keys_after_dedup() -> None:
     assert len(keys) == len(set(keys))  # every surviving record has a unique identity
 
 
+def _strong_key_multiset(articles):
+    keys = []
+    for a in articles:
+        i = a.identifiers
+        if i.pmcid:
+            keys.append(("pmcid", i.pmcid))
+        if i.pmid:
+            keys.append(("pmid", i.pmid))
+        if i.normalized_doi:
+            keys.append(("doi", i.normalized_doi))
+        if i.provider_id:
+            keys.append(("provider_id", f"{a.provider}:{i.provider_id}"))
+    return keys
+
+
+def test_bridge_identifier_merges_all_groups() -> None:
+    a = _rec(pmid="1", title="A")
+    b = _rec(doi="10.1/x", title="B")
+    bridge = _rec(pmid="1", doi="10.1/x", title="C")  # links A and B
+    result = deduplicate_articles([a, b, bridge])
+    assert len(result.articles) == 1
+
+
+def test_bridge_merge_is_order_independent() -> None:
+    import itertools
+
+    a = _rec(pmid="1", title="A")
+    b = _rec(doi="10.1/x", title="B")
+    bridge = _rec(pmid="1", doi="10.1/x", title="C")
+    for perm in itertools.permutations([a, b, bridge]):
+        assert len(deduplicate_articles(list(perm)).articles) == 1
+
+
+def test_provider_id_doi_bridge_merges() -> None:
+    a = _rec(provider_id="9", title="A", provider="p1")
+    b = _rec(doi="10.1/y", title="B")
+    bridge = _rec(provider_id="9", doi="10.1/y", title="C", provider="p1")
+    assert len(deduplicate_articles([a, b, bridge]).articles) == 1
+
+
+def test_three_step_transitive_chain_merges() -> None:
+    # pmid1<->pmcidX, pmcidX<->doiZ, doiZ<->provider p1:5 — one component.
+    a = _rec(pmid="1")
+    b = _rec(pmid="1", pmcid="PMCX")
+    c = _rec(pmcid="PMCX", doi="10.1/z")
+    d = _rec(doi="10.1/z", provider_id="5", provider="p1")
+    assert len(deduplicate_articles([a, b, c, d]).articles) == 1
+
+
+def test_bridge_with_conflict_still_reports_it() -> None:
+    a = _rec(pmid="1", doi="10.1/a")
+    bridge = _rec(pmid="1", doi="10.1/b")  # same pmid, conflicting doi
+    result = deduplicate_articles([a, bridge])
+    assert len(result.articles) == 1
+    assert any("doi" in c for c in result.conflicts)
+
+
+def test_no_strong_key_survives_on_two_records() -> None:
+    articles = [
+        _rec(pmid="1", title="A"),
+        _rec(doi="10.1/x", title="B"),
+        _rec(pmid="1", doi="10.1/x", title="C"),
+        _rec(pmid="2", title="D"),
+        _rec(provider_id="9", provider="p1", title="E"),
+        _rec(provider_id="9", provider="p2", title="F"),  # different provider: separate
+    ]
+    deduped = deduplicate_articles(articles).articles
+    keys = _strong_key_multiset(deduped)
+    assert len(keys) == len(set(keys))  # each strong id lives on exactly one record
+
+
 def test_conflicting_strong_ids_merge_but_report_conflict() -> None:
     # Same DOI, different PMID: they share a strong id so they merge, but the PMID
     # conflict is surfaced rather than silently overwritten.

@@ -218,48 +218,98 @@ class DedupResult(BaseModel):
     conflicts: list[str] = Field(default_factory=list)
 
 
+class _UnionFind:
+    def __init__(self, n: int) -> None:
+        self.parent = list(range(n))
+
+    def find(self, x: int) -> int:
+        root = x
+        while self.parent[root] != root:
+            root = self.parent[root]
+        while self.parent[x] != root:  # path compression
+            self.parent[x], x = root, self.parent[x]
+        return root
+
+    def union(self, a: int, b: int) -> None:
+        ra, rb = self.find(a), self.find(b)
+        if ra != rb:  # lower index becomes the root (deterministic, order-independent)
+            self.parent[max(ra, rb)] = min(ra, rb)
+
+
+def _component_strong_ids(articles: list[ArticleRecord], members: list[int]) -> dict[str, set]:
+    ids: dict[str, set] = {"pmid": set(), "pmcid": set(), "doi": set()}
+    for i in members:
+        ident = articles[i].identifiers
+        if ident.pmid:
+            ids["pmid"].add(ident.pmid)
+        if ident.pmcid:
+            ids["pmcid"].add(ident.pmcid)
+        if ident.normalized_doi:
+            ids["doi"].add(ident.normalized_doi)
+    return ids
+
+
+def _components_strong_conflict(a: dict[str, set], b: dict[str, set]) -> bool:
+    return any(a[kind] and b[kind] and a[kind] != b[kind] for kind in ("pmid", "pmcid", "doi"))
+
+
 def deduplicate_articles(articles: list[ArticleRecord]) -> DedupResult:
-    """Merge records that refer to the same paper.
+    """Merge records that refer to the same paper, as identity *components*.
 
-    A **strong** identifier match (PMCID / PMID / normalized DOI) merges records.
-    The **title** fallback merges only when it does *not* contradict a strong id —
-    two papers with the same title but different PMIDs/DOIs stay separate (the
-    original bug silently dropped one). Merging fills gaps without overwriting a
-    present identifier; where two merged records disagree on a strong id (e.g. same
-    DOI, different PMID) the conflict is reported rather than hidden.
+    Any two records that share a strong key (PMCID / PMID / normalized DOI /
+    provider-scoped provider_id) are one component — **transitively**, so a record
+    that bridges two groups (PMID=1 and DOI=x) merges all of them, independent of
+    input order (union-find). The title fallback then merges two components only when
+    they do not contradict a strong id. Merging fills gaps without overwriting a
+    present identifier; a disagreement on a strong id (e.g. same DOI, different PMID)
+    is reported rather than hidden. The same id never survives on two records.
     """
-    result: list[ArticleRecord] = []
-    strong_index: dict[tuple[str, str], int] = {}
-    title_index: dict[str, int] = {}
-    conflicts: list[str] = []
+    n = len(articles)
+    uf = _UnionFind(n)
 
-    for article in articles:
-        found: int | None = None
+    # Phase 1 — union every pair that shares a strong key (transitive).
+    key_owner: dict[tuple[str, str], int] = {}
+    for i, article in enumerate(articles):
         for key in _strong_keys(article):
-            if key in strong_index:
-                found = strong_index[key]
-                break
-        if found is None:
-            title = normalize_title(article.title)
-            if title and title in title_index:
-                candidate = title_index[title]
-                if not _strong_conflict(result[candidate], article):
-                    found = candidate
+            if key in key_owner:
+                uf.union(i, key_owner[key])
+            else:
+                key_owner[key] = i
 
-        if found is None:
-            result.append(article)
-            found = len(result) - 1
-        else:
-            for reason in _strong_conflict(result[found], article):
-                conflicts.append(f"merged records with conflicting identifiers: {reason}")
-            result[found], merge_warnings = _merge(result[found], article)
-            conflicts.extend(merge_warnings)
+    def members_by_root() -> dict[int, list[int]]:
+        groups: dict[int, list[int]] = {}
+        for i in range(n):
+            groups.setdefault(uf.find(i), []).append(i)
+        return groups
 
-        for key in _strong_keys(result[found]):
-            strong_index.setdefault(key, found)
-        title = normalize_title(result[found].title)
+    # Phase 2 — title fallback across components that do not strong-conflict.
+    title_to_roots: dict[str, list[int]] = {}
+    for i in range(n):
+        title = normalize_title(articles[i].title)
         if title:
-            title_index.setdefault(title, found)
+            title_to_roots.setdefault(title, []).append(uf.find(i))
+    for roots in title_to_roots.values():
+        distinct = sorted(set(roots))
+        for other in distinct[1:]:
+            first, second = uf.find(distinct[0]), uf.find(other)
+            if first == second:
+                continue
+            ids_first = _component_strong_ids(articles, members_by_root()[first])
+            ids_second = _component_strong_ids(articles, members_by_root()[second])
+            if not _components_strong_conflict(ids_first, ids_second):
+                uf.union(distinct[0], other)
+
+    # Fold each component (in original order) into one record, collecting conflicts.
+    result: list[ArticleRecord] = []
+    conflicts: list[str] = []
+    for members in members_by_root().values():
+        merged = articles[members[0]]
+        for j in members[1:]:
+            for reason in _strong_conflict(merged, articles[j]):
+                conflicts.append(f"merged records with conflicting identifiers: {reason}")
+            merged, merge_warnings = _merge(merged, articles[j])
+            conflicts.extend(merge_warnings)
+        result.append(merged)
     return DedupResult(articles=result, conflicts=conflicts)
 
 

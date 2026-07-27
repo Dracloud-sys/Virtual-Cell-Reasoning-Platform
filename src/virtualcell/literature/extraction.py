@@ -431,8 +431,8 @@ def _value_integrity_errors(candidate: ExtractedMeasurementCandidate) -> list[st
     if locator.source_kind is SourceKind.TABLE:
         if raw.strip() != locator.source_text.strip():
             errors.append("raw_value does not equal the cited cell text")
-    elif raw not in locator.source_text:
-        errors.append("raw_value is not a verbatim span of the cited source text")
+    elif not _independent_span_exists(locator.source_text, raw):
+        errors.append("raw_value is not an independent value span of the cited source text")
 
     reparse = parse_value_text(raw)
     if candidate.parse_status is not reparse.parse_status:
@@ -452,6 +452,62 @@ def _name_matches_label(name: str, label: str | None) -> bool:
     """Does a measurement name correspond to a cell axis label, the same way the
     deterministic extractor assigned it (target token contained in the label)?"""
     return _match_target(label, [name]) is not None
+
+
+def _extends_number_left(text: str, pos: int) -> bool:
+    """Would a number extend to the left, ending at ``text[pos]`` (before a match)?"""
+    if pos < 0:
+        return False
+    ch = text[pos]
+    if ch.isdigit():
+        return True
+    return ch in ".," and pos > 0 and text[pos - 1].isdigit()
+
+
+def _extends_number_right(text: str, pos: int) -> bool:
+    """Would a number extend to the right, starting at ``text[pos]`` (after a match)?"""
+    if pos >= len(text):
+        return False
+    ch = text[pos]
+    if ch.isdigit():
+        return True
+    nxt = text[pos + 1] if pos + 1 < len(text) else ""
+    if ch in ".," and nxt.isdigit():
+        return True
+    return ch in "eE" and (nxt.isdigit() or nxt in "+-")
+
+
+def _independent_span_exists(source_text: str, raw: str) -> bool:
+    """Is ``raw`` present in ``source_text`` as an independent value span?
+
+    A digit-bounded substring of a larger number (``2.4`` inside ``12.4``) is not
+    independent and is rejected; a whitespace/punctuation-bounded occurrence is.
+    """
+    if not raw:
+        return False
+    start = 0
+    while (idx := source_text.find(raw, start)) != -1:
+        left_ok = not (raw[0].isdigit() and _extends_number_left(source_text, idx - 1))
+        right_ok = not (raw[-1].isdigit() and _extends_number_right(source_text, idx + len(raw)))
+        if left_ok and right_ok:
+            return True
+        start = idx + 1
+    return False
+
+
+def _target_in_text(target: str, text: str) -> bool:
+    """Whole-token (or whole-phrase) lexical match of ``target`` in ``text``.
+
+    Deterministic and conservative: normalizes case and splits on non-alphanumerics,
+    then requires the target's token(s) to appear as consecutive whole tokens. No
+    fuzzy matching, no synonyms — ``TERT`` never matches inside ``XTERTY``.
+    """
+    tokens = re.findall(r"[a-z0-9]+", text.lower())
+    target_tokens = re.findall(r"[a-z0-9]+", target.lower())
+    if not target_tokens:
+        return False
+    n = len(target_tokens)
+    return any(tokens[i : i + n] == target_tokens for i in range(len(tokens) - n + 1))
 
 
 def _measurement_target_errors(
@@ -475,7 +531,19 @@ def _measurement_target_errors(
         ]
     locator = candidate.source_locator
     if locator.source_kind is not SourceKind.TABLE:
-        return []  # prose candidates are anchored by text; no axis to check
+        # Prose: the requested target must actually appear (as a whole token) in the
+        # cited span, and no *other* requested target may co-occur — otherwise which
+        # target a value binds to is ambiguous and the candidate is refused.
+        if not _target_in_text(candidate.measurement_name, locator.source_text):
+            return ["measurement_name does not appear as a whole word in the cited source text"]
+        distinct = {
+            _normalize(t)
+            for t in task.target_measurements
+            if _target_in_text(t, locator.source_text)
+        }
+        if len(distinct) > 1:
+            return ["multiple requested targets appear in the cited span; the binding is ambiguous"]
+        return []
     cell, errors = _matched_table_cell(document, locator)
     if errors or cell is None:
         return []  # locator errors are reported by the locator check; avoid duplicates

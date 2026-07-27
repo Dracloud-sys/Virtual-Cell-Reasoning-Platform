@@ -734,6 +734,127 @@ def test_both_axes_matching_is_skipped_by_deterministic_extractor(article_identi
     assert any("both axes" in w for w in result.warnings)
 
 
+# --- prose value-span boundary + target binding ------------------------------
+
+
+def _prose_doc(article, abstract: str):
+    from xml.sax.saxutils import escape
+
+    return parse_jats(
+        f"<article><front><article-meta><abstract><p>{escape(abstract)}</p>"
+        "</abstract></article-meta></front></article>",
+        article=article,
+    )
+
+
+def _prose_measurement(article, source_text: str, raw_value: str, *, name="TERT"):
+    parsed = parse_value_text(raw_value)  # fields must agree with a conservative parse
+    return ExtractedMeasurementCandidate(
+        measurement_name=name,
+        raw_value=raw_value,
+        parsed_value=parsed.parsed_value,
+        comparator=parsed.comparator,
+        uncertainty=parsed.uncertainty,
+        unit=parsed.unit,
+        parse_status=parsed.parse_status,
+        extraction_method=ExtractionMethod.LLM_STRUCTURED,
+        source_locator=SourceLocator(
+            article=article, source_kind=SourceKind.ABSTRACT, source_text=source_text
+        ),
+    )
+
+
+def _prose_accepts(doc, candidate, targets=("TERT",)) -> bool:
+    accepted, _ = accept_candidates(
+        doc,
+        LiteratureExtractionResult(measurements=[candidate]),
+        ExtractionTask(target_measurements=list(targets)),
+    )
+    return bool(accepted.measurements)
+
+
+def test_prose_partial_number_2_4_inside_12_4_is_rejected(article_identifier) -> None:
+    text = "TERT expression was 12.4-fold higher."
+    doc = _prose_doc(article_identifier, text)
+    assert not _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4"))
+
+
+def test_prose_partial_number_0_3_inside_10_3_is_rejected(article_identifier) -> None:
+    text = "TERT was 10.3 units."
+    doc = _prose_doc(article_identifier, text)
+    assert not _prose_accepts(doc, _prose_measurement(article_identifier, text, "0.3"))
+
+
+def test_prose_valid_fold_span_is_accepted(article_identifier) -> None:
+    text = "TERT increased 2.4-fold after culture."
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4-fold"))
+
+
+def test_prose_valid_comparator_span_is_accepted(article_identifier) -> None:
+    text = "TERT was < 2.4 in controls."
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, text, "< 2.4"))
+
+
+def test_prose_valid_uncertainty_span_is_accepted(article_identifier) -> None:
+    text = "TERT reached 2.4 ± 0.3 at passage 35."
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4 ± 0.3"))
+
+
+def test_prose_independent_span_accepted_despite_a_substring_occurrence(article_identifier) -> None:
+    # "2.4" appears both inside "12.4" AND as an independent value — one valid span
+    # is enough.
+    text = "Baseline 12.4, then TERT reached 2.4 units."
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4"))
+
+
+def test_prose_target_not_in_source_is_rejected(article_identifier) -> None:
+    # measurement_name is a requested target, but the cited sentence is about CDK4.
+    text = "CDK4 expression increased 2.4-fold after passage."
+    doc = _prose_doc(article_identifier, text)
+    assert not _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4-fold"))
+
+
+def test_prose_target_in_source_is_accepted(article_identifier) -> None:
+    text = "TERT expression increased 2.4-fold after passage."
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4-fold"))
+
+
+def test_prose_target_case_insensitive_match(article_identifier) -> None:
+    text = "tert increased 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4-fold"))
+
+
+def test_prose_target_across_punctuation_matches(article_identifier) -> None:
+    text = "TERT-mediated growth reached 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4-fold"))
+
+
+def test_prose_partial_word_target_is_rejected(article_identifier) -> None:
+    # "TERT" only appears inside a larger token; whole-word matching rejects it.
+    text = "XTERTY expression reached 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    assert not _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4-fold"))
+
+
+def test_prose_multiple_targets_in_span_is_ambiguous_and_rejected(article_identifier) -> None:
+    text = "TERT rose 2.4-fold while CDK4 fell."
+    doc = _prose_doc(article_identifier, text)
+    assert not _prose_accepts(
+        doc, _prose_measurement(article_identifier, text, "2.4-fold"), targets=("TERT", "CDK4")
+    )
+
+
+def test_prose_candidate_stays_unverified() -> None:
+    assert "verification_status" not in ExtractedMeasurementCandidate.model_fields
+
+
 # --- structured LLM boundary --------------------------------------------------
 
 
