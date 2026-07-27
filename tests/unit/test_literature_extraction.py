@@ -938,15 +938,22 @@ def test_prose_uncertainty_value_accepted_when_an_independent_occurrence_exists(
     [
         ("TERT reached .5-fold", "5"),  # fractional part of a leading decimal
         ("TERT reached .5-fold", ".5"),  # leading decimal itself
-        ("TERT was −1.2e−4 M", "1.2"),  # inside a Unicode-minus number
+        ("TERT was −1.2e−4 M", "1.2"),  # mantissa inside a Unicode-minus number
         ("TERT was −1.2e−4 M", "1.2e"),  # dangling exponent of the same
-        ("TERT was 1 × 10^-4 M", "10"),  # mantissa of ×10^ notation
+        ("TERT was −1.2e−4 M", "−1.2e−4"),  # the whole Unicode-minus number
+        ("TERT was 1 × 10^-4 M", "10"),  # power base of ×10^ notation
         ("TERT was 1 × 10^-4 M", "4"),  # exponent of ×10^ notation
+        ("TERT was 1 × 10^-4 M", "1"),  # mantissa of ×10^ notation
+        ("TERT was 1 × 10^-4 M", "1 × 10^-4"),  # the whole ×10^ expression
+        ("TERT was 10^-4 M", "10"),  # a bare caret exponent
+        ("TERT was 10⁻⁴ M", "10"),  # a superscript exponent
     ],
 )
 def test_prose_unsupported_numeric_notation_is_rejected(article_identifier, source, raw) -> None:
     """Unsupported numeric grammar (leading decimal, Unicode minus, ×10^/superscript)
-    is refused rather than partially parsed into a wrong value."""
+    is refused rather than partially parsed into a wrong value — the *entire* offending
+    span is rejected, whether the candidate is the full string, a mantissa, or an
+    interior digit."""
     doc = _prose_doc(article_identifier, source)
     assert not _prose_accepts(doc, _prose_measurement(article_identifier, source, raw))
 
@@ -961,6 +968,8 @@ def test_prose_unsupported_numeric_notation_is_rejected(article_identifier, sour
         ("TERT was 2.4E+4 copies", "2.4E+4"),
         ("TERT was < 2.4-fold", "< 2.4"),
         ("TERT reached 2.4 ± 0.3-fold", "2.4 ± 0.3"),
+        ("TERT rose 2.4× higher", "2.4"),  # a trailing × (fold shorthand) is not ×10^
+        ("TERT rose 2.4* (p<0.05)", "2.4"),  # a significance asterisk is not notation
     ],
 )
 def test_prose_supported_numeric_grammar_is_accepted(article_identifier, source, raw) -> None:

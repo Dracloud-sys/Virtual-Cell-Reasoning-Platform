@@ -461,17 +461,36 @@ def _name_matches_label(name: str, label: str | None) -> bool:
 # refused rather than mis-parsed, and deferred to a future issue.
 _SUPPORTED_NUMBER = re.compile(r"[-+]?\d+(?:,\d+)*(?:\.\d+)?(?:[eE][-+]?\d+)?")
 
-# Characters that, adjacent to a candidate value, signal unsupported numeric notation
-# the parser must not silently read a value out of: Unicode minus, a caret exponent,
-# and superscript digits/signs.
 _UNICODE_MINUS = "−"
-_SUPERSCRIPTS = "²³¹" + "".join(chr(c) for c in range(0x2070, 0x2080))
-_UNSUPPORTED_ADJACENT = frozenset(_UNICODE_MINUS + "^" + _SUPERSCRIPTS)
+_SIGN = f"[-+{_UNICODE_MINUS}]"  # ASCII minus/plus and the Unicode minus sign
+_SUPERSCRIPTS = "²³¹" + "".join(chr(c) for c in range(0x2070, 0x20A0))
+
+# Unsupported numeric constructs. Each matches the *whole* offending span in the source
+# so that any candidate overlapping it — the full string, a mantissa, or an interior
+# digit — is refused rather than silently parsed into a wrong value.
+#  * a number written with a Unicode minus (``−1.2e−4``);
+#  * a leading decimal (``.5``);
+#  * a caret or superscript exponent (``10^-4``, ``10⁻⁴``);
+#  * multiplication scientific notation (``1 × 10^-4``), captured from its mantissa.
+_SIGNED_NUMBER_LIKE = re.compile(rf"{_SIGN}?\d[\d,]*(?:\.\d+)?(?:[eE]{_SIGN}?\d+)?")
+_LEADING_DECIMAL = re.compile(r"(?<!\d)\.\d+")
+_CARET_OR_SUPERSCRIPT = re.compile(rf"\d[\d,]*(?:\.\d+)?(?:\^{_SIGN}?\d+|[{_SUPERSCRIPTS}]+)")
+_MULTIPLICATION = re.compile(
+    rf"\d[\d,]*(?:\.\d+)?\s*[×·]\s*{_SIGN}?\d[\d,]*(?:\.\d+)?"
+    rf"(?:\^{_SIGN}?\d+|[{_SUPERSCRIPTS}]+)?"
+)
 
 
-def _is_leading_decimal(raw: str) -> bool:
-    """Is ``raw`` itself an unsupported leading-decimal number (``.5``)?"""
-    return len(raw) >= 2 and raw[0] == "." and raw[1].isdigit()
+def _unsupported_spans(text: str) -> list[tuple[int, int]]:
+    """Index ranges of unsupported numeric notation in ``text`` (see the patterns)."""
+    spans: list[tuple[int, int]] = []
+    for match in _SIGNED_NUMBER_LIKE.finditer(text):
+        if _UNICODE_MINUS in match.group():  # an ASCII-only number is supported
+            spans.append((match.start(), match.end()))
+    for pattern in (_LEADING_DECIMAL, _CARET_OR_SUPERSCRIPT, _MULTIPLICATION):
+        for match in pattern.finditer(text):
+            spans.append((match.start(), match.end()))
+    return spans
 
 
 def _is_uncertainty_operand(text: str, idx: int) -> bool:
@@ -496,47 +515,42 @@ def _independent_span_exists(source_text: str, raw: str) -> bool:
     ``10``/``e10`` in ``2.4e10``), a decimal fragment (``.4`` in ``12.4``), a
     truncation (``2.4`` in ``2.40``) and a digit-embedded substring are rejected; (b)
     is not the lone right-hand operand of an uncertainty operator (``0.3`` in
-    ``2.4 ± 0.3``); and (c) is not adjacent to unsupported numeric notation (a leading
-    decimal ``.5``, a Unicode minus ``−1.2e−4``, a ``×10^`` / superscript exponent) —
-    which is refused, never mis-parsed. A whole supported value, optionally wrapped in
-    a comparator or paired with an uncertainty (``< 2.4``, ``2.4 ± 0.3``, ``-1.2e-4``),
-    is accepted; one clean occurrence suffices even if another sits inside a larger or
-    unsupported number.
+    ``2.4 ± 0.3``); and (c) does not overlap unsupported numeric notation — a leading
+    decimal (``.5``), a Unicode-minus number (``−1.2e−4``), or ``×10^`` / superscript
+    notation (``1 × 10^-4``) — whose *entire* span is refused, so neither the full
+    string nor a mantissa nor an interior digit is mis-parsed. A whole supported value,
+    optionally wrapped in a comparator or paired with an uncertainty (``< 2.4``,
+    ``2.4 ± 0.3``, ``-1.2e-4``), is accepted; one clean occurrence suffices even if
+    another sits inside a larger or unsupported number.
     """
     if not raw:
         return False
-    if _is_leading_decimal(raw):
-        return False
     tokens = [(m.start(), m.end()) for m in _SUPPORTED_NUMBER.finditer(source_text)]
+    forbidden = _unsupported_spans(source_text)
     start = 0
     while (idx := source_text.find(raw, start)) != -1:
         end = idx + len(raw)
-        if _occurrence_is_supported(source_text, raw, idx, end, tokens):
+        if _occurrence_is_supported(source_text, idx, end, tokens, forbidden):
             return True
         start = idx + 1
     return False
 
 
 def _occurrence_is_supported(
-    text: str, raw: str, idx: int, end: int, tokens: list[tuple[int, int]]
+    text: str,
+    idx: int,
+    end: int,
+    tokens: list[tuple[int, int]],
+    forbidden: list[tuple[int, int]],
 ) -> bool:
-    # (a) a supported token straddling either boundary means ``raw`` covers only part.
+    # (a) a supported token straddling either boundary means the value covers only part.
     if any(ts < idx < te or ts < end < te for ts, te in tokens):
         return False
     # (b) a lone uncertainty operand is not a standalone measurement.
     if _is_uncertainty_operand(text, idx):
         return False
-    left = text[idx - 1] if idx > 0 else ""
-    right = text[end] if end < len(text) else ""
-    # (c) adjacent unsupported notation (Unicode minus, caret/superscript exponent).
-    if left in _UNSUPPORTED_ADJACENT or right in _UNSUPPORTED_ADJACENT:
-        return False
-    # A leading digit sitting right after a decimal point whose own left side is not a
-    # digit is the fractional part of an unsupported leading decimal (``5`` in ``.5``).
-    leading_decimal = (
-        raw[0].isdigit() and left == "." and not (idx >= 2 and text[idx - 2].isdigit())
-    )
-    return not leading_decimal
+    # (c) any overlap with an unsupported numeric span is refused outright.
+    return not any(fs < end and fe > idx for fs, fe in forbidden)
 
 
 def _target_tokens(text: str) -> list[str]:
