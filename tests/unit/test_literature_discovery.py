@@ -404,6 +404,64 @@ def test_shared_provider_id_with_conflicting_strong_ids_is_reported() -> None:
     assert any("pmid" in c for c in result.conflicts)  # but the pmid conflict is surfaced
 
 
+def test_same_provider_diff_id_same_title_stays_separate() -> None:
+    # The defect: a shared title must NOT merge two records the same known provider
+    # gave *different* provider_ids — that is an identity conflict, not a duplicate.
+    result = deduplicate_articles(
+        [
+            _rec(provider_id="1", title="Same title", provider="p1"),
+            _rec(provider_id="2", title="Same title", provider="p1"),
+        ]
+    )
+    assert len(result.articles) == 2
+    assert any("provider_id" in c for c in result.conflicts)
+
+
+def test_same_provider_diff_id_same_title_is_order_independent() -> None:
+    import itertools
+
+    recs = [
+        _rec(provider_id="1", title="Same title", provider="p1"),
+        _rec(provider_id="2", title="Same title", provider="p1"),
+    ]
+    for perm in itertools.permutations(recs):
+        assert len(deduplicate_articles(list(perm)).articles) == 2
+
+
+def test_cross_provider_same_id_same_title_uses_existing_policy() -> None:
+    # Different providers sharing a provider_id value are not compared as a conflict;
+    # with a matching title and no contradicting strong id the title fallback still
+    # merges them, exactly as before this fix (behavior preserved, not changed).
+    result = deduplicate_articles(
+        [
+            _rec(provider_id="7", title="Same title", provider="p1"),
+            _rec(provider_id="7", title="Same title", provider="p2"),
+        ]
+    )
+    assert len(result.articles) == 1
+
+
+def test_provider_id_conflict_yields_to_shared_doi() -> None:
+    # A shared DOI is a stronger signal than differing provider_ids: the records are
+    # one paper and merge on the DOI (phase-1), regardless of provider_id.
+    result = deduplicate_articles(
+        [
+            _rec(provider_id="1", doi="10.1/x", title="Same title", provider="p1"),
+            _rec(provider_id="2", doi="10.1/x", title="Same title", provider="p1"),
+        ]
+    )
+    assert len(result.articles) == 1
+
+
+def test_missing_provider_does_not_manufacture_conflict() -> None:
+    # provider is None: distinct provider_ids must not block the title fallback (the
+    # existing "no known provider" behavior is left unchanged).
+    result = deduplicate_articles(
+        [_rec(provider_id="x", title="TERT Escape"), _rec(provider_id="y", title="tert escape")]
+    )
+    assert len(result.articles) == 1
+
+
 def test_no_duplicate_stable_keys_after_dedup() -> None:
     articles = [
         _rec(provider_id="7", title="A", provider="p1"),

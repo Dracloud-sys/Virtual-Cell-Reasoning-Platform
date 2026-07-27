@@ -236,21 +236,55 @@ class _UnionFind:
             self.parent[max(ra, rb)] = min(ra, rb)
 
 
-def _component_strong_ids(articles: list[ArticleRecord], members: list[int]) -> dict[str, set]:
-    ids: dict[str, set] = {"pmid": set(), "pmcid": set(), "doi": set()}
+class _ComponentIdentity:
+    """The strong identifiers a dedup component carries, for title-fallback conflict
+    detection: scalar ids (PMID/PMCID/DOI) plus provider-scoped provider_ids.
+
+    provider_ids are grouped by provider and only recorded for a *real* (non-null)
+    provider, so two records from the same known provider with different provider_ids
+    conflict, while a missing provider (``None``) never manufactures a conflict — that
+    keeps the title fallback unchanged when provider metadata is absent.
+    """
+
+    def __init__(self) -> None:
+        self.scalar: dict[str, set[str]] = {"pmid": set(), "pmcid": set(), "doi": set()}
+        self.provider_ids: dict[str, set[str]] = {}
+
+
+def _component_identity(articles: list[ArticleRecord], members: list[int]) -> _ComponentIdentity:
+    identity = _ComponentIdentity()
     for i in members:
-        ident = articles[i].identifiers
+        article = articles[i]
+        ident = article.identifiers
         if ident.pmid:
-            ids["pmid"].add(ident.pmid)
+            identity.scalar["pmid"].add(ident.pmid)
         if ident.pmcid:
-            ids["pmcid"].add(ident.pmcid)
+            identity.scalar["pmcid"].add(ident.pmcid)
         if ident.normalized_doi:
-            ids["doi"].add(ident.normalized_doi)
-    return ids
+            identity.scalar["doi"].add(ident.normalized_doi)
+        if ident.provider_id and article.provider:
+            identity.provider_ids.setdefault(article.provider, set()).add(ident.provider_id)
+    return identity
 
 
-def _components_strong_conflict(a: dict[str, set], b: dict[str, set]) -> bool:
-    return any(a[kind] and b[kind] and a[kind] != b[kind] for kind in ("pmid", "pmcid", "doi"))
+def _component_conflict_reasons(a: _ComponentIdentity, b: _ComponentIdentity) -> list[str]:
+    """Why two components must NOT be merged on a matching title.
+
+    A shared scalar id field with differing values conflicts; the same *known*
+    provider carrying different provider_ids conflicts. Different providers sharing a
+    provider_id value are never compared (their id namespaces are independent).
+    """
+    reasons: list[str] = []
+    for kind in ("pmid", "pmcid", "doi"):
+        if a.scalar[kind] and b.scalar[kind] and a.scalar[kind] != b.scalar[kind]:
+            reasons.append(f"{kind} {sorted(a.scalar[kind])} != {sorted(b.scalar[kind])}")
+    for provider in sorted(a.provider_ids.keys() & b.provider_ids.keys()):
+        if a.provider_ids[provider] != b.provider_ids[provider]:
+            reasons.append(
+                f"provider {provider} provider_id "
+                f"{sorted(a.provider_ids[provider])} != {sorted(b.provider_ids[provider])}"
+            )
+    return reasons
 
 
 def deduplicate_articles(articles: list[ArticleRecord]) -> DedupResult:
@@ -282,7 +316,12 @@ def deduplicate_articles(articles: list[ArticleRecord]) -> DedupResult:
             groups.setdefault(uf.find(i), []).append(i)
         return groups
 
-    # Phase 2 — title fallback across components that do not strong-conflict.
+    # Phase 2 — title fallback across components that do not strong-conflict. A
+    # matching title that spans components with conflicting strong ids (including the
+    # same known provider's differing provider_ids) is refused *and recorded*, so the
+    # conflict is never silently dropped.
+    conflicts: list[str] = []
+    seen_declines: set[tuple[int, int]] = set()
     title_to_roots: dict[str, list[int]] = {}
     for i in range(n):
         title = normalize_title(articles[i].title)
@@ -294,14 +333,23 @@ def deduplicate_articles(articles: list[ArticleRecord]) -> DedupResult:
             first, second = uf.find(distinct[0]), uf.find(other)
             if first == second:
                 continue
-            ids_first = _component_strong_ids(articles, members_by_root()[first])
-            ids_second = _component_strong_ids(articles, members_by_root()[second])
-            if not _components_strong_conflict(ids_first, ids_second):
+            identity_first = _component_identity(articles, members_by_root()[first])
+            identity_second = _component_identity(articles, members_by_root()[second])
+            reasons = _component_conflict_reasons(identity_first, identity_second)
+            if not reasons:
                 uf.union(distinct[0], other)
+                continue
+            pair = (min(first, second), max(first, second))
+            if pair not in seen_declines:
+                seen_declines.add(pair)
+                for reason in reasons:
+                    conflicts.append(
+                        f"kept records with a matching title separate on conflicting "
+                        f"identifiers: {reason}"
+                    )
 
     # Fold each component (in original order) into one record, collecting conflicts.
     result: list[ArticleRecord] = []
-    conflicts: list[str] = []
     for members in members_by_root().values():
         merged = articles[members[0]]
         for j in members[1:]:

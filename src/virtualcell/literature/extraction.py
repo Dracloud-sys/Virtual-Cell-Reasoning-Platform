@@ -454,56 +454,61 @@ def _name_matches_label(name: str, label: str | None) -> bool:
     return _match_target(label, [name]) is not None
 
 
-def _extends_number_left(text: str, pos: int) -> bool:
-    """Would a number extend to the left, ending at ``text[pos]`` (before a match)?"""
-    if pos < 0:
-        return False
-    ch = text[pos]
-    if ch.isdigit():
-        return True
-    return ch in ".," and pos > 0 and text[pos - 1].isdigit()
-
-
-def _extends_number_right(text: str, pos: int) -> bool:
-    """Would a number extend to the right, starting at ``text[pos]`` (after a match)?"""
-    if pos >= len(text):
-        return False
-    ch = text[pos]
-    if ch.isdigit():
-        return True
-    nxt = text[pos + 1] if pos + 1 < len(text) else ""
-    if ch in ".," and nxt.isdigit():
-        return True
-    return ch in "eE" and (nxt.isdigit() or nxt in "+-")
+# A *complete* numeric token: optional sign, integer part (with digit-grouping
+# commas), optional decimal, optional scientific-notation exponent. Kept in sync with
+# ``parse_value_text``'s notion of a number (comma between digits stays UNPARSED). Used
+# to reject a candidate raw value that slices through part of a source number.
+_NUMERIC_TOKEN = re.compile(r"[-+]?\d+(?:,\d+)*(?:\.\d+)?(?:[eE][-+]?\d+)?")
 
 
 def _independent_span_exists(source_text: str, raw: str) -> bool:
-    """Is ``raw`` present in ``source_text`` as an independent value span?
+    """Is ``raw`` present in ``source_text`` as a value span that does not slice
+    through a numeric token?
 
-    A digit-bounded substring of a larger number (``2.4`` inside ``12.4``) is not
-    independent and is rejected; a whitespace/punctuation-bounded occurrence is.
+    The source's *complete* numeric tokens are identified first; an occurrence of
+    ``raw`` is independent only when neither boundary falls in the middle of one of
+    those tokens. So a mantissa/exponent fragment (``4``/``-4`` inside ``1e-4``,
+    ``10``/``e10`` inside ``2.4e10``), a decimal fragment (``.4`` inside ``12.4``), a
+    truncation (``2.4`` inside ``2.40``) and a digit-embedded substring (``2.4`` inside
+    ``12.4``, ``24`` inside ``1234``) are all rejected — while a whitespace/
+    punctuation-bounded value, optionally wrapped in a comparator or paired with an
+    uncertainty (``< 2.4``, ``2.4 ± 0.3``, ``-1.2e-4``), is accepted. One clean
+    occurrence is enough even if another sits inside a larger number.
     """
     if not raw:
         return False
+    tokens = [(m.start(), m.end()) for m in _NUMERIC_TOKEN.finditer(source_text)]
     start = 0
     while (idx := source_text.find(raw, start)) != -1:
-        left_ok = not (raw[0].isdigit() and _extends_number_left(source_text, idx - 1))
-        right_ok = not (raw[-1].isdigit() and _extends_number_right(source_text, idx + len(raw)))
-        if left_ok and right_ok:
+        end = idx + len(raw)
+        # A token straddling either boundary means ``raw`` covers only part of it.
+        cuts = any(ts < idx < te or ts < end < te for ts, te in tokens)
+        if not cuts:
             return True
         start = idx + 1
     return False
 
 
+def _target_tokens(text: str) -> list[str]:
+    """Case-folded, Unicode-preserving tokens of ``text``.
+
+    Uses ``casefold`` (fuller Unicode case handling than ``lower``) and a Unicode
+    ``\\w`` split, so Greek and other non-ASCII letters survive: ``γH2AX`` and ``H2AX``
+    tokenize differently and are never conflated, and ``β-actin`` keeps its ``β`` token
+    distinct from ``actin``. No transliteration, no synonymy — ``γ`` is not ``gamma``.
+    """
+    return re.findall(r"\w+", text.casefold())
+
+
 def _target_in_text(target: str, text: str) -> bool:
     """Whole-token (or whole-phrase) lexical match of ``target`` in ``text``.
 
-    Deterministic and conservative: normalizes case and splits on non-alphanumerics,
-    then requires the target's token(s) to appear as consecutive whole tokens. No
-    fuzzy matching, no synonyms — ``TERT`` never matches inside ``XTERTY``.
+    Deterministic and conservative: the target's token(s) must appear as consecutive
+    whole tokens. No fuzzy matching, no synonyms — ``TERT`` never matches inside
+    ``XTERTY``, and ``γH2AX`` never matches a plain ``H2AX``.
     """
-    tokens = re.findall(r"[a-z0-9]+", text.lower())
-    target_tokens = re.findall(r"[a-z0-9]+", target.lower())
+    tokens = _target_tokens(text)
+    target_tokens = _target_tokens(target)
     if not target_tokens:
         return False
     n = len(target_tokens)
@@ -531,13 +536,18 @@ def _measurement_target_errors(
         ]
     locator = candidate.source_locator
     if locator.source_kind is not SourceKind.TABLE:
-        # Prose: the requested target must actually appear (as a whole token) in the
-        # cited span, and no *other* requested target may co-occur — otherwise which
-        # target a value binds to is ambiguous and the candidate is refused.
+        # Prose: bind the value to a requested target under Unicode-preserving
+        # identity. The name must *exactly* (token-for-token) be a requested target —
+        # so ``H2AX`` cannot stand in for a requested ``γH2AX`` — must actually appear
+        # as a whole token in the cited span, and no *other* requested target may
+        # co-occur, otherwise which target the value binds to is ambiguous.
+        name_key = tuple(_target_tokens(candidate.measurement_name))
+        if not any(tuple(_target_tokens(t)) == name_key for t in task.target_measurements):
+            return ["measurement_name does not exactly match a requested target"]
         if not _target_in_text(candidate.measurement_name, locator.source_text):
             return ["measurement_name does not appear as a whole word in the cited source text"]
         distinct = {
-            _normalize(t)
+            tuple(_target_tokens(t))
             for t in task.target_measurements
             if _target_in_text(t, locator.source_text)
         }

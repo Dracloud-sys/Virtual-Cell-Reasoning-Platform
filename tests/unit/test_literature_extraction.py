@@ -855,6 +855,135 @@ def test_prose_candidate_stays_unverified() -> None:
     assert "verification_status" not in ExtractedMeasurementCandidate.model_fields
 
 
+# --- complete numeric-token boundary -----------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("source", "raw"),
+    [
+        ("TERT was 1e-4 M", "4"),  # exponent digit
+        ("TERT was 1e-4 M", "-4"),  # signed exponent
+        ("TERT was 1e-4 M", "e-4"),  # exponent fragment
+        ("TERT was 2.4e10 copies", "10"),  # exponent digits
+        ("TERT was 2.4e10 copies", "e10"),  # e + exponent
+        ("TERT was 2.4e10 copies", "2.4"),  # mantissa of a sci-notation number
+        ("TERT was 12.4-fold", ".4"),  # trailing decimal fragment
+        ("TERT was 12.4-fold", "12."),  # leading decimal fragment
+        ("TERT was 12.4-fold", "2.4"),  # digit-embedded substring
+        ("TERT was 2.40 units", "2.4"),  # truncation of a longer number
+        ("TERT n=1234 cells", "24"),  # interior digits
+        ("TERT n=1,234 cells", "234"),  # thousands-grouped fragment
+        ("TERT was -1.2e-4 M", "-1.2"),  # signed mantissa fragment of sci notation
+    ],
+)
+def test_prose_numeric_token_fragment_is_rejected(article_identifier, source, raw) -> None:
+    """A candidate value that covers only part of a complete source number is refused,
+    even though ``parse_value_text`` alone would find a number inside it."""
+    doc = _prose_doc(article_identifier, source)
+    assert not _prose_accepts(doc, _prose_measurement(article_identifier, source, raw))
+
+
+@pytest.mark.parametrize(
+    ("source", "raw"),
+    [
+        ("TERT was 2.4-fold higher", "2.4-fold"),
+        ("TERT was < 2.4-fold", "< 2.4"),
+        ("TERT reached 2.4 ± 0.3-fold", "2.4 ± 0.3"),
+        ("TERT was -1.2e-4 M", "-1.2e-4"),  # the complete signed sci-notation value
+        ("TERT n=1,234 cells", "1,234"),  # the whole thousands-grouped token
+        ("Baseline 12.4, then TERT reached 2.4 units.", "2.4"),  # one clean occurrence
+    ],
+)
+def test_prose_complete_value_span_is_accepted(article_identifier, source, raw) -> None:
+    doc = _prose_doc(article_identifier, source)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, source, raw))
+
+
+# --- Unicode-preserving target tokenization ----------------------------------
+
+
+def test_prose_greek_target_not_in_ascii_only_source_is_rejected(article_identifier) -> None:
+    # γH2AX (a phospho-form) must not bind to a sentence that only mentions plain H2AX.
+    text = "H2AX reached 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    cand = _prose_measurement(article_identifier, text, "2.4-fold", name="γH2AX")
+    assert not _prose_accepts(doc, cand, targets=("γH2AX",))
+
+
+def test_prose_greek_target_in_matching_source_is_accepted(article_identifier) -> None:
+    text = "γH2AX reached 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    cand = _prose_measurement(article_identifier, text, "2.4-fold", name="γH2AX")
+    assert _prose_accepts(doc, cand, targets=("γH2AX",))
+
+
+def test_prose_beta_actin_not_in_actin_only_source_is_rejected(article_identifier) -> None:
+    text = "actin reached 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    cand = _prose_measurement(article_identifier, text, "2.4-fold", name="β-actin")
+    assert not _prose_accepts(doc, cand, targets=("β-actin",))
+
+
+def test_prose_beta_actin_in_matching_source_is_accepted(article_identifier) -> None:
+    text = "β-actin reached 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    cand = _prose_measurement(article_identifier, text, "2.4-fold", name="β-actin")
+    assert _prose_accepts(doc, cand, targets=("β-actin",))
+
+
+def test_prose_ascii_name_cannot_stand_in_for_greek_target(article_identifier) -> None:
+    # measurement_name H2AX must not satisfy a requested γH2AX target even though an
+    # ASCII-stripping normalization would equate them.
+    text = "H2AX reached 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    cand = _prose_measurement(article_identifier, text, "2.4-fold", name="H2AX")
+    assert not _prose_accepts(doc, cand, targets=("γH2AX",))
+
+
+def test_prose_greek_case_folding_matches(article_identifier) -> None:
+    # Uppercase Greek Γ casefolds to γ; the same target is still recognized.
+    text = "ΓH2AX reached 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    cand = _prose_measurement(article_identifier, text, "2.4-fold", name="γH2AX")
+    assert _prose_accepts(doc, cand, targets=("γH2AX",))
+
+
+def test_prose_unicode_multi_target_span_is_ambiguous(article_identifier) -> None:
+    # Two distinct requested targets (one Greek-marked) co-occur -> ambiguous binding.
+    text = "γH2AX rose 2.4-fold while H2AX fell."
+    doc = _prose_doc(article_identifier, text)
+    cand = _prose_measurement(article_identifier, text, "2.4-fold", name="γH2AX")
+    assert not _prose_accepts(doc, cand, targets=("γH2AX", "H2AX"))
+
+
+def test_prose_tert_tert2_distinction_preserved(article_identifier) -> None:
+    text = "TERT2 rose 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(
+        doc,
+        _prose_measurement(article_identifier, text, "2.4-fold", name="TERT2"),
+        targets=("TERT2",),
+    )
+    assert not _prose_accepts(
+        doc,
+        _prose_measurement(article_identifier, text, "2.4-fold", name="TERT"),
+        targets=("TERT",),
+    )
+
+
+def test_prose_unicode_accepted_candidate_stays_unverified(article_identifier) -> None:
+    text = "γH2AX reached 2.4-fold."
+    doc = _prose_doc(article_identifier, text)
+    cand = _prose_measurement(article_identifier, text, "2.4-fold", name="γH2AX")
+    accepted, _ = accept_candidates(
+        doc,
+        LiteratureExtractionResult(measurements=[cand]),
+        ExtractionTask(target_measurements=["γH2AX"]),
+    )
+    assert len(accepted.measurements) == 1
+    assert "verification_status" not in type(accepted.measurements[0]).model_fields
+
+
 # --- structured LLM boundary --------------------------------------------------
 
 
