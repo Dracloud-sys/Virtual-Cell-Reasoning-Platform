@@ -441,16 +441,49 @@ def test_cross_provider_same_id_same_title_uses_existing_policy() -> None:
     assert len(result.articles) == 1
 
 
-def test_provider_id_conflict_yields_to_shared_doi() -> None:
+def test_provider_id_conflict_yields_to_shared_doi_but_is_recorded() -> None:
     # A shared DOI is a stronger signal than differing provider_ids: the records are
-    # one paper and merge on the DOI (phase-1), regardless of provider_id.
-    result = deduplicate_articles(
-        [
-            _rec(provider_id="1", doi="10.1/x", title="Same title", provider="p1"),
-            _rec(provider_id="2", doi="10.1/x", title="Same title", provider="p1"),
-        ]
-    )
+    # one paper and merge on the DOI (phase-1), regardless of provider_id. But the same
+    # provider's conflicting provider_id must be surfaced, not silently dropped.
+    records = [
+        _rec(provider_id="1", doi="10.1/x", title="Same title", provider="p1"),
+        _rec(provider_id="2", doi="10.1/x", title="Same title", provider="p1"),
+    ]
+    result = deduplicate_articles(records)
     assert len(result.articles) == 1
+    assert any("provider_id" in c for c in result.conflicts)
+
+
+def test_provider_id_conflict_on_doi_merge_is_order_independent() -> None:
+    import itertools
+
+    records = [
+        _rec(provider_id="1", doi="10.1/x", title="Same title", provider="p1"),
+        _rec(provider_id="2", doi="10.1/x", title="Same title", provider="p1"),
+    ]
+    for perm in itertools.permutations(records):
+        result = deduplicate_articles(list(perm))
+        assert len(result.articles) == 1
+        assert any("provider_id" in c for c in result.conflicts)
+
+
+def test_neutral_bridge_title_group_is_partition_stable() -> None:
+    # A (p1:1), B (p2:x), C (p1:2) all share a title. B conflicts with neither A nor C
+    # (different provider), but A and C conflict (same provider, different id). A bare
+    # title fallback could bridge B into A or C depending on order; the whole-group rule
+    # keeps all three separate, deterministically, across every input permutation.
+    import itertools
+
+    a = _rec(provider_id="1", title="Same title", provider="p1")
+    b = _rec(provider_id="x", title="Same title", provider="p2")
+    c = _rec(provider_id="2", title="Same title", provider="p1")
+    partitions = set()
+    for perm in itertools.permutations([a, b, c]):
+        result = deduplicate_articles(list(perm))
+        assert len(result.articles) == 3  # no partial bridge merge
+        partitions.add(len(result.articles))
+        assert any("provider_id" in cf for cf in result.conflicts)
+    assert partitions == {3}  # identical partition regardless of order
 
 
 def test_missing_provider_does_not_manufacture_conflict() -> None:

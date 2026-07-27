@@ -8,6 +8,7 @@ or claim confidence.
 
 from __future__ import annotations
 
+import itertools
 import re
 
 from pydantic import BaseModel, Field
@@ -154,7 +155,13 @@ def _strong_keys(article: ArticleRecord) -> list[tuple[str, str]]:
 
 
 def _strong_conflict(a: ArticleRecord, b: ArticleRecord) -> list[str]:
-    """Reasons two records have *conflicting* strong ids (same field, different value)."""
+    """Reasons two records have *conflicting* strong ids (same field, different value).
+
+    Includes a provider-scoped provider_id disagreement: when a shared PMID/PMCID/DOI
+    merges two records that the *same known* provider gave different provider_ids, that
+    discrepancy is surfaced rather than silently dropped when one id is kept as the
+    representative. Different provider namespaces are never compared this way.
+    """
     reasons: list[str] = []
     ai, bi = a.identifiers, b.identifiers
     if ai.pmid and bi.pmid and ai.pmid != bi.pmid:
@@ -163,6 +170,15 @@ def _strong_conflict(a: ArticleRecord, b: ArticleRecord) -> list[str]:
         reasons.append(f"pmcid {ai.pmcid} != {bi.pmcid}")
     if ai.normalized_doi and bi.normalized_doi and ai.normalized_doi != bi.normalized_doi:
         reasons.append(f"doi {ai.normalized_doi} != {bi.normalized_doi}")
+    if (
+        a.provider
+        and a.provider == b.provider
+        and ai.provider_id
+        and bi.provider_id
+        and ai.provider_id != bi.provider_id
+    ):
+        lo, hi = sorted((ai.provider_id, bi.provider_id))
+        reasons.append(f"provider_id {a.provider}:{lo} != {a.provider}:{hi}")
     return reasons
 
 
@@ -316,37 +332,40 @@ def deduplicate_articles(articles: list[ArticleRecord]) -> DedupResult:
             groups.setdefault(uf.find(i), []).append(i)
         return groups
 
-    # Phase 2 — title fallback across components that do not strong-conflict. A
-    # matching title that spans components with conflicting strong ids (including the
-    # same known provider's differing provider_ids) is refused *and recorded*, so the
-    # conflict is never silently dropped.
+    # Phase 2 — title fallback, applied per normalized-title group as an all-or-nothing
+    # decision so the partition never depends on input order. Every component that
+    # shares a title is collected first; if *any* pair in that group strong-conflicts
+    # (including the same known provider's differing provider_ids), the whole group is
+    # left unmerged — no partial, order-dependent bridge merge — and the conflict is
+    # recorded. Otherwise the group's components all merge together.
     conflicts: list[str] = []
-    seen_declines: set[tuple[int, int]] = set()
+    seen_conflicts: set[str] = set()
     title_to_roots: dict[str, list[int]] = {}
     for i in range(n):
         title = normalize_title(articles[i].title)
         if title:
             title_to_roots.setdefault(title, []).append(uf.find(i))
     for roots in title_to_roots.values():
-        distinct = sorted(set(roots))
-        for other in distinct[1:]:
-            first, second = uf.find(distinct[0]), uf.find(other)
-            if first == second:
-                continue
-            identity_first = _component_identity(articles, members_by_root()[first])
-            identity_second = _component_identity(articles, members_by_root()[second])
-            reasons = _component_conflict_reasons(identity_first, identity_second)
-            if not reasons:
-                uf.union(distinct[0], other)
-                continue
-            pair = (min(first, second), max(first, second))
-            if pair not in seen_declines:
-                seen_declines.add(pair)
-                for reason in reasons:
-                    conflicts.append(
-                        f"kept records with a matching title separate on conflicting "
-                        f"identifiers: {reason}"
-                    )
+        current = sorted({uf.find(r) for r in roots})
+        if len(current) < 2:
+            continue
+        identities = {r: _component_identity(articles, members_by_root()[r]) for r in current}
+        group_conflicts: list[str] = []
+        for first, second in itertools.combinations(current, 2):
+            group_conflicts.extend(
+                _component_conflict_reasons(identities[first], identities[second])
+            )
+        if group_conflicts:
+            for reason in group_conflicts:
+                message = (
+                    f"kept a matching-title group unmerged on conflicting identifiers: {reason}"
+                )
+                if message not in seen_conflicts:
+                    seen_conflicts.add(message)
+                    conflicts.append(message)
+            continue
+        for other in current[1:]:
+            uf.union(current[0], other)
 
     # Fold each component (in original order) into one record, collecting conflicts.
     result: list[ArticleRecord] = []

@@ -899,6 +899,82 @@ def test_prose_complete_value_span_is_accepted(article_identifier, source, raw) 
     assert _prose_accepts(doc, _prose_measurement(article_identifier, source, raw))
 
 
+# --- uncertainty operand cannot be a standalone measurement ------------------
+
+
+@pytest.mark.parametrize(
+    ("source", "raw"),
+    [
+        ("TERT reached 2.4 ± 0.3-fold", "0.3"),  # right operand of ±
+        ("TERT reached 2.4 +/- 0.3-fold", "0.3"),  # right operand of +/-
+    ],
+)
+def test_prose_bare_uncertainty_operand_is_rejected(article_identifier, source, raw) -> None:
+    doc = _prose_doc(article_identifier, source)
+    assert not _prose_accepts(doc, _prose_measurement(article_identifier, source, raw))
+
+
+def test_prose_full_value_with_uncertainty_is_accepted(article_identifier) -> None:
+    text = "TERT reached 2.4 ± 0.3-fold"
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4 ± 0.3"))
+
+
+def test_prose_uncertainty_value_accepted_when_an_independent_occurrence_exists(
+    article_identifier,
+) -> None:
+    # "0.3" is an uncertainty operand in one place but a standalone value in another;
+    # the independent occurrence (with target binding) is enough to accept.
+    text = "Baseline was 0.3-fold, while TERT reached 2.4 ± 0.3-fold."
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, text, "0.3"))
+
+
+# --- fixed numeric grammar: unsupported notation is refused, not mis-parsed ---
+
+
+@pytest.mark.parametrize(
+    ("source", "raw"),
+    [
+        ("TERT reached .5-fold", "5"),  # fractional part of a leading decimal
+        ("TERT reached .5-fold", ".5"),  # leading decimal itself
+        ("TERT was −1.2e−4 M", "1.2"),  # inside a Unicode-minus number
+        ("TERT was −1.2e−4 M", "1.2e"),  # dangling exponent of the same
+        ("TERT was 1 × 10^-4 M", "10"),  # mantissa of ×10^ notation
+        ("TERT was 1 × 10^-4 M", "4"),  # exponent of ×10^ notation
+    ],
+)
+def test_prose_unsupported_numeric_notation_is_rejected(article_identifier, source, raw) -> None:
+    """Unsupported numeric grammar (leading decimal, Unicode minus, ×10^/superscript)
+    is refused rather than partially parsed into a wrong value."""
+    doc = _prose_doc(article_identifier, source)
+    assert not _prose_accepts(doc, _prose_measurement(article_identifier, source, raw))
+
+
+@pytest.mark.parametrize(
+    ("source", "raw"),
+    [
+        ("TERT was 2.4-fold", "2.4"),
+        ("TERT was -2.4-fold", "-2.4"),
+        ("TERT was +2.4-fold", "+2.4"),
+        ("TERT was 2.4e-4 M", "2.4e-4"),
+        ("TERT was 2.4E+4 copies", "2.4E+4"),
+        ("TERT was < 2.4-fold", "< 2.4"),
+        ("TERT reached 2.4 ± 0.3-fold", "2.4 ± 0.3"),
+    ],
+)
+def test_prose_supported_numeric_grammar_is_accepted(article_identifier, source, raw) -> None:
+    doc = _prose_doc(article_identifier, source)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, source, raw))
+
+
+def test_prose_value_before_sentence_period_is_still_accepted(article_identifier) -> None:
+    # A trailing sentence period is not a trailing-decimal number; the value stands.
+    text = "TERT reached 2.4."
+    doc = _prose_doc(article_identifier, text)
+    assert _prose_accepts(doc, _prose_measurement(article_identifier, text, "2.4"))
+
+
 # --- Unicode-preserving target tokenization ----------------------------------
 
 

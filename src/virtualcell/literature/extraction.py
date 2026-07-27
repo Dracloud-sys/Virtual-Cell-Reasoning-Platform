@@ -454,39 +454,89 @@ def _name_matches_label(name: str, label: str | None) -> bool:
     return _match_target(label, [name]) is not None
 
 
-# A *complete* numeric token: optional sign, integer part (with digit-grouping
-# commas), optional decimal, optional scientific-notation exponent. Kept in sync with
-# ``parse_value_text``'s notion of a number (comma between digits stays UNPARSED). Used
-# to reject a candidate raw value that slices through part of a source number.
-_NUMERIC_TOKEN = re.compile(r"[-+]?\d+(?:,\d+)*(?:\.\d+)?(?:[eE][-+]?\d+)?")
+# The *fixed* numeric grammar PR8c supports: optional ASCII sign, integer part (with
+# digit-grouping commas), optional decimal, optional ASCII scientific-notation
+# exponent. This is intentionally not a general math parser — anything outside it
+# (leading/trailing decimals, Unicode minus, ``×10^`` / superscript notation) is
+# refused rather than mis-parsed, and deferred to a future issue.
+_SUPPORTED_NUMBER = re.compile(r"[-+]?\d+(?:,\d+)*(?:\.\d+)?(?:[eE][-+]?\d+)?")
+
+# Characters that, adjacent to a candidate value, signal unsupported numeric notation
+# the parser must not silently read a value out of: Unicode minus, a caret exponent,
+# and superscript digits/signs.
+_UNICODE_MINUS = "−"
+_SUPERSCRIPTS = "²³¹" + "".join(chr(c) for c in range(0x2070, 0x2080))
+_UNSUPPORTED_ADJACENT = frozenset(_UNICODE_MINUS + "^" + _SUPERSCRIPTS)
+
+
+def _is_leading_decimal(raw: str) -> bool:
+    """Is ``raw`` itself an unsupported leading-decimal number (``.5``)?"""
+    return len(raw) >= 2 and raw[0] == "." and raw[1].isdigit()
+
+
+def _is_uncertainty_operand(text: str, idx: int) -> bool:
+    """Does the value at ``idx`` sit immediately to the right of an uncertainty
+    operator (``±`` or ``+/-``)? Such a value is an error term, not a standalone
+    measurement, so a bare right-hand operand is refused."""
+    j = idx - 1
+    while j >= 0 and text[j] == " ":
+        j -= 1
+    if j < 0:
+        return False
+    if text[j] == "±":
+        return True
+    return text[j] == "-" and j >= 2 and text[j - 1] == "/" and text[j - 2] == "+"
 
 
 def _independent_span_exists(source_text: str, raw: str) -> bool:
-    """Is ``raw`` present in ``source_text`` as a value span that does not slice
-    through a numeric token?
+    """Is ``raw`` present in ``source_text`` as a standalone, *supported* value span?
 
-    The source's *complete* numeric tokens are identified first; an occurrence of
-    ``raw`` is independent only when neither boundary falls in the middle of one of
-    those tokens. So a mantissa/exponent fragment (``4``/``-4`` inside ``1e-4``,
-    ``10``/``e10`` inside ``2.4e10``), a decimal fragment (``.4`` inside ``12.4``), a
-    truncation (``2.4`` inside ``2.40``) and a digit-embedded substring (``2.4`` inside
-    ``12.4``, ``24`` inside ``1234``) are all rejected — while a whitespace/
-    punctuation-bounded value, optionally wrapped in a comparator or paired with an
-    uncertainty (``< 2.4``, ``2.4 ± 0.3``, ``-1.2e-4``), is accepted. One clean
-    occurrence is enough even if another sits inside a larger number.
+    An occurrence is accepted only when it (a) does not slice through a supported
+    numeric token — so a mantissa/exponent fragment (``4``/``-4`` in ``1e-4``,
+    ``10``/``e10`` in ``2.4e10``), a decimal fragment (``.4`` in ``12.4``), a
+    truncation (``2.4`` in ``2.40``) and a digit-embedded substring are rejected; (b)
+    is not the lone right-hand operand of an uncertainty operator (``0.3`` in
+    ``2.4 ± 0.3``); and (c) is not adjacent to unsupported numeric notation (a leading
+    decimal ``.5``, a Unicode minus ``−1.2e−4``, a ``×10^`` / superscript exponent) —
+    which is refused, never mis-parsed. A whole supported value, optionally wrapped in
+    a comparator or paired with an uncertainty (``< 2.4``, ``2.4 ± 0.3``, ``-1.2e-4``),
+    is accepted; one clean occurrence suffices even if another sits inside a larger or
+    unsupported number.
     """
     if not raw:
         return False
-    tokens = [(m.start(), m.end()) for m in _NUMERIC_TOKEN.finditer(source_text)]
+    if _is_leading_decimal(raw):
+        return False
+    tokens = [(m.start(), m.end()) for m in _SUPPORTED_NUMBER.finditer(source_text)]
     start = 0
     while (idx := source_text.find(raw, start)) != -1:
         end = idx + len(raw)
-        # A token straddling either boundary means ``raw`` covers only part of it.
-        cuts = any(ts < idx < te or ts < end < te for ts, te in tokens)
-        if not cuts:
+        if _occurrence_is_supported(source_text, raw, idx, end, tokens):
             return True
         start = idx + 1
     return False
+
+
+def _occurrence_is_supported(
+    text: str, raw: str, idx: int, end: int, tokens: list[tuple[int, int]]
+) -> bool:
+    # (a) a supported token straddling either boundary means ``raw`` covers only part.
+    if any(ts < idx < te or ts < end < te for ts, te in tokens):
+        return False
+    # (b) a lone uncertainty operand is not a standalone measurement.
+    if _is_uncertainty_operand(text, idx):
+        return False
+    left = text[idx - 1] if idx > 0 else ""
+    right = text[end] if end < len(text) else ""
+    # (c) adjacent unsupported notation (Unicode minus, caret/superscript exponent).
+    if left in _UNSUPPORTED_ADJACENT or right in _UNSUPPORTED_ADJACENT:
+        return False
+    # A leading digit sitting right after a decimal point whose own left side is not a
+    # digit is the fractional part of an unsupported leading decimal (``5`` in ``.5``).
+    leading_decimal = (
+        raw[0].isdigit() and left == "." and not (idx >= 2 and text[idx - 2].isdigit())
+    )
+    return not leading_decimal
 
 
 def _target_tokens(text: str) -> list[str]:
