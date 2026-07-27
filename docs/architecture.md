@@ -153,8 +153,9 @@ a warning), keeping the parsed body in-process — only `DocumentMetadata` (iden
 `literature.extraction` extracts only what an `ExtractionTask` asks for and puts every
 extractor — including the optional `StructuredLiteratureExtractor` (LLM) — behind the
 same `accept_candidates(document, result, task)` gate. That is extraction *integrity*,
-not verification: **all PR8c candidates are unverified**, `verification_decisions` and
-`canonical_runs` stay empty, and the verification gate + canonical conversion are PR8d.
+not verification: **all PR8c candidates are source-grounded but unverified** — finding
+or reading a paper is never itself a biological fact. Canonical conversion (turning a
+verified measurement into an `ExperimentRun`) remains PR8d-2.
 
 Extraction policies (deterministic, and applied to every extractor):
 
@@ -187,6 +188,24 @@ Extraction policies (deterministic, and applied to every extractor):
 **PR8d invariant.** A candidate tagged `statistic` is a statistic *about* a measurement,
 not a measurement, and must never be converted to a canonical `ExperimentRun`.
 
+PR8d-1 adds the **deterministic verification gate** (`literature.verification`), a
+separate layer between extraction and canonical conversion. `verify_candidates(document,
+result, task)` re-checks each candidate against the *current* document — reusing the same
+PR8c `accept_candidates` boundary, so there is one rulebook — and emits exactly one
+`VerificationDecision` per candidate (deterministic, input never mutated, `verified_at`
+injectable and timezone-aware, the judged source span's hash recorded). It is
+conservative: only an exact, re-verified, quantitative **table cell** measurement
+(`parse_status == parsed`, a `parsed_value`, `statistic is None`) is `MACHINE_VERIFIED`.
+Abstract/section **prose**, qualitative/unparsed values, statistic-tagged measurements,
+every claim and every author interpretation are `PENDING_REVIEW` (their meaning is a
+semantic judgement a machine must not make). Anything whose source integrity no longer
+holds — drift, wrong coordinates or labels, a value or target mismatch, unsupported
+numeric notation — is `REJECTED`, never softened to pending. A candidate still carries no
+status of its own; `VerificationDecision` is the sole authority. Verification is an
+explicit opt-in on the agent (`verify: true`, which requires `extract: true`): a run
+verifies only the candidates it *retained* after the caps (no orphan decisions),
+`canonical_runs` stays empty, and nothing is written to the KnowledgeStore.
+
 PR8b implements the discovery slice: `literature.contracts` (query, article metadata,
 source-anchored candidates with deterministic ids, transparent relevance, verification
 status, and the `LiteratureEvidenceBundle`); a bounded, injectable `EuropePmcProvider` over
@@ -200,10 +219,11 @@ CLI exits non-zero only on `provider_error` — and `VerificationDecision` is th
 status a candidate is checked against. `LiteratureDiscoveryAgent` returns the typed bundle
 in `AgentOutput.result` and **no biological `Claim`s** — discovery metadata is not
 evidence, and `AgentOutput.confidence` is not the relevance score. Nothing here writes to
-the KnowledgeStore. Source-grounded extraction (JATS/tables + an optional structured LLM
-extractor behind a strict schema), the deterministic verification gate, and conversion of
-*verified* measurements to canonical runs are the next slices (PR8c/PR8d); their contracts
-already exist in the bundle. A paper is never treated as true merely because it was read.
+the KnowledgeStore. Source-grounded extraction (PR8c: JATS/tables + an optional structured
+LLM extractor behind a strict schema) and the deterministic verification gate (PR8d-1) are
+now in place; converting *verified* measurements to canonical runs and KnowledgeStore
+ingestion are the remaining slices (PR8d-2 onward). A paper is never treated as true merely
+because it was read.
 
 ## Orchestration (`virtualcell.orchestration`)
 

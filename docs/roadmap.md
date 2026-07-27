@@ -235,10 +235,19 @@ Development is **benchmark-first**: fix the questions the platform must answer
   over the official public API; deterministic query building / dedup / relevance; and a
   `LiteratureDiscoveryAgent` (+ `virtualcell literature discover` CLI) returning the typed
   bundle — **no biological claims, no KnowledgeStore writes**. Discovery is not evidence.
-- ▶ **PR8c/PR8d — extraction + verification + canonical conversion.** Source-grounded
-  JATS/table extraction with an optional strict-schema LLM extractor; a deterministic
-  verification gate; conversion of *verified* measurements to canonical `ExperimentRun`s;
-  reviewed ingestion. Contracts already exist in the bundle.
+- ✅ **PR8c — Source-grounded extraction.** Deterministic JATS/table extraction plus an
+  optional strict-schema LLM extractor, every candidate behind one `accept_candidates`
+  integrity gate (targeting, exact-cell anchoring, value discipline, statistic tagging,
+  fixed numeric grammar). All candidates are source-grounded but **unverified**.
+- ✅ **PR8d-1 — Deterministic verification gate.** `literature.verification` re-checks
+  retained candidates against the current document and emits one `VerificationDecision`
+  each. Only an exact, quantitative **table** measurement is `MACHINE_VERIFIED`; prose,
+  claims, author interpretations, statistics and unparsed values are `PENDING_REVIEW`;
+  source-integrity failures are `REJECTED`. Opt-in via `verify: true` (requires
+  `extract: true`); `canonical_runs` stays empty and nothing is written to the graph.
+- ▶ **PR8d-2+ — canonical conversion + ingestion.** Convert *verified* measurements to
+  canonical `ExperimentRun`s and run reviewed KnowledgeStore ingestion. Contracts already
+  exist in the bundle; discovery or extraction alone is never a biological fact.
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional

@@ -27,6 +27,7 @@ from virtualcell.literature.contracts import (
     ProviderProvenance,
     SourceKind,
     SourceLocator,
+    VerificationStatus,
 )
 from virtualcell.literature.extraction import LiteratureExtractionResult
 from virtualcell.literature.providers.base import ProviderError
@@ -550,5 +551,156 @@ async def test_knowledge_store_is_untouched(jats_xml) -> None:
         )
     )
     await agent.run(_inputs())
+    assert store.all_entities() == []
+    assert store.all_interactions() == []
+
+
+# --- PR8d-1 verification gate (opt-in) ---------------------------------------
+
+
+class _SearchErrorProvider:
+    name = "boom"
+
+    def __init__(self, error: Exception) -> None:
+        self._error = error
+
+    def search(self, query):
+        raise self._error
+
+    def fetch_record(self, identifier):  # pragma: no cover - unused
+        raise NotImplementedError
+
+    def fetch_open_full_text(self, identifier):  # pragma: no cover - unused
+        return None
+
+
+class _ProseAbstractExtractor:
+    """Proposes one abstract-anchored (prose) measurement with a supported number."""
+
+    name = "prose"
+
+    def extract(self, document, task) -> LiteratureExtractionResult:
+        return LiteratureExtractionResult(
+            measurements=[
+                ExtractedMeasurementCandidate(
+                    measurement_name="TERT",
+                    raw_value="2.4-fold",
+                    parsed_value=2.4,
+                    unit="fold",
+                    parse_status="parsed",
+                    extraction_method=ExtractionMethod.LLM_STRUCTURED,
+                    source_locator=SourceLocator(
+                        article=document.article,
+                        source_kind=SourceKind.ABSTRACT,
+                        source_text="TERT reached 2.4-fold after culture.",
+                    ),
+                )
+            ]
+        )
+
+
+def _verify_inputs(**over) -> AgentInput:
+    context = {"extract": True, "verify": True, "target_measurements": ["TERT", "CDK4"]}
+    context.update(over)
+    return AgentInput(query="TERT bovine preadipocyte", context=context)
+
+
+def _big_verify_inputs(**over) -> AgentInput:
+    context = {"extract": True, "verify": True, "target_measurements": _MARKERS}
+    context.update(over)
+    return AgentInput(query="markers", context=context)
+
+
+async def test_verify_omitted_produces_no_decisions(jats_xml) -> None:
+    bundle = await _bundle(_FakeProvider(jats_xml))  # extract only
+    assert bundle.measurements  # extraction still happened
+    assert bundle.verification_decisions == []
+
+
+async def test_verify_false_produces_no_decisions(jats_xml) -> None:
+    bundle = await _bundle(
+        _FakeProvider(jats_xml), over_inputs=lambda **o: _inputs(verify=False, **o)
+    )
+    assert bundle.verification_decisions == []
+
+
+async def test_verify_true_generates_decisions_for_retained_candidates(jats_xml) -> None:
+    bundle = await _bundle(_FakeProvider(jats_xml), over_inputs=_verify_inputs)
+    ids = {m.candidate_id for m in bundle.measurements}
+    assert bundle.verification_decisions
+    # A decision per retained candidate, each linked to a real id with a source hash.
+    assert {d.candidate_id for d in bundle.verification_decisions} == ids
+    assert all(d.source_text_hash for d in bundle.verification_decisions)
+    # Every sample-table measurement is an exact, parsed table cell -> machine verified.
+    assert all(
+        d.status is VerificationStatus.MACHINE_VERIFIED for d in bundle.verification_decisions
+    )
+    assert bundle.canonical_runs == []
+
+
+async def test_verify_requires_extract(jats_xml) -> None:
+    with pytest.raises(LiteratureQueryError):
+        await _agent(_FakeProvider(jats_xml)).run(
+            AgentInput(query="x", context={"verify": True})  # no extract
+        )
+
+
+async def test_verify_not_run_on_provider_error() -> None:
+    bundle = await _bundle(_SearchErrorProvider(ProviderError("boom")), over_inputs=_verify_inputs)
+    assert bundle.run_status.value == "provider_error"
+    assert bundle.verification_decisions == []
+
+
+async def test_verify_zero_results_has_empty_decisions() -> None:
+    bundle = await _bundle(_FakeProvider(None, records=[]), over_inputs=_verify_inputs)
+    assert bundle.run_status.value == "zero_results"
+    assert bundle.verification_decisions == []
+
+
+async def test_abstract_fallback_measurement_is_pending_review(jats_xml) -> None:
+    records = [_record(abstract="TERT reached 2.4-fold after culture.", full=False)]
+    bundle = await _bundle(
+        _FakeProvider(jats_xml, records=records),
+        _ProseAbstractExtractor(),
+        over_inputs=_verify_inputs,
+    )
+    assert bundle.documents[0].source_format.value == "abstract"  # fell back to abstract
+    prose = [m for m in bundle.measurements if m.source_locator.source_kind is SourceKind.ABSTRACT]
+    assert prose
+    prose_decisions = [
+        d for d in bundle.verification_decisions if d.candidate_id == prose[0].candidate_id
+    ]
+    assert prose_decisions and prose_decisions[0].status is VerificationStatus.PENDING_REVIEW
+
+
+async def test_decisions_only_reference_post_cap_candidates() -> None:
+    # 6 distinct candidates, per-document cap 3: exactly 3 retained AND 3 decisions,
+    # never an orphan decision for a capped-away candidate.
+    bundle = await _bundle(
+        _FakeProvider(_BIG_TABLE), max_candidates=3, over_inputs=_big_verify_inputs
+    )
+    assert len(bundle.measurements) == 3
+    assert len(bundle.verification_decisions) == 3
+    assert {d.candidate_id for d in bundle.verification_decisions} == {
+        m.candidate_id for m in bundle.measurements
+    }
+
+
+async def test_verify_run_creates_no_claims_or_canonical_runs(jats_xml) -> None:
+    out = await _agent(_FakeProvider(jats_xml)).run(_verify_inputs())
+    bundle = LiteratureEvidenceBundle.model_validate(out.result)
+    assert out.claims == []  # verification never manufactures a biological claim
+    assert out.confidence == 0.0  # not reused as a verification ratio
+    assert bundle.canonical_runs == []
+
+
+async def test_verify_run_leaves_knowledge_store_untouched(jats_xml) -> None:
+    store = InMemoryKnowledgeStore()
+    agent = LiteratureDiscoveryAgent(
+        AgentContext(
+            services={"literature_provider": _FakeProvider(jats_xml), "knowledge_store": store}
+        )
+    )
+    await agent.run(_verify_inputs())
     assert store.all_entities() == []
     assert store.all_interactions() == []

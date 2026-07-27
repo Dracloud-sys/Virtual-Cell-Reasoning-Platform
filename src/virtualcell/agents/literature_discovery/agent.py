@@ -38,6 +38,7 @@ from virtualcell.literature.extraction import (
 )
 from virtualcell.literature.providers.base import LiteratureProvider, ProviderError
 from virtualcell.literature.providers.europe_pmc import EuropePmcProvider
+from virtualcell.literature.verification import verify_candidates
 
 _QUERY_FIELDS = (
     "query_mode",
@@ -154,13 +155,24 @@ class LiteratureDiscoveryAgent(BaseAgent):
         return None, problem or "no open-access full text and no abstract"
 
     def _extract(
-        self, bundle: LiteratureEvidenceBundle, task: ExtractionTask, limit: int
+        self,
+        bundle: LiteratureEvidenceBundle,
+        task: ExtractionTask,
+        limit: int,
+        *,
+        verify: bool = False,
     ) -> LiteratureEvidenceBundle:
         """Extract candidates from the top-ranked articles and rebuild the bundle.
 
-        Every candidate is unverified: this never produces a VerificationDecision or a
-        canonical run, and nothing is written to the KnowledgeStore.
+        When ``verify`` is off every candidate stays unverified: no VerificationDecision
+        is produced. When it is on, each document's *retained* candidates (those that
+        survived acceptance, de-duplication and the caps) are re-checked against that
+        same in-memory ``ArticleDocument`` to produce deterministic decisions — an
+        orphan decision for a capped-away candidate is never created. Either way no
+        canonical run is produced and nothing is written to the KnowledgeStore.
         """
+        verified_at = datetime.now(UTC)
+        decisions = []
         # One shared identity policy (PMCID > PMID > DOI > provider-scoped id), the same
         # one dedup uses, and — crucially — the same one the relevance score carries, so
         # a provider_id-only record resolves to its score instead of falling to 0.
@@ -218,10 +230,11 @@ class LiteratureDiscoveryAgent(BaseAgent):
             # candidate_id -> per-document cap -> global run cap. Deterministic
             # candidates come before any LLM proposals, so a cap never prefers an LLM.
             kept = 0
-            for bucket, items in (
-                (measurements, accepted.measurements),
-                (claims, accepted.claims),
-                (interpretations, accepted.author_interpretations),
+            retained = LiteratureExtractionResult()
+            for bucket, retained_bucket, items in (
+                (measurements, retained.measurements, accepted.measurements),
+                (claims, retained.claims, accepted.claims),
+                (interpretations, retained.author_interpretations, accepted.author_interpretations),
             ):
                 for candidate in items:
                     if candidate.candidate_id in seen:
@@ -237,10 +250,18 @@ class LiteratureDiscoveryAgent(BaseAgent):
                         break
                     seen.add(candidate.candidate_id)
                     bucket.append(candidate)
+                    retained_bucket.append(candidate)
                     kept += 1
                     total_kept += 1
                 if global_capped or kept >= task.max_candidates:
                     break
+
+            # Verify only what this document actually retained (post-cap), against the
+            # same in-memory document — so a decision never orphans a capped candidate.
+            if verify:
+                decisions.extend(
+                    verify_candidates(document, retained, task, verified_at=verified_at)
+                )
 
         # Rebuilt (not mutated) so the bundle's linkage validation runs.
         return LiteratureEvidenceBundle(
@@ -253,6 +274,7 @@ class LiteratureDiscoveryAgent(BaseAgent):
             claims=claims,
             measurements=measurements,
             author_interpretations=interpretations,
+            verification_decisions=decisions,
             warnings=warnings,
         )
 
@@ -261,6 +283,11 @@ class LiteratureDiscoveryAgent(BaseAgent):
         query = self.build_query(inputs)
         task = self.build_task(inputs)
         limit = self._extract_limit(inputs) if task is not None else 0
+        # Verification is an explicit opt-in that *requires* extraction: it re-checks
+        # extracted candidates, so there is nothing to verify without extract=true.
+        verify = bool(inputs.context.get("verify", False))
+        if verify and task is None:
+            raise LiteratureQueryError("verify=true requires extract=true")
 
         try:
             bundle = discover(query, self.provider)
@@ -268,7 +295,7 @@ class LiteratureDiscoveryAgent(BaseAgent):
             bundle = self._failure_bundle(query, exc)
 
         if task is not None and bundle.run_status is not DiscoveryRunStatus.PROVIDER_ERROR:
-            bundle = self._extract(bundle, task, limit)
+            bundle = self._extract(bundle, task, limit, verify=verify)
 
         # Run status — not the presence of warnings — is the authoritative signal.
         if bundle.run_status is DiscoveryRunStatus.PROVIDER_ERROR:
@@ -282,6 +309,8 @@ class LiteratureDiscoveryAgent(BaseAgent):
                     f"; {len(bundle.measurements)} unverified measurement candidate(s) "
                     f"from {len(bundle.documents)} document(s)"
                 )
+            if verify:
+                notes += f"; {len(bundle.verification_decisions)} verification decision(s)"
         return AgentOutput(
             agent=self.name,
             claims=[],  # discovery yields metadata, never a biological claim
