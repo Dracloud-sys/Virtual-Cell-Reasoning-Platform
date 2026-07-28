@@ -220,8 +220,23 @@ canonical contract. Conversion is deterministic — the same verified measuremen
 yields the same `run_id`, and duplicate inputs collapse to one run — and a run only ever
 references a *retained* (post-cap) candidate. It is a further opt-in (`convert: true`,
 which requires `verify: true`); only successful conversions land in `canonical_runs`, and
-this module still writes nothing. Reviewed KnowledgeStore/KG ingestion (weak relations
-like `SUGGESTS`/`ASSOCIATED_WITH`, never `ESTABLISHED`) is the next slice (PR8e).
+this module still writes nothing.
+
+PR8e adds **reviewed ingestion** (`literature.ingestion`), the first and only path that
+writes literature evidence into a `KnowledgeStore` — and it does so *cautiously*, because
+a single machine-verified number is not a mechanism. `ingest_runs(store, runs)` writes,
+per canonical run, a `lit:`-namespaced `Marker` (the measured target) and `AssayResult`
+(the measurement, carrying the full canonical provenance verbatim), linked by the **weak,
+symmetric** `ASSOCIATED_WITH` relation at a fixed conservative confidence. No
+`PROMOTES`/`INHIBITS`/`REGULATES`/`INDICATES` or any causal/established edge is ever
+created here, every node and edge is tagged `review_status = "pending_review"` so it is
+never silently merged into curated truth and can always be re-reviewed, and ingestion is
+deterministic and idempotent (re-ingesting the same run upserts the same nodes and does
+not duplicate the edge). It is a final opt-in on the agent (`ingest: true`, which requires
+`convert: true` **and** an injected `knowledge_store` service): every earlier stage
+(discovery, extraction, verification, conversion) still leaves the store untouched.
+Connecting these literature markers to the curated ontology, and the integrated
+KB→discovery→evidence query orchestrator, are the next slices (PR9).
 
 PR8b implements the discovery slice: `literature.contracts` (query, article metadata,
 source-anchored candidates with deterministic ids, transparent relevance, verification
@@ -235,11 +250,12 @@ for exact-phrase precision) is recorded in provenance. A machine-readable `Disco
 CLI exits non-zero only on `provider_error` — and `VerificationDecision` is the authoritative
 status a candidate is checked against. `LiteratureDiscoveryAgent` returns the typed bundle
 in `AgentOutput.result` and **no biological `Claim`s** — discovery metadata is not
-evidence, and `AgentOutput.confidence` is not the relevance score. Nothing here writes to
-the KnowledgeStore. Source-grounded extraction (PR8c), the deterministic verification gate
-(PR8d-1) and canonical conversion of verified measurements (PR8d-2) are now in place;
-reviewed KnowledgeStore/KG ingestion is the remaining slice (PR8e). A paper is never
-treated as true merely because it was read.
+evidence, and `AgentOutput.confidence` is not the relevance score. By default nothing
+here writes to the KnowledgeStore — only the explicit `ingest: true` opt-in does.
+Source-grounded extraction (PR8c), the deterministic verification gate (PR8d-1), canonical
+conversion of verified measurements (PR8d-2) and reviewed weak-evidence ingestion (PR8e)
+are now in place; the integrated KB→discovery→evidence query orchestrator is the next
+slice (PR9). A paper is never treated as true merely because it was read.
 
 ## Orchestration (`virtualcell.orchestration`)
 

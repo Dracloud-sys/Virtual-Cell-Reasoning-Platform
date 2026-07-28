@@ -37,6 +37,7 @@ from virtualcell.literature.extraction import (
     accept_candidates,
     extract_deterministic,
 )
+from virtualcell.literature.ingestion import ingest_runs
 from virtualcell.literature.providers.base import LiteratureProvider, ProviderError
 from virtualcell.literature.providers.europe_pmc import EuropePmcProvider
 from virtualcell.literature.verification import verify_candidates
@@ -300,10 +301,18 @@ class LiteratureDiscoveryAgent(BaseAgent):
         # MACHINE_VERIFIED measurement is converted, so it is meaningless without verify.
         verify = bool(inputs.context.get("verify", False))
         convert = bool(inputs.context.get("convert", False))
+        # Reviewed ingestion is a final opt-in that requires conversion (only a canonical
+        # run is ingested) and a knowledge_store service to write into.
+        ingest = bool(inputs.context.get("ingest", False))
+        store = self.context.services.get("knowledge_store")
         if verify and task is None:
             raise LiteratureQueryError("verify=true requires extract=true")
         if convert and not verify:
             raise LiteratureQueryError("convert=true requires verify=true")
+        if ingest and not convert:
+            raise LiteratureQueryError("ingest=true requires convert=true")
+        if ingest and store is None:
+            raise LiteratureQueryError("ingest=true requires a knowledge_store service")
 
         try:
             bundle = discover(query, self.provider)
@@ -312,6 +321,12 @@ class LiteratureDiscoveryAgent(BaseAgent):
 
         if task is not None and bundle.run_status is not DiscoveryRunStatus.PROVIDER_ERROR:
             bundle = self._extract(bundle, task, limit, verify=verify, convert=convert)
+
+        # Ingest the (post-cap) canonical runs as weak, reviewable evidence. This is the
+        # only path that writes to the KnowledgeStore, and only under an explicit opt-in.
+        ingestion = None
+        if ingest and bundle.canonical_runs:
+            ingestion = ingest_runs(store, bundle.canonical_runs)
 
         # Run status — not the presence of warnings — is the authoritative signal.
         if bundle.run_status is DiscoveryRunStatus.PROVIDER_ERROR:
@@ -329,6 +344,9 @@ class LiteratureDiscoveryAgent(BaseAgent):
                 notes += f"; {len(bundle.verification_decisions)} verification decision(s)"
             if convert:
                 notes += f"; {len(bundle.canonical_runs)} canonical run(s)"
+            if ingest:
+                added = ingestion.interactions_added if ingestion is not None else 0
+                notes += f"; ingested {added} weak evidence edge(s)"
         return AgentOutput(
             agent=self.name,
             claims=[],  # discovery yields metadata, never a biological claim

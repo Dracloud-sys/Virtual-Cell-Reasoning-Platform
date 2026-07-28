@@ -17,6 +17,7 @@ from virtualcell.agents.literature_discovery.agent import (
 from virtualcell.core.agent import AgentContext
 from virtualcell.core.contracts import AgentInput
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
+from virtualcell.knowledge.schema import RelationType
 from virtualcell.literature.contracts import (
     ArticleIdentifier,
     ArticleRecord,
@@ -797,3 +798,88 @@ async def test_convert_run_leaves_knowledge_store_untouched(jats_xml) -> None:
     assert out.claims == []  # canonical conversion is still not a biological claim
     assert store.all_entities() == []
     assert store.all_interactions() == []
+
+
+# --- PR8e reviewed ingestion (opt-in) ----------------------------------------
+
+
+def _ingest_inputs(**over) -> AgentInput:
+    context = {
+        "extract": True,
+        "verify": True,
+        "convert": True,
+        "ingest": True,
+        "target_measurements": ["TERT", "CDK4"],
+    }
+    context.update(over)
+    return AgentInput(query="TERT bovine preadipocyte", context=context)
+
+
+def _store_agent(provider, store) -> LiteratureDiscoveryAgent:
+    return LiteratureDiscoveryAgent(
+        AgentContext(services={"literature_provider": provider, "knowledge_store": store})
+    )
+
+
+async def test_ingest_writes_weak_reviewable_evidence(jats_xml) -> None:
+    store = InMemoryKnowledgeStore()
+    out = await _store_agent(_FakeProvider(jats_xml), store).run(_ingest_inputs())
+    bundle = LiteratureEvidenceBundle.model_validate(out.result)
+
+    # The store now holds literature evidence, namespaced and flagged for review.
+    entities = store.all_entities()
+    assert entities and all(e.id.startswith("lit:") for e in entities)
+    assert all(e.properties.get("review_status") == "pending_review" for e in entities)
+    # Only weak associations, one per canonical run, and no biological claim is emitted.
+    interactions = store.all_interactions()
+    assert interactions and all(i.relation is RelationType.ASSOCIATED_WITH for i in interactions)
+    assert len(interactions) == len(bundle.canonical_runs)
+    assert out.claims == []
+
+
+async def test_ingest_requires_convert(jats_xml) -> None:
+    store = InMemoryKnowledgeStore()
+    with pytest.raises(LiteratureQueryError):
+        await _store_agent(_FakeProvider(jats_xml), store).run(
+            AgentInput(query="x", context={"extract": True, "verify": True, "ingest": True})
+        )
+
+
+async def test_ingest_requires_a_knowledge_store(jats_xml) -> None:
+    # No knowledge_store service injected -> refused before any I/O.
+    with pytest.raises(LiteratureQueryError):
+        await _agent(_FakeProvider(jats_xml)).run(_ingest_inputs())
+
+
+async def test_ingest_is_idempotent_across_runs(jats_xml) -> None:
+    store = InMemoryKnowledgeStore()
+    agent = _store_agent(_FakeProvider(jats_xml), store)
+    await agent.run(_ingest_inputs())
+    entities_after_first = {e.id for e in store.all_entities()}
+    interactions_after_first = len(store.all_interactions())
+
+    await agent.run(_ingest_inputs())  # same deterministic runs again
+    assert {e.id for e in store.all_entities()} == entities_after_first
+    assert len(store.all_interactions()) == interactions_after_first
+
+
+async def test_convert_without_ingest_still_leaves_store_untouched(jats_xml) -> None:
+    # Regression: converting is not ingesting. The store is written only under ingest.
+    store = InMemoryKnowledgeStore()
+    await _store_agent(_FakeProvider(jats_xml), store).run(_convert_inputs())
+    assert store.all_entities() == []
+    assert store.all_interactions() == []
+
+
+async def test_ingest_creates_no_established_or_causal_edges(jats_xml) -> None:
+    store = InMemoryKnowledgeStore()
+    await _store_agent(_FakeProvider(jats_xml), store).run(_ingest_inputs())
+    causal = {
+        RelationType.PROMOTES,
+        RelationType.INHIBITS,
+        RelationType.REGULATES,
+        RelationType.ENCODES,
+        RelationType.INDICATES,
+        RelationType.HAS_RESULT,
+    }
+    assert all(i.relation not in causal for i in store.all_interactions())

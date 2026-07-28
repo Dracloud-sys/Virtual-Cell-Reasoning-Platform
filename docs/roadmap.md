@@ -252,9 +252,13 @@ Development is **benchmark-first**: fix the questions the platform must answer
   author interpretations and statistics never do. Opt-in via `convert: true` (requires
   `verify: true`); only successful conversions land in `canonical_runs`, and nothing is
   written to the graph.
-- ▶ **PR8e — Reviewed ingestion.** Store canonical evidence in an evidence store / KG,
-  expressing uncertain biology as *weak* relations (`SUGGESTS`, `ASSOCIATED_WITH`), never
-  `ESTABLISHED`, with provenance and re-review preserved.
+- ✅ **PR8e — Reviewed ingestion.** `literature.ingestion` writes each canonical run into
+  a `KnowledgeStore` as **weak, reviewable** evidence: `lit:`-namespaced `Marker`/
+  `AssayResult` nodes tagged `review_status = "pending_review"`, linked by the weak,
+  symmetric `ASSOCIATED_WITH` relation (never `PROMOTES`/`INHIBITS`/`ESTABLISHED`), with
+  full provenance on node and edge. Deterministic and idempotent. Opt-in via `ingest:
+  true` (requires `convert: true` and a `knowledge_store` service); it is the only path
+  that writes to the store, and only under that opt-in.
 - ▶ **PR9 — Integrated query orchestrator.** KB lookup → literature discovery on a miss →
   extraction → verification → canonical evidence, as a separate orchestrator (not a
   fallback bolted onto `qa.py`). Benchmark-first: re-evaluate the 10 fixed cell-engineering
