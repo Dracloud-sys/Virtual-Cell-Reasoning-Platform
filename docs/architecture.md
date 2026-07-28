@@ -235,8 +235,21 @@ deterministic and idempotent (re-ingesting the same run upserts the same nodes a
 not duplicate the edge). It is a final opt-in on the agent (`ingest: true`, which requires
 `convert: true` **and** an injected `knowledge_store` service): every earlier stage
 (discovery, extraction, verification, conversion) still leaves the store untouched.
-Connecting these literature markers to the curated ontology, and the integrated
-KB→discovery→evidence query orchestrator, are the next slices (PR9).
+
+PR9 adds the **integrated evidence-query orchestrator** (`orchestration.query`), one
+entry point that unifies the two evidence sources while keeping their epistemic status
+distinct. `EvidenceQueryOrchestrator.answer` first grounds the question in the curated KB
+(the unchanged `QuestionAnswerer` path); on a **miss** it consults literature —
+discovery → extraction → verification → canonical conversion → weak-evidence ingestion —
+and surfaces what survives as clearly **weak, pending-review** facts, never synthesized
+into a confident answer (so a possibility is never phrased as a conclusion). It is a
+*separate* layer over the existing pieces, not a fallback bolted into `qa.py`, and it
+enforces the tier boundary the store cannot: a `lit:` node is never an established KB hit,
+a literature fact surfacing alongside a curated answer is downgraded to `HYPOTHESIS`, and
+a repeat query re-surfaces previously ingested evidence (still weak) instead of
+re-discovering it. Formatting the deferred mechanism/hypothesis intents (Q5/Q6/Q9) into
+`DecisionReport`s from the KG-explain path, and resolving `lit:` markers onto curated
+ontology nodes, are the remaining PR9 work.
 
 PR8b implements the discovery slice: `literature.contracts` (query, article metadata,
 source-anchored candidates with deterministic ids, transparent relevance, verification
@@ -253,9 +266,9 @@ in `AgentOutput.result` and **no biological `Claim`s** — discovery metadata is
 evidence, and `AgentOutput.confidence` is not the relevance score. By default nothing
 here writes to the KnowledgeStore — only the explicit `ingest: true` opt-in does.
 Source-grounded extraction (PR8c), the deterministic verification gate (PR8d-1), canonical
-conversion of verified measurements (PR8d-2) and reviewed weak-evidence ingestion (PR8e)
-are now in place; the integrated KB→discovery→evidence query orchestrator is the next
-slice (PR9). A paper is never treated as true merely because it was read.
+conversion of verified measurements (PR8d-2), reviewed weak-evidence ingestion (PR8e) and
+the integrated KB→discovery→evidence query orchestrator (PR9) are now in place. A paper is
+never treated as true merely because it was read.
 
 ## Orchestration (`virtualcell.orchestration`)
 

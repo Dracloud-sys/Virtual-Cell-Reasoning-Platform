@@ -270,11 +270,18 @@ Development is **benchmark-first**: fix the questions the platform must answer
   `ASSOCIATED_WITH`/`SUGGESTS` edges) already lives in the seed graph, awaiting PR9
   formatting. No status is ever over-called. PR8 left the vertical unchanged (no
   regression).
-- ▶ **PR9 — Integrated query orchestrator.** KB lookup → literature discovery on a miss →
-  extraction → verification → canonical evidence, as a separate orchestrator (not a
-  fallback bolted onto `qa.py`). Formats the deferred mechanism/hypothesis intents
-  (Q5/Q6/Q9) into `DecisionReport`s from the KG-explain path, and connects literature
-  markers to the curated ontology.
+- ✅ **PR9-a — Integrated query orchestrator (core).** `orchestration.query`
+  (`EvidenceQueryOrchestrator`) answers from the curated KB and, on a **miss**, reaches
+  for literature — discovery → extraction → verification → canonical conversion →
+  weak-evidence ingestion — then surfaces it as clearly **weak, pending-review** facts.
+  A separate layer over `QuestionAnswerer` + `LiteratureDiscoveryAgent` (not bolted onto
+  `qa.py`); a `lit:` node is never treated as an established KB hit, and any literature
+  fact that surfaces alongside a curated answer is downgraded to `HYPOTHESIS`. Ingestion
+  is deterministic/idempotent; a repeat query re-surfaces prior evidence without
+  re-discovering, still weak.
+- ▶ **PR9-b — Mechanism/hypothesis DecisionReports + entity resolution.** Format the
+  deferred Q5/Q6/Q9 intents into `DecisionReport`s from the KG-explain path, and resolve
+  `lit:` markers onto curated ontology nodes.
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional
