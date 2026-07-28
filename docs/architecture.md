@@ -206,6 +206,23 @@ explicit opt-in on the agent (`verify: true`, which requires `extract: true`): a
 verifies only the candidates it *retained* after the caps (no orphan decisions),
 `canonical_runs` stays empty, and nothing is written to the KnowledgeStore.
 
+PR8d-2 adds **canonical conversion** (`literature.canonical`), the step between a
+verified measurement and evidence storage. `experiment_runs_from_verified(measurements,
+decisions)` links each decision to its candidate by `candidate_id` and turns **only** a
+`MACHINE_VERIFIED` measurement into a source-neutral `core.experiment.ExperimentRun` — a
+`PENDING_REVIEW`/`REJECTED` decision, a claim, an author interpretation and a
+`statistic`-tagged candidate are all skipped (defensively re-checked, so a statistic can
+never become a run). The run carries full provenance (`origin_kind=experiment`,
+`acquisition_mode=imported`, article ids, exact locator, source-text hash, the
+verification decision, and the raw value with its comparator/uncertainty preserved as
+measurement quality flags); units/comparators/uncertainty/target/conditions map onto the
+canonical contract. Conversion is deterministic — the same verified measurement always
+yields the same `run_id`, and duplicate inputs collapse to one run — and a run only ever
+references a *retained* (post-cap) candidate. It is a further opt-in (`convert: true`,
+which requires `verify: true`); only successful conversions land in `canonical_runs`, and
+this module still writes nothing. Reviewed KnowledgeStore/KG ingestion (weak relations
+like `SUGGESTS`/`ASSOCIATED_WITH`, never `ESTABLISHED`) is the next slice (PR8e).
+
 PR8b implements the discovery slice: `literature.contracts` (query, article metadata,
 source-anchored candidates with deterministic ids, transparent relevance, verification
 status, and the `LiteratureEvidenceBundle`); a bounded, injectable `EuropePmcProvider` over
@@ -219,11 +236,10 @@ CLI exits non-zero only on `provider_error` — and `VerificationDecision` is th
 status a candidate is checked against. `LiteratureDiscoveryAgent` returns the typed bundle
 in `AgentOutput.result` and **no biological `Claim`s** — discovery metadata is not
 evidence, and `AgentOutput.confidence` is not the relevance score. Nothing here writes to
-the KnowledgeStore. Source-grounded extraction (PR8c: JATS/tables + an optional structured
-LLM extractor behind a strict schema) and the deterministic verification gate (PR8d-1) are
-now in place; converting *verified* measurements to canonical runs and KnowledgeStore
-ingestion are the remaining slices (PR8d-2 onward). A paper is never treated as true merely
-because it was read.
+the KnowledgeStore. Source-grounded extraction (PR8c), the deterministic verification gate
+(PR8d-1) and canonical conversion of verified measurements (PR8d-2) are now in place;
+reviewed KnowledgeStore/KG ingestion is the remaining slice (PR8e). A paper is never
+treated as true merely because it was read.
 
 ## Orchestration (`virtualcell.orchestration`)
 

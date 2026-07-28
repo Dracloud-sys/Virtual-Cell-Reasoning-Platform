@@ -15,6 +15,7 @@ from pydantic import ValidationError
 
 from virtualcell.core.agent import AgentContext, BaseAgent
 from virtualcell.core.contracts import AgentInput, AgentOutput
+from virtualcell.literature.canonical import experiment_runs_from_verified
 from virtualcell.literature.contracts import (
     ArticleRecord,
     DiscoveryRunStatus,
@@ -161,6 +162,7 @@ class LiteratureDiscoveryAgent(BaseAgent):
         limit: int,
         *,
         verify: bool = False,
+        convert: bool = False,
     ) -> LiteratureEvidenceBundle:
         """Extract candidates from the top-ranked articles and rebuild the bundle.
 
@@ -168,11 +170,14 @@ class LiteratureDiscoveryAgent(BaseAgent):
         is produced. When it is on, each document's *retained* candidates (those that
         survived acceptance, de-duplication and the caps) are re-checked against that
         same in-memory ``ArticleDocument`` to produce deterministic decisions — an
-        orphan decision for a capped-away candidate is never created. Either way no
-        canonical run is produced and nothing is written to the KnowledgeStore.
+        orphan decision for a capped-away candidate is never created. When ``convert`` is
+        also on, each document's ``MACHINE_VERIFIED`` measurements become canonical
+        ``ExperimentRun``s (only successful conversions land in ``canonical_runs``).
+        Nothing here is ever written to the KnowledgeStore.
         """
         verified_at = datetime.now(UTC)
         decisions = []
+        canonical_runs = []
         # One shared identity policy (PMCID > PMID > DOI > provider-scoped id), the same
         # one dedup uses, and — crucially — the same one the relevance score carries, so
         # a provider_id-only record resolves to its score instead of falling to 0.
@@ -258,10 +263,15 @@ class LiteratureDiscoveryAgent(BaseAgent):
 
             # Verify only what this document actually retained (post-cap), against the
             # same in-memory document — so a decision never orphans a capped candidate.
+            # Canonical conversion then draws only from those same retained candidates and
+            # their decisions, so a run can never reference a capped-away measurement.
             if verify:
-                decisions.extend(
-                    verify_candidates(document, retained, task, verified_at=verified_at)
-                )
+                doc_decisions = verify_candidates(document, retained, task, verified_at=verified_at)
+                decisions.extend(doc_decisions)
+                if convert:
+                    canonical_runs.extend(
+                        experiment_runs_from_verified(retained.measurements, doc_decisions)
+                    )
 
         # Rebuilt (not mutated) so the bundle's linkage validation runs.
         return LiteratureEvidenceBundle(
@@ -275,6 +285,7 @@ class LiteratureDiscoveryAgent(BaseAgent):
             measurements=measurements,
             author_interpretations=interpretations,
             verification_decisions=decisions,
+            canonical_runs=canonical_runs,
             warnings=warnings,
         )
 
@@ -285,9 +296,14 @@ class LiteratureDiscoveryAgent(BaseAgent):
         limit = self._extract_limit(inputs) if task is not None else 0
         # Verification is an explicit opt-in that *requires* extraction: it re-checks
         # extracted candidates, so there is nothing to verify without extract=true.
+        # Canonical conversion is a further opt-in that requires verification: only a
+        # MACHINE_VERIFIED measurement is converted, so it is meaningless without verify.
         verify = bool(inputs.context.get("verify", False))
+        convert = bool(inputs.context.get("convert", False))
         if verify and task is None:
             raise LiteratureQueryError("verify=true requires extract=true")
+        if convert and not verify:
+            raise LiteratureQueryError("convert=true requires verify=true")
 
         try:
             bundle = discover(query, self.provider)
@@ -295,7 +311,7 @@ class LiteratureDiscoveryAgent(BaseAgent):
             bundle = self._failure_bundle(query, exc)
 
         if task is not None and bundle.run_status is not DiscoveryRunStatus.PROVIDER_ERROR:
-            bundle = self._extract(bundle, task, limit, verify=verify)
+            bundle = self._extract(bundle, task, limit, verify=verify, convert=convert)
 
         # Run status — not the presence of warnings — is the authoritative signal.
         if bundle.run_status is DiscoveryRunStatus.PROVIDER_ERROR:
@@ -311,6 +327,8 @@ class LiteratureDiscoveryAgent(BaseAgent):
                 )
             if verify:
                 notes += f"; {len(bundle.verification_decisions)} verification decision(s)"
+            if convert:
+                notes += f"; {len(bundle.canonical_runs)} canonical run(s)"
         return AgentOutput(
             agent=self.name,
             claims=[],  # discovery yields metadata, never a biological claim

@@ -704,3 +704,96 @@ async def test_verify_run_leaves_knowledge_store_untouched(jats_xml) -> None:
     await agent.run(_verify_inputs())
     assert store.all_entities() == []
     assert store.all_interactions() == []
+
+
+# --- PR8d-2 canonical conversion (opt-in) ------------------------------------
+
+
+def _convert_inputs(**over) -> AgentInput:
+    context = {
+        "extract": True,
+        "verify": True,
+        "convert": True,
+        "target_measurements": ["TERT", "CDK4"],
+    }
+    context.update(over)
+    return AgentInput(query="TERT bovine preadipocyte", context=context)
+
+
+async def test_convert_omitted_leaves_canonical_runs_empty(jats_xml) -> None:
+    bundle = await _bundle(_FakeProvider(jats_xml), over_inputs=_verify_inputs)
+    assert bundle.verification_decisions  # verified
+    assert bundle.canonical_runs == []  # but not converted
+
+
+async def test_convert_true_populates_canonical_runs(jats_xml) -> None:
+    bundle = await _bundle(_FakeProvider(jats_xml), over_inputs=_convert_inputs)
+    verified_measurement_ids = {
+        d.candidate_id
+        for d in bundle.verification_decisions
+        if d.status is VerificationStatus.MACHINE_VERIFIED
+    }
+    assert bundle.canonical_runs
+    # Exactly one run per machine-verified measurement, each carrying its source trail.
+    run_candidate_ids = {r.provenance.metadata["candidate_id"] for r in bundle.canonical_runs}
+    assert run_candidate_ids == verified_measurement_ids
+    assert all(r.provenance.source_system == "literature" for r in bundle.canonical_runs)
+
+
+async def test_convert_requires_verify(jats_xml) -> None:
+    with pytest.raises(LiteratureQueryError):
+        await _agent(_FakeProvider(jats_xml)).run(
+            AgentInput(query="x", context={"extract": True, "convert": True})  # no verify
+        )
+
+
+async def test_convert_only_converts_machine_verified(jats_xml) -> None:
+    # SA_b_gal's cell is qualitative -> PENDING_REVIEW -> never a canonical run, while
+    # TERT's quantitative cells do convert.
+    bundle = await _bundle(
+        _FakeProvider(jats_xml),
+        over_inputs=lambda **o: _convert_inputs(target_measurements=["TERT", "SA_b_gal"], **o),
+    )
+    pending = {
+        d.candidate_id
+        for d in bundle.verification_decisions
+        if d.status is VerificationStatus.PENDING_REVIEW
+    }
+    converted = {r.provenance.metadata["candidate_id"] for r in bundle.canonical_runs}
+    assert converted and pending
+    assert converted.isdisjoint(pending)  # no pending candidate was converted
+
+
+async def test_convert_runs_reference_only_post_cap_candidates() -> None:
+    bundle = await _bundle(
+        _FakeProvider(_BIG_TABLE),
+        max_candidates=3,
+        over_inputs=lambda **o: AgentInput(
+            query="markers",
+            context={
+                "extract": True,
+                "verify": True,
+                "convert": True,
+                "target_measurements": _MARKERS,
+                **o,
+            },
+        ),
+    )
+    assert len(bundle.measurements) == 3
+    assert len(bundle.canonical_runs) == 3
+    assert {r.provenance.metadata["candidate_id"] for r in bundle.canonical_runs} == {
+        m.candidate_id for m in bundle.measurements
+    }
+
+
+async def test_convert_run_leaves_knowledge_store_untouched(jats_xml) -> None:
+    store = InMemoryKnowledgeStore()
+    agent = LiteratureDiscoveryAgent(
+        AgentContext(
+            services={"literature_provider": _FakeProvider(jats_xml), "knowledge_store": store}
+        )
+    )
+    out = await agent.run(_convert_inputs())
+    assert out.claims == []  # canonical conversion is still not a biological claim
+    assert store.all_entities() == []
+    assert store.all_interactions() == []

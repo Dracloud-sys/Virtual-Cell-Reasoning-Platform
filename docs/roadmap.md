@@ -245,9 +245,20 @@ Development is **benchmark-first**: fix the questions the platform must answer
   claims, author interpretations, statistics and unparsed values are `PENDING_REVIEW`;
   source-integrity failures are `REJECTED`. Opt-in via `verify: true` (requires
   `extract: true`); `canonical_runs` stays empty and nothing is written to the graph.
-- ▶ **PR8d-2+ — canonical conversion + ingestion.** Convert *verified* measurements to
-  canonical `ExperimentRun`s and run reviewed KnowledgeStore ingestion. Contracts already
-  exist in the bundle; discovery or extraction alone is never a biological fact.
+- ✅ **PR8d-2 — Canonical conversion.** `literature.canonical` turns each
+  `MACHINE_VERIFIED` measurement into a source-neutral `ExperimentRun` (full provenance:
+  article ids, exact locator, source hash, the verification decision, raw value +
+  comparator/uncertainty). Only machine-verified measurements convert — prose, claims,
+  author interpretations and statistics never do. Opt-in via `convert: true` (requires
+  `verify: true`); only successful conversions land in `canonical_runs`, and nothing is
+  written to the graph.
+- ▶ **PR8e — Reviewed ingestion.** Store canonical evidence in an evidence store / KG,
+  expressing uncertain biology as *weak* relations (`SUGGESTS`, `ASSOCIATED_WITH`), never
+  `ESTABLISHED`, with provenance and re-review preserved.
+- ▶ **PR9 — Integrated query orchestrator.** KB lookup → literature discovery on a miss →
+  extraction → verification → canonical evidence, as a separate orchestrator (not a
+  fallback bolted onto `qa.py`). Benchmark-first: re-evaluate the 10 fixed cell-engineering
+  questions on real `DecisionReport`s before extending core models.
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional
