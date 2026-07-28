@@ -259,10 +259,22 @@ Development is **benchmark-first**: fix the questions the platform must answer
   full provenance on node and edge. Deterministic and idempotent. Opt-in via `ingest:
   true` (requires `convert: true` and a `knowledge_store` service); it is the only path
   that writes to the store, and only under that opt-in.
+- ✅ **Benchmark-first re-evaluation (post-PR8).** `tests/benchmarks/eval_immortalization_v0`
+  runs all 10 fixed questions through the real `DecisionReport` pipeline and scores the
+  machine-decidable rubric axes (0/1/2, pass ≥ 9/12), pinned by
+  `test_immortalization_eval`. Result: the **7 assessment questions all pass** (Q1/Q4
+  score 11 — a clear senescence case has no "supporting immortalization" side; Q8 scores
+  11 — its overinterpretation caveat is generic, not question-specific); the **3
+  mechanism/hypothesis questions (Q5/Q6/Q9) are correctly deferred** — the deterministic
+  builder refuses them by design and their knowledge (incl. Q9's weak
+  `ASSOCIATED_WITH`/`SUGGESTS` edges) already lives in the seed graph, awaiting PR9
+  formatting. No status is ever over-called. PR8 left the vertical unchanged (no
+  regression).
 - ▶ **PR9 — Integrated query orchestrator.** KB lookup → literature discovery on a miss →
   extraction → verification → canonical evidence, as a separate orchestrator (not a
-  fallback bolted onto `qa.py`). Benchmark-first: re-evaluate the 10 fixed cell-engineering
-  questions on real `DecisionReport`s before extending core models.
+  fallback bolted onto `qa.py`). Formats the deferred mechanism/hypothesis intents
+  (Q5/Q6/Q9) into `DecisionReport`s from the KG-explain path, and connects literature
+  markers to the curated ontology.
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional
