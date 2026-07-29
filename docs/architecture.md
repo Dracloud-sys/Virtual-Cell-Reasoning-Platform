@@ -247,9 +247,18 @@ into a confident answer (so a possibility is never phrased as a conclusion). It 
 enforces the tier boundary the store cannot: a `lit:` node is never an established KB hit,
 a literature fact surfacing alongside a curated answer is downgraded to `HYPOTHESIS`, and
 a repeat query re-surfaces previously ingested evidence (still weak) instead of
-re-discovering it. Formatting the deferred mechanism/hypothesis intents (Q5/Q6/Q9) into
-`DecisionReport`s from the KG-explain path, and resolving `lit:` markers onto curated
-ontology nodes, are the remaining PR9 work.
+re-discovering it.
+
+PR9-b closes the last benchmark gap: `agents.immortalization.mechanism.build_mechanism_report`
+formats the mechanism (Q5/Q6) and hypothesis (Q9) intents — which the assessment builder
+refuses — into `DecisionReport`s. The mechanistic chain is derived from the seed graph with
+`explain` (auditable, tier-graded, weak edges capped at `hypothesis`) and the domain
+limitations/caveats/claim-decomposition are curated tier-tagged statements. It respects the
+benchmark guardrails: TERT alone is not sufficient, immortalization is never conflated with
+safety or function, and Q9's spontaneous route stays a hypothesis stated as *P53-independent*
+— never a P53-negative reduction, never `CAUSES`. The re-eval harness now scores all ten
+questions (Q5/Q6/Q9 at 12/12). Resolving `lit:` markers onto curated ontology nodes is the
+remaining PR9 work.
 
 PR8b implements the discovery slice: `literature.contracts` (query, article metadata,
 source-anchored candidates with deterministic ids, transparent relevance, verification

@@ -279,9 +279,17 @@ Development is **benchmark-first**: fix the questions the platform must answer
   fact that surfaces alongside a curated answer is downgraded to `HYPOTHESIS`. Ingestion
   is deterministic/idempotent; a repeat query re-surfaces prior evidence without
   re-discovering, still weak.
-- ▶ **PR9-b — Mechanism/hypothesis DecisionReports + entity resolution.** Format the
-  deferred Q5/Q6/Q9 intents into `DecisionReport`s from the KG-explain path, and resolve
-  `lit:` markers onto curated ontology nodes.
+- ✅ **PR9-b — Mechanism/hypothesis DecisionReports.** `agents.immortalization.mechanism`
+  (`build_mechanism_report`) formats the previously deferred Q5/Q6/Q9 intents into
+  `DecisionReport`s: the mechanistic chain is derived from the seed graph with `explain`
+  (auditable, tier-graded, weak edges capped at `hypothesis`), and the domain
+  limitations/caveats/claim-decomposition are curated tier-tagged statements. TERT alone
+  is not sufficient, immortalization is never conflated with safety/function, and Q9's
+  spontaneous route stays a hypothesis stated as *P53-independent* — never a P53-negative
+  reduction, never `CAUSES`. The re-eval harness now scores **all 10/10 questions** (Q5/Q6/Q9
+  at 12/12), pinned by `test_immortalization_eval`.
+- ▶ **PR9-c — Entity resolution.** Resolve `lit:` literature markers onto curated ontology
+  nodes so discovered evidence attaches to the known graph.
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional

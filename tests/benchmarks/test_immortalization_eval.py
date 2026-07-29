@@ -1,10 +1,11 @@
 """Benchmark-first regression: pin the DecisionReport re-evaluation of the 10 questions.
 
-Freezes the current, honest state of the immortalization vertical so a future change
-cannot silently regress it: every *assessment* question the deterministic builder handles
-must still clear the rubric threshold on a real ``DecisionReport``, and the mechanism /
-hypothesis questions remain correctly *deferred* to the later KG-explain/LLM-synthesis
-slice (PR9) — with the knowledge their answers need already present in the seed graph.
+Freezes the immortalization vertical so a future change cannot silently regress it: all
+10 fixed questions are now answered on a real ``DecisionReport`` and must clear the rubric
+threshold — the seven assessment questions via the deterministic builder, and the mechanism
+(Q5/Q6) and hypothesis (Q9) questions via the KG-explain formatter (PR9-b). The domain
+guardrails (no over-call, Q9's weak-only relations and forbidden P53 phrasings) are pinned
+here too.
 """
 
 from __future__ import annotations
@@ -21,39 +22,45 @@ from virtualcell.knowledge.schema import RelationType
 from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
 
 _RESULTS = {r.id: r for r in evaluate()}
-_DEFERRED = {"IMM-Q5", "IMM-Q6", "IMM-Q9"}  # mechanism (Q5/Q6) + hypothesis (Q9)
+_MECHANISM = {"IMM-Q5", "IMM-Q6"}  # mechanism questions (no candidate status)
+_HYPOTHESIS = "IMM-Q9"
 
 
-def test_all_ten_questions_are_covered() -> None:
+def test_all_ten_questions_are_handled() -> None:
     assert len(_RESULTS) == 10
+    assert all(r.handled for r in _RESULTS.values())  # nothing deferred anymore
 
 
-@pytest.mark.parametrize("qid", sorted(set(_RESULTS) - _DEFERRED))
-def test_handled_assessment_questions_pass_the_rubric(qid: str) -> None:
+@pytest.mark.parametrize("qid", sorted(_RESULTS))
+def test_every_question_passes_the_rubric(qid: str) -> None:
     result = _RESULTS[qid]
-    assert result.handled, f"{qid} should be handled by the deterministic builder"
     assert result.passed, f"{qid} scored {result.total}/12 (threshold {PASS_THRESHOLD})"
-    # Status is the hard gate: it must match the frozen expectation (or acceptable set).
-    status_axis = next(a for a in result.axes if a.name == "status_match")
-    assert status_axis.score > 0, f"{qid}: wrong status {result.status}"
 
 
-@pytest.mark.parametrize("qid", sorted(_DEFERRED))
-def test_mechanism_and_hypothesis_questions_are_deferred(qid: str) -> None:
+@pytest.mark.parametrize("qid", sorted(_MECHANISM))
+def test_mechanism_questions_carry_no_status_and_a_chain(qid: str) -> None:
     result = _RESULTS[qid]
-    assert not result.handled  # by design: the deterministic builder refuses these
-    assert result.deferred_reason
+    assert result.status is None  # a mechanism question never asserts a candidate status
+    chain_axis = next(a for a in result.axes if a.name == "mechanistic_chain")
+    assert chain_axis.score > 0  # answered from the KG-explain path
+
+
+def test_hypothesis_question_is_conservative() -> None:
+    result = _RESULTS[_HYPOTHESIS]
+    assert result.status == "insufficient_evidence"
+    scores = {a.name: a.score for a in result.axes}
+    assert scores["forbidden_absent"] == 2  # no 'without P53' / 'P53 loss' / 'CAUSES ...'
+    assert scores["weak_relations"] == 2  # spontaneous route reached only weakly
 
 
 def test_seed_graph_holds_q9_weak_relations_only() -> None:
     # Q9 (spontaneous route) requires ASSOCIATED_WITH / SUGGESTS and *forbids* a causal
-    # claim. The curated seed already encodes exactly that, so the answer is deferred on
-    # formatting, not on missing (or over-strong) knowledge.
+    # claim; the curated seed encodes exactly that, so the report can format it honestly.
     spec = {q["id"]: q for q in load_spec()["questions"]}["IMM-Q9"]
     required = {RelationType[r] for r in spec["required_edge_relations"]}  # YAML uses names
 
-    store = InMemoryKnowledgeStore()
     source = ImmortalizationSeedSource()
+    store = InMemoryKnowledgeStore()
     for entity in source.entities():
         store.upsert(entity)
     spontaneous_edges = [
@@ -64,13 +71,14 @@ def test_seed_graph_holds_q9_weak_relations_only() -> None:
     assert relations <= required  # only the weak relations, never a causal/established one
 
 
-def test_no_handled_question_overcalls_immortalization() -> None:
+def test_no_question_overcalls_immortalization() -> None:
     # The domain's top failure mode: never present a possibility as confirmed
-    # immortalization. There is no such status in the vocabulary, and none is produced.
-    for result in _RESULTS.values():
-        if result.handled:
-            assert result.status in {
-                "possible_candidate",
-                "senescence_or_stress_prone",
-                "insufficient_evidence",
-            }
+    # immortalization. Mechanism questions carry no status; assessment/hypothesis
+    # questions stay within the coarse three-status vocabulary.
+    allowed = {
+        None,
+        "possible_candidate",
+        "senescence_or_stress_prone",
+        "insufficient_evidence",
+    }
+    assert all(r.status in allowed for r in _RESULTS.values())

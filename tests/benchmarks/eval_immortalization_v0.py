@@ -6,28 +6,28 @@ benchmark can be re-run as an honest scorecard rather than only a pass/fail test
 subjective rubric axes (prose quality, expert nuance) still need a human; this harness
 scores only what is deterministically decidable and states its own limits.
 
-Coverage note: the deterministic builder answers the four *assessment* intents (7 of the
-10 questions). The two mechanism questions (Q5/Q6) and the hypothesis question (Q9) are
-refused by the builder *by design* — they are the KG-explain / LLM-synthesis path wired
-in a later slice (PR9). Their required knowledge already lives in the seed graph; this
-harness records them as ``deferred`` rather than failed.
+Coverage: the deterministic builder answers the seven *assessment* questions; the two
+mechanism questions (Q5/Q6) and the hypothesis question (Q9) are answered from the
+KG-explain path via ``mechanism.build_mechanism_report`` (PR9-b). All ten are scored.
 
 Run ``python -m tests.benchmarks.eval_immortalization_v0`` for the scorecard.
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel
 
 from virtualcell.agents.immortalization.adapters import input_from_scenario
+from virtualcell.agents.immortalization.mechanism import build_mechanism_report
 from virtualcell.agents.immortalization.models import ASSESSMENT_INTENTS, AssessmentIntent
-from virtualcell.agents.immortalization.rules import (
-    UnsupportedIntentError,
-    build_decision_report,
-)
+from virtualcell.agents.immortalization.rules import build_decision_report
+from virtualcell.core.evidence import EvidenceTier
+from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
+from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
 
 _SPEC_PATH = Path(__file__).parent / "immortalization_v0.yaml"
 
@@ -67,6 +67,9 @@ class QuestionEval(BaseModel):
     flags: list[str] = []
     expected_flags: list[str] = []
     axes: list[AxisScore] = []
+    # Axes that must not be zero for the question to pass (hard gates: a wrong status, an
+    # over-call, or a forbidden phrasing fails the question regardless of total).
+    critical: list[str] = []
 
     @property
     def total(self) -> int:
@@ -74,13 +77,9 @@ class QuestionEval(BaseModel):
 
     @property
     def passed(self) -> bool:
-        # A deferred (mechanism/hypothesis) question is not a failure of the assessment
-        # builder. A handled question passes at the rubric threshold, and a wrong status
-        # is a hard fail regardless of total.
-        if not self.handled:
+        if not self.handled or self.total < PASS_THRESHOLD:
             return False
-        status_ok = next(a.score for a in self.axes if a.name == "status_match") > 0
-        return status_ok and self.total >= PASS_THRESHOLD
+        return all(a.score > 0 for a in self.axes if a.name in self.critical)
 
 
 def load_spec() -> dict:
@@ -96,47 +95,64 @@ def _axis_token(axis: str) -> str:
     return axis.lower().replace("-", "").replace("_", "").replace("b", "b")
 
 
+def _seed_store() -> InMemoryKnowledgeStore:
+    store = InMemoryKnowledgeStore()
+    source = ImmortalizationSeedSource()
+    for entity in source.entities():
+        store.upsert(entity)
+    for interaction in source.interactions():
+        store.add_interaction(interaction)
+    return store
+
+
+def _report_text(report) -> str:
+    parts = [
+        report.conclusion,
+        *report.limitations,
+        *report.overinterpretation_risk,
+        *report.next_experiment,
+        *(link.target_name for link in report.mechanistic_chain),
+        *(c.statement for c in report.supporting_evidence),
+    ]
+    return " ".join(parts).lower()
+
+
 def _evaluate_question(question: dict) -> QuestionEval:
     qid = question["id"]
     intent = AssessmentIntent(question["intent"])
     scenario = question["scenario"]
     expected_status = question.get("expected_status")
     expected_flags = sorted(question.get("expected_flags", []) or [])
+    data = input_from_scenario(intent, scenario)
 
-    if intent not in ASSESSMENT_INTENTS:
-        return QuestionEval(
-            id=qid,
-            intent=intent.value,
-            handled=False,
-            deferred_reason="mechanism/hypothesis intent -- KG-explain/LLM-synthesis path (PR9)",
-            expected_status=expected_status,
-            expected_flags=expected_flags,
+    if intent in ASSESSMENT_INTENTS:
+        report = build_decision_report(data)
+        status = report.candidate_status.value if report.candidate_status else None
+        flags = sorted(f.value for f in report.flags)
+        acceptable = question.get("acceptable_status") or (
+            [expected_status] if expected_status else []
         )
+        axes = [
+            _score_status(status, flags, acceptable, expected_flags),
+            _score_multi_marker(report),
+            _score_both_sides(report, question),
+            _score_overinterpretation(report),
+            _score_next_experiment(report),
+            _score_tiers(report),
+        ]
+        critical = ["status_match"]
+    else:
+        # Mechanism (Q5/Q6) and hypothesis (Q9): formatted from the KG-explain path.
+        report = build_mechanism_report(_seed_store(), data)
+        status = report.candidate_status.value if report.candidate_status else None
+        flags = []
+        if intent is AssessmentIntent.HYPOTHESIS_HANDLING:
+            axes = _score_hypothesis(report, question, expected_status)
+            critical = ["status_match", "forbidden_absent"]
+        else:
+            axes = _score_mechanism(report, question)
+            critical = ["no_overcall"]
 
-    try:
-        report = build_decision_report(input_from_scenario(intent, scenario))
-    except UnsupportedIntentError as exc:  # pragma: no cover - guarded by the intent check
-        return QuestionEval(
-            id=qid,
-            intent=intent.value,
-            handled=False,
-            deferred_reason=str(exc),
-            expected_status=expected_status,
-            expected_flags=expected_flags,
-        )
-
-    status = report.candidate_status.value if report.candidate_status else None
-    flags = sorted(f.value for f in report.flags)
-    acceptable = question.get("acceptable_status") or ([expected_status] if expected_status else [])
-
-    axes = [
-        _score_status(status, flags, acceptable, expected_flags),
-        _score_multi_marker(report),
-        _score_both_sides(report, question),
-        _score_overinterpretation(report),
-        _score_next_experiment(report),
-        _score_tiers(report),
-    ]
     return QuestionEval(
         id=qid,
         intent=intent.value,
@@ -146,7 +162,107 @@ def _evaluate_question(question: dict) -> QuestionEval:
         flags=flags,
         expected_flags=expected_flags,
         axes=axes,
+        critical=critical,
     )
+
+
+def _covers(text: str, key_point: str) -> bool:
+    """Is a benchmark key point (``does_not_bypass_p16_RB``) represented in the text?"""
+    stop = {"does", "not", "may", "the", "via", "and", "for", "be"}
+    tokens = [t for t in key_point.lower().split("_") if len(t) >= 3 and t not in stop]
+    if not tokens:
+        return True
+    return sum(1 for t in tokens if t in text) / len(tokens) >= 0.5
+
+
+def _score_mechanism(report, question) -> list[AxisScore]:
+    text = _report_text(report)
+    key_points = question.get("key_points", [])
+    covered = sum(1 for kp in key_points if _covers(text, kp))
+    kp_score = 2 if covered == len(key_points) else (1 if covered else 0)
+    tiers = {link.tier for link in report.mechanistic_chain}
+    return [
+        AxisScore(
+            name="no_overcall",
+            score=2 if report.candidate_status is None else 0,
+            detail=f"status={report.candidate_status}",
+        ),
+        AxisScore(
+            name="mechanistic_chain",
+            score=2 if report.mechanistic_chain else 0,
+            detail=f"{len(report.mechanistic_chain)} link(s)",
+        ),
+        AxisScore(name="key_points", score=kp_score, detail=f"{covered}/{len(key_points)}"),
+        AxisScore(
+            name="limitation_present",
+            score=2 if report.limitations else 0,
+            detail=f"{len(report.limitations)} limitation(s)",
+        ),
+        AxisScore(
+            name="targeted_next_experiment",
+            score=2 if report.next_experiment else 0,
+            detail=f"{len(report.next_experiment)} step(s)",
+        ),
+        AxisScore(
+            name="evidence_tier_discipline",
+            score=2 if len(tiers) >= 2 else (1 if tiers else 0),
+            detail=f"tiers={sorted(t.value for t in tiers)}",
+        ),
+    ]
+
+
+def _claim_matched(report, required: dict) -> bool:
+    want_tier = required["tier"]
+    tokens = [t for t in re.findall(r"[a-z0-9]+", required["text"].lower()) if len(t) >= 4]
+    for claim in report.supporting_evidence:
+        if _tier(claim) != want_tier:
+            continue
+        statement = claim.statement.lower()
+        if sum(1 for t in tokens if t in statement) >= 2:
+            return True
+    return False
+
+
+def _score_hypothesis(report, question, expected_status) -> list[AxisScore]:
+    text = _report_text(report)
+    status = report.candidate_status.value if report.candidate_status else None
+    forbidden = [p.lower() for p in question.get("forbidden_phrasings", [])]
+    forbidden_hit = [p for p in forbidden if p in text]
+    required = question.get("required_claims", [])
+    matched = sum(1 for rc in required if _claim_matched(report, rc))
+    rc_score = 2 if matched == len(required) else (1 if matched else 0)
+    weak_ok = any(
+        "spontaneous" in link.target_name.lower() and link.tier is not EvidenceTier.ESTABLISHED
+        for link in report.mechanistic_chain
+    )
+    return [
+        AxisScore(
+            name="status_match",
+            score=2 if status == expected_status else 0,
+            detail=f"status={status} vs {expected_status}",
+        ),
+        AxisScore(name="required_claims", score=rc_score, detail=f"{matched}/{len(required)}"),
+        AxisScore(
+            name="forbidden_absent",
+            score=0 if forbidden_hit else 2,
+            detail=f"forbidden present: {forbidden_hit}",
+        ),
+        AxisScore(
+            name="weak_relations",
+            score=2 if weak_ok else 0,
+            detail="spontaneous route reached only weakly",
+        ),
+        AxisScore(
+            name="overinterpretation_controlled",
+            score=2 if "p53-independent" in text else 0,
+            detail="P53-independent framing stated",
+        ),
+        AxisScore(
+            name="targeted_next_experiment",
+            score=2 if report.next_experiment else 0,
+            detail=f"{len(report.next_experiment)} step(s)",
+        ),
+    ]
 
 
 def _score_status(status, flags, acceptable, expected_flags) -> AxisScore:
