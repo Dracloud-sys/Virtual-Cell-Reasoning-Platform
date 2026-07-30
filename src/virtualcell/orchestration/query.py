@@ -36,6 +36,7 @@ from virtualcell.literature.ingestion import (
     IngestionReport,
     ingest_runs,
 )
+from virtualcell.literature.resolution import ResolutionReport, resolve_literature_markers
 from virtualcell.reasoning.llm import LLMBackend
 from virtualcell.reasoning.qa import GroundedFact, QuestionAnswerer
 
@@ -60,6 +61,7 @@ class OrchestratedAnswer(BaseModel):
     literature_consulted: bool = False
     literature_facts: list[GroundedFact] = Field(default_factory=list)
     ingestion: IngestionReport | None = None
+    resolution: ResolutionReport | None = None
 
 
 def _is_target_token(token: str) -> bool:
@@ -158,6 +160,9 @@ class EvidenceQueryOrchestrator:
         )
         bundle = LiteratureEvidenceBundle.model_validate(out.result)
         ingestion = ingest_runs(self.store, bundle.canonical_runs)
+        # Bridge the newly ingested markers onto curated ontology nodes (weakly), so the
+        # evidence is reachable from the known graph without being merged or upgraded.
+        resolution = resolve_literature_markers(self.store, ingestion.markers)
         facts = [self._assay_fact(self.store.get(a)) for a in ingestion.assay_results]
         facts = [f for f in facts if f is not None]
 
@@ -171,8 +176,11 @@ class EvidenceQueryOrchestrator:
                 ),
                 literature_consulted=True,
                 ingestion=ingestion,
+                resolution=resolution,
             )
-        return self._literature_answer(question, facts, ingestion=ingestion, consulted=True)
+        return self._literature_answer(
+            question, facts, ingestion=ingestion, resolution=resolution, consulted=True
+        )
 
     def _literature_answer(
         self,
@@ -181,6 +189,7 @@ class EvidenceQueryOrchestrator:
         *,
         ingestion: IngestionReport | None,
         consulted: bool,
+        resolution: ResolutionReport | None = None,
     ) -> OrchestratedAnswer:
         rendered = "\n".join(f"- {f.statement} [{f.citation}]" for f in facts)
         return OrchestratedAnswer(
@@ -194,6 +203,7 @@ class EvidenceQueryOrchestrator:
             literature_consulted=consulted,
             literature_facts=facts,
             ingestion=ingestion,
+            resolution=resolution,
         )
 
     def _existing_literature_facts(self, seeds: list) -> list[GroundedFact]:

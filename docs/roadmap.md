@@ -288,8 +288,13 @@ Development is **benchmark-first**: fix the questions the platform must answer
   spontaneous route stays a hypothesis stated as *P53-independent* — never a P53-negative
   reduction, never `CAUSES`. The re-eval harness now scores **all 10/10 questions** (Q5/Q6/Q9
   at 12/12), pinned by `test_immortalization_eval`.
-- ▶ **PR9-c — Entity resolution.** Resolve `lit:` literature markers onto curated ontology
-  nodes so discovered evidence attaches to the known graph.
+- ✅ **PR9-c — Entity resolution.** `literature.resolution` (`resolve_literature_markers`)
+  bridges a `lit:marker` onto the curated ontology node carrying the same
+  name/symbol/alias, via a weak, reviewable `ASSOCIATED_WITH` edge — so discovered
+  evidence is reachable from the known graph without being merged into it or upgraded past
+  `hypothesis`. Only an **exact normalized** match resolves (no fuzzy/synonym); an ambiguous
+  match is left unresolved. Deterministic and idempotent. The orchestrator runs it after
+  ingestion, and a later curated hit reaching the bridged evidence keeps it weak.
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional

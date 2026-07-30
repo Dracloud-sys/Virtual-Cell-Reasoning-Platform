@@ -218,3 +218,33 @@ async def test_augmentation_is_deterministic_and_idempotent(jats_xml) -> None:
     # Re-ingesting the same evidence adds nothing new.
     assert {e.id for e in store.all_entities()} == entities_after_first
     assert len(store.all_interactions()) == interactions_after_first
+
+
+# --- PR9-c: literature markers resolved onto curated nodes -------------------
+
+
+async def test_augmentation_resolves_markers_onto_curated_nodes(jats_xml) -> None:
+    # The question does not name a curated node (a miss), but the target does: the ingested
+    # lit:marker is bridged to the curated gene it names.
+    store = _seeded_store()  # curated gene:TERT exists
+    orch = EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml))
+    result = await orch.answer("summarize any recent measurements", target_measurements=["TERT"])
+    assert result.source is QuerySource.LITERATURE_AUGMENTED
+    assert result.resolution is not None
+    assert ("lit:marker:tert", "gene:TERT") in [tuple(r) for r in result.resolution.resolved]
+    # The curated gene now reaches the literature marker (a weak bridge, not a merge).
+    assert "lit:marker:tert" in {n.id for n in store.neighbors("gene:TERT")}
+    assert store.get("gene:TERT") is not None and store.get("lit:marker:tert") is not None
+
+
+async def test_resolved_literature_stays_weak_from_the_curated_node(jats_xml) -> None:
+    store = _seeded_store()
+    orch = EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml))
+    await orch.answer("summarize any recent measurements", target_measurements=["TERT"])
+    # A later curated hit on TERT can now reach the ingested literature evidence — and it
+    # stays weak (downgraded to hypothesis), never an established KB fact.
+    followup = await orch.answer("What is TERT?")
+    assert followup.source is QuerySource.KNOWLEDGE_BASE
+    assert followup.literature_facts  # the resolved literature evidence is reachable
+    assert all(f.tier is EvidenceTier.HYPOTHESIS for f in followup.literature_facts)
+    assert all("lit:" not in f.citation for f in followup.kb_facts)

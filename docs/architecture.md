@@ -257,8 +257,18 @@ limitations/caveats/claim-decomposition are curated tier-tagged statements. It r
 benchmark guardrails: TERT alone is not sufficient, immortalization is never conflated with
 safety or function, and Q9's spontaneous route stays a hypothesis stated as *P53-independent*
 — never a P53-negative reduction, never `CAUSES`. The re-eval harness now scores all ten
-questions (Q5/Q6/Q9 at 12/12). Resolving `lit:` markers onto curated ontology nodes is the
-remaining PR9 work.
+questions (Q5/Q6/Q9 at 12/12).
+
+PR9-c adds **entity resolution** (`literature.resolution.resolve_literature_markers`): a
+`lit:marker` is bridged onto the curated ontology node carrying the same
+name/symbol/alias, by a weak, reviewable `ASSOCIATED_WITH` edge, so discovered evidence
+becomes reachable from the known graph without being merged into it or upgraded past
+`hypothesis`. Matching is conservative — an exact normalized name/symbol/alias only (no
+fuzzy matching, no synonyms) — and an ambiguous match (several curated candidates) is left
+unresolved rather than guessed; resolution is deterministic and idempotent. The
+orchestrator runs it right after ingestion, and because `explain` caps a weak-edge path at
+`hypothesis` and the orchestrator downgrades any `lit:`-citing fact, a later curated hit
+that reaches the bridged literature evidence still surfaces it as weak.
 
 PR8b implements the discovery slice: `literature.contracts` (query, article metadata,
 source-anchored candidates with deterministic ids, transparent relevance, verification
