@@ -295,6 +295,21 @@ Development is **benchmark-first**: fix the questions the platform must answer
   `hypothesis`. Only an **exact normalized** match resolves (no fuzzy/synonym); an ambiguous
   match is left unresolved. Deterministic and idempotent. The orchestrator runs it after
   ingestion, and a later curated hit reaching the bridged evidence keeps it weak.
+- ✅ **PR10a — Epistemic-safe answers.** Fixes a PR9 integrity gap: literature facts were
+  downgraded only *after* `QuestionAnswerer` had already synthesized the user-facing
+  answer, so `lit:` evidence could still be rendered as `established` inside `answer`
+  (and handed to an LLM backend that way) even though the structured facts were correct.
+  `qa` now separates `ground` (classify) from `synthesize` (render + backend) and caps
+  provisional evidence at grounding time; the orchestrator grounds, partitions, and only
+  then synthesizes. One shared predicate, `core.evidence.is_unreviewed`, decides what is
+  provisional from **either** an explicit `review_status = "pending_review"` property
+  **or** a reserved `lit:` id/citation namespace — either signal alone suffices, so a
+  `lit:` node that reaches the store without the property (fixture, migration, hand-built
+  graph) is still capped. Every anchor of a fact is checked (node, both path endpoints,
+  composed citation). The answer and the structured facts share one classification, and
+  the rule protects direct `/reasoning/qa` and CLI callers too. Literature evidence stays
+  visible and labelled, never hidden. Verified by a spying backend and by re-running the
+  new tests against the pre-fix sources.
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional

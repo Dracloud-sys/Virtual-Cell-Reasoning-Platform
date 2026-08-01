@@ -237,6 +237,133 @@ async def test_augmentation_resolves_markers_onto_curated_nodes(jats_xml) -> Non
     assert store.get("gene:TERT") is not None and store.get("lit:marker:tert") is not None
 
 
+# --- PR10a: classification precedes synthesis --------------------------------
+
+
+class _SpyBackend:
+    """Captures the exact evidence block handed to the backend for synthesis."""
+
+    name = "spy"
+
+    def __init__(self) -> None:
+        self.blocks: list[str] = []
+
+    def answer(self, question: str, evidence: str) -> str:
+        self.blocks.append(evidence)
+        return "synthesized answer"
+
+
+_ESTABLISHED_LABEL = f"[{EvidenceTier.ESTABLISHED.value}]"
+
+
+def _established_lit_lines(text: str) -> list[str]:
+    """Lines that present a lit: citation/path under an established label."""
+    return [line for line in text.splitlines() if "lit:" in line and _ESTABLISHED_LABEL in line]
+
+
+async def _store_with_resolved_literature(jats_xml) -> InMemoryKnowledgeStore:
+    """A curated seed graph that has also ingested + resolved TERT literature evidence."""
+    store = _seeded_store()
+    await EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml)).answer(
+        "summarize any recent measurements", target_measurements=["TERT"]
+    )
+    assert any(e.id.startswith("lit:") for e in store.all_entities())
+    return store
+
+
+async def test_backend_never_receives_literature_as_established(jats_xml) -> None:
+    # The blocker: classification used to happen *after* synthesis, so the backend saw
+    # lit: evidence labelled established. Prove it now cannot.
+    store = await _store_with_resolved_literature(jats_xml)
+    spy = _SpyBackend()
+    orch = EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml), backend=spy)
+    result = await orch.answer("What is TERT?")
+
+    assert result.source is QuerySource.KNOWLEDGE_BASE
+    assert spy.blocks, "the backend must have been asked to synthesize"
+    block = spy.blocks[0]
+    assert "lit:" in block, "literature evidence must stay visible, not be hidden"
+    assert not _established_lit_lines(block), (
+        f"literature sent to the backend as established: {_established_lit_lines(block)}"
+    )
+
+
+async def test_answer_never_renders_literature_under_an_established_label(jats_xml) -> None:
+    store = await _store_with_resolved_literature(jats_xml)
+    orch = EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml))
+    result = await orch.answer("What is TERT?")
+
+    assert not _established_lit_lines(result.answer)
+    # Still present, and clearly marked as weak/pending rather than dropped.
+    assert "lit:" in result.answer
+    assert "pending review" in result.answer.lower()
+
+
+async def test_curated_hit_keeps_curated_established_and_literature_weak(jats_xml) -> None:
+    store = await _store_with_resolved_literature(jats_xml)
+    orch = EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml))
+    result = await orch.answer("What is TERT?")
+
+    # The curated TERT gene remains established evidence...
+    curated = [f for f in result.kb_facts if "gene:TERT" in f.citation]
+    assert any(f.tier is EvidenceTier.ESTABLISHED for f in curated)
+    # ...while the resolved literature measurement stays a hypothesis.
+    assert result.literature_facts
+    assert all(f.tier is EvidenceTier.HYPOTHESIS for f in result.literature_facts)
+    assert all("lit:" not in f.citation for f in result.kb_facts)
+
+
+async def test_answer_and_structured_facts_share_one_classification(jats_xml) -> None:
+    store = await _store_with_resolved_literature(jats_xml)
+    orch = EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml))
+    result = await orch.answer("What is TERT?")
+
+    # Every fact reported structurally is rendered in the answer at the same tier.
+    for fact in [*result.kb_facts, *result.literature_facts]:
+        assert f"[{fact.tier.value}] {fact.statement} [{fact.citation}]" in result.answer
+
+
+async def test_literature_only_answer_stays_weak_and_pending(jats_xml) -> None:
+    store = InMemoryKnowledgeStore()  # no curated knowledge at all
+    orch = EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml))
+    result = await orch.answer("known about TERT?", target_measurements=["TERT"])
+
+    assert result.source is QuerySource.LITERATURE_AUGMENTED
+    assert result.kb_facts == []
+    assert result.literature_facts
+    assert all(f.tier is EvidenceTier.HYPOTHESIS for f in result.literature_facts)
+    assert not _established_lit_lines(result.answer)
+    assert "pending review" in result.answer.lower()
+
+
+async def test_repeat_queries_do_not_upgrade_literature_evidence(jats_xml) -> None:
+    store = await _store_with_resolved_literature(jats_xml)
+    orch = EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml))
+
+    first = await orch.answer("What is TERT?")
+    second = await orch.answer("What is TERT?")
+
+    # Deterministic, and repetition never promotes literature toward established.
+    assert first.answer == second.answer
+    assert [(f.citation, f.tier) for f in first.literature_facts] == [
+        (f.citation, f.tier) for f in second.literature_facts
+    ]
+    assert all(f.tier is EvidenceTier.HYPOTHESIS for f in second.literature_facts)
+    assert not _established_lit_lines(second.answer)
+
+
+async def test_curated_only_store_answer_is_unchanged(jats_xml) -> None:
+    # Regression guard: with no literature in the store the KB path is untouched.
+    store = _seeded_store()
+    orch = EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml))
+    result = await orch.answer("What is TERT?")
+
+    assert result.source is QuerySource.KNOWLEDGE_BASE
+    assert result.literature_facts == []
+    assert any(f.tier is EvidenceTier.ESTABLISHED for f in result.kb_facts)
+    assert "lit:" not in result.answer
+
+
 async def test_resolved_literature_stays_weak_from_the_curated_node(jats_xml) -> None:
     store = _seeded_store()
     orch = EvidenceQueryOrchestrator(store, literature_agent=_lit_agent(jats_xml))

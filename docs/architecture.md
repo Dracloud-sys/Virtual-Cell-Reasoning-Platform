@@ -76,6 +76,8 @@ The first roadmap stage and the only fully working subsystem in v0.1.
 - **`decision`** — the `DecisionReport` output contract (conclusion, candidate
   status, both-sided `Claim`s, `mechanistic_chain`, risks, next experiments).
 - **`qa`** — natural-language answers grounded in the graph (Claude or offline).
+  `ground` (classify) and `synthesize` (render + call the backend) are separate, so
+  evidence is tiered before any backend sees it.
 
 ## Cell-engineering vertical (`virtualcell.agents.immortalization`)
 
@@ -248,6 +250,32 @@ enforces the tier boundary the store cannot: a `lit:` node is never an establish
 a literature fact surfacing alongside a curated answer is downgraded to `HYPOTHESIS`, and
 a repeat query re-surfaces previously ingested evidence (still weak) instead of
 re-discovering it.
+
+**Classification precedes synthesis (PR10a).** Because the curated graph and ingested
+literature share one store, a retrieval can return both — so `qa.ground` assigns tiers
+*before* `qa.synthesize` renders the evidence block for a backend. Evidence is capped
+below `ESTABLISHED` and explicitly labelled at grounding time, so no backend — offline
+template or LLM — can ever be handed unreviewed evidence dressed as curated truth, and the
+natural-language answer carries exactly the tiers the structured facts report.
+
+What counts as provisional is decided by **one shared predicate**,
+`core.evidence.is_unreviewed`, which lives in domain-neutral `core` so no layer
+re-implements it and `reasoning` needs no dependency on the literature pipeline. It treats
+two *independent* signals as sufficient on their own:
+
+1. an explicit `review_status = "pending_review"` property on a node, and
+2. an entity id or citation in a namespace reserved for unreviewed evidence (`lit:`).
+
+Either alone caps the fact, because neither reliably accompanies the other — a fixture,
+migration, or hand-built graph can create a `lit:` node with no review property, while a
+future non-`lit:` source may carry the property alone. Grounding passes every anchor a
+fact rests on (the node, both endpoints of a mechanistic path, the composed citation), so
+a path is only as strong as the weakest node beneath it. The predicate can only ever
+weaken a tier, never strengthen one, and it protects every caller — the orchestrator,
+`/reasoning/qa`, and the CLI alike. The orchestrator's split of curated from literature
+facts uses the same predicate purely for *reporting*; it never re-tiers. Literature
+evidence is *never hidden* to achieve any of this: it stays in the answer, visible and
+labelled, just never established.
 
 PR9-b closes the last benchmark gap: `agents.immortalization.mechanism.build_mechanism_report`
 formats the mechanism (Q5/Q6) and hypothesis (Q9) intents — which the assessment builder
