@@ -76,6 +76,8 @@ The first roadmap stage and the only fully working subsystem in v0.1.
 - **`decision`** — the `DecisionReport` output contract (conclusion, candidate
   status, both-sided `Claim`s, `mechanistic_chain`, risks, next experiments).
 - **`qa`** — natural-language answers grounded in the graph (Claude or offline).
+  `ground` (classify) and `synthesize` (render + call the backend) are separate, so
+  evidence is tiered before any backend sees it.
 
 ## Cell-engineering vertical (`virtualcell.agents.immortalization`)
 
@@ -249,15 +251,53 @@ a literature fact surfacing alongside a curated answer is downgraded to `HYPOTHE
 a repeat query re-surfaces previously ingested evidence (still weak) instead of
 re-discovering it.
 
-PR9-b closes the last benchmark gap: `agents.immortalization.mechanism.build_mechanism_report`
-formats the mechanism (Q5/Q6) and hypothesis (Q9) intents — which the assessment builder
-refuses — into `DecisionReport`s. The mechanistic chain is derived from the seed graph with
-`explain` (auditable, tier-graded, weak edges capped at `hypothesis`) and the domain
-limitations/caveats/claim-decomposition are curated tier-tagged statements. It respects the
-benchmark guardrails: TERT alone is not sufficient, immortalization is never conflated with
-safety or function, and Q9's spontaneous route stays a hypothesis stated as *P53-independent*
-— never a P53-negative reduction, never `CAUSES`. The re-eval harness now scores all ten
-questions (Q5/Q6/Q9 at 12/12).
+**Classification precedes synthesis (PR10a).** Because the curated graph and ingested
+literature share one store, a retrieval can return both — so `qa.ground` assigns tiers
+*before* `qa.synthesize` renders the evidence block for a backend. Evidence is capped
+below `ESTABLISHED` and explicitly labelled at grounding time, so no backend — offline
+template or LLM — can ever be handed unreviewed evidence dressed as curated truth, and the
+natural-language answer carries exactly the tiers the structured facts report.
+
+What counts as provisional is decided by **one shared predicate**,
+`core.evidence.is_unreviewed`, which lives in domain-neutral `core` so no layer
+re-implements it and `reasoning` needs no dependency on the literature pipeline. It treats
+two *independent* signals as sufficient on their own:
+
+1. an explicit `review_status = "pending_review"` property on a node, and
+2. an entity id or citation in a namespace reserved for unreviewed evidence (`lit:`).
+
+Either alone caps the fact, because neither reliably accompanies the other — a fixture,
+migration, or hand-built graph can create a `lit:` node with no review property, while a
+future non-`lit:` source may carry the property alone. Grounding passes every anchor a
+fact rests on (the node, both endpoints of a mechanistic path, the composed citation), so
+a path is only as strong as the weakest node beneath it. The predicate can only ever
+weaken a tier, never strengthen one, and it protects every caller — the orchestrator,
+`/reasoning/qa`, and the CLI alike. The orchestrator's split of curated from literature
+facts uses the same predicate purely for *reporting*; it never re-tiers. Literature
+evidence is *never hidden* to achieve any of this: it stays in the answer, visible and
+labelled, just never established.
+
+PR9-b/PR10b close the last benchmark gap, and close it **on the product path**. The
+mechanism (Q5/Q6) and hypothesis (Q9) intents — which the assessment builder refuses —
+are answered by the shipped policies `agents.immortalization.grounding` and
+`agents.immortalization.hypotheses`, dispatched by `ImmortalizationAssessmentAgent`. Their
+mechanistic chains come from the seed graph via `explain` (auditable, tier-graded, weak
+edges capped at `hypothesis`, target allowlists and per-target relation signatures), and
+the negative claims the graph cannot express — "TERT alone does not bypass a competent
+p16/RB checkpoint" — live in the curated `limitations` catalog. Guardrails: TERT alone is
+never sufficient, immortalization is never conflated with safety or function, and Q9's
+spontaneous route stays a hypothesis stated as *P53-independent* — never a P53-negative
+reduction, never `CAUSES`.
+
+**The benchmark runs the product path (PR10b).** All ten questions are evaluated through
+`ImmortalizationAssessmentAgent.assess`, the same entry point API and CLI callers use; the
+harness never selects a builder by intent, so the 10/10 scorecard is evidence about the
+shipped agent rather than a benchmark-only code path. An earlier duplicate Q5/Q6/Q9
+implementation (`agents.immortalization.mechanism`) was removed rather than kept in
+parallel — one canonical implementation per intent. Forbidden-phrase scoring reuses the
+production notion of an *assertion* field (`hypotheses.assertion_texts`: conclusion plus
+evidence claims), so required safety guidance such as "P53-independent does not mean P53
+loss" is not mistaken for the violation it prohibits.
 
 PR9-c adds **entity resolution** (`literature.resolution.resolve_literature_markers`): a
 `lit:marker` is bridged onto the curated ontology node carrying the same

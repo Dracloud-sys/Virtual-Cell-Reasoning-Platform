@@ -101,7 +101,18 @@ questions:
     risk: [ignoring_genomic_stability, ignoring_functionality]
     trend_class: not_applicable
     expected_status: null
-    key_points: [telomere_maintenance, p16_RB_bypass_via_CDK4, non_oncogenic_reliable, verify_stability_and_differentiation]
+    # Rubric correction (PR10b): `non_oncogenic_reliable` was replaced. It rewarded an
+    # unsupported *safety* claim — being unlike a viral oncogene strategy is a
+    # mechanistic contrast, not evidence of non-tumorigenicity, and no citation in this
+    # benchmark establishes it. The replacements keep the defensible mechanistic
+    # distinction and require that safety be validated rather than inferred. The pass
+    # threshold is unchanged.
+    key_points:
+      - telomere_maintenance
+      - p16_RB_bypass_via_CDK4
+      - distinct_from_viral_oncogene_approaches
+      - non_tumorigenicity_requires_separate_validation
+      - verify_stability_and_differentiation
 
   - id: IMM-Q7
     intent: immortalization_vs_functionality

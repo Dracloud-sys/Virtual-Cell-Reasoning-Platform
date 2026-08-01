@@ -193,6 +193,99 @@ async def test_run_hypothesis_status_is_insufficient() -> None:
     assert out.result["candidate_status"] == "insufficient_evidence"
 
 
+# --- public-path parity: assess() == run() payload (PR10b) -------------------
+#
+# The benchmark scores `assess`; API and CLI callers consume `run`. These pin that the
+# two cannot drift — `run` must serialize the canonical report untouched.
+
+_PARITY_SCENARIOS = {
+    "Q5": {"intent": "mechanism_explanation", "construct": "TERT_only"},
+    "Q6": {"intent": "mechanism_explanation", "construct": "TERT_plus_CDK4"},
+    "Q9": {"intent": "hypothesis_handling"},
+}
+
+
+@pytest.mark.parametrize("label", sorted(_PARITY_SCENARIOS))
+async def test_run_serializes_exactly_the_assessed_report(label: str) -> None:
+    payload = _PARITY_SCENARIOS[label]
+    agent = _agent()
+
+    scenario = {k: v for k, v in payload.items() if k != "intent"}
+    assessed = agent.assess(input_from_scenario(payload["intent"], scenario))
+    out = await agent.run(AgentInput(query="x", context={"assessment": payload}))
+
+    # Byte-for-byte the same report: status, claims, tiers, citations, limitations and
+    # mechanistic links all survive the AgentOutput round trip unchanged.
+    assert out.result == assessed.model_dump(mode="json")
+    round_tripped = DecisionReport.model_validate(out.result)
+    assert round_tripped.candidate_status == assessed.candidate_status
+    assert [c.tier for c in round_tripped.supporting_evidence] == [
+        c.tier for c in assessed.supporting_evidence
+    ]
+    assert [c.citations for c in round_tripped.supporting_evidence] == [
+        c.citations for c in assessed.supporting_evidence
+    ]
+    assert round_tripped.limitations == assessed.limitations
+    assert [link.target_id for link in round_tripped.mechanistic_chain] == [
+        link.target_id for link in assessed.mechanistic_chain
+    ]
+    # AgentOutput claims are the report's claims, not a re-derivation.
+    assert out.claims == [*assessed.supporting_evidence, *assessed.contradicting_evidence]
+
+
+@pytest.mark.parametrize("label", sorted(_PARITY_SCENARIOS))
+async def test_public_path_is_deterministic_across_instances(label: str) -> None:
+    payload = _PARITY_SCENARIOS[label]
+    first = await _agent().run(AgentInput(query="x", context={"assessment": payload}))
+    second = await _agent().run(AgentInput(query="x", context={"assessment": payload}))
+    assert first.result == second.result
+    assert first.confidence == second.confidence
+
+
+def test_q5_keeps_cdk4_conditional_and_does_not_claim_immortalization() -> None:
+    report = _agent().assess(
+        input_from_scenario("mechanism_explanation", {"construct": "TERT_only"})
+    )
+    assert report.candidate_status is None
+    assert any("telomere" in c.statement.lower() for c in report.supporting_evidence)
+    # The load-bearing negative claim.
+    assert any("does not bypass" in limitation.lower() for limitation in report.limitations)
+    # CDK4 appears as a context-dependent follow-up, never an unconditional prescription.
+    cdk4_steps = [s for s in report.next_experiment if "cdk4" in s.lower()]
+    assert cdk4_steps
+    assert all(
+        any(word in step.lower() for word in ("only if", "if ", "consider", "evaluate"))
+        for step in cdk4_steps
+    )
+    asserted = " ".join(
+        [report.conclusion, *(c.statement for c in report.supporting_evidence)]
+    ).lower()
+    assert "establishes immortalization" not in asserted
+
+
+def test_q6_requires_safety_validation_rather_than_asserting_it() -> None:
+    report = _agent().assess(
+        input_from_scenario("mechanism_explanation", {"construct": "TERT_plus_CDK4"})
+    )
+    assert report.candidate_status is None
+    asserted = " ".join(
+        [report.conclusion, *(c.statement for c in report.supporting_evidence)]
+    ).lower()
+    for unsafe in ("non-oncogenic", "non oncogenic", "tumor-free", "proven safe"):
+        assert unsafe not in asserted
+
+    guidance = " ".join([*report.limitations, *report.recommended_validation]).lower()
+    assert "non-tumorigenicity" in guidance and "viral oncogene" in guidance
+
+    # The three validation axes Q6 must demand. Differentiation is asked for as
+    # retained *function* ("adipogenic or myogenic functionality"), which is the
+    # cultured-meat-relevant phrasing, so accept either wording.
+    asked = " ".join([*report.recommended_validation, *report.next_experiment]).lower()
+    assert "genomic stability" in asked or "karyotype" in asked
+    assert "differentiation" in asked or "functionality" in asked
+    assert "long-term" in asked or "proliferative" in asked
+
+
 async def test_run_rejects_bad_payloads() -> None:
     agent = _agent()
     with pytest.raises(AssessmentInputError):

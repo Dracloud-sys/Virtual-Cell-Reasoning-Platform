@@ -7,17 +7,18 @@ distinct:
 2. **literature** discovered on demand when the KB has no answer — extracted, verified,
    converted to canonical runs and ingested as *weak, pending-review* evidence (PR8b–e).
 
-The flow is: KB lookup → if it grounds the question, answer from the KB (unchanged
+The flow is: KB lookup → if it grounds the question, answer from the KB (the
 :class:`QuestionAnswerer` path) → otherwise, on a **miss**, consult literature, ingest
 what survives verification into the same store, and surface it as clearly weak,
 provenance-carrying evidence for review. This is a *separate* orchestrator layered over
-the existing pieces — it does not bolt a literature fallback into ``qa.py`` — and it
-never presents a weak literature measurement as an established fact (no LLM synthesis is
-run over the weak evidence, so a possibility is never phrased as a conclusion).
+the existing pieces — it does not bolt a literature fallback into ``qa.py``.
 
-Out of scope for this slice (later PR9 work): formatting the deferred mechanism/hypothesis
-intents (Q5/Q6/Q9) into ``DecisionReport``s from the KG-explain path, and resolving
-``lit:`` markers onto curated ontology nodes.
+**Epistemic invariant.** A weak literature measurement is never presented as an
+established fact, in the structured facts *or* in the natural-language answer. On a
+curated hit the orchestrator grounds (which classifies), partitions curated from
+literature, and only *then* asks the answerer to synthesize from those classified facts —
+so the backend's evidence block and the reported facts carry identical tiers. Literature
+evidence is never hidden: it stays visible, labelled, and capped at ``HYPOTHESIS``.
 """
 
 from __future__ import annotations
@@ -28,7 +29,7 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 from virtualcell.core.contracts import AgentInput
-from virtualcell.core.evidence import EvidenceTier
+from virtualcell.core.evidence import EvidenceTier, is_unreviewed
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.literature.contracts import LiteratureEvidenceBundle
 from virtualcell.literature.ingestion import (
@@ -39,6 +40,9 @@ from virtualcell.literature.ingestion import (
 from virtualcell.literature.resolution import ResolutionReport, resolve_literature_markers
 from virtualcell.reasoning.llm import LLMBackend
 from virtualcell.reasoning.qa import GroundedFact, QuestionAnswerer
+
+_LIT_PREFIX = "lit:"
+_LIT_ASSAY = "lit:assay:"
 
 
 class QuerySource(StrEnum):
@@ -109,10 +113,16 @@ class EvidenceQueryOrchestrator:
         seeds = self.answerer.retrieve(question)
         # A curated (non-``lit:``) match is an established KB hit; a match on only
         # literature-ingested nodes is *not* — that evidence stays weak.
-        curated = [e for e in seeds if not e.id.startswith("lit:")]
+        curated = [e for e in seeds if not e.id.startswith(_LIT_PREFIX)]
         if curated:
-            grounded = self.answerer.answer(question)
-            kb_facts, weak_facts = self._partition_facts(grounded.facts)
+            # Ground (which classifies) -> partition -> only THEN synthesize, so the
+            # backend's evidence block and the structured facts below carry exactly the
+            # same classification. Synthesizing first would hand the backend literature
+            # evidence still labelled established.
+            kb_facts, weak_facts = self._partition_facts(self.answerer.ground(seeds))
+            grounded = self.answerer.synthesize(
+                question, [*kb_facts, *weak_facts], [e.id for e in seeds]
+            )
             return OrchestratedAnswer(
                 question=question,
                 source=QuerySource.KNOWLEDGE_BASE,
@@ -216,39 +226,32 @@ class EvidenceQueryOrchestrator:
         facts: list[GroundedFact] = []
         seen: set[str] = set()
         for seed in seeds:
-            if not seed.id.startswith("lit:"):
+            if not seed.id.startswith(_LIT_PREFIX):
                 continue
-            assays = [seed] if seed.id.startswith("lit:assay:") else self.store.neighbors(seed.id)
+            assays = [seed] if seed.id.startswith(_LIT_ASSAY) else self.store.neighbors(seed.id)
             for node in assays:
-                if node.id.startswith("lit:assay:") and node.id not in seen:
+                if node.id.startswith(_LIT_ASSAY) and node.id not in seen:
                     seen.add(node.id)
                     fact = self._assay_fact(node)
                     if fact is not None:
                         facts.append(fact)
         return facts
 
+    @staticmethod
     def _partition_facts(
-        self, facts: list[GroundedFact]
+        facts: list[GroundedFact],
     ) -> tuple[list[GroundedFact], list[GroundedFact]]:
-        """Split grounded facts into curated (kept as-is) and literature (downgraded).
+        """Split already-classified grounded facts into curated and literature evidence.
 
-        The curated answerer tags every retrieved entity ``ESTABLISHED``; a fact citing a
-        ``lit:`` node is literature evidence and must not inherit that tier, so it is
-        moved out and weakened to ``HYPOTHESIS``.
+        A **pure split for reporting** — it never re-tiers. Tiers are assigned in exactly
+        one place, :meth:`QuestionAnswerer.ground`, using the same shared
+        :func:`~virtualcell.core.evidence.is_unreviewed` policy applied here, so a fact
+        landing in ``weak_facts`` has already been capped at grounding time. Keeping a
+        second cap here would be a competing implementation of the same rule.
         """
         kb_facts, weak_facts = [], []
         for fact in facts:
-            if "lit:" in fact.citation:
-                weak_facts.append(
-                    fact.model_copy(
-                        update={
-                            "tier": EvidenceTier.HYPOTHESIS,
-                            "confidence": min(fact.confidence, LITERATURE_EVIDENCE_CONFIDENCE),
-                        }
-                    )
-                )
-            else:
-                kb_facts.append(fact)
+            (weak_facts if is_unreviewed(fact.citation) else kb_facts).append(fact)
         return kb_facts, weak_facts
 
     @staticmethod

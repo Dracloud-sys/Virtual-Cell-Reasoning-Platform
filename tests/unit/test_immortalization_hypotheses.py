@@ -8,7 +8,9 @@ from virtualcell.agents.immortalization.grounding import GroundingError
 from virtualcell.agents.immortalization.hypotheses import (
     HypothesisSafetyError,
     UnsupportedHypothesisError,
+    assertion_texts,
     build_hypothesis_report,
+    forbidden_phrases_in,
     validate_hypothesis_report,
 )
 from virtualcell.agents.immortalization.models import ImmortalizationAssessmentInput
@@ -123,3 +125,43 @@ def test_safety_validator_rejects_forbidden_phrasing() -> None:
     )
     with pytest.raises(HypothesisSafetyError):
         validate_hypothesis_report(bad)
+
+
+# --- forbidden-phrase scope: assertions only (PR10b) -------------------------
+#
+# The check must distinguish *asserting* a prohibited claim from *prohibiting* it.
+# Safety guidance necessarily quotes the phrase it forbids, and must not be punished
+# for doing so — otherwise the honest wording would be pressured out of the report.
+
+
+def test_asserted_p53_loss_in_evidence_is_rejected() -> None:
+    asserted = DecisionReport(
+        conclusion="A reported spontaneous route.",
+        candidate_status=CandidateStatus.INSUFFICIENT_EVIDENCE,
+        supporting_evidence=[
+            Claim(statement="Immortalization followed P53 loss.", tier=EvidenceTier.HYPOTHESIS)
+        ],
+    )
+    assert forbidden_phrases_in(asserted) == ["p53 loss"]
+    with pytest.raises(HypothesisSafetyError):
+        validate_hypothesis_report(asserted)
+
+
+def test_safety_guidance_quoting_a_forbidden_phrase_is_allowed() -> None:
+    guidance = DecisionReport(
+        conclusion="A reported spontaneous route, described as P53-independent.",
+        candidate_status=CandidateStatus.INSUFFICIENT_EVIDENCE,
+        supporting_evidence=[Claim(statement="Association only.", tier=EvidenceTier.HYPOTHESIS)],
+        limitations=["P53-independent does not mean P53 loss, knockout, or absence."],
+        overinterpretation_risk=["Do not infer P53 loss from a P53-independent route."],
+    )
+    assert forbidden_phrases_in(guidance) == []
+    validate_hypothesis_report(guidance)  # must not raise
+
+
+def test_assertion_scope_excludes_guidance_fields() -> None:
+    report = _report()
+    joined = " ".join(assertion_texts(report)).lower()
+    # The shipped report *does* carry the guidance wording, just not as an assertion.
+    assert any("p53 loss" in limitation.lower() for limitation in report.limitations)
+    assert "p53 loss" not in joined
