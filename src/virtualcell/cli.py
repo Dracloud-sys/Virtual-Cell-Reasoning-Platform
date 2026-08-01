@@ -209,6 +209,105 @@ def _cmd_assess(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_query(args: argparse.Namespace) -> int:
+    """Run a domain-neutral platform query — the same service the API uses."""
+    import asyncio
+    import json
+
+    from pydantic import ValidationError
+
+    from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
+    from virtualcell.platform.bootstrap import default_registry
+    from virtualcell.platform.contracts import ReasoningQuery
+    from virtualcell.platform.domains import (
+        QueryValidationError,
+        UnknownDomainError,
+        UnsupportedTaskError,
+    )
+    from virtualcell.platform.service import ReasoningService
+
+    try:
+        payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"could not read input: {exc}")
+        return 1
+    try:
+        request = ReasoningQuery.model_validate(payload)
+    except ValidationError as exc:
+        print(f"invalid query: {exc}")
+        return 1
+
+    if args.load:
+        from virtualcell.knowledge.persistence import load_store
+
+        store = load_store(args.load)
+    else:
+        store = InMemoryKnowledgeStore()
+    load_into(ImmortalizationSeedSource(), store)
+
+    service = ReasoningService(store, default_registry())
+    try:
+        response = asyncio.run(service.query(request))
+    except UnknownDomainError as exc:
+        print(f"unknown domain: {exc}")
+        return 2
+    except UnsupportedTaskError as exc:
+        print(f"unsupported task: {exc}")
+        return 2
+    except QueryValidationError as exc:
+        print(f"invalid query: {exc}")
+        return 1
+
+    if args.format == "json":
+        print(json.dumps(response.model_dump(mode="json"), indent=2))
+    else:
+        _print_query_text(response)
+    return 0
+
+
+def _print_query_text(response) -> None:
+    """Human-readable rendering of a generic reasoning response."""
+
+    def _block(label: str, items: list[str]) -> None:
+        if items:
+            print(f"\n{label}:")
+            for item in items:
+                print(f"  - {item}")
+
+    print(f"domain: {response.domain}   task: {response.task}")
+    print(f"summary: {response.summary}")
+    if response.decision_support.status:
+        print(f"status: {response.decision_support.status}")
+    if response.decision_support.flags:
+        print(f"flags: {', '.join(response.decision_support.flags)}")
+    if response.decision_support.trend_required:
+        print("trend required: yes (a single snapshot is not sufficient)")
+
+    _block("observations", response.observations)
+    _block("quality findings", response.quality_findings)
+    _block(
+        "supporting evidence",
+        [f"[{c.tier.value}] {c.statement}" for c in response.supporting_evidence],
+    )
+    _block(
+        "contradicting evidence",
+        [f"[{c.tier.value}] {c.statement}" for c in response.contradicting_evidence],
+    )
+    _block(
+        "mechanistic links",
+        [f"[{link.tier.value}] {' | '.join(link.path)}" for link in response.mechanistic_links],
+    )
+    _block("missing information", response.missing_information)
+    _block("limitations", response.limitations)
+    _block("overinterpretation risks", response.overinterpretation_risks)
+    _block("recommended validation", response.recommended_validation)
+    _block("next experiments", response.recommended_next_experiments)
+    print(f"\nliterature: {response.literature.status.value}")
+    if response.literature.evidence:
+        for claim in response.literature.evidence:
+            print(f"  - [{claim.tier.value}] {claim.statement}")
+
+
 def _cmd_literature_discover(args: argparse.Namespace) -> int:
     import json
 
@@ -392,6 +491,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_assess.add_argument("--format", choices=["json", "text"], default="text")
     p_assess.add_argument("--load", help="merge the seed onto an existing saved graph JSON")
     p_assess.set_defaults(func=_cmd_assess)
+
+    # The domain-neutral platform query: the same service the API's POST /reasoning/query
+    # uses. The domain is named in the request file, so no new domain needs a CLI change.
+    p_query = sub.add_parser("query", help="run a domain-neutral reasoning query (JSON request)")
+    p_query.add_argument("--input", required=True, help="path to a JSON ReasoningQuery")
+    p_query.add_argument("--format", choices=["json", "text"], default="json")
+    p_query.add_argument("--load", help="merge the seed onto an existing saved graph JSON")
+    p_query.set_defaults(func=_cmd_query)
 
     p_lit = sub.add_parser("literature", help="external literature discovery")
     lit_sub = p_lit.add_subparsers(dest="literature_command", required=True)

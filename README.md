@@ -2,6 +2,8 @@
 
 > An AI-driven, modular, **explainable reasoning layer for cell biology** — it structures biological knowledge into a graph and lets agents answer questions with **evidence-graded, cited** explanations and hypotheses. It complements data-driven perturbation predictors rather than competing with them.
 
+> **Scope:** VCRP is a **general biological experiment reasoning platform**. **Immortalization is its first validated reasoning vertical and reference implementation**, not the product's subject — as of PR11 it is registered as the first *domain pack* behind a domain-neutral query boundary (`POST /reasoning/query`, `virtualcell query`), and a new domain is added without touching the API or CLI. Canonical Experiment Schema v1 (PR12), structured raw-data ingestion/QC/normalization (PR13) and the Generic Reasoning Kernel (PR14) follow; PR11 does **not** yet claim to interpret arbitrary raw assay files.
+
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/Dracloud-sys/Virtual-Cell-Reasoning-Platform/actions/workflows/ci.yml/badge.svg)](../../actions)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)

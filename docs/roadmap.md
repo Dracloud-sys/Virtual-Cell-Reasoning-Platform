@@ -4,6 +4,16 @@ The platform grows through 12 stages. Each stage extends or replaces existing
 modules rather than rewriting the system. The guiding rule: prioritize decisions
 that move the project closer to a full digital organism.
 
+> **Scope.** VCRP is a **general biological experiment reasoning platform**:
+> data in → assay-aware QC and normalization → canonical representation → reasoning over
+> experimental, biological and literature evidence → explained research decisions.
+> **Immortalization is the first validated reasoning vertical and reference
+> implementation**, not the product's subject. As of PR11 it is registered as the first
+> *domain pack* behind a domain-neutral query boundary; PR12–PR14 add the canonical
+> schema, raw-data ingestion/QC, and the generic reasoning kernel, after which a second
+> domain pack (preferably adipogenesis) validates generality. Knowledge-learning and
+> non-expert explanation are later platform layers.
+
 | Stage | Name | Status |
 |------:|------|--------|
 | 1 | Cellular Knowledge Base | **In progress (v0.1: working in-memory core)** |
@@ -326,6 +336,38 @@ Development is **benchmark-first**: fix the questions the platform must answer
   **Scorer correction:** forbidden-phrase checks now scan assertion fields only
   (`hypotheses.assertion_texts`), so guidance that quotes a phrase to forbid it — "P53-
   independent does not mean P53 loss" — is no longer a false positive.
+- ✅ **PR11 — Generic reasoning query and domain dispatch boundary.** Establishes the
+  domain-neutral platform seam: `platform.contracts` (`ReasoningQuery` /
+  `ReasoningResponse`), `platform.domains` (`DomainPack` + `DomainRegistry`),
+  `platform.service` (`ReasoningService` — one application entry point for API *and* CLI),
+  and `platform.packs.immortalization`, the **first domain pack**, wired to the real
+  `ImmortalizationAssessmentAgent` path without duplicating any scientific rule. Adds
+  `POST /reasoning/query`, `GET /reasoning/domains` and `virtualcell query`. Unknown
+  domains and unsupported tasks fail explicitly and never fall back to immortalization;
+  literature states (`not_requested` / `unavailable` / `success` / `zero_results` /
+  `provider_error` / `timeout`) are distinguishable and a failure never becomes evidence.
+  PR10's epistemic safeguards and the 10/10 benchmark are unchanged.
+
+### Platform sequence after PR11
+
+VCRP is a general biological experiment reasoning platform; immortalization is its first
+reference domain pack. The remaining platform layers, in order:
+
+- ▶ **PR12 — Canonical Experiment Schema v1.** A versioned, source-neutral experimental
+  representation that every domain and ingestion path converges on (building on the PR8a
+  `ExperimentRun` contract).
+- ▶ **PR13 — Structured raw-data ingestion, QC and normalization.** Assay-aware readers
+  (CSV/XLSX, qPCR Ct, FCS, imaging, omics), quality control, and normalization into the
+  canonical schema. **PR11 deliberately does not claim arbitrary raw-data interpretation.**
+- ▶ **PR14 — Generic Reasoning Kernel extraction.** Lift the domain-independent reasoning
+  machinery (evidence grading, mechanistic traversal, decision assembly) out of the
+  immortalization vertical so packs supply only domain policy.
+- ▶ **Second domain pack (preferably adipogenesis).** Validates generality *after* kernel
+  extraction — the real test of whether the boundary holds.
+- ▶ **Knowledge-learning and non-expert explanation layers.** Make
+  `explanation_level` actually change the explanation, so a non-expert can learn the
+  concepts, interpret raw data, and follow the basis of a research judgment. Until then
+  the level is carried as provenance only.
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional
