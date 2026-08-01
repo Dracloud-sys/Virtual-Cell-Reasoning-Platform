@@ -279,15 +279,16 @@ Development is **benchmark-first**: fix the questions the platform must answer
   fact that surfaces alongside a curated answer is downgraded to `HYPOTHESIS`. Ingestion
   is deterministic/idempotent; a repeat query re-surfaces prior evidence without
   re-discovering, still weak.
-- ✅ **PR9-b — Mechanism/hypothesis DecisionReports.** `agents.immortalization.mechanism`
-  (`build_mechanism_report`) formats the previously deferred Q5/Q6/Q9 intents into
-  `DecisionReport`s: the mechanistic chain is derived from the seed graph with `explain`
-  (auditable, tier-graded, weak edges capped at `hypothesis`), and the domain
-  limitations/caveats/claim-decomposition are curated tier-tagged statements. TERT alone
-  is not sufficient, immortalization is never conflated with safety/function, and Q9's
-  spontaneous route stays a hypothesis stated as *P53-independent* — never a P53-negative
-  reduction, never `CAUSES`. The re-eval harness now scores **all 10/10 questions** (Q5/Q6/Q9
-  at 12/12), pinned by `test_immortalization_eval`.
+- ✅ **PR9-b — Mechanism/hypothesis DecisionReports.** The previously deferred Q5/Q6/Q9
+  intents are answered as `DecisionReport`s: the mechanistic chain is derived from the
+  seed graph with `explain` (auditable, tier-graded, weak edges capped at `hypothesis`),
+  and the domain limitations/caveats/claim-decomposition are curated tier-tagged
+  statements. TERT alone is not sufficient, immortalization is never conflated with
+  safety/function, and Q9's spontaneous route stays a hypothesis stated as
+  *P53-independent* — never a P53-negative reduction, never `CAUSES`. The re-eval harness
+  scores **all 10/10 questions** (Q5/Q6/Q9 at 12/12), pinned by `test_immortalization_eval`.
+  *(Superseded by PR10b: the implementation it originally added was a duplicate of the
+  shipped policies and has been removed — see below.)*
 - ✅ **PR9-c — Entity resolution.** `literature.resolution` (`resolve_literature_markers`)
   bridges a `lit:marker` onto the curated ontology node carrying the same
   name/symbol/alias, via a weak, reviewable `ASSOCIATED_WITH` edge — so discovered
@@ -310,6 +311,21 @@ Development is **benchmark-first**: fix the questions the platform must answer
   the rule protects direct `/reasoning/qa` and CLI callers too. Literature evidence stays
   visible and labelled, never hidden. Verified by a spying backend and by re-running the
   new tests against the pre-fix sources.
+- ✅ **PR10b — Benchmark runs the product path.** Fixes a measurement-validity gap: the
+  benchmark called `rules.build_decision_report` and a *second* Q5/Q6/Q9 implementation
+  directly, while the shipped agent dispatches Q5/Q6 through `grounding.py` and Q9 through
+  `hypotheses.py` — so 10/10 did not prove 10/10 through the product. All ten questions now
+  run through `ImmortalizationAssessmentAgent.assess`, the API/CLI entry point; the harness
+  no longer selects builders by intent (pinned by a call-counting spy and an import guard).
+  The duplicate `agents.immortalization.mechanism` was **removed** in favour of the
+  production policies, which are stricter (target allowlists, relation signatures,
+  validation, conditional CDK4 wording). Adds `assess()`↔`run()` parity tests for Q5/Q6/Q9.
+  **Q6 rubric correction:** the key point `non_oncogenic_reliable` rewarded an unsupported
+  safety claim and was replaced by `distinct_from_viral_oncogene_approaches` +
+  `non_tumorigenicity_requires_separate_validation`; the pass threshold is unchanged.
+  **Scorer correction:** forbidden-phrase checks now scan assertion fields only
+  (`hypotheses.assertion_texts`), so guidance that quotes a phrase to forbid it — "P53-
+  independent does not mean P53 loss" — is no longer a false positive.
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional

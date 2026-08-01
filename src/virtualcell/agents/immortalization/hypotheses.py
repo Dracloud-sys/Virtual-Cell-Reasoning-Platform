@@ -179,26 +179,36 @@ def _grounded_links(store: KnowledgeStore, rule: HypothesisRule) -> list[Mechani
     return [link for _, link in selected]
 
 
-def validate_hypothesis_report(report: DecisionReport) -> None:
-    """Fail if forbidden P53/causal phrasing appears in an *assertion* field.
+def assertion_texts(report: DecisionReport) -> list[str]:
+    """The report fields that make biological *assertions*.
 
-    Scans the conclusion and the evidence claims (the fields that make biological
-    assertions, and where an LLM narrative would later land). It deliberately does
-    **not** scan the curated safety-guidance fields (``limitations`` /
-    ``overinterpretation_risk``), because those *name* the forbidden phrases in order
-    to prohibit them (e.g. "P53-independent does not mean P53 loss"). Graph path
-    strings are also excluded (they legitimately contain "P53-independent").
-    (This scope resolves a conflict in the review spec; flagged for GPT review.)
+    Forbidden-phrase checking must scan only these: the conclusion and the evidence
+    claims (where an LLM narrative would later land). It deliberately excludes the
+    curated safety-guidance fields (``limitations`` / ``overinterpretation_risk``),
+    because those *name* the forbidden phrases in order to prohibit them — e.g.
+    "P53-independent does not mean P53 loss" is correct guidance, not a violation.
+    Graph path strings are excluded too (they legitimately contain "P53-independent").
+
+    Exposed so the benchmark scorer applies exactly this scope instead of
+    re-deriving it, keeping one definition of "an assertion" in the codebase.
     """
-    texts = [
+    return [
         report.conclusion,
         *(c.statement for c in report.supporting_evidence),
         *(c.statement for c in report.contradicting_evidence),
     ]
-    blob = " ".join(texts).lower()
-    for phrase in _FORBIDDEN:
-        if phrase in blob:
-            raise HypothesisSafetyError(f"forbidden phrasing in hypothesis report: {phrase!r}")
+
+
+def forbidden_phrases_in(report: DecisionReport) -> list[str]:
+    """Forbidden P53/causal phrasings actually *asserted* by ``report`` (may be empty)."""
+    blob = " ".join(assertion_texts(report)).lower()
+    return [phrase for phrase in _FORBIDDEN if phrase in blob]
+
+
+def validate_hypothesis_report(report: DecisionReport) -> None:
+    """Fail if forbidden P53/causal phrasing appears in an *assertion* field."""
+    for phrase in forbidden_phrases_in(report):
+        raise HypothesisSafetyError(f"forbidden phrasing in hypothesis report: {phrase!r}")
 
 
 def build_hypothesis_report(

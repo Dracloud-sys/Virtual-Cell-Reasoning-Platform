@@ -277,15 +277,27 @@ facts uses the same predicate purely for *reporting*; it never re-tiers. Literat
 evidence is *never hidden* to achieve any of this: it stays in the answer, visible and
 labelled, just never established.
 
-PR9-b closes the last benchmark gap: `agents.immortalization.mechanism.build_mechanism_report`
-formats the mechanism (Q5/Q6) and hypothesis (Q9) intents — which the assessment builder
-refuses — into `DecisionReport`s. The mechanistic chain is derived from the seed graph with
-`explain` (auditable, tier-graded, weak edges capped at `hypothesis`) and the domain
-limitations/caveats/claim-decomposition are curated tier-tagged statements. It respects the
-benchmark guardrails: TERT alone is not sufficient, immortalization is never conflated with
-safety or function, and Q9's spontaneous route stays a hypothesis stated as *P53-independent*
-— never a P53-negative reduction, never `CAUSES`. The re-eval harness now scores all ten
-questions (Q5/Q6/Q9 at 12/12).
+PR9-b/PR10b close the last benchmark gap, and close it **on the product path**. The
+mechanism (Q5/Q6) and hypothesis (Q9) intents — which the assessment builder refuses —
+are answered by the shipped policies `agents.immortalization.grounding` and
+`agents.immortalization.hypotheses`, dispatched by `ImmortalizationAssessmentAgent`. Their
+mechanistic chains come from the seed graph via `explain` (auditable, tier-graded, weak
+edges capped at `hypothesis`, target allowlists and per-target relation signatures), and
+the negative claims the graph cannot express — "TERT alone does not bypass a competent
+p16/RB checkpoint" — live in the curated `limitations` catalog. Guardrails: TERT alone is
+never sufficient, immortalization is never conflated with safety or function, and Q9's
+spontaneous route stays a hypothesis stated as *P53-independent* — never a P53-negative
+reduction, never `CAUSES`.
+
+**The benchmark runs the product path (PR10b).** All ten questions are evaluated through
+`ImmortalizationAssessmentAgent.assess`, the same entry point API and CLI callers use; the
+harness never selects a builder by intent, so the 10/10 scorecard is evidence about the
+shipped agent rather than a benchmark-only code path. An earlier duplicate Q5/Q6/Q9
+implementation (`agents.immortalization.mechanism`) was removed rather than kept in
+parallel — one canonical implementation per intent. Forbidden-phrase scoring reuses the
+production notion of an *assertion* field (`hypotheses.assertion_texts`: conclusion plus
+evidence claims), so required safety guidance such as "P53-independent does not mean P53
+loss" is not mistaken for the violation it prohibits.
 
 PR9-c adds **entity resolution** (`literature.resolution.resolve_literature_markers`): a
 `lit:marker` is bridged onto the curated ontology node carrying the same

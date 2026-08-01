@@ -109,7 +109,12 @@ _TERT_PLUS_CDK4_RULE = MechanismRule(
     limitations=[
         _claim("Sustained proliferation does not establish genomic stability."),
         _claim("Sustained proliferation does not establish retained differentiation capacity."),
-        _claim("The construct combination does not by itself establish non-tumorigenicity."),
+        # States the honest mechanistic contrast without inheriting a safety claim from
+        # it: being unlike a viral oncogene strategy is not evidence of non-tumorigenicity.
+        _claim(
+            "TERT+CDK4 is mechanistically distinct from viral oncogene-based approaches, "
+            "but non-tumorigenicity and genomic stability require separate validation."
+        ),
     ],
     recommended_validation=[
         "Genomic stability",

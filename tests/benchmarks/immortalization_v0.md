@@ -84,6 +84,28 @@ LLM 답변의 `candidate_status`가 baseline과 불일치하면 rubric에서 감
 
 ---
 
+## 2-a. 실행 경로 — 10개 질문 전부 제품 경로로 평가 (PR10b)
+
+`tests/benchmarks/eval_immortalization_v0.py`는 **10개 질문 전부**를 제품이 쓰는 공개
+진입점 하나로 평가한다.
+
+```text
+seed 그래프 → ImmortalizationAssessmentAgent(store) → agent.assess(data) → DecisionReport 채점
+```
+
+* 벤치마크는 **intent로 내부 builder를 직접 고르지 않는다.** dispatch 권한은 agent에만 있다
+  (`rules` / `grounding` / `hypotheses` 선택은 agent 내부 책임).
+* intent는 *채점 축*만 고른다(기전 질문에는 status 축이 없음). 구현 선택이 아니다.
+* 따라서 10/10은 **실제 출하 경로**에 대한 근거이며, 벤치마크 전용 코드 경로에 대한
+  근거가 아니다. API/CLI 호출자도 같은 `assess`/`run`을 통과한다.
+* 회귀 고정: 호출 카운팅 spy + import 가드(`test_immortalization_eval`).
+
+> 과거에 Q5/Q6/Q9용 **중복 구현**(`agents.immortalization.mechanism`)이 벤치마크에서만
+> 쓰인 적이 있다. 제품 정책(`grounding.py`/`hypotheses.py`)이 더 엄격하므로(타깃 allowlist,
+> relation signature, 검증, 조건부 CDK4 문구) 중복 구현은 **제거**했다. intent당 정본 구현은 하나다.
+
+---
+
 ## 3. 채점 rubric (질문당 6축 × 0/1/2점, 만점 12, 통과 ≥ 9)
 
 | 축 | 0점 | 1점 | 2점 |
@@ -135,9 +157,23 @@ LLM 답변의 `candidate_status`가 baseline과 불일치하면 rubric에서 감
 - next_experiment: p16 상태 확인, telomere/TERT 활성, 필요 시 CDK4 병용.
 
 ### Q6 — TERT + CDK4 (기전 질문, status 없음)
-- mechanistic_chain: TERT → telomere maintenance(replicative senescence 방지) **+** CDK4 → p16-매개 senescence를 G1/S로 우회 → 지속 증식. 비-oncogenic·재현성 높은 경로로 보고됨(예: bovine iBSC >120 doublings). (established)
+- mechanistic_chain: TERT → telomere maintenance(replicative senescence 방지) **+** CDK4 → p16-매개 senescence를 G1/S로 우회 → 지속 증식. (established)
 - caveat: 불멸화 ≠ 안전·기능 보장. genomic stability, 분화능(cultured meat에선 필수)을 별도 확인.
 - next_experiment: karyotype/genomic stability, 분화 assay(근/지방), 장기 PDL.
+
+> **Rubric 정정 (PR10b).** 기존 key point `non_oncogenic_reliable`을 제거하고 다음 둘로 교체했다:
+> `distinct_from_viral_oncogene_approaches`, `non_tumorigenicity_requires_separate_validation`.
+>
+> **이유:** "비-oncogenic"은 *안전성 주장*이다. TERT+CDK4가 바이러스 oncogene 기반 전략과
+> **기전적으로 다르다**는 것은 방어 가능한 사실이지만, 그로부터 **비종양원성(non-tumorigenicity)이
+> 따라 나오지는 않는다.** 이 벤치마크에는 그것을 established로 세울 citation이 없고, 기존 표현은
+> 모델이 검증 없이 안전을 단정하도록 보상했다 — 이 도메인의 최우선 실패모드(과해석)와 정면으로 충돌한다.
+> 교체된 표현은 기전적 구분은 유지하면서 안전성은 **추론이 아니라 검증 대상**으로 요구한다.
+>
+> 권장 문구: *"TERT+CDK4는 바이러스 oncogene 기반 접근과 기전적으로 구별되지만, 비종양원성과
+> 유전체 안정성은 별도 검증이 필요하다."*
+>
+> 이는 **rubric 정정이지 통과 기준 완화가 아니다.** 통과 임계값(≥9/12)은 그대로다.
 
 ### Q7 — γH2AX↓·증식 지속 이지만 분화능 상실 → `possible_candidate` + `functionality_compromised`
 - supporting: 증식 지속 + γH2AX 낮음 → 불멸화 축은 긍정적.
@@ -157,6 +193,17 @@ claim을 반드시 분해할 것(과해석 방지):
 - Claim 3 (hypothesis, **citation 필수**): 보고된 자발적 불멸화 경로는 **"P53 활성화 없이(without activating P53, P53-independent)"** 진행된 것으로 기술됨(Believer Meats, Nature Food 2025). "P53 없이/P53 loss"로 바꿔 말하지 말 것.
 - Claim 4 (hypothesis): TERT/PGC1A 연관 회복은 자발적 불멸화 관련 기전을 **시사(SUGGESTS)**할 수 있음. `CAUSES` 금지.
 - KG edge는 `ASSOCIATED_WITH`/`SUGGESTS`.
+
+> **금지 표현 채점 범위 (PR10b).** `forbidden_phrasings` 검사는 **주장(assertion) 필드에만**
+> 적용한다 — `conclusion` + `supporting_evidence` + `contradicting_evidence`
+> (제품 코드의 `hypotheses.assertion_texts`와 동일 범위를 재사용).
+>
+> `limitations` / `overinterpretation_risk`는 스캔하지 않는다. 이 필드들은 금지 표현을
+> **금지하기 위해 인용**하기 때문이다: *"P53-independent does not mean P53 loss"*는 요구되는
+> 안전 문구이지 위반이 아니다. 전체 리포트를 스캔하면 올바른 안전 문구가 감점되어,
+> 정직한 표현이 리포트에서 밀려나는 역효과가 난다.
+>
+> 회귀 고정: "P53 loss"를 **주장하면** 실패, "do not infer P53 loss"라고 **경고하면** 통과.
 
 ### Q10 — 상충 marker (양측 근거 동시 출력) → `insufficient_evidence` / `senescence_or_stress_prone`
 - **핵심은 상충을 억지로 하나로 뭉개지 않는 것.**

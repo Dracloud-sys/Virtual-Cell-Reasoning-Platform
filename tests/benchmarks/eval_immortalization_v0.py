@@ -6,9 +6,13 @@ benchmark can be re-run as an honest scorecard rather than only a pass/fail test
 subjective rubric axes (prose quality, expert nuance) still need a human; this harness
 scores only what is deterministically decidable and states its own limits.
 
-Coverage: the deterministic builder answers the seven *assessment* questions; the two
-mechanism questions (Q5/Q6) and the hypothesis question (Q9) are answered from the
-KG-explain path via ``mechanism.build_mechanism_report`` (PR9-b). All ten are scored.
+**Product path.** All ten questions are evaluated through the *same public entry point
+API and CLI callers use* — :meth:`ImmortalizationAssessmentAgent.assess` — over a store
+built by the normal deterministic seed path. The benchmark never selects an internal
+builder by intent; the agent is the sole dispatch authority, so a 10/10 score is
+evidence about the shipped product rather than about a benchmark-only code path.
+Intent only chooses which *rubric axes* apply (a mechanism question has no status to
+score), never which implementation runs.
 
 Run ``python -m tests.benchmarks.eval_immortalization_v0`` for the scorecard.
 """
@@ -22,9 +26,9 @@ import yaml
 from pydantic import BaseModel
 
 from virtualcell.agents.immortalization.adapters import input_from_scenario
-from virtualcell.agents.immortalization.mechanism import build_mechanism_report
+from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
+from virtualcell.agents.immortalization.hypotheses import assertion_texts
 from virtualcell.agents.immortalization.models import ASSESSMENT_INTENTS, AssessmentIntent
-from virtualcell.agents.immortalization.rules import build_decision_report
 from virtualcell.core.evidence import EvidenceTier
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
 from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
@@ -106,10 +110,13 @@ def _seed_store() -> InMemoryKnowledgeStore:
 
 
 def _report_text(report) -> str:
+    """Broad text used for *key-point coverage* only — never for forbidden-phrase
+    checking, which must see assertion fields alone (see :func:`_score_hypothesis`)."""
     parts = [
         report.conclusion,
         *report.limitations,
         *report.overinterpretation_risk,
+        *report.recommended_validation,
         *report.next_experiment,
         *(link.target_name for link in report.mechanistic_chain),
         *(c.statement for c in report.supporting_evidence),
@@ -117,18 +124,27 @@ def _report_text(report) -> str:
     return " ".join(parts).lower()
 
 
-def _evaluate_question(question: dict) -> QuestionEval:
+def build_agent() -> ImmortalizationAssessmentAgent:
+    """The product's assessment agent over a normally seeded store."""
+    return ImmortalizationAssessmentAgent(store=_seed_store())
+
+
+def _evaluate_question(question: dict, agent: ImmortalizationAssessmentAgent) -> QuestionEval:
     qid = question["id"]
     intent = AssessmentIntent(question["intent"])
-    scenario = question["scenario"]
     expected_status = question.get("expected_status")
     expected_flags = sorted(question.get("expected_flags", []) or [])
-    data = input_from_scenario(intent, scenario)
 
+    # One public call for every question — the agent owns intent dispatch.
+    data = input_from_scenario(intent, question["scenario"])
+    report = agent.assess(data)
+
+    status = report.candidate_status.value if report.candidate_status else None
+    flags = sorted(f.value for f in report.flags)
+
+    # Intent selects the applicable *rubric axes* (a mechanism question has no status
+    # to score), not the implementation that produced the report.
     if intent in ASSESSMENT_INTENTS:
-        report = build_decision_report(data)
-        status = report.candidate_status.value if report.candidate_status else None
-        flags = sorted(f.value for f in report.flags)
         acceptable = question.get("acceptable_status") or (
             [expected_status] if expected_status else []
         )
@@ -141,17 +157,12 @@ def _evaluate_question(question: dict) -> QuestionEval:
             _score_tiers(report),
         ]
         critical = ["status_match"]
+    elif intent is AssessmentIntent.HYPOTHESIS_HANDLING:
+        axes = _score_hypothesis(report, question, expected_status)
+        critical = ["status_match", "forbidden_absent"]
     else:
-        # Mechanism (Q5/Q6) and hypothesis (Q9): formatted from the KG-explain path.
-        report = build_mechanism_report(_seed_store(), data)
-        status = report.candidate_status.value if report.candidate_status else None
-        flags = []
-        if intent is AssessmentIntent.HYPOTHESIS_HANDLING:
-            axes = _score_hypothesis(report, question, expected_status)
-            critical = ["status_match", "forbidden_absent"]
-        else:
-            axes = _score_mechanism(report, question)
-            critical = ["no_overcall"]
+        axes = _score_mechanism(report, question)
+        critical = ["no_overcall"]
 
     return QuestionEval(
         id=qid,
@@ -226,8 +237,16 @@ def _claim_matched(report, required: dict) -> bool:
 def _score_hypothesis(report, question, expected_status) -> list[AxisScore]:
     text = _report_text(report)
     status = report.candidate_status.value if report.candidate_status else None
-    forbidden = [p.lower() for p in question.get("forbidden_phrasings", [])]
-    forbidden_hit = [p for p in forbidden if p in text]
+    # The benchmark owns its forbidden list, but scans it over the *production* notion
+    # of an assertion field (conclusion + evidence claims). Scanning the whole report
+    # would fail correct safety guidance that quotes a phrase in order to forbid it —
+    # "P53-independent does not mean P53 loss" is required wording, not a violation.
+    asserted = " ".join(assertion_texts(report)).lower()
+    forbidden_hit = [
+        phrase
+        for phrase in (p.lower() for p in question.get("forbidden_phrasings", []))
+        if phrase in asserted
+    ]
     required = question.get("required_claims", [])
     matched = sum(1 for rc in required if _claim_matched(report, rc))
     rc_score = 2 if matched == len(required) else (1 if matched else 0)
@@ -344,7 +363,9 @@ def _score_tiers(report) -> AxisScore:
 
 
 def evaluate() -> list[QuestionEval]:
-    return [_evaluate_question(q) for q in load_spec()["questions"]]
+    """Score all ten questions through one product-path agent."""
+    agent = build_agent()
+    return [_evaluate_question(q, agent) for q in load_spec()["questions"]]
 
 
 def scorecard(results: list[QuestionEval]) -> str:
