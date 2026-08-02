@@ -250,14 +250,33 @@ experimental data is the one outcome dedup must never produce, so an unknown min
 *cannot decide*, never *same*. Being readable and being dedupable are therefore separate
 questions, and `literature.ingestion` reports them separately.
 
-**Ordering and normalization are stated, not inherited from the serializer:**
+**Collection semantics are stated, not inherited from the serializer:**
 
-| collection | rule |
-|---|---|
-| `observations` | order **significant**, preserved — the sequence is the trajectory |
-| `measurements` within an observation | order **insignificant**, normalized by sorting — readings at one time point are a set |
-| `quality_flags` | order **insignificant**, normalized by sorting |
-| `conditions` (both levels) | mappings; key order normalized. *Where* a condition is declared is itself part of identity — a run-level condition asserts it held for the whole run |
+| collection | semantics | order | multiplicity |
+|---|---|---|---|
+| `observations` | ordered **sequence** — it *is* the trajectory | significant | significant |
+| `measurements` within an observation | unordered **multiset** — replicates are real data, so two identical readings at one time point are not one reading | normalized away | **significant** |
+| `quality_flags` | true **set** — a flag repeated twice says what it says once | normalized away | normalized away |
+| `conditions` (both levels) | mapping | normalized away | n/a |
+
+One deliberate non-normalization: *where* a condition is declared is part of identity. A
+run-level condition asserts it held for the whole run; the same key on one observation
+asserts something narrower.
+
+**Numeric identity is normalized in `dedup_key`, never in `content_checksum`.** `1` and
+`1.0` are the same measurement — `Measurement.numeric_value()` reads both as `1.0` — and
+`0.0`/`-0.0` are the same quantity, so they must not split a dedup group when a CSV reader
+emits `int` and the literature converter emits `float` for one reading. Integrity asks a
+different question: `1` and `1.0` are different bytes, so the checksum keeps them apart.
+
+**Only finite numbers.** NaN and ±Infinity are refused by every canonical numeric field
+(`Measurement.value`, `confidence`, elapsed-time values, and every `conditions`/`metadata`
+map), and refused again before hashing so a preserved newer-minor extra — unvalidated by
+design — cannot slip one through. The pre-check runs on the *python-mode* dump, because
+pydantic's JSON mode rewrites NaN to `null`: checking afterwards would let a NaN-bearing run
+and a null-bearing run seal to the same checksum, certifying data the serializer had already
+altered. `json.dumps(..., allow_nan=False)` is the final guard. A non-finite reading is a
+missing or invalid one, and `quality` is the field that says so.
 
 `deduplicate_runs` keeps the first run of each group in input order, names every collapse,
 and emits a structured `DedupCollision` (both run ids, both checksums, the shared key)

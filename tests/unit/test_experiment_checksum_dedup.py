@@ -14,6 +14,8 @@ for its first replicate.
 
 from __future__ import annotations
 
+import math
+
 import pytest
 
 from virtualcell.core.experiment import (
@@ -158,7 +160,7 @@ def test_the_checksum_works_at_a_version_this_reader_does_not_know() -> None:
 
 def test_the_dedup_key_is_stable_across_processes() -> None:
     assert dedup_key(_run()) == (
-        "sha256:17dfc2639498596584f5cda038bb107bf0b8268ee208d7131843f37a3da613ae"
+        "sha256:9e3bca6a6c45e27a84b0dc5328aa8eff2e62bda67235b5a158e3a144c4c9c710"
     )
 
 
@@ -215,12 +217,44 @@ def test_observation_order_is_significant() -> None:
 
 
 def test_measurement_order_within_an_observation_is_not_significant() -> None:
-    """Readings taken at one time point are a set, not a sequence."""
+    """Readings taken at one time point are an unordered multiset, not a sequence."""
     pdl = Measurement(name="cumulative_PDL", value=24.0, unit="population_doubling")
     dt = Measurement(name="DT_hours", value=40.0, unit="hour")
     assert dedup_key(_run(observations=[_observation(measurements=[pdl, dt])])) == dedup_key(
         _run(observations=[_observation(measurements=[dt, pdl])])
     )
+
+
+def test_measurement_multiplicity_is_significant() -> None:
+    """Measurements are a *multiset*: two readings of the same value at one time point are
+    replicates, and a run with two is not the same experiment as a run with one. This is
+    where they differ from ``quality_flags``, which are a true set."""
+    reading = Measurement(name="cumulative_PDL", value=24.0, unit="population_doubling")
+    once = _run(observations=[_observation(measurements=[reading])])
+    twice = _run(observations=[_observation(measurements=[reading, reading])])
+    assert dedup_key(once) != dedup_key(twice)
+
+
+def test_quality_flag_repeats_are_normalized_away() -> None:
+    """A true set: a flag repeated twice says exactly what it says once."""
+
+    def flagged(*flags: str) -> ExperimentRun:
+        return _run(
+            observations=[
+                _observation(
+                    measurements=[
+                        Measurement(
+                            name="cumulative_PDL",
+                            value=24.0,
+                            quality=MeasurementQuality.SUSPECT,
+                            quality_flags=list(flags),
+                        )
+                    ]
+                )
+            ]
+        )
+
+    assert dedup_key(flagged("bound:>", "bound:>")) == dedup_key(flagged("bound:>"))
 
 
 def test_quality_flag_order_is_not_significant() -> None:
@@ -258,6 +292,113 @@ def test_where_a_condition_is_declared_is_part_of_identity() -> None:
         observations=[_observation(conditions={"oxygen_pct": 5})],
     )
     assert dedup_key(at_run_level) != dedup_key(at_observation_level)
+
+
+# --- only finite numbers ------------------------------------------------------
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+def test_a_measurement_value_must_be_finite(bad: float) -> None:
+    """NaN is not JSON, and ``NaN != NaN`` breaks the equality this schema depends on:
+    a run holding one would not even equal itself."""
+    with pytest.raises(ValueError, match="finite"):
+        Measurement(name="PDL", value=bad)
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+def test_scalar_maps_must_hold_finite_numbers(bad: float) -> None:
+    with pytest.raises(ValueError, match="finite"):
+        _run(conditions={"oxygen_pct": bad})
+    with pytest.raises(ValueError, match="finite"):
+        _run(metadata={"drift": bad})
+    with pytest.raises(ValueError, match="finite"):
+        _run(observations=[_observation(conditions={"oxygen_pct": bad})])
+    with pytest.raises(ValueError, match="finite"):
+        _provenance(metadata={"ambient_c": bad})
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+def test_numeric_schema_fields_must_be_finite(bad: float) -> None:
+    from virtualcell.core.experiment import ElapsedTimePoint
+
+    with pytest.raises(ValueError):
+        ElapsedTimePoint(value=bad, unit="hour")
+    with pytest.raises(ValueError):
+        Measurement(name="PDL", value=1.0, confidence=bad)
+
+
+def test_a_sealed_run_survives_the_json_text_round_trip_it_claims() -> None:
+    """The seal is only meaningful if the run can actually make the trip: serialize to real
+    JSON text, parse it back, and the checksum must still verify."""
+    import json as _json
+
+    sealed = _run().sealed()
+    text = sealed.model_dump_json()
+    assert "NaN" not in text and "Infinity" not in text
+    restored = ExperimentRun.model_validate(_json.loads(text))
+    assert restored.checksum == sealed.checksum
+    assert content_checksum(restored) == sealed.checksum
+
+
+def test_hashing_refuses_a_non_finite_value_smuggled_in_as_a_newer_minor_extra() -> None:
+    """Extras are preserved unvalidated by design, and Python's json module *accepts* the
+    non-standard NaN token — so the hash needs its own guard, not just field validation."""
+    import json as _json
+
+    assert math.isnan(_json.loads('{"drift": NaN}')["drift"])  # this is how one gets in
+
+    payload = _run(schema_version=NEWER_MINOR).model_dump(mode="json")
+    payload["sensor_drift"] = float("nan")
+    run = ExperimentRun.model_validate(payload)  # preserved, not judged
+
+    # Checking after serialization would be too late in the way that matters: pydantic's
+    # JSON mode rewrites the value to null, so a NaN-bearing run and a null-bearing run
+    # would seal identically and the checksum would certify data it had already altered.
+    assert run.model_dump(mode="json")["sensor_drift"] is None
+
+    with pytest.raises(ValueError, match="non-finite"):
+        content_checksum(run)
+
+
+# --- numeric identity ---------------------------------------------------------
+
+
+def _valued(value) -> ExperimentRun:
+    return _run(observations=[_observation(measurements=[Measurement(name="PDL", value=value)])])
+
+
+def test_an_integer_and_its_float_spelling_are_the_same_measurement() -> None:
+    """``Measurement.numeric_value`` reads both as 1.0, so identity must agree. Two
+    producers spelling one reading differently — a CSV reader emitting int, the literature
+    converter emitting float — must land in the same dedup group."""
+    assert dedup_key(_valued(1)) == dedup_key(_valued(1.0))
+
+
+def test_signed_and_unsigned_zero_are_the_same_quantity() -> None:
+    assert dedup_key(_valued(0)) == dedup_key(_valued(0.0)) == dedup_key(_valued(-0.0))
+
+
+def test_condition_numbers_are_normalized_too() -> None:
+    assert dedup_key(_run(conditions={"serum_pct": 10})) == dedup_key(
+        _run(conditions={"serum_pct": 10.0})
+    )
+
+
+def test_non_integral_values_are_untouched() -> None:
+    assert dedup_key(_valued(1.5)) != dedup_key(_valued(1))
+    assert dedup_key(_valued(1.5)) == dedup_key(_valued(1.5))
+
+
+def test_a_boolean_is_never_the_same_as_a_number() -> None:
+    # ``isinstance(True, int)`` is a Python accident, not a statement about the data.
+    assert dedup_key(_valued(True)) != dedup_key(_valued(1))
+
+
+def test_the_checksum_deliberately_does_not_normalize_numbers() -> None:
+    """Integrity asks whether the bytes changed, and ``1`` and ``1.0`` are different bytes.
+    Identity asks whether the measurement is the same, and they are."""
+    assert content_checksum(_valued(1)) != content_checksum(_valued(1.0))
+    assert dedup_key(_valued(1)) == dedup_key(_valued(1.0))
 
 
 # --- dedup refuses to guess ---------------------------------------------------

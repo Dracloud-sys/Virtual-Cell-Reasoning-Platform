@@ -94,30 +94,81 @@ tampering, or make two genuinely different runs look identical.
   newer minor may have added the very field that tells two runs apart. Being unable to
   decide must never be reported as "same".
 
-Ordering is stated, never left to the serializer: ``observations`` order is **significant**
-(it is the trajectory) and preserved; ``measurements`` within an observation and
-``quality_flags`` are **sets**, so their order is normalized by sorting; ``conditions`` are
-mappings, so key order is normalized. :func:`deduplicate_runs` keeps the first of each
-group and reports every collapse, raising a structured :class:`DedupCollision` whenever two
-collapsed runs do not serialize identically.
+Collection semantics are stated, never left to the serializer: ``observations`` are an
+ordered **sequence** (the trajectory); ``measurements`` within an observation are an
+unordered **multiset**, so order is normalized away but multiplicity is kept — replicates
+are real data; ``quality_flags`` are a true **set**, so repeats are normalized away too;
+``conditions`` are mappings with normalized key order. Numeric values are normalized so
+``1``/``1.0`` and ``0.0``/``-0.0`` cannot split a dedup group.
+:func:`deduplicate_runs` keeps the first of each group and reports every collapse, raising
+a structured :class:`DedupCollision` whenever two collapsed runs do not serialize
+identically.
+
+**Only finite numbers.** NaN and ±Infinity are refused by every canonical numeric field,
+and :func:`_canonical_json` refuses them again at hash time so a preserved newer-minor
+extra cannot slip one past. They are not JSON, ``NaN != NaN`` breaks the equality this
+schema relies on, and pydantic writes them as ``null`` while a naive hash would cover
+Python's non-standard token — a seal that cannot survive its own round trip. A non-finite
+reading is a missing or invalid one; ``quality`` is the field that says so.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 from collections.abc import Mapping
 from datetime import datetime
 from enum import StrEnum
 from typing import Annotated, Any, Final, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 # JSON scalar values only — ``conditions``/``metadata`` are flat, JSON-serializable
 # maps. Nested structures, arrays, and binary payloads are intentionally excluded
 # from this first contract (they belong to a future artifact-reference model).
 JSONScalar = str | int | float | bool | None
+
+
+def _require_finite(value: float, field: str) -> float:
+    """NaN and ±Infinity are not JSON, and this contract claims to be JSON-round-trippable.
+
+    They also break every equality this schema depends on: ``NaN != NaN``, so a run
+    containing one is not equal to itself, and pydantic's JSON serializer writes them as
+    ``null`` while :func:`content_checksum` would hash Python's non-standard ``NaN`` token —
+    a seal that cannot survive the round trip it claims to protect. A non-finite reading is
+    a *missing or invalid* reading; say so with ``quality``, which is the field for it.
+    """
+    if not math.isfinite(value):
+        raise ValueError(
+            f"{field} must be a finite number, got {value!r}; NaN and Infinity are not "
+            "representable in JSON — use quality='missing' or 'suspect' instead"
+        )
+    return value
+
+
+def _finite_scalar(value: JSONScalar) -> JSONScalar:
+    if isinstance(value, float):
+        _require_finite(value, "value")
+    return value
+
+
+def _finite_float(value: float) -> float:
+    return _require_finite(value, "value")
+
+
+# The scalar types the canonical models actually accept. Identical to ``JSONScalar``
+# except that non-finite floats are refused at the boundary rather than at hash time.
+CanonicalScalar = Annotated[JSONScalar, AfterValidator(_finite_scalar)]
+ScalarMap = dict[str, CanonicalScalar]
 
 # Unknown fields are *preserved*, not ignored: a reader that accepts a newer minor must
 # hand the fields it does not understand back out unchanged (see the module docstring).
@@ -297,7 +348,7 @@ class ElapsedTimePoint(BaseModel):
     model_config = CANONICAL_MODEL_CONFIG
 
     kind: Literal["elapsed_time"] = "elapsed_time"
-    value: float = Field(ge=0)
+    value: Annotated[float, AfterValidator(_finite_float)] = Field(ge=0)
     unit: Literal["minute", "hour", "day"]
 
 
@@ -345,7 +396,7 @@ class Provenance(BaseModel):
     source_run_id: str | None = None
     method: str | None = None
     recorded_at: datetime | None = None
-    metadata: dict[str, JSONScalar] = Field(default_factory=dict)
+    metadata: ScalarMap = Field(default_factory=dict)
 
     @field_validator("recorded_at")
     @classmethod
@@ -362,7 +413,7 @@ class Measurement(BaseModel):
     model_config = CANONICAL_MODEL_CONFIG
 
     name: str
-    value: JSONScalar = None
+    value: CanonicalScalar = None
     # What the value *is*, so a numeric assay cannot silently hold a string. Inferred from
     # the value when a producer does not state it; when a producer does state it, a
     # mismatch is an error rather than a coercion.
@@ -465,7 +516,7 @@ class Observation(BaseModel):
     observation_id: str | None = None
     time_point: TimePoint
     measurements: list[Measurement] = Field(default_factory=list)
-    conditions: dict[str, JSONScalar] = Field(default_factory=dict)
+    conditions: ScalarMap = Field(default_factory=dict)
     provenance: Provenance | None = None
 
 
@@ -502,9 +553,9 @@ class ExperimentRun(BaseModel):
     schema_version: str
     run_id: str
     provenance: Provenance
-    conditions: dict[str, JSONScalar] = Field(default_factory=dict)
+    conditions: ScalarMap = Field(default_factory=dict)
     observations: list[Observation] = Field(default_factory=list)
-    metadata: dict[str, JSONScalar] = Field(default_factory=dict)
+    metadata: ScalarMap = Field(default_factory=dict)
     # Optional integrity seal (schema 1.1). Self-verifying when present: it must equal
     # :func:`content_checksum` of this run, so a stored run that was edited in place no
     # longer validates. Absent means "not sealed", never "verified".
@@ -643,12 +694,83 @@ class DedupUnavailableError(SchemaVersionError):
 
 
 def _canonical_json(payload: Any) -> str:
-    """One byte-stable serialization, so a hash is reproducible across processes."""
-    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    """One byte-stable serialization, so a hash is reproducible across processes.
+
+    ``allow_nan=False`` is the last line of defence rather than the first: the canonical
+    fields already refuse non-finite floats at validation, but a **preserved newer-minor
+    extra** is by definition unvalidated, and Python's ``json`` module both emits and
+    accepts the non-standard ``NaN``/``Infinity`` tokens. Hashing one would produce a seal
+    no standards-compliant reader could reproduce.
+    """
+    try:
+        return json.dumps(
+            payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "cannot hash a run containing a non-finite number (NaN or Infinity); it is not "
+            f"representable in JSON, so the hash would not be reproducible: {exc}"
+        ) from exc
+
+
+def _canonical_numbers(value: Any) -> Any:
+    """Collapse numeric values that differ only in Python spelling, recursively.
+
+    ``1`` and ``1.0`` are the same measurement — :meth:`Measurement.numeric_value` reads
+    both as ``1.0`` — and ``0.0``/``-0.0`` are the same quantity. Two producers writing the
+    same reading with different Python types (a CSV reader emitting ``int``, the literature
+    converter emitting ``float``) must land in the same dedup group, or PR13b ingestion
+    would import a measurement it already had.
+
+    Used only by :func:`dedup_key`. :func:`content_checksum` deliberately does **not**
+    normalize: it answers whether the bytes changed, and ``1`` and ``1.0`` are different
+    bytes.
+    """
+    if isinstance(value, bool):
+        return value  # a flag is not a quantity; keep it distinct from 0/1
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            # Unreachable through validated fields; leave it for _canonical_json to refuse
+            # with a clear message rather than crashing on int(inf).
+            return value
+        integral = int(value)
+        return integral if value == integral else value
+    if isinstance(value, dict):
+        return {key: _canonical_numbers(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_canonical_numbers(item) for item in value]
+    return value
 
 
 def _digest(payload: Any) -> str:
     return HASH_PREFIX + hashlib.sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
+
+
+def _reject_non_finite_numbers(payload: Any, path: str = "") -> None:
+    """Refuse a non-finite number anywhere in ``payload``, naming where it is.
+
+    Runs against the **python-mode** dump, before serialization, because pydantic's JSON
+    mode rewrites NaN and ±Infinity to ``null``. Checking afterwards would be too late in
+    the way that matters: a run carrying NaN and a run carrying null would seal to the same
+    checksum, so the seal would certify data it had already silently altered.
+    """
+    where = path or "value"
+    if isinstance(payload, bool):
+        return
+    if isinstance(payload, float):
+        if not math.isfinite(payload):
+            raise ValueError(
+                f"cannot hash a run containing a non-finite number at {where}: {payload!r} "
+                "is not representable in JSON, so the hash would not be reproducible"
+            )
+        return
+    if isinstance(payload, Mapping):
+        for key, item in payload.items():
+            _reject_non_finite_numbers(item, f"{where}.{key}" if path else str(key))
+        return
+    if isinstance(payload, (list, tuple)):
+        for index, item in enumerate(payload):
+            _reject_non_finite_numbers(item, f"{where}[{index}]")
 
 
 def content_checksum(run: ExperimentRun) -> str:
@@ -664,23 +786,29 @@ def content_checksum(run: ExperimentRun) -> str:
 
     Works at **any** declared version, including a newer minor: hashing bytes needs no
     understanding of what the fields mean. That is the difference from :func:`dedup_key`.
+
+    Refuses a run carrying a non-finite number anywhere, including inside a preserved
+    newer-minor extra that no field validator saw.
     """
+    _reject_non_finite_numbers(run.model_dump())
     payload = run.model_dump(mode="json")
     payload.pop("checksum", None)
     return _digest(payload)
 
 
 def _measurement_identity(measurement: Measurement) -> dict[str, Any]:
-    return {
-        "name": measurement.name,
-        "value": measurement.value,
-        "value_type": measurement.value_type.value if measurement.value_type else None,
-        "unit": measurement.unit,
-        "quality": measurement.quality.value,
-        # A flag *set*, not a sequence: two runs flagged the same way in a different order
-        # recorded the same thing, so the order is normalized away.
-        "quality_flags": sorted(measurement.quality_flags),
-    }
+    return _canonical_numbers(
+        {
+            "name": measurement.name,
+            "value": measurement.value,
+            "value_type": measurement.value_type.value if measurement.value_type else None,
+            "unit": measurement.unit,
+            "quality": measurement.quality.value,
+            # A genuine *set*: order carries nothing, and a flag repeated twice says exactly
+            # what it says once, so both order and multiplicity are normalized away.
+            "quality_flags": sorted(set(measurement.quality_flags)),
+        }
+    )
 
 
 def dedup_key(run: ExperimentRun) -> str:
@@ -698,11 +826,18 @@ def dedup_key(run: ExperimentRun) -> str:
 
     Ordering and normalization, stated rather than left to the serializer:
 
-    * ``observations`` — order is **significant** and preserved. The sequence is the
-      trajectory; reordering it changes what the run means.
-    * ``measurements`` within an observation — order is **insignificant** and normalized
-      by sorting. They are a set of readings taken at one time point.
-    * ``quality_flags`` — order is **insignificant** and normalized by sorting.
+    * ``observations`` — an ordered **sequence**: order is significant and preserved. The
+      sequence is the trajectory; reordering it changes what the run means.
+    * ``measurements`` within an observation — an unordered **multiset**: order is
+      normalized away by sorting, multiplicity is **not**. Two readings of the same value
+      at one time point are replicates, and a run with two is not the same experiment as a
+      run with one.
+    * ``quality_flags`` — a true **set**: order and multiplicity are both normalized away.
+      A flag repeated twice says exactly what it says once.
+    * numeric values, anywhere in the payload — normalized so that ``1`` and ``1.0`` and
+      ``0.0`` and ``-0.0`` are the same quantity (:func:`_canonical_numbers`). Consumers
+      already read them that way, and two producers spelling one reading differently must
+      not land in different dedup groups.
     * ``conditions`` (both levels) — mappings, so key order is normalized by sorting.
       Observation entries carry :meth:`ExperimentRun.effective_conditions`; run-level
       conditions are hashed separately as well, because *where* a condition is declared is
@@ -736,11 +871,14 @@ def dedup_key(run: ExperimentRun) -> str:
             "source_run_id": provenance.source_run_id,
             "method": provenance.method,
         },
-        "conditions": dict(run.conditions),
+        "conditions": _canonical_numbers(dict(run.conditions)),
         "observations": [
             {
-                "time_point": observation.time_point.model_dump(mode="json"),
-                "conditions": run.effective_conditions(observation),
+                "time_point": _canonical_numbers(observation.time_point.model_dump(mode="json")),
+                "conditions": _canonical_numbers(run.effective_conditions(observation)),
+                # An unordered *multiset*: order is normalized away, multiplicity is not.
+                # Two readings of the same value at one time point are replicates, and a run
+                # with two is not the same experiment as a run with one.
                 "measurements": sorted(
                     (_measurement_identity(m) for m in observation.measurements),
                     key=_canonical_json,
