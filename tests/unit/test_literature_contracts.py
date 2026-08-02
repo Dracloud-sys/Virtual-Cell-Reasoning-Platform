@@ -8,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from virtualcell.core.experiment import (
+    SCHEMA_VERSION,
     AcquisitionMode,
     ExperimentRun,
     OriginKind,
@@ -285,6 +286,7 @@ def test_bundle_json_round_trips_with_a_canonical_run() -> None:
         articles=[ArticleRecord(identifiers=ArticleIdentifier(pmid="9"), title="A paper")],
         canonical_runs=[
             ExperimentRun(
+                schema_version=SCHEMA_VERSION,
                 run_id="lit:10.1/x:groupA",
                 provenance=Provenance(
                     origin_kind=OriginKind.EXPERIMENT, acquisition_mode=AcquisitionMode.IMPORTED

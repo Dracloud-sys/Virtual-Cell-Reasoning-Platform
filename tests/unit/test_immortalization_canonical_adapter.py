@@ -65,7 +65,7 @@ def test_canonical_to_passage_observation() -> None:
 
 def test_passage_series_round_trips_through_a_run() -> None:
     series = [_obs(25, 22.0, 42.0), _obs(30, 25.5, 80.0), _obs(35, 27.0, 100.0)]
-    run = passage_series_to_run(series, run_id="RUN-1")
+    run = passage_series_to_run(series, run_id="immortalization:RUN-1")
     assert isinstance(run, ExperimentRun)
     assert run.provenance.origin_kind is OriginKind.EXPERIMENT
     restored = run_to_passage_series(run)
@@ -147,7 +147,7 @@ def test_missing_unit_is_accepted() -> None:
 def test_adapter_output_feeds_extract_trajectory() -> None:
     run = passage_series_to_run(
         [_obs(25, 22.0, 42.0), _obs(30, 25.5, 80.0), _obs(35, 27.0, 100.0)],
-        run_id="RUN-1",
+        run_id="immortalization:RUN-1",
     )
     series = run_to_passage_series(run)
     ta = extract_trajectory(series)  # the adapter did no reasoning; the engine does

@@ -25,6 +25,7 @@ from __future__ import annotations
 import re
 
 from virtualcell.core.experiment import (
+    SCHEMA_VERSION,
     AcquisitionMode,
     ExperimentRun,
     Measurement,
@@ -35,6 +36,7 @@ from virtualcell.core.experiment import (
     Provenance,
     TimePoint,
     TimestampTimePoint,
+    make_run_id,
 )
 from virtualcell.literature.contracts import (
     CandidateKind,
@@ -47,7 +49,10 @@ from virtualcell.literature.contracts import (
 
 # How a literature-derived run identifies itself as canonical provenance.
 SOURCE_SYSTEM = "literature"
-RUN_ID_PREFIX = "literature"
+# The canonical run-id namespace this producer mints under (PR12). Every literature run is
+# ``literature:<candidate_id>``, so it can never collide with a run minted by ingestion or
+# by a domain pack.
+RUN_NAMESPACE = "literature"
 
 # A passage encoded in the (explicitly temporal) ``time_point`` field: "P35",
 # "passage 35", "35". Deliberately strict — the ambiguous ``sample_group`` axis is kept
@@ -193,7 +198,10 @@ def _run_from_measurement(
         conditions=_conditions(measurement),
     )
     return ExperimentRun(
-        run_id=f"{RUN_ID_PREFIX}:{measurement.candidate_id}",
+        # Stated explicitly rather than relying on the default: literature is a *producer*
+        # of canonical runs, and the version it wrote against should be visible here.
+        schema_version=SCHEMA_VERSION,
+        run_id=make_run_id(RUN_NAMESPACE, measurement.candidate_id),
         provenance=provenance,
         conditions=_conditions(measurement),
         observations=[observation],

@@ -16,22 +16,191 @@ nothing from ``agents`` or ``reasoning`` (no ``DecisionReport``/trajectory types
 so verticals depend on it, never the reverse. It knows how to *hold* an
 observation, not how to judge one.
 
-Scope of this first PR: a typed, JSON-round-trippable contract only. No
-simulator/robot/LIMS connectors, no ingest, no normalization, no reasoning.
+Scope: a typed, JSON-round-trippable contract only. No simulator/robot/LIMS
+connectors, no ingest, no normalization, no reasoning.
+
+Canonical Experiment Schema v1 (PR12)
+-------------------------------------
+
+Every run carries an explicit :attr:`ExperimentRun.schema_version`, so a stored or
+transmitted run states which contract it was written against instead of leaving readers to
+guess. That matters because this schema is the convergence point: literature evidence,
+domain packs, and (from PR13) raw-assay ingestion all produce or consume it, and a silent
+shape change would corrupt data no single module owns.
+
+**Version is mandatory.** ``schema_version`` has no default: an unversioned payload
+arriving at a storage or transmission boundary is refused rather than silently assumed to
+be v1 forever. Payloads serialized *before* versioning existed are still loadable, but only
+through the explicit migration path (:func:`load_legacy_run` /
+:func:`migrate_legacy_payload`), which injects :data:`LEGACY_SCHEMA_VERSION` for exactly
+that case and refuses a payload that already declares a version.
+
+**Compatibility policy.** The version is ``MAJOR.MINOR``:
+
+* **MINOR** increments are *additive* — new optional fields only. A reader accepts any
+  minor of its own major, including a *newer* one, because refusing structurally valid
+  data would be the more damaging failure.
+* **MAJOR** increments are *breaking* — renamed, removed, or re-typed fields. A reader
+  refuses a different major outright (:class:`SchemaVersionError`) rather than
+  misinterpreting it. Failing loudly beats silently reading a v2 payload as v1.
+
+**Forward compatibility is preservation, not tolerance.** Accepting a newer minor is only
+honest if the fields this reader does not understand survive it. Every canonical model
+therefore sets ``extra="allow"``: unknown fields are kept on the model and re-serialized
+unchanged, so a v1.0 reader can validate a v1.1 payload, store it, and hand it on without
+quietly stripping the v1.1 additions while still declaring ``schema_version="1.1"``.
+
+The run is the version-bearing unit, so the *strictness* check lives there: if a run
+declares a version this reader fully knows (same major, minor at or below its own), unknown
+fields anywhere in that run are an error, not silent extras — at a known version there are
+no additive fields left to preserve, so an unknown key is a typo or a foreign shape.
+Unknown fields are preserved without complaint only when the run declares a newer minor.
+
+**Mixed-minor collections are legal.** A version is a property of a run, not of the
+container holding it, so a bundle may legitimately carry runs at different minors of the
+same major (older stored runs alongside newly produced ones). Containers validate each run
+individually and must not require a single uniform minor.
+
+Identity, value typing and conditions
+-------------------------------------
+
+* **Run identity is namespaced**: ``run_id`` is ``<namespace>:<local_id>`` (see
+  :func:`make_run_id`). Once ingestion and a second domain pack both mint runs, an
+  unqualified identifier makes collisions possible with no rule preventing them; the
+  namespace states which system minted the id and keeps local ids independent.
+* **Measurement values are typed**: :attr:`Measurement.value_type` distinguishes numeric,
+  categorical and boolean values, so a numeric assay cannot silently carry a string.
+  Consumers read numbers through :meth:`Measurement.numeric_value` instead of
+  re-implementing a type guard each time.
+* **Conditions compose, observation-first**: run-level conditions are defaults for the
+  whole run and observation-level keys override them per time point. There is one
+  canonical resolver — :meth:`ExperimentRun.effective_conditions` — so two readers cannot
+  disagree about which wins.
+
+Deferred to PR13: run checksums / content-hash dedup.
 """
 
 from __future__ import annotations
 
+import re
+from collections.abc import Mapping
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Literal
+from typing import Annotated, Any, Final, Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 # JSON scalar values only — ``conditions``/``metadata`` are flat, JSON-serializable
 # maps. Nested structures, arrays, and binary payloads are intentionally excluded
 # from this first contract (they belong to a future artifact-reference model).
 JSONScalar = str | int | float | bool | None
+
+# Unknown fields are *preserved*, not ignored: a reader that accepts a newer minor must
+# hand the fields it does not understand back out unchanged (see the module docstring).
+# ``ExperimentRun`` rejects unknown fields when the declared version is one it fully knows.
+CANONICAL_MODEL_CONFIG = ConfigDict(extra="allow")
+
+# --- schema version ----------------------------------------------------------
+
+SCHEMA_MAJOR: Final = 1
+SCHEMA_MINOR: Final = 0
+SCHEMA_VERSION: Final = f"{SCHEMA_MAJOR}.{SCHEMA_MINOR}"
+"""The canonical experiment schema version this module implements."""
+
+LEGACY_SCHEMA_VERSION: Final = "1.0"
+"""The version implicitly held by payloads serialized before versioning existed.
+
+Only :func:`migrate_legacy_payload` may assume it. Normal validation refuses a payload
+with no ``schema_version`` rather than guessing.
+"""
+
+_VERSION_PATTERN = re.compile(r"^(\d+)\.(\d+)$")
+
+
+class SchemaVersionError(ValueError):
+    """Raised when a run declares a schema version this reader cannot interpret."""
+
+
+def parse_schema_version(version: str) -> tuple[int, int]:
+    """Split a ``MAJOR.MINOR`` version string, rejecting anything malformed."""
+    match = _VERSION_PATTERN.match(version or "")
+    if match is None:
+        raise SchemaVersionError(
+            f"malformed schema_version {version!r}; expected 'MAJOR.MINOR' "
+            f"(e.g. {SCHEMA_VERSION!r})"
+        )
+    return int(match.group(1)), int(match.group(2))
+
+
+def is_compatible(version: str) -> bool:
+    """Can this reader interpret ``version``? Same major, any minor."""
+    try:
+        major, _minor = parse_schema_version(version)
+    except SchemaVersionError:
+        return False
+    return major == SCHEMA_MAJOR
+
+
+def validate_schema_version(version: str) -> None:
+    """Raise :class:`SchemaVersionError` unless ``version`` is readable here.
+
+    A *newer minor* is accepted deliberately: minors are additive, so the fields this
+    reader knows about are still present and correctly typed, and refusing structurally
+    valid data would be the more damaging failure. A different *major* is refused, because
+    silently reading a v2 payload as v1 would corrupt the meaning of the data.
+    """
+    major, _minor = parse_schema_version(version)
+    if major != SCHEMA_MAJOR:
+        raise SchemaVersionError(
+            f"incompatible canonical experiment schema: run declares {version!r}, "
+            f"this reader implements {SCHEMA_VERSION!r} (major {SCHEMA_MAJOR})"
+        )
+
+
+# --- run identity ------------------------------------------------------------
+
+RUN_ID_SEPARATOR: Final = ":"
+_RUN_NAMESPACE = re.compile(r"^[a-z][a-z0-9_]*$")
+
+
+class RunIdError(ValueError):
+    """Raised when a run identifier does not follow the canonical convention."""
+
+
+def make_run_id(namespace: str, local_id: str) -> str:
+    """Build a canonical ``<namespace>:<local_id>`` run identifier.
+
+    The namespace names the system that minted the id (``literature``,
+    ``immortalization``, an ingestion source). It is lower-case ``[a-z][a-z0-9_]*`` so
+    identifiers are stable across systems and comparable without normalization.
+    """
+    if not _RUN_NAMESPACE.match(namespace or ""):
+        raise RunIdError(
+            f"run id namespace {namespace!r} is not canonical; expected lower-case "
+            "'[a-z][a-z0-9_]*' naming the minting system (e.g. 'literature')"
+        )
+    local = (local_id or "").strip()
+    if not local:
+        raise RunIdError("run id local part must not be empty")
+    if any(character.isspace() for character in local):
+        raise RunIdError(f"run id local part {local_id!r} must not contain whitespace")
+    return f"{namespace}{RUN_ID_SEPARATOR}{local}"
+
+
+def parse_run_id(run_id: str) -> tuple[str, str]:
+    """Split a canonical run id into ``(namespace, local_id)``.
+
+    Only the *first* separator delimits the namespace: a local id may itself contain
+    colons (a literature run keyed by DOI and sample group, for instance).
+    """
+    namespace, separator, local_id = (run_id or "").partition(RUN_ID_SEPARATOR)
+    if not separator:
+        raise RunIdError(
+            f"run id {run_id!r} is not namespaced; expected '<namespace>{RUN_ID_SEPARATOR}"
+            "<local_id>' so runs minted by different systems cannot collide"
+        )
+    make_run_id(namespace, local_id)  # re-validates both halves
+    return namespace, local_id
 
 
 class OriginKind(StrEnum):
@@ -67,6 +236,23 @@ class MeasurementQuality(StrEnum):
     EXCLUDED = "excluded"
 
 
+class MeasurementValueType(StrEnum):
+    """What kind of value a measurement holds.
+
+    Separate from :class:`MeasurementQuality`, which is about acquisition, and from the
+    unit, which is about scale. This is about *interpretability*: whether the value can be
+    reasoned over arithmetically at all.
+    """
+
+    NUMERIC = "numeric"
+    CATEGORICAL = "categorical"
+    BOOLEAN = "boolean"
+
+
+class MeasurementTypeError(ValueError):
+    """Raised when a measurement is read as a type it does not hold."""
+
+
 # --- Time axis (discriminated union) ----------------------------------------
 #
 # Passage counts, elapsed culture time, simulation steps and wall-clock stamps
@@ -75,22 +261,30 @@ class MeasurementQuality(StrEnum):
 
 
 class PassageTimePoint(BaseModel):
+    model_config = CANONICAL_MODEL_CONFIG
+
     kind: Literal["passage"] = "passage"
     value: int = Field(ge=0)
 
 
 class ElapsedTimePoint(BaseModel):
+    model_config = CANONICAL_MODEL_CONFIG
+
     kind: Literal["elapsed_time"] = "elapsed_time"
     value: float = Field(ge=0)
     unit: Literal["minute", "hour", "day"]
 
 
 class SimulationStepTimePoint(BaseModel):
+    model_config = CANONICAL_MODEL_CONFIG
+
     kind: Literal["simulation_step"] = "simulation_step"
     value: int = Field(ge=0)
 
 
 class TimestampTimePoint(BaseModel):
+    model_config = CANONICAL_MODEL_CONFIG
+
     kind: Literal["timestamp"] = "timestamp"
     value: datetime
 
@@ -117,6 +311,8 @@ class Provenance(BaseModel):
     evidence tier from provenance.
     """
 
+    model_config = CANONICAL_MODEL_CONFIG
+
     origin_kind: OriginKind
     acquisition_mode: AcquisitionMode
     source_system: str | None = None
@@ -137,8 +333,14 @@ class Measurement(BaseModel):
     """A single scalar measurement. Arrays/tensors/images/FCS payloads are out of
     scope for this first contract — only JSON scalars are accepted as ``value``."""
 
+    model_config = CANONICAL_MODEL_CONFIG
+
     name: str
     value: JSONScalar = None
+    # What the value *is*, so a numeric assay cannot silently hold a string. Inferred from
+    # the value when a producer does not state it; when a producer does state it, a
+    # mismatch is an error rather than a coercion.
+    value_type: MeasurementValueType | None = None
     unit: str | None = None
     # An optional pointer for a future ontology/registry; this PR does not resolve
     # or validate it, and does not hardcode a controlled vocabulary for ``name``.
@@ -165,6 +367,60 @@ class Measurement(BaseModel):
             raise ValueError("a 'valid' measurement must carry a value (use quality='missing')")
         return self
 
+    @model_validator(mode="after")
+    def _value_type_matches_value(self) -> Measurement:
+        """Infer the value type, or verify a declared one against the actual value.
+
+        A value with no declared type is classified rather than left ambiguous, so every
+        present value has a type. A *declared* type that disagrees with the value is the
+        case this exists to catch: a numeric assay whose value arrived as ``"24.0"`` is
+        refused at the boundary instead of failing somewhere downstream. A measurement
+        with no value keeps whatever type was declared (a missing numeric reading is
+        still a numeric measurement).
+        """
+        if self.value is None:
+            return self
+        actual = _classify_value(self.value)
+        if self.value_type is None:
+            self.value_type = actual
+        elif self.value_type is not actual:
+            raise ValueError(
+                f"measurement {self.name!r} declares value_type "
+                f"{self.value_type.value!r} but carries a {actual.value} value "
+                f"({self.value!r}); the schema does not coerce between value types"
+            )
+        return self
+
+    @property
+    def is_numeric(self) -> bool:
+        """Does this measurement hold a value that may be reasoned over arithmetically?"""
+        return self.value_type is MeasurementValueType.NUMERIC and self.value is not None
+
+    def numeric_value(self) -> float:
+        """Return the value as a float, or raise :class:`MeasurementTypeError`.
+
+        The single place a consumer converts a measurement to a number. Booleans are
+        refused rather than promoted to 1/0, and a numeric-looking string is refused
+        rather than parsed — reading ``"24.0"`` as 24.0 is exactly the silent
+        reinterpretation the value type exists to prevent.
+        """
+        if not self.is_numeric:
+            declared = self.value_type.value if self.value_type else "untyped"
+            raise MeasurementTypeError(
+                f"measurement {self.name!r} is {declared}, not numeric (value {self.value!r})"
+            )
+        return float(self.value)  # type: ignore[arg-type]
+
+
+def _classify_value(value: JSONScalar) -> MeasurementValueType:
+    # bool before int: in Python ``bool`` is a subclass of ``int``, and a flag is not a
+    # quantity — classifying True as numeric would let it be averaged.
+    if isinstance(value, bool):
+        return MeasurementValueType.BOOLEAN
+    if isinstance(value, (int, float)):
+        return MeasurementValueType.NUMERIC
+    return MeasurementValueType.CATEGORICAL
+
 
 class Observation(BaseModel):
     """One time point of a run: a set of measurements sharing conditions/provenance.
@@ -172,7 +428,13 @@ class Observation(BaseModel):
     The canonical layer does not enforce measurement presence, time-point ordering,
     or uniqueness — replicates and out-of-order raw data are legitimate, and their
     detection belongs to a domain QC layer, not the container.
+
+    ``conditions`` here are the conditions *at this time point*; they override the
+    run-level defaults key by key. Resolve them with
+    :meth:`ExperimentRun.effective_conditions` rather than merging by hand.
     """
+
+    model_config = CANONICAL_MODEL_CONFIG
 
     observation_id: str | None = None
     time_point: TimePoint
@@ -181,23 +443,140 @@ class Observation(BaseModel):
     provenance: Provenance | None = None
 
 
+def _extra_field_paths(model: BaseModel, prefix: str = "") -> list[str]:
+    """Dotted paths of every unknown field carried anywhere inside ``model``."""
+    paths = [f"{prefix}{key}" for key in sorted(model.model_extra or {})]
+    for name in type(model).model_fields:
+        value = getattr(model, name, None)
+        if isinstance(value, BaseModel):
+            paths.extend(_extra_field_paths(value, f"{prefix}{name}."))
+        elif isinstance(value, list):
+            for index, item in enumerate(value):
+                if isinstance(item, BaseModel):
+                    paths.extend(_extra_field_paths(item, f"{prefix}{name}[{index}]."))
+    return paths
+
+
 class ExperimentRun(BaseModel):
     """A source-neutral run: run-level provenance plus ordered observations.
 
     ``observations`` preserves input order and does not reject duplicate time
     points (replicates are allowed). Measurement-level provenance, when present,
-    overrides the run-level provenance for that measurement.
+    overrides the run-level provenance for that measurement, and observation-level
+    conditions override run-level conditions key by key
+    (:meth:`effective_conditions`).
     """
 
+    model_config = CANONICAL_MODEL_CONFIG
+
+    # Declared first so it is the leading key in a serialized run: a reader can check
+    # what it is looking at before interpreting anything else. Required, not defaulted —
+    # an unversioned payload is refused rather than assumed to be v1 (see
+    # :func:`load_legacy_run` for the one path that may assume it).
+    schema_version: str
     run_id: str
     provenance: Provenance
     conditions: dict[str, JSONScalar] = Field(default_factory=dict)
     observations: list[Observation] = Field(default_factory=list)
     metadata: dict[str, JSONScalar] = Field(default_factory=dict)
 
+    @field_validator("schema_version")
+    @classmethod
+    def _version_is_well_formed(cls, v: str) -> str:
+        # Only the *shape* is enforced at construction. Whether this reader can interpret
+        # the version is a separate question (`validate_schema_version`), because a run
+        # may legitimately be constructed to be handed to a different reader.
+        parse_schema_version(v)
+        return v
+
     @field_validator("run_id")
     @classmethod
-    def _run_id_not_blank(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("run_id must not be empty")
+    def _run_id_is_namespaced(cls, v: str) -> str:
+        parse_run_id(v)
         return v
+
+    @model_validator(mode="after")
+    def _unknown_fields_require_a_newer_minor(self) -> ExperimentRun:
+        """Unknown fields are preserved only when the run claims a version we don't know.
+
+        At a version this reader fully implements there are no additive fields left to
+        carry, so an unknown key is a typo or a foreign shape and is refused. Preservation
+        (``extra="allow"``) exists for the forward-compatibility case, not as a general
+        invitation to attach arbitrary keys — ``metadata`` is the field for that.
+        """
+        major, minor = parse_schema_version(self.schema_version)
+        if major != SCHEMA_MAJOR or minor > SCHEMA_MINOR:
+            return self
+        unknown = _extra_field_paths(self)
+        if unknown:
+            raise ValueError(
+                f"run {self.run_id!r} declares schema_version {self.schema_version!r}, "
+                f"which this reader fully implements, but carries unknown fields: "
+                f"{', '.join(unknown)}. Use 'metadata' for extra keys, or declare a newer "
+                "minor version if these are additive schema fields."
+            )
+        return self
+
+    @property
+    def schema_is_compatible(self) -> bool:
+        """Can this process interpret the run's declared schema version?"""
+        return is_compatible(self.schema_version)
+
+    def require_compatible_schema(self) -> None:
+        """Raise :class:`SchemaVersionError` unless this run is readable here.
+
+        Consumers accepting runs from outside their own process (stored bundles, other
+        services, future ingestion) should call this before trusting field meanings.
+        """
+        validate_schema_version(self.schema_version)
+
+    @property
+    def run_namespace(self) -> str:
+        """The system that minted this run's identifier."""
+        return parse_run_id(self.run_id)[0]
+
+    @property
+    def run_local_id(self) -> str:
+        """The identifier local to :attr:`run_namespace`."""
+        return parse_run_id(self.run_id)[1]
+
+    def effective_conditions(self, observation: Observation) -> dict[str, JSONScalar]:
+        """Conditions in force at ``observation``: run-level defaults, then overrides.
+
+        The canonical resolver. Run-level conditions describe the whole run, so they are
+        the base; an observation states what changed at that time point, so its keys win.
+        A reader must never merge these by hand — two readers disagreeing about precedence
+        would silently disagree about what an experiment measured.
+        """
+        return {**self.conditions, **observation.conditions}
+
+
+def migrate_legacy_payload(
+    payload: Mapping[str, Any], *, namespace: str | None = None
+) -> dict[str, Any]:
+    """Add the implicit version to a payload serialized before versioning existed.
+
+    This is the *only* place :data:`LEGACY_SCHEMA_VERSION` may be assumed. A payload that
+    already declares a version is not a legacy payload and is refused, so this can never
+    be used to paper over a version that failed a compatibility check.
+
+    ``namespace`` optionally qualifies a pre-convention ``run_id`` that carries no
+    namespace. It is opt-in and never guessed: silently renaming an identifier a caller
+    may have stored elsewhere is worse than refusing it.
+    """
+    if "schema_version" in payload:
+        raise SchemaVersionError(
+            f"payload already declares schema_version "
+            f"{payload['schema_version']!r}; legacy migration is only for payloads "
+            "written before the version existed — validate it normally instead"
+        )
+    migrated: dict[str, Any] = {"schema_version": LEGACY_SCHEMA_VERSION, **payload}
+    run_id = migrated.get("run_id")
+    if namespace is not None and isinstance(run_id, str) and RUN_ID_SEPARATOR not in run_id:
+        migrated["run_id"] = make_run_id(namespace, run_id)
+    return migrated
+
+
+def load_legacy_run(payload: Mapping[str, Any], *, namespace: str | None = None) -> ExperimentRun:
+    """Load a pre-versioning payload as a v1 run. See :func:`migrate_legacy_payload`."""
+    return ExperimentRun.model_validate(migrate_legacy_payload(payload, namespace=namespace))

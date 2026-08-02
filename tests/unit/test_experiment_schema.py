@@ -8,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from virtualcell.core.experiment import (
+    SCHEMA_VERSION,
     AcquisitionMode,
     ElapsedTimePoint,
     ExperimentRun,
@@ -24,7 +25,8 @@ from virtualcell.core.experiment import (
 
 def _experiment_run() -> ExperimentRun:
     return ExperimentRun(
-        run_id="RUN-1",
+        schema_version=SCHEMA_VERSION,
+        run_id="experiment:RUN-1",
         provenance=Provenance(
             origin_kind=OriginKind.EXPERIMENT, acquisition_mode=AcquisitionMode.MANUAL
         ),
@@ -56,7 +58,8 @@ def test_experiment_manual_run_json_round_trips() -> None:
 
 def test_simulation_imported_run_json_round_trips() -> None:
     run = ExperimentRun(
-        run_id="SIM-7",
+        schema_version=SCHEMA_VERSION,
+        run_id="simulation:SIM-7",
         provenance=Provenance(
             origin_kind=OriginKind.SIMULATION,
             acquisition_mode=AcquisitionMode.IMPORTED,
@@ -135,6 +138,7 @@ def test_metadata_rejects_non_scalar_values() -> None:
 def test_run_id_must_not_be_blank() -> None:
     with pytest.raises(ValidationError):
         ExperimentRun(
+            schema_version=SCHEMA_VERSION,
             run_id="  ",
             provenance=Provenance(
                 origin_kind=OriginKind.EXPERIMENT, acquisition_mode=AcquisitionMode.MANUAL
@@ -146,7 +150,8 @@ def test_duplicate_time_points_are_preserved_as_replicates() -> None:
     # The canonical layer does not reject replicates; order and count are preserved.
     prov = Provenance(origin_kind=OriginKind.EXPERIMENT, acquisition_mode=AcquisitionMode.MANUAL)
     run = ExperimentRun(
-        run_id="R",
+        schema_version=SCHEMA_VERSION,
+        run_id="experiment:R",
         provenance=prov,
         observations=[
             Observation(time_point=PassageTimePoint(value=10), measurements=[]),

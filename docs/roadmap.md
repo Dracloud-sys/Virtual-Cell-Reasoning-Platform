@@ -353,9 +353,24 @@ Development is **benchmark-first**: fix the questions the platform must answer
 VCRP is a general biological experiment reasoning platform; immortalization is its first
 reference domain pack. The remaining platform layers, in order:
 
-- ▶ **PR12 — Canonical Experiment Schema v1.** A versioned, source-neutral experimental
-  representation that every domain and ingestion path converges on (building on the PR8a
-  `ExperimentRun` contract).
+- ✅ **PR12 — Canonical Experiment Schema v1.** The PR8a `ExperimentRun` contract is now
+  explicitly **versioned**: `schema_version` is *mandatory* on every run — an unversioned
+  payload is refused rather than assumed to be v1 forever, and pre-versioning payloads load
+  only through the explicit `load_legacy_run` migration. The `MAJOR.MINOR` policy is
+  documented and enforced: a newer *minor* is accepted (minors are additive) and its
+  unknown fields are **preserved** through validate → bundle → serialize rather than
+  silently dropped, while a different *major* is refused (`SchemaVersionError`) rather than
+  misread. The real producers and consumers are wired to it, not just the contract:
+  `literature.canonical` and `passage_series_to_run` emit the version explicitly,
+  `run_to_passage_series` validates before reading field meanings out of a structure it did
+  not build, `LiteratureEvidenceBundle` refuses an incompatible run at the
+  storage/transmission boundary, and `literature.ingestion` skips and reports one. Three v1
+  decisions land with it, ahead of PR13: **namespaced run identity** (`<namespace>:<local>`,
+  so two minting systems cannot collide), **typed measurement values** (numeric /
+  categorical / boolean, so a numeric assay cannot silently hold a string, read through
+  `Measurement.numeric_value()`), and **condition precedence** (observation-level keys
+  override run-level, resolved by the single `ExperimentRun.effective_conditions` helper).
+  Run checksums / content-hash dedup are deferred to PR13.
 - ▶ **PR13 — Structured raw-data ingestion, QC and normalization.** Assay-aware readers
   (CSV/XLSX, qPCR Ct, FCS, imaging, omics), quality control, and normalization into the
   canonical schema. **PR11 deliberately does not claim arbitrary raw-data interpretation.**

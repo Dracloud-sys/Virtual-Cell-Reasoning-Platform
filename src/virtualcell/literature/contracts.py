@@ -31,7 +31,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from virtualcell.core.experiment import ExperimentRun
+from virtualcell.core.experiment import ExperimentRun, SchemaVersionError
 
 # --- query -------------------------------------------------------------------
 
@@ -570,6 +570,27 @@ class LiteratureEvidenceBundle(BaseModel):
         if DiscoveryRunStatus.PROVIDER_ERROR in statuses:
             return DiscoveryRunStatus.PROVIDER_ERROR
         return None
+
+    @model_validator(mode="after")
+    def _canonical_runs_are_readable(self) -> LiteratureEvidenceBundle:
+        """Every canonical run in a bundle must be interpretable by this reader.
+
+        A bundle is the unit that gets stored, transmitted and re-read, so it is the right
+        boundary to refuse a run written against an incompatible schema major — otherwise
+        the mismatch would only surface much later, wherever someone consumed a field
+        whose meaning had changed.
+
+        Each run is judged **individually**: a version belongs to a run, not to the
+        container holding it, so a bundle carrying runs at different minors of the same
+        major is legal by design (older stored runs alongside newly produced ones).
+        Requiring one uniform minor would reject data that is perfectly readable.
+        """
+        for run in self.canonical_runs:
+            try:
+                run.require_compatible_schema()
+            except SchemaVersionError as exc:
+                raise ValueError(f"canonical run {run.run_id!r}: {exc}") from exc
+        return self
 
     @model_validator(mode="after")
     def _check_candidate_linkage(self) -> LiteratureEvidenceBundle:

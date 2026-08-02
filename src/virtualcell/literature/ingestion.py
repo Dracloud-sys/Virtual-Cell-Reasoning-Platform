@@ -27,7 +27,7 @@ import re
 
 from pydantic import BaseModel, Field
 
-from virtualcell.core.experiment import ExperimentRun
+from virtualcell.core.experiment import ExperimentRun, SchemaVersionError
 from virtualcell.knowledge.schema import (
     AssayResult,
     Interaction,
@@ -77,6 +77,14 @@ def ingest_runs(store: KnowledgeStore, runs: list[ExperimentRun]) -> IngestionRe
     seen_markers: set[str] = set()
     seen_assays: set[str] = set()
     for run in runs:
+        # A consumer that reads field *meanings* out of a run it did not build. An
+        # incompatible major is skipped rather than raised: one unreadable run must not
+        # abort ingestion of the rest, and the skip is reported so it is never silent.
+        try:
+            run.require_compatible_schema()
+        except SchemaVersionError as exc:
+            report.skipped.append(f"{run.run_id}: {exc}")
+            continue
         measurement, meta = _single_measurement(run)
         if measurement is None:
             report.skipped.append(f"{run.run_id}: no measurement to ingest")
