@@ -4,6 +4,30 @@ The Virtual Cell Platform is a coordinated ecosystem of specialized agents,
 biological knowledge bases, and simulation engines. It is deliberately **not** a
 single model. This document describes the layers and how they fit together.
 
+## What this platform is
+
+VCRP is a **general biological experiment reasoning platform**. Its long-term job is to
+accept experimental data, apply assay-aware QC and normalization, convert results into a
+canonical experimental representation, combine those observations with biological and
+literature evidence, support mechanistic reasoning and research decisions, and explain
+that reasoning at different levels of expertise.
+
+**Immortalization is the first validated reasoning vertical and the reference
+implementation — not the product's subject.** It exists to prove the pipeline end to end
+against a fixed benchmark; every other domain is meant to arrive the same way.
+
+PR11 establishes the boundary that makes that claim structural rather than aspirational:
+a domain-neutral query and dispatch layer through which immortalization is registered as
+the *first domain pack*. See [Platform boundary](#platform-boundary-virtualcellplatform).
+
+### What is not claimed yet
+
+PR11 accepts a **normalised** experiment payload — the shape existing agents already
+consume. It does **not** claim to interpret arbitrary raw assay files. Structured raw-data
+ingestion (CSV/XLSX, qPCR Ct, FCS, imaging, omics), QC and normalization are PR13 work,
+and non-expert knowledge-learning explanations are a later platform layer still. The
+roadmap records the sequence.
+
 ## Layered view
 
 ```
@@ -328,6 +352,111 @@ Source-grounded extraction (PR8c), the deterministic verification gate (PR8d-1),
 conversion of verified measurements (PR8d-2), reviewed weak-evidence ingestion (PR8e) and
 the integrated KB→discovery→evidence query orchestrator (PR9) are now in place. A paper is
 never treated as true merely because it was read.
+
+## Platform boundary (`virtualcell.platform`)
+
+PR11 introduces the domain-neutral seam every interface goes through:
+
+```
+                 API  (POST /reasoning/query)      CLI  (virtualcell query)
+                                  │                        │
+                                  └────────────┬───────────┘
+                                               ▼
+                                    ReasoningService.query()      one application service
+                                               │
+                                               ▼
+                                        DomainRegistry            resolve domain + task
+                                               │
+                                               ▼
+                                          DomainPack              per-vertical adapter
+                                               │
+                                               ▼
+                              ImmortalizationAssessmentAgent      the real product path
+```
+
+* **`platform.contracts`** — `ReasoningQuery` (domain, task, optional question, normalised
+  `experiment`, validated `explanation_level`, explicit `allow_literature`, typed
+  `target_measurements`) and `ReasoningResponse`, a domain-neutral envelope carrying
+  observations, quality findings, interpretations, evidence (as tiered `Claim`s with
+  citations), mechanistic links, missing information, decision support, recommended
+  validation and next experiments, limitations, overinterpretation risks, literature
+  outcome, and provenance. Nothing is flattened to prose: the vertical's native report is
+  preserved verbatim in `domain_details`, so normalisation can never lose meaning.
+* **`platform.domains`** — the `DomainPack` protocol and `DomainRegistry`. The registry
+  holds **no** scientific rules and never falls back to a default domain: an unregistered
+  domain raises `UnknownDomainError`, a registered domain that cannot do the task raises
+  `UnsupportedTaskError`. A test asserts the registry's executable code mentions no domain
+  concept at all.
+* **`platform.service`** — `ReasoningService`, the single application entry point used by
+  both API and CLI. It owns domain resolution, task dispatch, literature orchestration and
+  provider-outcome mapping, provenance assembly — and no biological rules.
+* **`platform.packs.immortalization`** — the first domain pack. A thin adapter that calls
+  `ImmortalizationAssessmentAgent.assess` (the same path PR10b aligned the benchmark to)
+  and converts its `DecisionReport` into the envelope. It re-derives nothing: status,
+  claims, tiers, citations, limitations and mechanistic links come from the agent
+  unchanged, so PR10's claim boundaries and the Q5/Q6/Q9 corrections survive intact.
+* **`platform.bootstrap`** — the single registration point.
+
+### Literature is optional, and a failure is never evidence
+
+The literature agent is composed in the **real** API and CLI paths (defaulting to the
+Europe PMC provider), so `allow_literature=true` can actually retrieve; both surfaces keep
+dependency injection for tests. `allow_literature=false` performs no external retrieval at
+all — the CLI does not even construct a provider.
+
+When it is true, the service reuses the existing evidence orchestrator (so PR9/PR10a
+weak-ingestion and never-established semantics apply unchanged) and reports the outcome as
+a distinguishable `LiteratureStatus`: `not_requested`, `unavailable` (requested but no
+provider wired), `success`, `zero_results`, `provider_error`, `timeout`.
+
+A **timeout is typed end to end** rather than collapsed into a generic failure:
+`UrllibTransport` raises `ProviderTimeoutError` (a `ProviderError` subclass, so existing
+handlers keep working) for both read timeouts and connect timeouts wrapped in
+`URLError(reason=TimeoutError)`; `EuropePmcProvider` preserves the subclass through its
+retry loop and defensively translates any raw error a third-party transport leaks; the
+agent records `DiscoveryRunStatus.PROVIDER_TIMEOUT` on the bundle; and the service maps it
+to `LiteratureStatus.TIMEOUT`. That distinction matters operationally — a timeout is
+usually worth retrying, a hard error usually is not.
+
+**Evidence is attached only on success** — enforced by a model validator on
+`LiteratureOutcome`, not by convention, so a failed retrieval cannot be constructed with
+evidence attached. It is kept separate from the domain's own evidence and retains its weak
+pending-review tier and citations. "We could not look" is never reported as "we looked and
+found nothing", including when the discovery agent absorbs a provider failure internally.
+
+### Adding a domain pack
+
+A second vertical requires **no API, CLI, contract, or service change** — only a pack and
+one registration line:
+
+```python
+# virtualcell/platform/packs/adipogenesis.py
+class AdipogenesisDomainPack:
+    domain = "adipogenesis"
+    supported_tasks = ("assess_state",)
+
+    def execute(self, query, store):
+        report = AdipogenesisAgent(store=store).assess(...)   # that vertical's own path
+        return ReasoningResponse(...)                          # the shared envelope
+
+# virtualcell/platform/bootstrap.py
+def default_registry() -> DomainRegistry:
+    registry = DomainRegistry()
+    registry.register(ImmortalizationDomainPack())
+    registry.register(AdipogenesisDomainPack())    # <- the only line added
+    return registry
+```
+
+It is then immediately addressable as `{"domain": "adipogenesis", "task": "assess_state"}`
+over both `POST /reasoning/query` and `virtualcell query`.
+
+### Current limitation: `explanation_level`
+
+The level is validated and carried end to end, but PR11 does **not** yet let it change the
+scientific content of a response. Re-pitching an evidence-graded report for a non-expert
+without softening claims needs a knowledge-learning layer that does not exist yet, so the
+level is preserved as request provenance and no explanation is fabricated to fill the
+schema. A test pins that novice and expert responses are scientifically identical today.
 
 ## Orchestration (`virtualcell.orchestration`)
 

@@ -45,6 +45,31 @@ class ProviderError(RuntimeError):
         self.query_sent = query_sent
 
 
+class ProviderTimeoutError(ProviderError):
+    """The provider did not answer in time.
+
+    A *subclass* of :class:`ProviderError`, so every existing handler keeps working
+    unchanged, while a caller that cares can tell "the provider is slow or unreachable"
+    from "the provider answered with an error". The two warrant different responses — a
+    timeout is often worth retrying, a hard error usually is not — and collapsing them
+    would make a real Europe PMC timeout indistinguishable from a malformed response.
+    """
+
+
+def is_timeout(exc: BaseException) -> bool:
+    """Is this exception (or the reason it wraps) a timeout?
+
+    ``urllib`` reports a read timeout as a bare :class:`TimeoutError`, but a *connect*
+    timeout arrives wrapped in ``URLError(reason=TimeoutError(...))``, so the wrapped
+    reason has to be inspected too. (``socket.timeout`` is an alias of ``TimeoutError``
+    on Python 3.10+.)
+    """
+    if isinstance(exc, TimeoutError):
+        return True
+    reason = getattr(exc, "reason", None)
+    return isinstance(reason, TimeoutError)
+
+
 @dataclass(frozen=True)
 class HttpResponse:
     status_code: int
@@ -85,6 +110,10 @@ class UrllibTransport:
             body = exc.read().decode("utf-8", "replace") if exc.fp else ""
             return HttpResponse(status_code=exc.code, text=body)
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            if is_timeout(exc):
+                raise ProviderTimeoutError(
+                    f"timed out after {timeout}s fetching {url}: {exc}"
+                ) from exc
             raise ProviderError(f"transport error fetching {url}: {exc}") from exc
 
 

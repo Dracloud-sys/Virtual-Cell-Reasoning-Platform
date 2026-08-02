@@ -42,7 +42,9 @@ from virtualcell.literature.providers.base import (
     HttpResponse,
     HttpTransport,
     ProviderError,
+    ProviderTimeoutError,
     UrllibTransport,
+    is_timeout,
 )
 
 _BASE = "https://www.ebi.ac.uk/europepmc/webservices/rest"
@@ -89,7 +91,19 @@ class EuropePmcProvider:
             try:
                 response = self.transport.get(url, timeout=self.timeout)
             except ProviderError as exc:
+                # Already typed (including ProviderTimeoutError) — keep the subclass so
+                # a timeout stays distinguishable after the retry loop.
                 last = exc
+            except (TimeoutError, OSError) as exc:
+                # Defensive: the transport protocol says raise ProviderError, but an
+                # injected or third-party transport may leak a raw error. Translating
+                # here keeps a timeout typed instead of escaping uncaught and crashing
+                # the run that should have produced a failure bundle.
+                last = (
+                    ProviderTimeoutError(f"europe_pmc request timed out: {exc}")
+                    if is_timeout(exc)
+                    else ProviderError(f"europe_pmc transport error: {exc}")
+                )
             else:
                 if response.ok or response.status_code in ok_statuses:
                     return response

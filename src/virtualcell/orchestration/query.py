@@ -66,6 +66,14 @@ class OrchestratedAnswer(BaseModel):
     literature_facts: list[GroundedFact] = Field(default_factory=list)
     ingestion: IngestionReport | None = None
     resolution: ResolutionReport | None = None
+    # The discovery run's own outcome (``success``/``zero_results``/``provider_error``)
+    # when literature was consulted. Carried so a caller can tell "we could not look"
+    # from "we looked and found nothing" — the two must never be conflated.
+    literature_run_status: str | None = None
+    # Per-document fetch failures during an otherwise successful *search*. A search can
+    # succeed while every document behind it times out; without this the run would look
+    # like a genuine zero-result.
+    literature_document_failure: str | None = None
 
 
 def _is_target_token(token: str) -> bool:
@@ -151,6 +159,19 @@ class EvidenceQueryOrchestrator:
 
         return await self._augment_with_literature(question, target_measurements)
 
+    async def augment_with_literature(
+        self, question: str, target_measurements: list[str] | None = None
+    ) -> OrchestratedAnswer:
+        """Consult literature directly, bypassing the KB-first gate.
+
+        :meth:`answer` reaches for literature only on a KB *miss*, which is right for
+        question answering. A caller that has already reasoned by other means and is
+        explicitly asking for supplementary literature (the platform query boundary, with
+        ``allow_literature=true``) must not have that request silently skipped just
+        because the KB happens to match — so it enters here instead.
+        """
+        return await self._augment_with_literature(question, target_measurements)
+
     async def _augment_with_literature(
         self, question: str, target_measurements: list[str] | None
     ) -> OrchestratedAnswer:
@@ -176,6 +197,9 @@ class EvidenceQueryOrchestrator:
         facts = [self._assay_fact(self.store.get(a)) for a in ingestion.assay_results]
         facts = [f for f in facts if f is not None]
 
+        run_status = bundle.run_status.value
+        worst = bundle.worst_document_failure
+        document_failure = worst.value if worst is not None else None
         if not facts:
             return OrchestratedAnswer(
                 question=question,
@@ -187,9 +211,17 @@ class EvidenceQueryOrchestrator:
                 literature_consulted=True,
                 ingestion=ingestion,
                 resolution=resolution,
+                literature_run_status=run_status,
+                literature_document_failure=document_failure,
             )
         return self._literature_answer(
-            question, facts, ingestion=ingestion, resolution=resolution, consulted=True
+            question,
+            facts,
+            ingestion=ingestion,
+            resolution=resolution,
+            consulted=True,
+            run_status=run_status,
+            document_failure=document_failure,
         )
 
     def _literature_answer(
@@ -200,6 +232,8 @@ class EvidenceQueryOrchestrator:
         ingestion: IngestionReport | None,
         consulted: bool,
         resolution: ResolutionReport | None = None,
+        run_status: str | None = None,
+        document_failure: str | None = None,
     ) -> OrchestratedAnswer:
         rendered = "\n".join(f"- {f.statement} [{f.citation}]" for f in facts)
         return OrchestratedAnswer(
@@ -214,6 +248,8 @@ class EvidenceQueryOrchestrator:
             literature_facts=facts,
             ingestion=ingestion,
             resolution=resolution,
+            literature_run_status=run_status,
+            literature_document_failure=document_failure,
         )
 
     def _existing_literature_facts(self, seeds: list) -> list[GroundedFact]:

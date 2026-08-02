@@ -37,6 +37,14 @@ async def lifespan(app: FastAPI):
         # the ImmortalizationAssessmentAgent can be grounded via the API.
         load_into(ImmortalizationSeedSource(), store)
     app.state.knowledge_store = store
+
+    # The literature agent is composed here (defaulting to the real Europe PMC provider)
+    # so ``allow_literature=true`` can actually retrieve. Constructing it performs no I/O;
+    # nothing is contacted unless a request opts in. Tests override
+    # ``app.state.literature_agent`` to inject a fake provider.
+    from virtualcell.agents.literature_discovery.agent import LiteratureDiscoveryAgent
+
+    app.state.literature_agent = LiteratureDiscoveryAgent()
     yield
 
 
