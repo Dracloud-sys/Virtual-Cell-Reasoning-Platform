@@ -579,6 +579,11 @@ class LiteratureEvidenceBundle(BaseModel):
         boundary to refuse a run written against an incompatible schema major — otherwise
         the mismatch would only surface much later, wherever someone consumed a field
         whose meaning had changed.
+
+        Each run is judged **individually**: a version belongs to a run, not to the
+        container holding it, so a bundle carrying runs at different minors of the same
+        major is legal by design (older stored runs alongside newly produced ones).
+        Requiring one uniform minor would reject data that is perfectly readable.
         """
         for run in self.canonical_runs:
             try:

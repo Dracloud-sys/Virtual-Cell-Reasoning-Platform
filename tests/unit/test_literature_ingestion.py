@@ -171,6 +171,7 @@ def test_empty_runs_leave_the_store_untouched(document) -> None:
 
 def test_run_without_a_measurement_is_skipped(document) -> None:
     from virtualcell.core.experiment import (
+        SCHEMA_VERSION,
         AcquisitionMode,
         ExperimentRun,
         OriginKind,
@@ -178,6 +179,7 @@ def test_run_without_a_measurement_is_skipped(document) -> None:
     )
 
     empty_run = ExperimentRun(
+        schema_version=SCHEMA_VERSION,
         run_id="literature:empty",
         provenance=Provenance(
             origin_kind=OriginKind.EXPERIMENT, acquisition_mode=AcquisitionMode.IMPORTED

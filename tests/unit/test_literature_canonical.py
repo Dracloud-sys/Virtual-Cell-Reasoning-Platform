@@ -12,7 +12,7 @@ from virtualcell.core.experiment import (
     OriginKind,
 )
 from virtualcell.literature.canonical import (
-    RUN_ID_PREFIX,
+    RUN_NAMESPACE,
     SOURCE_SYSTEM,
     experiment_runs_from_verified,
 )
@@ -234,7 +234,7 @@ def test_run_ids_are_deterministic_and_prefixed(document) -> None:
     first = experiment_runs_from_verified(measurements, decisions)
     second = experiment_runs_from_verified(measurements, decisions)
     assert [r.run_id for r in first] == [r.run_id for r in second]
-    assert all(r.run_id.startswith(f"{RUN_ID_PREFIX}:") for r in first)
+    assert all(r.run_id.startswith(f"{RUN_NAMESPACE}:") for r in first)
 
 
 def test_duplicate_input_collapses_to_one_run(document) -> None:

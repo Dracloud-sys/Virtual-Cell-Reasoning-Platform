@@ -24,9 +24,11 @@ from virtualcell.agents.immortalization.models import (
     PassageObservation,
 )
 from virtualcell.core.experiment import (
+    SCHEMA_VERSION,
     AcquisitionMode,
     ExperimentRun,
     Measurement,
+    MeasurementTypeError,
     Observation,
     OriginKind,
     PassageTimePoint,
@@ -110,14 +112,16 @@ def passage_observation_to_canonical(obs: PassageObservation) -> Observation:
 def _numeric_value(measurement: Measurement) -> float:
     """Validate a recognized measurement's value and unit, returning a float.
 
-    No unit conversion is performed: a present unit must equal the expected one
-    (an unsupported unit is rejected, never silently reinterpreted).
+    The type check is the schema's (:meth:`Measurement.numeric_value`) rather than a
+    hand-rolled guard here, so every consumer refuses a string-valued numeric assay the
+    same way. Unit handling stays local: no conversion is performed, and a present unit
+    must equal the expected one (an unsupported unit is rejected, never silently
+    reinterpreted).
     """
-    value = measurement.value
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise CanonicalAdapterError(
-            f"measurement {measurement.name!r} must be numeric, got {type(value).__name__}"
-        )
+    try:
+        value = measurement.numeric_value()
+    except MeasurementTypeError as exc:
+        raise CanonicalAdapterError(str(exc)) from exc
     expected = _UNIT[measurement.name]
     if measurement.unit is not None and measurement.unit != expected:
         raise CanonicalAdapterError(
@@ -171,8 +175,15 @@ def passage_series_to_run(
     provenance: Provenance | None = None,
     conditions: dict[str, Any] | None = None,
 ) -> ExperimentRun:
-    """Wrap a passage series as a canonical :class:`ExperimentRun` (order preserved)."""
+    """Wrap a passage series as a canonical :class:`ExperimentRun` (order preserved).
+
+    ``run_id`` must follow the canonical ``<namespace>:<local_id>`` convention; this
+    adapter does not invent a namespace on the caller's behalf.
+    """
     return ExperimentRun(
+        # Stated explicitly: this is a *producer* of canonical runs, and the version it
+        # wrote against must be visible at the construction site.
+        schema_version=SCHEMA_VERSION,
         run_id=run_id,
         provenance=provenance or _default_provenance(),
         conditions=conditions or {},

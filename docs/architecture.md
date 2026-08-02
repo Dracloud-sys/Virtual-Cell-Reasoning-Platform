@@ -155,12 +155,18 @@ reconciliation, or status judgment.
 
 ### Canonical Experiment Schema v1 (PR12)
 
-Every run declares the contract it was written against —
-`ExperimentRun.schema_version`, defaulting to `SCHEMA_VERSION` (`"1.0"`) and serialized as
-the *leading* key so a reader can see what it is looking at before interpreting anything
-else. This matters because the schema is the convergence point: literature evidence,
-domain packs, and (from PR13) raw-assay ingestion all produce or consume it, and a silent
-shape change would corrupt data that no single module owns.
+Every run declares the contract it was written against — `ExperimentRun.schema_version`,
+serialized as the *leading* key so a reader can see what it is looking at before
+interpreting anything else. This matters because the schema is the convergence point:
+literature evidence, domain packs, and (from PR13) raw-assay ingestion all produce or
+consume it, and a silent shape change would corrupt data that no single module owns.
+
+**The version is mandatory.** It has no default: an unversioned payload arriving at a
+storage or transmission boundary is refused rather than assumed to be v1 forever. Payloads
+written before versioning existed load through one explicit path — `load_legacy_run` /
+`migrate_legacy_payload` — which injects `LEGACY_SCHEMA_VERSION` for exactly that case and
+refuses a payload that already declares a version, so migration can never paper over a
+version that failed a compatibility check.
 
 **Compatibility policy** (`MAJOR.MINOR`):
 
@@ -174,22 +180,57 @@ is still present and correctly typed, and refusing structurally valid data would
 more damaging failure. Refusing a different major is equally deliberate — silently reading
 a v2 payload as v1 would corrupt the meaning of the data.
 
+**Forward compatibility is preservation, not tolerance.** Accepting a newer minor is only
+honest if the unknown fields survive it. Every canonical model sets `extra="allow"`, so a
+v1.0 reader can validate a v1.1 payload, bundle it, serialize it and hand it on with the
+v1.1 additions intact — instead of dropping them while still declaring
+`schema_version="1.1"`. The run is the version-bearing unit, so the strictness check lives
+there: at a version this reader *fully* implements there are no additive fields left to
+carry, so an unknown key anywhere in the run is a typo and is refused (`metadata` is the
+field for arbitrary keys). Unknown fields are preserved without complaint only when the run
+declares a newer minor.
+
+**Mixed-minor collections are legal.** A version belongs to a run, not to its container, so
+a bundle may carry runs at different minors of the same major (older stored runs alongside
+newly produced ones). Containers validate each run individually.
+
 The policy is enforced where it matters rather than only declared:
 
-* `literature.canonical` **emits** v1 explicitly (literature is a producer of canonical
-  runs, so the version it wrote against is visible at the construction site);
+* `literature.canonical` and `immortalization.adapters.passage_series_to_run` **emit** the
+  version explicitly at the construction site;
 * `immortalization.adapters.run_to_passage_series` **validates before reading** — it pulls
   passage numbers, PDL and doubling times out of a structure it did not build, where an
   incompatible major could yield a plausible-looking but wrong trajectory;
 * `LiteratureEvidenceBundle` **refuses** an incompatible canonical run, because a bundle is
-  the unit that gets stored, transmitted and re-read.
+  the unit that gets stored, transmitted and re-read;
+* `literature.ingestion` **skips and reports** an incompatible run rather than raising, so
+  one unreadable run cannot abort ingestion of the rest.
 
-Fully additive: runs serialized before PR12 carry no version and default to v1.
+### Identity, value typing and conditions
+
+Three v1 decisions that are far cheaper to make before PR13 ingestion and a second domain
+pack start minting runs:
+
+* **Run identity is namespaced** — `run_id` is `<namespace>:<local_id>` (`make_run_id` /
+  `parse_run_id`). The namespace names the minting system, so an ingestion run and a
+  literature run cannot collide. Only the first separator delimits, so a DOI-keyed local id
+  keeps its own colons.
+* **Measurement values are typed** — `MeasurementValueType` distinguishes `numeric`,
+  `categorical` and `boolean`. The type is inferred when a producer does not state it and
+  *verified* when it does, so a numeric assay whose value arrived as `"24.0"` is refused at
+  the boundary. Consumers read numbers through `Measurement.numeric_value()`, the single
+  place a measurement becomes a float: a numeric-looking string is refused rather than
+  parsed, and a boolean is refused rather than promoted to 1/0.
+* **Conditions compose, observation-first** — run-level conditions are defaults for the
+  whole run; observation-level keys override them per time point. There is one canonical
+  resolver, `ExperimentRun.effective_conditions(observation)`, so two readers cannot
+  silently disagree about what an experiment measured.
+
+Deferred to PR13: run checksums / content-hash dedup.
 
 Scope today: this is the *foundation contract, its version policy, and the first adapter*.
 It does **not** yet connect a real simulator, robot, or LIMS, and the existing
-immortalization input/API/CLI are unchanged — the canonical schema is additive, not a
-migration. Raw-assay ingestion and QC land in PR13.
+immortalization input/API/CLI are unchanged. Raw-assay ingestion and QC land in PR13.
 
 ## Literature discovery (`virtualcell.literature`)
 
