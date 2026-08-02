@@ -25,6 +25,7 @@ from __future__ import annotations
 import re
 
 from virtualcell.core.experiment import (
+    SCHEMA_VERSION,
     AcquisitionMode,
     ExperimentRun,
     Measurement,
@@ -193,6 +194,9 @@ def _run_from_measurement(
         conditions=_conditions(measurement),
     )
     return ExperimentRun(
+        # Stated explicitly rather than relying on the default: literature is a *producer*
+        # of canonical runs, and the version it wrote against should be visible here.
+        schema_version=SCHEMA_VERSION,
         run_id=f"{RUN_ID_PREFIX}:{measurement.candidate_id}",
         provenance=provenance,
         conditions=_conditions(measurement),

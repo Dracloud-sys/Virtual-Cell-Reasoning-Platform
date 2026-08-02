@@ -16,15 +16,38 @@ nothing from ``agents`` or ``reasoning`` (no ``DecisionReport``/trajectory types
 so verticals depend on it, never the reverse. It knows how to *hold* an
 observation, not how to judge one.
 
-Scope of this first PR: a typed, JSON-round-trippable contract only. No
-simulator/robot/LIMS connectors, no ingest, no normalization, no reasoning.
+Scope: a typed, JSON-round-trippable contract only. No simulator/robot/LIMS
+connectors, no ingest, no normalization, no reasoning.
+
+Canonical Experiment Schema v1 (PR12)
+-------------------------------------
+
+Every run now carries an explicit :attr:`ExperimentRun.schema_version`, so a stored or
+transmitted run states which contract it was written against instead of leaving readers to
+guess. That matters because this schema is the convergence point: literature evidence,
+domain packs, and (from PR13) raw-assay ingestion all produce or consume it, and a silent
+shape change would corrupt data no single module owns.
+
+**Compatibility policy.** The version is ``MAJOR.MINOR``:
+
+* **MINOR** increments are *additive* — new optional fields only. A reader accepts any
+  minor of its own major, including a *newer* one: unknown additive fields are simply not
+  consumed, which is safer than refusing data that is structurally fine.
+* **MAJOR** increments are *breaking* — renamed, removed, or re-typed fields. A reader
+  refuses a different major outright (:class:`SchemaVersionError`) rather than
+  misinterpreting it. Failing loudly beats silently reading a v2 payload as v1.
+
+Producers should leave :attr:`ExperimentRun.schema_version` at its default; consumers that
+accept runs from outside their own process should call :func:`validate_schema_version`
+before trusting the shape.
 """
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Literal
+from typing import Annotated, Final, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -32,6 +55,55 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 # maps. Nested structures, arrays, and binary payloads are intentionally excluded
 # from this first contract (they belong to a future artifact-reference model).
 JSONScalar = str | int | float | bool | None
+
+# --- schema version ----------------------------------------------------------
+
+SCHEMA_MAJOR: Final = 1
+SCHEMA_MINOR: Final = 0
+SCHEMA_VERSION: Final = f"{SCHEMA_MAJOR}.{SCHEMA_MINOR}"
+"""The canonical experiment schema version this module implements."""
+
+_VERSION_PATTERN = re.compile(r"^(\d+)\.(\d+)$")
+
+
+class SchemaVersionError(ValueError):
+    """Raised when a run declares a schema version this reader cannot interpret."""
+
+
+def parse_schema_version(version: str) -> tuple[int, int]:
+    """Split a ``MAJOR.MINOR`` version string, rejecting anything malformed."""
+    match = _VERSION_PATTERN.match(version or "")
+    if match is None:
+        raise SchemaVersionError(
+            f"malformed schema_version {version!r}; expected 'MAJOR.MINOR' "
+            f"(e.g. {SCHEMA_VERSION!r})"
+        )
+    return int(match.group(1)), int(match.group(2))
+
+
+def is_compatible(version: str) -> bool:
+    """Can this reader interpret ``version``? Same major, any minor."""
+    try:
+        major, _minor = parse_schema_version(version)
+    except SchemaVersionError:
+        return False
+    return major == SCHEMA_MAJOR
+
+
+def validate_schema_version(version: str) -> None:
+    """Raise :class:`SchemaVersionError` unless ``version`` is readable here.
+
+    A *newer minor* is accepted deliberately: minors are additive, so the fields this
+    reader knows about are still present and correctly typed, and refusing structurally
+    valid data would be the more damaging failure. A different *major* is refused, because
+    silently reading a v2 payload as v1 would corrupt the meaning of the data.
+    """
+    major, _minor = parse_schema_version(version)
+    if major != SCHEMA_MAJOR:
+        raise SchemaVersionError(
+            f"incompatible canonical experiment schema: run declares {version!r}, "
+            f"this reader implements {SCHEMA_VERSION!r} (major {SCHEMA_MAJOR})"
+        )
 
 
 class OriginKind(StrEnum):
@@ -189,11 +261,36 @@ class ExperimentRun(BaseModel):
     overrides the run-level provenance for that measurement.
     """
 
+    # Declared first so it is the leading key in a serialized run: a reader can check
+    # what it is looking at before interpreting anything else.
+    schema_version: str = SCHEMA_VERSION
     run_id: str
     provenance: Provenance
     conditions: dict[str, JSONScalar] = Field(default_factory=dict)
     observations: list[Observation] = Field(default_factory=list)
     metadata: dict[str, JSONScalar] = Field(default_factory=dict)
+
+    @field_validator("schema_version")
+    @classmethod
+    def _version_is_well_formed(cls, v: str) -> str:
+        # Only the *shape* is enforced at construction. Whether this reader can interpret
+        # the version is a separate question (`validate_schema_version`), because a run
+        # may legitimately be constructed to be handed to a different reader.
+        parse_schema_version(v)
+        return v
+
+    @property
+    def schema_is_compatible(self) -> bool:
+        """Can this process interpret the run's declared schema version?"""
+        return is_compatible(self.schema_version)
+
+    def require_compatible_schema(self) -> None:
+        """Raise :class:`SchemaVersionError` unless this run is readable here.
+
+        Consumers accepting runs from outside their own process (stored bundles, other
+        services, future ingestion) should call this before trusting field meanings.
+        """
+        validate_schema_version(self.schema_version)
 
     @field_validator("run_id")
     @classmethod

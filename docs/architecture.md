@@ -153,9 +153,43 @@ a discriminated `TimePoint`, scalar `Measurement` + `Provenance`, `Observation`,
 `PassageObservation`; it only reshapes data and performs no trajectory extraction,
 reconciliation, or status judgment.
 
-Scope today: this is the *foundation contract plus the first adapter*. It does **not**
-yet connect a real simulator, robot, or LIMS, and the existing immortalization
-input/API/CLI are unchanged — the canonical schema is additive, not a migration.
+### Canonical Experiment Schema v1 (PR12)
+
+Every run declares the contract it was written against —
+`ExperimentRun.schema_version`, defaulting to `SCHEMA_VERSION` (`"1.0"`) and serialized as
+the *leading* key so a reader can see what it is looking at before interpreting anything
+else. This matters because the schema is the convergence point: literature evidence,
+domain packs, and (from PR13) raw-assay ingestion all produce or consume it, and a silent
+shape change would corrupt data that no single module owns.
+
+**Compatibility policy** (`MAJOR.MINOR`):
+
+| change | version | reader behaviour |
+|---|---|---|
+| new optional fields | MINOR | **accepted**, including a newer minor than the reader's own |
+| renamed / removed / re-typed fields | MAJOR | **refused** with `SchemaVersionError` |
+
+Accepting a newer minor is deliberate: minors are additive, so every field the reader knows
+is still present and correctly typed, and refusing structurally valid data would be the
+more damaging failure. Refusing a different major is equally deliberate — silently reading
+a v2 payload as v1 would corrupt the meaning of the data.
+
+The policy is enforced where it matters rather than only declared:
+
+* `literature.canonical` **emits** v1 explicitly (literature is a producer of canonical
+  runs, so the version it wrote against is visible at the construction site);
+* `immortalization.adapters.run_to_passage_series` **validates before reading** — it pulls
+  passage numbers, PDL and doubling times out of a structure it did not build, where an
+  incompatible major could yield a plausible-looking but wrong trajectory;
+* `LiteratureEvidenceBundle` **refuses** an incompatible canonical run, because a bundle is
+  the unit that gets stored, transmitted and re-read.
+
+Fully additive: runs serialized before PR12 carry no version and default to v1.
+
+Scope today: this is the *foundation contract, its version policy, and the first adapter*.
+It does **not** yet connect a real simulator, robot, or LIMS, and the existing
+immortalization input/API/CLI are unchanged — the canonical schema is additive, not a
+migration. Raw-assay ingestion and QC land in PR13.
 
 ## Literature discovery (`virtualcell.literature`)
 

@@ -353,9 +353,16 @@ Development is **benchmark-first**: fix the questions the platform must answer
 VCRP is a general biological experiment reasoning platform; immortalization is its first
 reference domain pack. The remaining platform layers, in order:
 
-- ▶ **PR12 — Canonical Experiment Schema v1.** A versioned, source-neutral experimental
-  representation that every domain and ingestion path converges on (building on the PR8a
-  `ExperimentRun` contract).
+- ✅ **PR12 — Canonical Experiment Schema v1.** The PR8a `ExperimentRun` contract is now
+  explicitly **versioned**: `SCHEMA_VERSION = "1.0"` on every run, with a documented
+  `MAJOR.MINOR` compatibility policy — a newer *minor* is accepted (minors are additive, so
+  known fields are still present and correctly typed), a different *major* is refused
+  (`SchemaVersionError`) rather than silently misread. The real producers and consumers are
+  wired to it, not just the contract: `literature.canonical` emits v1,
+  `immortalization.adapters.run_to_passage_series` validates before reading field meanings
+  out of a structure it did not build, and `LiteratureEvidenceBundle` refuses an
+  incompatible canonical run at the storage/transmission boundary. Fully additive — runs
+  serialized before PR12 carry no version and default to v1.
 - ▶ **PR13 — Structured raw-data ingestion, QC and normalization.** Assay-aware readers
   (CSV/XLSX, qPCR Ct, FCS, imaging, omics), quality control, and normalization into the
   canonical schema. **PR11 deliberately does not claim arbitrary raw-data interpretation.**

@@ -185,5 +185,11 @@ def run_to_passage_series(run: ExperimentRun, *, strict: bool = True) -> list[Pa
 
     The result is exactly what ``extract_trajectory`` consumes, so a canonical run
     can drive the existing immortalization pipeline unchanged.
+
+    The run's schema version is checked **first**: this reads field meanings (passage
+    numbers, PDL, doubling times) out of a structure it did not build, and a run written
+    against an incompatible major version could silently yield a plausible-looking but
+    wrong trajectory. Refusing is the only safe response (:class:`SchemaVersionError`).
     """
+    run.require_compatible_schema()
     return [canonical_to_passage_observation(o, strict=strict) for o in run.observations]
