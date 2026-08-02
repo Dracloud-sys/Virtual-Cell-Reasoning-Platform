@@ -26,7 +26,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from virtualcell.core.evidence import Claim
 from virtualcell.reasoning.explain import MechanisticLink
@@ -65,7 +65,16 @@ class LiteratureStatus(StrEnum):
 
 
 class ReasoningQuery(BaseModel):
-    """A domain-neutral request for reasoning over experimental evidence."""
+    """A domain-neutral request for reasoning over experimental evidence.
+
+    Unknown top-level fields are **rejected**, not ignored: a misspelled control field
+    (``allow_litrature``, ``explanation_lvl``) would otherwise silently fall back to its
+    default and change what the platform does — retrieving no literature, or answering at
+    the wrong level — with no signal to the caller. ``experiment`` stays deliberately open
+    because its keys belong to the domain, not to this contract.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     domain: str
     task: str
@@ -131,6 +140,21 @@ class LiteratureOutcome(BaseModel):
     provider: str | None = None
     detail: str | None = None
     evidence: list[Claim] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _evidence_requires_success(self) -> LiteratureOutcome:
+        """Enforce the invariant structurally, not by convention.
+
+        A future caller (or a careless refactor) must not be able to construct an outcome
+        that attaches evidence to a failed or skipped retrieval — that is exactly how a
+        provider outage would turn into scientific support.
+        """
+        if self.evidence and self.status is not LiteratureStatus.SUCCESS:
+            raise ValueError(
+                f"literature evidence is only valid with status 'success', got "
+                f"{self.status.value!r} with {len(self.evidence)} claim(s)"
+            )
+        return self
 
 
 class QueryProvenance(BaseModel):

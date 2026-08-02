@@ -21,6 +21,7 @@ from pydantic import ValidationError
 
 from virtualcell.agents.immortalization.adapters import input_from_scenario
 from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
+from virtualcell.agents.immortalization.models import ImmortalizationAssessmentInput
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.platform.contracts import (
     DecisionSupport,
@@ -63,15 +64,36 @@ class ImmortalizationDomainPack:
     def execute(self, query: ReasoningQuery, store: KnowledgeStore) -> ReasoningResponse:
         data = self._to_assessment_input(query)
         report = ImmortalizationAssessmentAgent(store=store).assess(data)
-        return self._to_response(query, report)
+        return self._to_response(query, report, data)
 
     # --- request adaptation --------------------------------------------------
 
     def _to_assessment_input(self, query: ReasoningQuery):
         experiment = dict(query.experiment)
-        intent = _FIXED_INTENT.get(query.task) or experiment.pop("intent", _DEFAULT_ASSESS_INTENT)
-        # A fixed-intent task must not be contradicted by a stray payload intent.
-        experiment.pop("intent", None)
+        payload_intent = experiment.pop("intent", None)
+        fixed = _FIXED_INTENT.get(query.task)
+
+        if fixed is not None:
+            # A task that names one intent must not be silently overruled by a
+            # contradicting payload: dropping the intent would answer a different
+            # scientific question than the caller asked for.
+            if payload_intent is not None and payload_intent != fixed:
+                raise QueryValidationError(
+                    f"task {query.task!r} implies intent {fixed!r}, but the experiment "
+                    f"payload declares intent {payload_intent!r}; remove the conflicting "
+                    "intent or use the task that matches it"
+                )
+            intent = fixed
+        else:
+            intent = payload_intent or _DEFAULT_ASSESS_INTENT
+            # `assess_state` covers only the assessment intents; a mechanism/hypothesis
+            # intent smuggled in here would bypass the task the caller selected.
+            if intent in _FIXED_INTENT.values():
+                raise QueryValidationError(
+                    f"intent {intent!r} is not an assessment intent; use task "
+                    f"{next(t for t, i in _FIXED_INTENT.items() if i == intent)!r}"
+                )
+
         try:
             return input_from_scenario(intent, experiment)
         except (ValidationError, ValueError) as exc:
@@ -81,13 +103,18 @@ class ImmortalizationDomainPack:
 
     # --- response conversion (normalise; never reinterpret) ------------------
 
-    def _to_response(self, query: ReasoningQuery, report: DecisionReport) -> ReasoningResponse:
+    def _to_response(
+        self,
+        query: ReasoningQuery,
+        report: DecisionReport,
+        data: ImmortalizationAssessmentInput,
+    ) -> ReasoningResponse:
         flags = [f.value for f in report.flags]
         return ReasoningResponse(
             domain=self.domain,
             task=query.task,
             summary=report.conclusion,
-            observations=self._observations(report),
+            observations=self._observations(report, data),
             # Input conflicts and withheld overrides are acquisition/QC findings, not
             # biological conclusions, so they are reported as such.
             quality_findings=[*report.input_conflicts, *report.blocked_overrides],
@@ -119,18 +146,45 @@ class ImmortalizationDomainPack:
                 literature_requested=query.allow_literature,
                 deterministic=True,
             ),
-            # Verbatim, so normalisation can never lose or reshape the domain report.
-            domain_details={"decision_report": report.model_dump(mode="json")},
+            # Verbatim, so normalisation can never lose or reshape the domain report —
+            # and the validated input beside it, so the judgment is auditable against
+            # exactly what the assessment consumed.
+            domain_details={
+                "decision_report": report.model_dump(mode="json"),
+                "assessment_input": data.model_dump(mode="json"),
+            },
         )
 
     @staticmethod
-    def _observations(report: DecisionReport) -> list[str]:
+    def _observations(report: DecisionReport, data: ImmortalizationAssessmentInput) -> list[str]:
         """The marker values the assessment actually consumed.
 
-        ``derived_input`` records where a raw series replaced a snapshot label, so this
-        reports what was observed without restating any interpretation of it.
+        Reports the **validated** snapshot inputs (``PDL_trend``, ``DT_trend``, ``p16``,
+        ``p21``, ``gammaH2AX``, ``SA_b_gal``, ``adipogenic_retention``) rather than only
+        ``derived_input``, which is populated solely when a raw passage series overrode a
+        snapshot label — so a snapshot-only assessment would otherwise report *no*
+        observations at all and the judgment would be unauditable.
+
+        A derived value takes precedence where one exists, and is marked as such. Values
+        are copied verbatim: unmeasured axes are omitted rather than guessed, and nothing
+        is reinterpreted.
         """
-        observations = [f"{axis}={value}" for axis, value in sorted(report.derived_input.items())]
+        derived = dict(report.derived_input)
+        observations: list[str] = []
+        for axis, value in sorted(data.marker_dict().items()):
+            text = str(value)
+            if text in ("unknown", "None"):  # never measured: say nothing about it
+                continue
+            if axis in derived:
+                observations.append(f"{axis}={derived[axis]} (derived from series)")
+            else:
+                observations.append(f"{axis}={text}")
+        # Any derived axis outside the snapshot marker set (defensive; keeps parity if
+        # the vertical adds an axis later).
+        for axis, value in sorted(derived.items()):
+            if axis not in data.marker_dict():
+                observations.append(f"{axis}={value} (derived from series)")
+
         trajectory: dict[str, Any] | None = report.trajectory
         if trajectory and trajectory.get("state"):
             observations.append(f"trajectory={trajectory['state']}")

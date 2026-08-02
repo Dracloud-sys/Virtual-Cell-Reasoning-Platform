@@ -38,7 +38,11 @@ from virtualcell.literature.extraction import (
     extract_deterministic,
 )
 from virtualcell.literature.ingestion import ingest_runs
-from virtualcell.literature.providers.base import LiteratureProvider, ProviderError
+from virtualcell.literature.providers.base import (
+    LiteratureProvider,
+    ProviderError,
+    ProviderTimeoutError,
+)
 from virtualcell.literature.providers.europe_pmc import EuropePmcProvider
 from virtualcell.literature.verification import verify_candidates
 
@@ -319,7 +323,9 @@ class LiteratureDiscoveryAgent(BaseAgent):
         except ProviderError as exc:
             bundle = self._failure_bundle(query, exc)
 
-        if task is not None and bundle.run_status is not DiscoveryRunStatus.PROVIDER_ERROR:
+        # Any provider failure (error *or* timeout) skips extraction — there is nothing
+        # to extract from, and a timeout must not be silently treated as a usable run.
+        if task is not None and not bundle.run_status.is_failure:
             bundle = self._extract(bundle, task, limit, verify=verify, convert=convert)
 
         # Ingest the (post-cap) canonical runs as weak, reviewable evidence. This is the
@@ -329,8 +335,9 @@ class LiteratureDiscoveryAgent(BaseAgent):
             ingestion = ingest_runs(store, bundle.canonical_runs)
 
         # Run status — not the presence of warnings — is the authoritative signal.
-        if bundle.run_status is DiscoveryRunStatus.PROVIDER_ERROR:
-            notes = f"provider_error: {bundle.warnings[0] if bundle.warnings else 'unknown'}"
+        if bundle.run_status.is_failure:
+            detail = bundle.warnings[0] if bundle.warnings else "unknown"
+            notes = f"{bundle.run_status.value}: {detail}"
         elif bundle.run_status is DiscoveryRunStatus.ZERO_RESULTS:
             notes = "0 articles discovered"
         else:
@@ -365,9 +372,16 @@ class LiteratureDiscoveryAgent(BaseAgent):
             query_sent=error.query_sent or query.query_text,
             retrieved_at=datetime.now(UTC),
         )
+        # A timeout keeps its own status all the way into the bundle, so downstream
+        # callers can distinguish "slow/unreachable" from "answered with an error".
+        status = (
+            DiscoveryRunStatus.PROVIDER_TIMEOUT
+            if isinstance(error, ProviderTimeoutError)
+            else DiscoveryRunStatus.PROVIDER_ERROR
+        )
         return LiteratureEvidenceBundle(
             query=query,
             provider_provenance=provenance,
-            run_status=DiscoveryRunStatus.PROVIDER_ERROR,
+            run_status=status,
             warnings=[str(error)],
         )

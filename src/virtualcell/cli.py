@@ -209,6 +209,18 @@ def _cmd_assess(args: argparse.Namespace) -> int:
     return 0
 
 
+def _literature_agent():
+    """Compose the literature agent for the CLI (real Europe PMC provider by default).
+
+    A named seam rather than an inline construction so tests can inject a fake provider
+    without a network call. Constructing it performs no I/O — nothing is contacted unless
+    a request sets ``allow_literature=true``.
+    """
+    from virtualcell.agents.literature_discovery.agent import LiteratureDiscoveryAgent
+
+    return LiteratureDiscoveryAgent()
+
+
 def _cmd_query(args: argparse.Namespace) -> int:
     """Run a domain-neutral platform query — the same service the API uses."""
     import asyncio
@@ -245,7 +257,13 @@ def _cmd_query(args: argparse.Namespace) -> int:
         store = InMemoryKnowledgeStore()
     load_into(ImmortalizationSeedSource(), store)
 
-    service = ReasoningService(store, default_registry())
+    # Only compose the literature agent when the request actually opts in, so an offline
+    # query never even constructs a provider.
+    service = ReasoningService(
+        store,
+        default_registry(),
+        literature_agent=_literature_agent() if request.allow_literature else None,
+    )
     try:
         response = asyncio.run(service.query(request))
     except UnknownDomainError as exc:

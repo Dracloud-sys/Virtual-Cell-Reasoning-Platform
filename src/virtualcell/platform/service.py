@@ -24,7 +24,8 @@ from __future__ import annotations
 
 from virtualcell.core.evidence import Claim
 from virtualcell.knowledge.store import KnowledgeStore
-from virtualcell.literature.providers.base import ProviderError
+from virtualcell.literature.contracts import DiscoveryRunStatus
+from virtualcell.literature.providers.base import ProviderError, ProviderTimeoutError
 from virtualcell.platform.contracts import (
     LiteratureOutcome,
     LiteratureStatus,
@@ -90,7 +91,8 @@ class ReasoningService:
             result = await orchestrator.augment_with_literature(
                 question, target_measurements=request.target_measurements or None
             )
-        except _TIMEOUT_ERRORS as exc:
+        except (ProviderTimeoutError, *_TIMEOUT_ERRORS) as exc:
+            # Ordered before ProviderError: ProviderTimeoutError subclasses it.
             return LiteratureOutcome(
                 status=LiteratureStatus.TIMEOUT, provider=provider, detail=str(exc)
             )
@@ -101,12 +103,20 @@ class ReasoningService:
 
         # A provider failure that the discovery agent caught internally still surfaces as
         # a failure here — it must never be reported as "we looked and found nothing".
-        if result.literature_run_status == "provider_error":
-            return LiteratureOutcome(
-                status=LiteratureStatus.PROVIDER_ERROR,
-                provider=provider,
-                detail="the literature provider reported an error",
-            )
+        # A timeout keeps its own status the whole way from UrllibTransport.
+        failure = {
+            DiscoveryRunStatus.PROVIDER_ERROR.value: (
+                LiteratureStatus.PROVIDER_ERROR,
+                "the literature provider reported an error",
+            ),
+            DiscoveryRunStatus.PROVIDER_TIMEOUT.value: (
+                LiteratureStatus.TIMEOUT,
+                "the literature provider did not respond in time",
+            ),
+        }.get(result.literature_run_status or "")
+        if failure is not None:
+            status, detail = failure
+            return LiteratureOutcome(status=status, provider=provider, detail=detail)
         if not result.literature_facts:
             return LiteratureOutcome(
                 status=LiteratureStatus.ZERO_RESULTS,

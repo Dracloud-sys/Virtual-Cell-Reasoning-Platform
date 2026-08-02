@@ -44,7 +44,13 @@ async def reasoning_query(request: Request, body: ReasoningQuery) -> ReasoningRe
     not an HTTP error — the scientific response is still returned, with the outcome
     recorded in ``literature.status`` so it can never be mistaken for evidence.
     """
-    service = ReasoningService(request.app.state.knowledge_store, _REGISTRY)
+    service = ReasoningService(
+        request.app.state.knowledge_store,
+        _REGISTRY,
+        # Composed at startup; None only if the app was built without one. The service
+        # keeps ``allow_literature=false`` strictly offline regardless.
+        literature_agent=getattr(request.app.state, "literature_agent", None),
+    )
     try:
         return await service.query(body)
     except UnknownDomainError as exc:

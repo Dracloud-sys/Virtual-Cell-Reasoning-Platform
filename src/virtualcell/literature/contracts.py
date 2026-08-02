@@ -500,6 +500,17 @@ class DiscoveryRunStatus(StrEnum):
     SUCCESS = "success"
     ZERO_RESULTS = "zero_results"
     PROVIDER_ERROR = "provider_error"
+    # A timeout is a *distinct* failure from a provider error: it usually means slow or
+    # unreachable rather than broken, and is often worth retrying. Kept separate so a real
+    # network timeout is never reported as a generic provider failure. Callers that only
+    # need "did it fail" should use :meth:`is_failure` rather than comparing to
+    # PROVIDER_ERROR alone.
+    PROVIDER_TIMEOUT = "provider_timeout"
+
+    @property
+    def is_failure(self) -> bool:
+        """True when the run failed to reach the provider (not merely found nothing)."""
+        return self in (DiscoveryRunStatus.PROVIDER_ERROR, DiscoveryRunStatus.PROVIDER_TIMEOUT)
 
 
 class LiteratureEvidenceBundle(BaseModel):

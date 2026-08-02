@@ -399,14 +399,30 @@ PR11 introduces the domain-neutral seam every interface goes through:
 
 ### Literature is optional, and a failure is never evidence
 
-`allow_literature=false` performs no external retrieval at all. When it is true, the
-service reuses the existing evidence orchestrator (so PR9/PR10a weak-ingestion and
-never-established semantics apply unchanged) and reports the outcome as a distinguishable
-`LiteratureStatus`: `not_requested`, `unavailable` (requested but no provider wired),
-`success`, `zero_results`, `provider_error`, `timeout`. **Evidence is attached only on
-success**, is kept separate from the domain's own evidence, and retains its weak
+The literature agent is composed in the **real** API and CLI paths (defaulting to the
+Europe PMC provider), so `allow_literature=true` can actually retrieve; both surfaces keep
+dependency injection for tests. `allow_literature=false` performs no external retrieval at
+all — the CLI does not even construct a provider.
+
+When it is true, the service reuses the existing evidence orchestrator (so PR9/PR10a
+weak-ingestion and never-established semantics apply unchanged) and reports the outcome as
+a distinguishable `LiteratureStatus`: `not_requested`, `unavailable` (requested but no
+provider wired), `success`, `zero_results`, `provider_error`, `timeout`.
+
+A **timeout is typed end to end** rather than collapsed into a generic failure:
+`UrllibTransport` raises `ProviderTimeoutError` (a `ProviderError` subclass, so existing
+handlers keep working) for both read timeouts and connect timeouts wrapped in
+`URLError(reason=TimeoutError)`; `EuropePmcProvider` preserves the subclass through its
+retry loop and defensively translates any raw error a third-party transport leaks; the
+agent records `DiscoveryRunStatus.PROVIDER_TIMEOUT` on the bundle; and the service maps it
+to `LiteratureStatus.TIMEOUT`. That distinction matters operationally — a timeout is
+usually worth retrying, a hard error usually is not.
+
+**Evidence is attached only on success** — enforced by a model validator on
+`LiteratureOutcome`, not by convention, so a failed retrieval cannot be constructed with
+evidence attached. It is kept separate from the domain's own evidence and retains its weak
 pending-review tier and citations. "We could not look" is never reported as "we looked and
-found nothing" — including when the discovery agent absorbs a `ProviderError` internally.
+found nothing", including when the discovery agent absorbs a provider failure internally.
 
 ### Adding a domain pack
 
