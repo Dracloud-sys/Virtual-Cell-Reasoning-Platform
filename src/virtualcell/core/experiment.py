@@ -77,11 +77,35 @@ Identity, value typing and conditions
   canonical resolver — :meth:`ExperimentRun.effective_conditions` — so two readers cannot
   disagree about which wins.
 
-Deferred to PR13: run checksums / content-hash dedup.
+Integrity and identity (schema 1.1, PR13a)
+------------------------------------------
+
+Two hashes, because "was this modified?" and "do I already have this?" are different
+questions. One hash forced to answer both would either make a harmless re-import look like
+tampering, or make two genuinely different runs look identical.
+
+* :func:`content_checksum` — everything the run says, byte-stable. Answers **integrity**.
+  Works at any declared version, since hashing bytes needs no understanding of the fields.
+  The optional :attr:`ExperimentRun.checksum` seal is excluded from its own input;
+  including it would be unsatisfiable, because writing the seal changes the run.
+* :func:`dedup_key` — what the run *observed*. Answers **identity**, ignoring the fields
+  that differ between two imports of the same data. It **refuses a newer minor**
+  (:class:`DedupUnavailableError`): the hash covers the field set this reader knows, and a
+  newer minor may have added the very field that tells two runs apart. Being unable to
+  decide must never be reported as "same".
+
+Ordering is stated, never left to the serializer: ``observations`` order is **significant**
+(it is the trajectory) and preserved; ``measurements`` within an observation and
+``quality_flags`` are **sets**, so their order is normalized by sorting; ``conditions`` are
+mappings, so key order is normalized. :func:`deduplicate_runs` keeps the first of each
+group and reports every collapse, raising a structured :class:`DedupCollision` whenever two
+collapsed runs do not serialize identically.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from collections.abc import Mapping
 from datetime import datetime
@@ -103,7 +127,9 @@ CANONICAL_MODEL_CONFIG = ConfigDict(extra="allow")
 # --- schema version ----------------------------------------------------------
 
 SCHEMA_MAJOR: Final = 1
-SCHEMA_MINOR: Final = 0
+# 1.1 (PR13a) adds the optional ``ExperimentRun.checksum``. Additive, so by this module's
+# own policy it is a *minor* bump: a 1.0 reader accepts a 1.1 run and preserves the field.
+SCHEMA_MINOR: Final = 1
 SCHEMA_VERSION: Final = f"{SCHEMA_MAJOR}.{SCHEMA_MINOR}"
 """The canonical experiment schema version this module implements."""
 
@@ -479,6 +505,10 @@ class ExperimentRun(BaseModel):
     conditions: dict[str, JSONScalar] = Field(default_factory=dict)
     observations: list[Observation] = Field(default_factory=list)
     metadata: dict[str, JSONScalar] = Field(default_factory=dict)
+    # Optional integrity seal (schema 1.1). Self-verifying when present: it must equal
+    # :func:`content_checksum` of this run, so a stored run that was edited in place no
+    # longer validates. Absent means "not sealed", never "verified".
+    checksum: str | None = None
 
     @field_validator("schema_version")
     @classmethod
@@ -516,6 +546,27 @@ class ExperimentRun(BaseModel):
                 "minor version if these are additive schema fields."
             )
         return self
+
+    @model_validator(mode="after")
+    def _declared_checksum_matches(self) -> ExperimentRun:
+        """A declared checksum must match the run it seals, or it is worse than none."""
+        if self.checksum is not None:
+            expected = content_checksum(self)
+            if self.checksum != expected:
+                raise ValueError(
+                    f"run {self.run_id!r} declares checksum {self.checksum!r} but its "
+                    f"content hashes to {expected!r}; the run was modified after it was "
+                    "sealed, or the checksum was computed over different content"
+                )
+        return self
+
+    def sealed(self) -> ExperimentRun:
+        """A copy of this run carrying its own :func:`content_checksum`.
+
+        Producers seal a run when they hand it to something that stores or transmits it,
+        so a later reader can tell an intact run from an edited one.
+        """
+        return self.model_copy(update={"checksum": content_checksum(self)})
 
     @property
     def schema_is_compatible(self) -> bool:
@@ -580,3 +631,202 @@ def migrate_legacy_payload(
 def load_legacy_run(payload: Mapping[str, Any], *, namespace: str | None = None) -> ExperimentRun:
     """Load a pre-versioning payload as a v1 run. See :func:`migrate_legacy_payload`."""
     return ExperimentRun.model_validate(migrate_legacy_payload(payload, namespace=namespace))
+
+
+# --- integrity and identity (PR13a) ------------------------------------------
+
+HASH_PREFIX: Final = "sha256:"
+
+
+class DedupUnavailableError(SchemaVersionError):
+    """Raised when a run's declared version makes semantic dedup unsound."""
+
+
+def _canonical_json(payload: Any) -> str:
+    """One byte-stable serialization, so a hash is reproducible across processes."""
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+
+
+def _digest(payload: Any) -> str:
+    return HASH_PREFIX + hashlib.sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
+
+
+def content_checksum(run: ExperimentRun) -> str:
+    """Hash of everything the run says — the *integrity* question.
+
+    Covers the full serialization: version, identity, metadata, provenance timestamps and
+    any preserved unknown fields. Two runs with the same checksum are byte-identical as
+    canonical JSON, so a mismatch means the run changed after it was sealed.
+
+    :attr:`ExperimentRun.checksum` is excluded from its own input. Including it would make
+    the seal unsatisfiable — writing the checksum into the run changes the run, so no value
+    could ever equal the hash of the run containing it.
+
+    Works at **any** declared version, including a newer minor: hashing bytes needs no
+    understanding of what the fields mean. That is the difference from :func:`dedup_key`.
+    """
+    payload = run.model_dump(mode="json")
+    payload.pop("checksum", None)
+    return _digest(payload)
+
+
+def _measurement_identity(measurement: Measurement) -> dict[str, Any]:
+    return {
+        "name": measurement.name,
+        "value": measurement.value,
+        "value_type": measurement.value_type.value if measurement.value_type else None,
+        "unit": measurement.unit,
+        "quality": measurement.quality.value,
+        # A flag *set*, not a sequence: two runs flagged the same way in a different order
+        # recorded the same thing, so the order is normalized away.
+        "quality_flags": sorted(measurement.quality_flags),
+    }
+
+
+def dedup_key(run: ExperimentRun) -> str:
+    """Hash of what the run *observed* — the *identity* question.
+
+    Answers "have I already stored this measurement?", so it deliberately ignores the
+    fields that differ between two imports of the same data: ``run_id``,
+    ``schema_version``, ``checksum``, ``metadata``, ``observation_id``,
+    ``provenance.recorded_at``, ``provenance.metadata``, and observation/measurement-level
+    provenance. Those record *where a datum came from*, not what it says.
+
+    Run-level provenance ``origin_kind``/``acquisition_mode``/``source_system``/
+    ``source_run_id``/``method`` **is** included: a simulation run and a wet-lab run with
+    identical numbers are not duplicates of one another.
+
+    Ordering and normalization, stated rather than left to the serializer:
+
+    * ``observations`` — order is **significant** and preserved. The sequence is the
+      trajectory; reordering it changes what the run means.
+    * ``measurements`` within an observation — order is **insignificant** and normalized
+      by sorting. They are a set of readings taken at one time point.
+    * ``quality_flags`` — order is **insignificant** and normalized by sorting.
+    * ``conditions`` (both levels) — mappings, so key order is normalized by sorting.
+      Observation entries carry :meth:`ExperimentRun.effective_conditions`; run-level
+      conditions are hashed separately as well, because *where* a condition is declared is
+      itself a statement (a run-level condition asserts it held for the whole run) and
+      because a run may have no observations at all.
+
+    Refuses a run declaring a **newer minor** (:class:`DedupUnavailableError`). This hash
+    is computed over the field set this reader knows; a newer minor may have added a field
+    that distinguishes two runs, and hashing without it would collapse records that are
+    not duplicates. Silently merging distinct experimental data is the one outcome dedup
+    must never produce, so an unknown minor means "cannot decide", not "same".
+    """
+    major, minor = parse_schema_version(run.schema_version)
+    if major != SCHEMA_MAJOR:
+        raise DedupUnavailableError(
+            f"cannot compute a dedup key for run {run.run_id!r}: it declares "
+            f"{run.schema_version!r} and this reader implements {SCHEMA_VERSION!r}"
+        )
+    if minor > SCHEMA_MINOR:
+        raise DedupUnavailableError(
+            f"cannot compute a dedup key for run {run.run_id!r}: it declares minor "
+            f"{run.schema_version!r}, newer than this reader's {SCHEMA_VERSION!r}, so a "
+            "field that distinguishes it from another run may be invisible here"
+        )
+    provenance = run.provenance
+    payload = {
+        "provenance": {
+            "origin_kind": provenance.origin_kind.value,
+            "acquisition_mode": provenance.acquisition_mode.value,
+            "source_system": provenance.source_system,
+            "source_run_id": provenance.source_run_id,
+            "method": provenance.method,
+        },
+        "conditions": dict(run.conditions),
+        "observations": [
+            {
+                "time_point": observation.time_point.model_dump(mode="json"),
+                "conditions": run.effective_conditions(observation),
+                "measurements": sorted(
+                    (_measurement_identity(m) for m in observation.measurements),
+                    key=_canonical_json,
+                ),
+            }
+            for observation in run.observations
+        ],
+    }
+    return _digest(payload)
+
+
+class DedupCollision(BaseModel):
+    """Two runs claim the same observations but do not serialize identically.
+
+    Reported as a record rather than a warning string so a caller can act on it: the
+    difference lies entirely in fields :func:`dedup_key` excludes (identity, metadata,
+    provenance timestamps), which usually means the same data was imported twice under
+    different provenance — but "usually" is not "always", and a human should be able to
+    look at both.
+
+    ``run_id`` is part of the checksum and not part of the key, so **two distinct records
+    asserting the same observations always produce a collision**, while a byte-identical
+    re-import collapses quietly. That asymmetry is the point: one record seen twice is
+    housekeeping, two records making the same claim is a fact about the data.
+    """
+
+    dedup_key: str
+    kept_run_id: str
+    kept_checksum: str
+    dropped_run_id: str
+    dropped_checksum: str
+
+
+class DeduplicationResult(BaseModel):
+    """The outcome of :func:`deduplicate_runs`."""
+
+    runs: list[ExperimentRun] = Field(default_factory=list)
+    """The runs to keep, in input order."""
+
+    collapsed: list[str] = Field(default_factory=list)
+    """Run ids dropped because an earlier run reported the same observations."""
+
+    collisions: list[DedupCollision] = Field(default_factory=list)
+    """Collapses where the two runs did not serialize identically."""
+
+    not_deduplicated: list[str] = Field(default_factory=list)
+    """Run ids kept without a dedup decision because their version blocked one.
+
+    These are **kept**, never dropped: being unable to prove two runs are duplicates is a
+    reason to hold both, not a reason to discard one.
+    """
+
+
+def deduplicate_runs(runs: list[ExperimentRun]) -> DeduplicationResult:
+    """Collapse runs reporting the same observations, keeping the first of each.
+
+    Deterministic: input order decides which run is kept, so the same input always yields
+    the same output. Nothing is dropped silently — every collapse is named in
+    :attr:`DeduplicationResult.collapsed`, and any collapse whose runs differ outside the
+    dedup field set is additionally reported as a :class:`DedupCollision`.
+    """
+    result = DeduplicationResult()
+    seen: dict[str, tuple[str, str]] = {}
+    for run in runs:
+        try:
+            key = dedup_key(run)
+        except DedupUnavailableError:
+            result.not_deduplicated.append(run.run_id)
+            result.runs.append(run)
+            continue
+        checksum = content_checksum(run)
+        previous = seen.get(key)
+        if previous is None:
+            seen[key] = (run.run_id, checksum)
+            result.runs.append(run)
+            continue
+        kept_run_id, kept_checksum = previous
+        result.collapsed.append(run.run_id)
+        if kept_checksum != checksum:
+            result.collisions.append(
+                DedupCollision(
+                    dedup_key=key,
+                    kept_run_id=kept_run_id,
+                    kept_checksum=kept_checksum,
+                    dropped_run_id=run.run_id,
+                    dropped_checksum=checksum,
+                )
+            )
+    return result

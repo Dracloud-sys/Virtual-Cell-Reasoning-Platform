@@ -226,7 +226,47 @@ pack start minting runs:
   resolver, `ExperimentRun.effective_conditions(observation)`, so two readers cannot
   silently disagree about what an experiment measured.
 
-Deferred to PR13: run checksums / content-hash dedup.
+### Integrity and identity (schema 1.1, PR13a)
+
+Two hashes, because *"was this modified?"* and *"do I already have this?"* are different
+questions. One hash forced to answer both would either make a harmless re-import look like
+tampering, or make two genuinely different runs look identical.
+
+| | `content_checksum` | `dedup_key` |
+|---|---|---|
+| answers | integrity | identity |
+| covers | everything the run says, including version, `run_id`, metadata, provenance timestamps and preserved unknown fields | only what the run *observed*, plus run-level `origin_kind` / `acquisition_mode` / `source_system` / `source_run_id` / `method` |
+| newer minor | **works** — hashing bytes needs no understanding of the fields | **refused** (`DedupUnavailableError`) |
+
+`ExperimentRun.checksum` is an optional, self-verifying seal: when present it must equal
+`content_checksum`, so a stored run edited in place no longer validates. It is **excluded
+from its own input** — including it would be unsatisfiable, since writing the seal changes
+the run. Absent means "not sealed", never "verified".
+
+`dedup_key` refuses a newer minor on purpose. The hash spans the field set this reader
+knows; a newer minor may have added the very field that distinguishes two runs, and hashing
+without it would collapse records that are not duplicates. Silently merging distinct
+experimental data is the one outcome dedup must never produce, so an unknown minor means
+*cannot decide*, never *same*. Being readable and being dedupable are therefore separate
+questions, and `literature.ingestion` reports them separately.
+
+**Ordering and normalization are stated, not inherited from the serializer:**
+
+| collection | rule |
+|---|---|
+| `observations` | order **significant**, preserved — the sequence is the trajectory |
+| `measurements` within an observation | order **insignificant**, normalized by sorting — readings at one time point are a set |
+| `quality_flags` | order **insignificant**, normalized by sorting |
+| `conditions` (both levels) | mappings; key order normalized. *Where* a condition is declared is itself part of identity — a run-level condition asserts it held for the whole run |
+
+`deduplicate_runs` keeps the first run of each group in input order, names every collapse,
+and emits a structured `DedupCollision` (both run ids, both checksums, the shared key)
+whenever two collapsed runs do not serialize identically. Since `run_id` is in the checksum
+but not the key, two *distinct records* asserting the same observations always surface as a
+collision while a byte-identical re-import collapses quietly — one record seen twice is
+housekeeping, two records making the same claim is a fact about the data. A run whose
+version blocks a dedup decision is **kept**, never dropped: being unable to prove two runs
+are duplicates is a reason to hold both.
 
 Scope today: this is the *foundation contract, its version policy, and the first adapter*.
 It does **not** yet connect a real simulator, robot, or LIMS, and the existing
