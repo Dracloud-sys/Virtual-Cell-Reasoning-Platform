@@ -301,6 +301,290 @@ def test_run_status_failure_helper_covers_both() -> None:
     assert not DiscoveryRunStatus.SUCCESS.is_failure
 
 
+# --- 2b. document-retrieval failures are not zero-results ---------------------
+#
+# Review round 3: the *search* can succeed while the documents behind it fail to
+# download. The agent absorbed those into per-document warnings and left run_status
+# SUCCESS, so a run whose every document timed out was reported as ZERO_RESULTS —
+# "we read everything and nothing qualified" instead of "we could not read it".
+
+
+class _FetchFailingProvider:
+    """Search succeeds with one open-access article; fetching its full text fails."""
+
+    name = "fake"
+
+    def __init__(self, error: ProviderError) -> None:
+        self._error = error
+
+    def search(self, query) -> LiteratureSearchResult:
+        record = ArticleRecord(
+            identifiers=ArticleIdentifier(pmcid="PMC1", pmid="1", provider_id="PMC1"),
+            title="TERT",
+            abstract=None,
+            is_open_access=True,
+            has_full_text=True,
+            provider="fake",
+            retrieved_at=datetime(2024, 1, 1, tzinfo=UTC),
+        )
+        return LiteratureSearchResult(
+            provenance=ProviderProvenance(
+                provider="fake",
+                query_sent="q",
+                retrieved_at=datetime(2024, 1, 1, tzinfo=UTC),
+                hit_count=1,
+            ),
+            articles=[record],
+        )
+
+    def fetch_record(self, identifier):  # pragma: no cover - unused
+        raise NotImplementedError
+
+    def fetch_open_full_text(self, identifier):
+        raise self._error
+
+
+def _agent_with(provider) -> LiteratureDiscoveryAgent:
+    return LiteratureDiscoveryAgent(AgentContext(services={"literature_provider": provider}))
+
+
+@pytest.mark.parametrize(
+    "error,expected_bundle,expected_platform",
+    [
+        (
+            ProviderTimeoutError("full text timed out"),
+            DiscoveryRunStatus.PROVIDER_TIMEOUT,
+            LiteratureStatus.TIMEOUT,
+        ),
+        (
+            ProviderError("full text unavailable"),
+            DiscoveryRunStatus.PROVIDER_ERROR,
+            LiteratureStatus.PROVIDER_ERROR,
+        ),
+    ],
+)
+def test_document_fetch_failure_is_not_reported_as_zero_results(
+    error, expected_bundle, expected_platform
+) -> None:
+    agent = _agent_with(_FetchFailingProvider(error))
+    service = ReasoningService(_store(), default_registry(), literature_agent=agent)
+    response = asyncio.run(service.query(ReasoningQuery.model_validate(_TERT_QUERY)))
+
+    assert response.literature.status is expected_platform
+    assert response.literature.status is not LiteratureStatus.ZERO_RESULTS
+    assert response.literature.evidence == []  # a failure never becomes evidence
+    # And the typed failure is recorded on the bundle rather than only in prose.
+    from virtualcell.core.contracts import AgentInput
+
+    out = asyncio.run(
+        agent.run(
+            AgentInput(
+                query="TERT",
+                context={
+                    "extract": True,
+                    "verify": True,
+                    "convert": True,
+                    "target_measurements": ["TERT"],
+                },
+            )
+        )
+    )
+    failures = out.result["document_failures"]
+    assert failures and failures[0]["status"] == expected_bundle.value
+
+
+def test_document_fetch_timeout_and_error_are_distinguishable() -> None:
+    def _status(error):
+        agent = _agent_with(_FetchFailingProvider(error))
+        service = ReasoningService(_store(), default_registry(), literature_agent=agent)
+        return asyncio.run(
+            service.query(ReasoningQuery.model_validate(_TERT_QUERY))
+        ).literature.status
+
+    assert _status(ProviderTimeoutError("slow")) is LiteratureStatus.TIMEOUT
+    assert _status(ProviderError("broken")) is LiteratureStatus.PROVIDER_ERROR
+
+
+def test_genuine_zero_results_is_still_zero_results(jats_xml) -> None:
+    """A search that returns nothing is a real negative — not a failure."""
+
+    class _EmptyProvider:
+        name = "fake"
+
+        def search(self, query):
+            return LiteratureSearchResult(
+                provenance=ProviderProvenance(
+                    provider="fake",
+                    query_sent="q",
+                    retrieved_at=datetime(2024, 1, 1, tzinfo=UTC),
+                    hit_count=0,
+                ),
+                articles=[],
+            )
+
+        def fetch_record(self, identifier):  # pragma: no cover - unused
+            raise NotImplementedError
+
+        def fetch_open_full_text(self, identifier):  # pragma: no cover - unused
+            return None
+
+    service = ReasoningService(
+        _store(), default_registry(), literature_agent=_agent_with(_EmptyProvider())
+    )
+    response = asyncio.run(service.query(ReasoningQuery.model_validate(_TERT_QUERY)))
+    assert response.literature.status is LiteratureStatus.ZERO_RESULTS
+
+
+def test_partial_failure_keeps_the_usable_evidence(jats_xml) -> None:
+    """One document succeeds, another times out: keep the evidence, record the failure."""
+
+    class _MixedProvider:
+        name = "fake"
+
+        def search(self, query):
+            good = ArticleRecord(
+                identifiers=ArticleIdentifier(pmcid="PMC1", provider_id="PMC1"),
+                title="TERT good",
+                abstract="TERT",
+                is_open_access=True,
+                has_full_text=True,
+                provider="fake",
+                retrieved_at=datetime(2024, 1, 1, tzinfo=UTC),
+            )
+            bad = ArticleRecord(
+                identifiers=ArticleIdentifier(pmcid="PMC2", provider_id="PMC2"),
+                title="TERT bad",
+                abstract=None,
+                is_open_access=True,
+                has_full_text=True,
+                provider="fake",
+                retrieved_at=datetime(2024, 1, 1, tzinfo=UTC),
+            )
+            return LiteratureSearchResult(
+                provenance=ProviderProvenance(
+                    provider="fake",
+                    query_sent="q",
+                    retrieved_at=datetime(2024, 1, 1, tzinfo=UTC),
+                    hit_count=2,
+                ),
+                articles=[good, bad],
+            )
+
+        def fetch_record(self, identifier):  # pragma: no cover - unused
+            raise NotImplementedError
+
+        def fetch_open_full_text(self, identifier):
+            if identifier.pmcid == "PMC2":
+                raise ProviderTimeoutError("second document timed out")
+            return jats_xml
+
+    service = ReasoningService(
+        _store(), default_registry(), literature_agent=_agent_with(_MixedProvider())
+    )
+    response = asyncio.run(service.query(ReasoningQuery.model_validate(_TERT_QUERY)))
+
+    # The usable result is preserved...
+    assert response.literature.status is LiteratureStatus.SUCCESS
+    assert response.literature.evidence
+    # ...and the partial failure is recorded rather than discarded or promoted.
+    assert "partial retrieval" in (response.literature.detail or "")
+
+
+# --- 2c. CLI failure detection covers every failure status --------------------
+
+
+class _SearchFailingProvider:
+    name = "fake"
+
+    def __init__(self, error: ProviderError) -> None:
+        self._error = error
+
+    def search(self, query):
+        raise self._error
+
+    def fetch_record(self, identifier):  # pragma: no cover - unused
+        raise NotImplementedError
+
+    def fetch_open_full_text(self, identifier):  # pragma: no cover - unused
+        return None
+
+
+@pytest.mark.parametrize(
+    "error,expected_status",
+    [
+        (ProviderTimeoutError("search timed out"), "provider_timeout"),
+        (ProviderError("search failed"), "provider_error"),
+    ],
+)
+def test_cli_literature_discover_exits_non_zero_on_any_failure(
+    error, expected_status, capsys, monkeypatch
+) -> None:
+    # The regression: only 'provider_error' was treated as failure, so the newly added
+    # 'provider_timeout' exited 0 and an automation pipeline would read it as success.
+    import virtualcell.agents.literature_discovery.agent as agent_module
+
+    monkeypatch.setattr(
+        agent_module, "EuropePmcProvider", lambda *a, **k: _SearchFailingProvider(error)
+    )
+    exit_code = cli_main(["literature", "discover", "--query", "TERT"])
+    assert exit_code == 1, f"{expected_status} must exit non-zero"
+    assert expected_status in capsys.readouterr().out  # named in text mode
+
+
+@pytest.mark.parametrize(
+    "error,expected_status",
+    [
+        (ProviderTimeoutError("search timed out"), "provider_timeout"),
+        (ProviderError("search failed"), "provider_error"),
+    ],
+)
+def test_cli_literature_discover_failure_is_machine_readable(
+    error, expected_status, tmp_path, capsys, monkeypatch
+) -> None:
+    import virtualcell.agents.literature_discovery.agent as agent_module
+
+    monkeypatch.setattr(
+        agent_module, "EuropePmcProvider", lambda *a, **k: _SearchFailingProvider(error)
+    )
+    # JSON mode keeps the status readable while still exiting non-zero.
+    assert cli_main(["literature", "discover", "--query", "TERT", "--format", "json"]) == 1
+    assert json.loads(capsys.readouterr().out)["run_status"] == expected_status
+
+    # ...as does --output file mode.
+    out_file = tmp_path / "bundle.json"
+    assert cli_main(["literature", "discover", "--query", "TERT", "--output", str(out_file)]) == 1
+    capsys.readouterr()
+    assert json.loads(out_file.read_text(encoding="utf-8"))["run_status"] == expected_status
+
+
+def test_cli_literature_discover_zero_results_still_exits_zero(capsys, monkeypatch) -> None:
+    class _EmptyProvider:
+        name = "fake"
+
+        def search(self, query):
+            return LiteratureSearchResult(
+                provenance=ProviderProvenance(
+                    provider="fake",
+                    query_sent="q",
+                    retrieved_at=datetime(2024, 1, 1, tzinfo=UTC),
+                    hit_count=0,
+                ),
+                articles=[],
+            )
+
+        def fetch_record(self, identifier):  # pragma: no cover - unused
+            raise NotImplementedError
+
+        def fetch_open_full_text(self, identifier):  # pragma: no cover - unused
+            return None
+
+    import virtualcell.agents.literature_discovery.agent as agent_module
+
+    monkeypatch.setattr(agent_module, "EuropePmcProvider", lambda *a, **k: _EmptyProvider())
+    assert cli_main(["literature", "discover", "--query", "TERT"]) == 0
+    capsys.readouterr()
+
+
 # --- 3. snapshot observations survive -----------------------------------------
 
 _SNAPSHOT = {

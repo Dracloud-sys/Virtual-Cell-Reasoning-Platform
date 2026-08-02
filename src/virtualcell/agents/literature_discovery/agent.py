@@ -19,6 +19,7 @@ from virtualcell.literature.canonical import experiment_runs_from_verified
 from virtualcell.literature.contracts import (
     ArticleRecord,
     DiscoveryRunStatus,
+    DocumentRetrievalFailure,
     LiteratureEvidenceBundle,
     LiteratureQuery,
     ProviderProvenance,
@@ -126,21 +127,38 @@ class LiteratureDiscoveryAgent(BaseAgent):
             )
         return limit
 
-    def _document_for(self, record: ArticleRecord) -> tuple[ArticleDocument | None, str | None]:
+    def _document_for(
+        self, record: ArticleRecord
+    ) -> tuple[ArticleDocument | None, str | None, DocumentRetrievalFailure | None]:
         """Fetch + parse a document, falling back to the abstract. Never raises.
 
         A fetch failure *or* a parse failure falls back to the abstract when the
         record has one — the original problem is preserved as a warning, and a
         malformed full text is never recorded as a successful full-text parse. Only a
         document with neither full text nor an abstract is skipped.
+
+        A *provider* fetch failure is additionally returned as a typed
+        :class:`DocumentRetrievalFailure`, so a downstream caller can distinguish a
+        timeout from a hard error instead of reading it out of a warning string. A parse
+        failure is **not** one: the provider answered, the payload was simply unusable.
         """
         problem: str | None = None
+        failure: DocumentRetrievalFailure | None = None
         xml: str | None = None
         if record.is_open_access and record.has_full_text:
             try:
                 xml = self.provider.fetch_open_full_text(record.identifiers)
             except ProviderError as exc:
                 problem = f"full text unavailable ({exc})"
+                failure = DocumentRetrievalFailure(
+                    article_key=record.identifiers.stable_key(record.provider),
+                    status=(
+                        DiscoveryRunStatus.PROVIDER_TIMEOUT
+                        if isinstance(exc, ProviderTimeoutError)
+                        else DiscoveryRunStatus.PROVIDER_ERROR
+                    ),
+                    message=str(exc),
+                )
         if xml and problem is None:
             try:
                 return (
@@ -152,13 +170,18 @@ class LiteratureDiscoveryAgent(BaseAgent):
                         retrieved_at=record.retrieved_at,
                     ),
                     None,
+                    None,
                 )
             except JatsParseError as exc:
                 problem = f"could not parse full text ({exc})"
         if record.abstract:
             suffix = "; fell back to the abstract" if problem else None
-            return document_from_abstract(record), f"{problem}{suffix}" if problem else None
-        return None, problem or "no open-access full text and no abstract"
+            return (
+                document_from_abstract(record),
+                f"{problem}{suffix}" if problem else None,
+                failure,
+            )
+        return None, problem or "no open-access full text and no abstract", failure
 
     def _extract(
         self,
@@ -196,6 +219,7 @@ class LiteratureDiscoveryAgent(BaseAgent):
         )[:limit]
 
         documents, warnings = [], list(bundle.warnings)
+        document_failures = list(bundle.document_failures)
         measurements, claims, interpretations = [], [], []
         seen: set[str] = set()
         total_kept = 0
@@ -205,9 +229,13 @@ class LiteratureDiscoveryAgent(BaseAgent):
             if global_capped:
                 break
             label = record.identifiers.stable_key(record.provider)
-            document, problem = self._document_for(record)
+            document, problem, failure = self._document_for(record)
             if problem:
                 warnings.append(f"{label}: {problem}")
+            if failure is not None:
+                # Typed, so a retrieval timeout stays distinguishable from a run that
+                # simply found nothing usable.
+                document_failures.append(failure)
             if document is None:
                 continue
 
@@ -290,6 +318,7 @@ class LiteratureDiscoveryAgent(BaseAgent):
             measurements=measurements,
             author_interpretations=interpretations,
             verification_decisions=decisions,
+            document_failures=document_failures,
             canonical_runs=canonical_runs,
             warnings=warnings,
         )

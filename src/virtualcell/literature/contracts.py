@@ -513,6 +513,22 @@ class DiscoveryRunStatus(StrEnum):
         return self in (DiscoveryRunStatus.PROVIDER_ERROR, DiscoveryRunStatus.PROVIDER_TIMEOUT)
 
 
+class DocumentRetrievalFailure(BaseModel):
+    """A per-document fetch failure, kept **typed** rather than flattened to a warning.
+
+    A search can succeed while the documents it points at fail to download. Recording
+    only a prose warning loses the distinction between "the provider timed out" and "we
+    read everything and nothing qualified" — which is the difference between a run worth
+    retrying and a genuine negative result. ``status`` is
+    :attr:`DiscoveryRunStatus.PROVIDER_ERROR` or
+    :attr:`DiscoveryRunStatus.PROVIDER_TIMEOUT`.
+    """
+
+    article_key: str
+    status: DiscoveryRunStatus
+    message: str
+
+
 class LiteratureEvidenceBundle(BaseModel):
     """The full, auditable output of a literature run.
 
@@ -536,6 +552,24 @@ class LiteratureEvidenceBundle(BaseModel):
     canonical_runs: list[ExperimentRun] = Field(default_factory=list)
     unresolved: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    # Per-document fetch failures during an otherwise successful search. Typed so a
+    # caller can tell a retrieval timeout from a genuine zero-result run even when
+    # ``run_status`` is SUCCESS because the *search* itself worked.
+    document_failures: list[DocumentRetrievalFailure] = Field(default_factory=list)
+
+    @property
+    def worst_document_failure(self) -> DiscoveryRunStatus | None:
+        """The most actionable document-retrieval failure, or ``None``.
+
+        A timeout outranks a generic error: it is the more retryable signal, and
+        reporting it is strictly more informative than collapsing both into "error".
+        """
+        statuses = {failure.status for failure in self.document_failures}
+        if DiscoveryRunStatus.PROVIDER_TIMEOUT in statuses:
+            return DiscoveryRunStatus.PROVIDER_TIMEOUT
+        if DiscoveryRunStatus.PROVIDER_ERROR in statuses:
+            return DiscoveryRunStatus.PROVIDER_ERROR
+        return None
 
     @model_validator(mode="after")
     def _check_candidate_linkage(self) -> LiteratureEvidenceBundle:

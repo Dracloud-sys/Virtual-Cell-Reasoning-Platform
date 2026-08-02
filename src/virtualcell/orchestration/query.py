@@ -70,6 +70,10 @@ class OrchestratedAnswer(BaseModel):
     # when literature was consulted. Carried so a caller can tell "we could not look"
     # from "we looked and found nothing" — the two must never be conflated.
     literature_run_status: str | None = None
+    # Per-document fetch failures during an otherwise successful *search*. A search can
+    # succeed while every document behind it times out; without this the run would look
+    # like a genuine zero-result.
+    literature_document_failure: str | None = None
 
 
 def _is_target_token(token: str) -> bool:
@@ -194,6 +198,8 @@ class EvidenceQueryOrchestrator:
         facts = [f for f in facts if f is not None]
 
         run_status = bundle.run_status.value
+        worst = bundle.worst_document_failure
+        document_failure = worst.value if worst is not None else None
         if not facts:
             return OrchestratedAnswer(
                 question=question,
@@ -206,6 +212,7 @@ class EvidenceQueryOrchestrator:
                 ingestion=ingestion,
                 resolution=resolution,
                 literature_run_status=run_status,
+                literature_document_failure=document_failure,
             )
         return self._literature_answer(
             question,
@@ -214,6 +221,7 @@ class EvidenceQueryOrchestrator:
             resolution=resolution,
             consulted=True,
             run_status=run_status,
+            document_failure=document_failure,
         )
 
     def _literature_answer(
@@ -225,6 +233,7 @@ class EvidenceQueryOrchestrator:
         consulted: bool,
         resolution: ResolutionReport | None = None,
         run_status: str | None = None,
+        document_failure: str | None = None,
     ) -> OrchestratedAnswer:
         rendered = "\n".join(f"- {f.statement} [{f.citation}]" for f in facts)
         return OrchestratedAnswer(
@@ -240,6 +249,7 @@ class EvidenceQueryOrchestrator:
             ingestion=ingestion,
             resolution=resolution,
             literature_run_status=run_status,
+            literature_document_failure=document_failure,
         )
 
     def _existing_literature_facts(self, seeds: list) -> list[GroundedFact]:

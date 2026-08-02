@@ -334,6 +334,7 @@ def _cmd_literature_discover(args: argparse.Namespace) -> int:
         LiteratureQueryError,
     )
     from virtualcell.core.contracts import AgentInput
+    from virtualcell.literature.contracts import DiscoveryRunStatus
     from virtualcell.literature.providers.base import ProviderError
 
     context = {
@@ -363,8 +364,13 @@ def _cmd_literature_discover(args: argparse.Namespace) -> int:
 
     result = output.result or {}
     # A provider/network failure exits non-zero so an automation pipeline never reads
-    # it as success; a legitimate zero-result run still exits 0.
-    failed = result.get("run_status") == "provider_error"
+    # it as success; a legitimate zero-result run still exits 0. Typed rather than a
+    # string comparison against one status: a new failure status (e.g. provider_timeout)
+    # must not silently start exiting 0.
+    try:
+        failed = DiscoveryRunStatus(result.get("run_status", "")).is_failure
+    except ValueError:  # unknown/absent status: treat as non-failure, as before
+        failed = False
     exit_code = 1 if failed else 0
     if args.output:
         Path(args.output).write_text(
@@ -376,7 +382,8 @@ def _cmd_literature_discover(args: argparse.Namespace) -> int:
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return exit_code
     if failed:
-        print(f"provider error: {output.notes}")
+        # The status names which failure it was (provider_error vs provider_timeout).
+        print(f"{result.get('run_status')}: {output.notes}")
         return exit_code
 
     prov = result.get("provider_provenance", {})

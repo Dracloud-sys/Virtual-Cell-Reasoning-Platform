@@ -39,6 +39,19 @@ from virtualcell.reasoning.llm import LLMBackend
 # ProviderError is the literature layer's typed transport failure.
 _TIMEOUT_ERRORS = (TimeoutError,)
 
+# One mapping from a discovery failure status to the platform status + wording, used for
+# both search failures and per-document retrieval failures so the two cannot drift.
+_FAILURE_STATUS: dict[str, tuple[LiteratureStatus, str]] = {
+    DiscoveryRunStatus.PROVIDER_ERROR.value: (
+        LiteratureStatus.PROVIDER_ERROR,
+        "the literature provider reported an error",
+    ),
+    DiscoveryRunStatus.PROVIDER_TIMEOUT.value: (
+        LiteratureStatus.TIMEOUT,
+        "the literature provider did not respond in time",
+    ),
+}
+
 
 class ReasoningService:
     """Executes a domain-neutral query against a registered domain pack."""
@@ -104,28 +117,42 @@ class ReasoningService:
         # A provider failure that the discovery agent caught internally still surfaces as
         # a failure here — it must never be reported as "we looked and found nothing".
         # A timeout keeps its own status the whole way from UrllibTransport.
-        failure = {
-            DiscoveryRunStatus.PROVIDER_ERROR.value: (
-                LiteratureStatus.PROVIDER_ERROR,
-                "the literature provider reported an error",
-            ),
-            DiscoveryRunStatus.PROVIDER_TIMEOUT.value: (
-                LiteratureStatus.TIMEOUT,
-                "the literature provider did not respond in time",
-            ),
-        }.get(result.literature_run_status or "")
-        if failure is not None:
-            status, detail = failure
+        search_failure = _FAILURE_STATUS.get(result.literature_run_status or "")
+        if search_failure is not None:
+            status, detail = search_failure
             return LiteratureOutcome(status=status, provider=provider, detail=detail)
+
+        document_failure = _FAILURE_STATUS.get(result.literature_document_failure or "")
         if not result.literature_facts:
+            # The *search* succeeded but nothing usable came back. Whether that is a
+            # genuine negative or a retrieval failure depends on whether the documents
+            # could be fetched at all: a run whose documents timed out is not a
+            # zero-result run, and reporting it as one would hide a retryable outage.
+            if document_failure is not None:
+                status, detail = document_failure
+                return LiteratureOutcome(
+                    status=status,
+                    provider=provider,
+                    detail=f"{detail} while retrieving documents",
+                )
             return LiteratureOutcome(
                 status=LiteratureStatus.ZERO_RESULTS,
                 provider=provider,
                 detail="no machine-verified literature measurement was found",
             )
+
+        # Evidence was produced. A document that failed alongside it is a *partial*
+        # failure: keep the usable result and record the failure, never the reverse —
+        # and the failure itself still never becomes evidence.
+        detail = (
+            f"partial retrieval: {document_failure[1]} for at least one document"
+            if document_failure is not None
+            else None
+        )
         return LiteratureOutcome(
             status=LiteratureStatus.SUCCESS,
             provider=provider,
+            detail=detail,
             evidence=[
                 # Tier and citation are carried across verbatim; nothing is upgraded.
                 Claim(
