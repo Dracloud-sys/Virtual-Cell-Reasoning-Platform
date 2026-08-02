@@ -27,9 +27,11 @@ is a statement about cells, and it belongs to a vertical, not to ingestion.
 
 from __future__ import annotations
 
-import re
+import math
+from collections.abc import Mapping
 from enum import StrEnum
 from typing import Final, Literal
+from urllib.parse import quote
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -58,13 +60,34 @@ class SpecVersionError(ValueError):
 
 
 def validate_spec_version(version: str) -> None:
-    """Refuse a spec whose major this reader does not implement."""
-    major, _minor = parse_schema_version(version)
+    """Refuse a spec version this reader cannot execute.
+
+    Stricter than the canonical run schema, and deliberately so. A run is **data**: a
+    reader that meets a newer minor can carry the fields it does not understand through
+    untouched, so accepting one loses nothing. A spec is **executed** — every field is an
+    instruction about how to read a file — so a newer minor may carry an instruction this
+    reader would silently not follow, and the import would look successful while ignoring
+    part of what the author asked for. A newer minor is therefore refused until a reader
+    exists that implements it.
+    """
+    major, minor = parse_schema_version(version)
     if major != SPEC_MAJOR:
         raise SpecVersionError(
             f"incompatible dataset spec: declares {version!r}, this reader implements "
             f"{SPEC_VERSION!r} (major {SPEC_MAJOR})"
         )
+    if minor > SPEC_MINOR:
+        raise SpecVersionError(
+            f"dataset spec declares minor {version!r}, newer than this reader's "
+            f"{SPEC_VERSION!r}; a spec is executed rather than relayed, so an instruction "
+            "this reader does not implement would be silently skipped"
+        )
+
+
+def _require_finite_number(value: float | None, field: str) -> float | None:
+    if value is not None and not math.isfinite(value):
+        raise ValueError(f"{field} must be a finite number, got {value!r}")
+    return value
 
 
 class SourceFormat(StrEnum):
@@ -168,8 +191,39 @@ class ColumnSpec(BaseModel):
                     f"emits {self.unit!r} with no unit_factor; this layer never guesses a "
                     "conversion"
                 )
-            if self.unit_factor == 0:
-                raise ValueError(f"column {self.header!r} unit_factor must not be zero")
+            if self.unit_factor <= 0:
+                raise ValueError(
+                    f"column {self.header!r} unit_factor must be positive, got "
+                    f"{self.unit_factor!r}; a zero or negative factor is not a unit "
+                    "conversion, it is a different measurement"
+                )
+        for field in (
+            "unit_factor",
+            "detection_limit_low",
+            "detection_limit_high",
+            "plausible_min",
+            "plausible_max",
+        ):
+            _require_finite_number(getattr(self, field), f"column {self.header!r} {field}")
+        if (
+            self.detection_limit_low is not None
+            and self.detection_limit_high is not None
+            and self.detection_limit_low > self.detection_limit_high
+        ):
+            raise ValueError(
+                f"column {self.header!r} detection_limit_low "
+                f"({self.detection_limit_low}) is above detection_limit_high "
+                f"({self.detection_limit_high}); no reading could ever satisfy both"
+            )
+        if (
+            self.plausible_min is not None
+            and self.plausible_max is not None
+            and self.plausible_min > self.plausible_max
+        ):
+            raise ValueError(
+                f"column {self.header!r} plausible_min ({self.plausible_min}) is above "
+                f"plausible_max ({self.plausible_max}); the range is empty"
+            )
         return self
 
 
@@ -178,7 +232,11 @@ class DatasetSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    spec_version: str = SPEC_VERSION
+    spec_version: str
+    """Required. An unversioned spec is refused rather than assumed to be the current
+    version: a spec is executed, and guessing which instructions it meant is how a file
+    gets read under rules its author never wrote."""
+
     dataset_id: str
     """Names this dataset in the run identity: ``<run_namespace>:<dataset_id>[:<group>]``."""
 
@@ -301,6 +359,7 @@ class QCRule(StrEnum):
     UNPARSEABLE = "unparseable"
     TYPE_MISMATCH = "type_mismatch"
     UNIT_MISMATCH = "unit_mismatch"
+    BOUNDED = "bounded"
     BELOW_DETECTION = "below_detection"
     ABOVE_DETECTION = "above_detection"
     OUT_OF_RANGE = "out_of_range"
@@ -370,17 +429,61 @@ class NormalizationStep(BaseModel):
 # --- result ------------------------------------------------------------------
 
 
+class RowRejectionReason(StrEnum):
+    """Why a row could not become an observation. Never a judgement about the biology."""
+
+    UNUSABLE_TIME_POINT = "unusable_time_point"
+    """An observation with no time point is not an observation."""
+
+    UNUSABLE_IDENTIFIER = "unusable_identifier"
+    """A required identifier was blank or unreadable, so which run the row belongs to is
+    unknown. Grouping it with every other such row would silently merge unrelated data."""
+
+
+class RowRejection(BaseModel):
+    """One rejected row, reported structurally so a caller can act on it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    row_index: int = Field(ge=0)
+    reason: RowRejectionReason
+    column: str | None = None
+    detail: str
+
+
 class IngestionStatus(StrEnum):
-    """The authoritative outcome of an import. Callers must not infer it from counts."""
+    """The authoritative outcome of an import. Callers must not infer it from counts.
+
+    ``PARTIAL`` exists because "some rows were rejected" is neither success nor failure:
+    real runs were produced *and* a human needs to look. Collapsing it into either one
+    would hide the half that matters.
+    """
 
     SUCCESS = "success"
+    PARTIAL = "partial"
+    NO_VALID_ROWS = "no_valid_rows"
     NO_ROWS = "no_rows"
     SPEC_MISMATCH = "spec_mismatch"
     UNREADABLE_SOURCE = "unreadable_source"
 
     @property
     def is_failure(self) -> bool:
-        return self is not IngestionStatus.SUCCESS
+        """Did the import fail to produce usable runs? ``PARTIAL`` did not."""
+        return self not in (IngestionStatus.SUCCESS, IngestionStatus.PARTIAL)
+
+    @property
+    def exit_code(self) -> int:
+        """The process exit code for this outcome.
+
+        Three values, because there are three answers: 0 imported everything, 2 imported
+        something and rejected something, 1 imported nothing. A partial import must not
+        exit 0 (the rejects would go unseen) nor 1 (the runs it did produce are real).
+        """
+        if self is IngestionStatus.SUCCESS:
+            return 0
+        if self is IngestionStatus.PARTIAL:
+            return 2
+        return 1
 
 
 class TabularIngestionResult(BaseModel):
@@ -401,6 +504,9 @@ class TabularIngestionResult(BaseModel):
     guessed at — a column nobody declared is a question for a human."""
 
     missing_columns: list[str] = Field(default_factory=list)
+    rejected_rows: list[RowRejection] = Field(default_factory=list)
+    """Rows that could not become observations, each with the reason it was rejected."""
+
     errors: list[str] = Field(default_factory=list)
     collapsed_duplicates: list[str] = Field(default_factory=list)
     collisions: list = Field(default_factory=list)
@@ -410,14 +516,20 @@ class TabularIngestionResult(BaseModel):
         return sum(len(run.observations) for run in self.runs)
 
 
-_WHITESPACE = re.compile(r"\s+")
+def encode_group(identifiers: Mapping[str, str]) -> str:
+    """Encode identifier values into a collision-safe ``run_id`` local part.
 
+    Every name and value is percent-encoded before the ``name=value`` pairs are joined with
+    ``|``, so the encoding is **injective**: no combination of identifier values can produce
+    the string another combination produces. Concatenating raw values with delimiters would
+    not be — ``{"a": "x|b=y"}`` and ``{"a": "x", "b": "y"}`` would collide, silently merging
+    two unrelated cultures into one run.
 
-def slug_identifier(value: str) -> str:
-    """Make an identifier value safe for a canonical ``run_id`` local part.
-
-    Run ids forbid whitespace, but real identifiers (``IMR 90``) contain it. Whitespace
-    collapses to ``_`` for the *handle* only — the untouched values are also written to the
-    run's conditions, so nothing about the data is lost to a naming rule.
+    Percent-encoding also removes the whitespace a canonical run id forbids, so an
+    identifier like ``IMR 90`` needs no lossy slug. The untouched values are written to the
+    run's conditions regardless, so nothing about the data lives only in the handle.
     """
-    return _WHITESPACE.sub("_", value.strip())
+    return "|".join(
+        f"{quote(name, safe='')}={quote(value, safe='')}"
+        for name, value in sorted(identifiers.items())
+    )

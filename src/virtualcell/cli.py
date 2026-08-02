@@ -508,11 +508,16 @@ def _cmd_experiment_import(args: argparse.Namespace) -> int:
             print(f"unmapped columns (not ingested): {', '.join(result.unmapped_columns)}")
         if result.collapsed_duplicates:
             print(f"collapsed duplicate runs: {', '.join(result.collapsed_duplicates)}")
+        for rejection in result.rejected_rows:
+            print(
+                f"rejected row {rejection.row_index} ({rejection.reason.value}): {rejection.detail}"
+            )
         for error in result.errors:
             print(f"error: {error}")
 
-    # The status is authoritative; a caller must not have to infer failure from counts.
-    return 1 if result.status.is_failure else 0
+    # The status is authoritative; a caller must not have to infer the outcome from counts.
+    # 0 imported everything, 2 imported some and rejected some, 1 imported nothing.
+    return result.status.exit_code
 
 
 def build_parser() -> argparse.ArgumentParser:

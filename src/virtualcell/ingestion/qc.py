@@ -108,6 +108,22 @@ def qc_decision(cell: ParsedCell, column: ColumnSpec) -> QCDecision:
 
     flags = _value_flags(cell)
 
+    if cell.comparator is not None:
+        # "<0.05" does not mean 0.05. The value is kept, because the limit is real
+        # information, but the reading is not a point estimate and must never be read as
+        # one: a trend, a mean or a comparison computed from it would be wrong in a way
+        # nothing downstream could detect.
+        return _decision(
+            cell,
+            MeasurementQuality.SUSPECT,
+            QCRule.BOUNDED,
+            flags=flags,
+            detail=(
+                f"{cell.raw_text!r} is a bound, not a point estimate; the value is a limit "
+                "on the reading, not the reading"
+            ),
+        )
+
     if cell.value_type is MeasurementValueType.NUMERIC and isinstance(cell.value, (int, float)):
         number = float(cell.value)
         if column.detection_limit_low is not None and number < column.detection_limit_low:

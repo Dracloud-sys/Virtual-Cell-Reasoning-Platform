@@ -23,6 +23,7 @@ IMR 90,35,NA,6000
 """
 
 SPEC = {
+    "spec_version": "1.0",
     "dataset_id": "fibroblast_passages",
     "source_format": "csv",
     "conditions": {"medium": "DMEM"},
@@ -90,7 +91,7 @@ def test_json_output_carries_the_canonical_runs(files, capsys) -> None:
     payload = json.loads(capsys.readouterr().out)
 
     run = payload["runs"][0]
-    assert run["run_id"] == "ingestion:fibroblast_passages:cell_line=IMR_90"
+    assert run["run_id"] == "ingestion:fibroblast_passages:cell_line=IMR%2090"
     assert run["checksum"].startswith("sha256:")
     assert run["schema_version"]
     # 2520 minutes read as 42 hours, by the factor the spec declared.
@@ -117,7 +118,9 @@ def test_a_missing_source_exits_non_zero_without_a_traceback(files, capsys) -> N
 
 def test_an_invalid_spec_is_rejected_before_any_reading(tmp_path, capsys) -> None:
     bad = tmp_path / "bad.json"
-    bad.write_text(json.dumps({"dataset_id": "d", "columns": []}), encoding="utf-8")
+    bad.write_text(
+        json.dumps({"spec_version": "1.0", "dataset_id": "d", "columns": []}), encoding="utf-8"
+    )
     source = tmp_path / "x.csv"
     source.write_text("a\n1\n", encoding="utf-8")
 
@@ -132,3 +135,79 @@ def test_import_writes_nothing(files, tmp_path, capsys) -> None:
     _run(["experiment", "import", "--spec", str(spec_path), "--input", str(csv_path)])
     capsys.readouterr()
     assert set(tmp_path.iterdir()) == before
+
+
+# --- review round 2: three exit codes, three answers -------------------------
+
+
+def _write(tmp_path, name: str, text: str):
+    path = tmp_path / name
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_a_partial_import_exits_two_and_names_the_rejected_rows(files, tmp_path, capsys) -> None:
+    """A partial import must not exit 0 (the rejects would go unseen) nor 1 (the runs it
+    did produce are real)."""
+    spec_path, _ = files
+    source = _write(
+        tmp_path,
+        "partial.csv",
+        "cell_line,passage,PDL,DT_min\nIMR 90,25,22.0,2520\nIMR 90,x,25.5,4800\n",
+    )
+
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 2
+
+    out = capsys.readouterr().out
+    assert "status: partial" in out
+    assert "rejected row 1 (unusable_time_point)" in out
+
+
+def test_rejecting_every_row_exits_one(files, tmp_path, capsys) -> None:
+    spec_path, _ = files
+    source = _write(tmp_path, "none.csv", "cell_line,passage,PDL,DT_min\nIMR 90,x,22.0,2520\n")
+
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 1
+    assert "status: no_valid_rows" in capsys.readouterr().out
+
+
+def test_a_clean_import_still_exits_zero(files, capsys) -> None:
+    spec_path, csv_path = files
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(csv_path)]) == 0
+    assert "rejected row" not in capsys.readouterr().out
+
+
+def test_rejected_rows_are_structured_in_the_json_surface(files, tmp_path, capsys) -> None:
+    spec_path, _ = files
+    source = _write(
+        tmp_path,
+        "partial.csv",
+        "cell_line,passage,PDL,DT_min\nIMR 90,25,22.0,2520\n,30,25.5,4800\n",
+    )
+    _run(
+        [
+            "experiment",
+            "import",
+            "--spec",
+            str(spec_path),
+            "--input",
+            str(source),
+            "--format",
+            "json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["status"] == "partial"
+    rejection = payload["rejected_rows"][0]
+    assert (rejection["row_index"], rejection["reason"]) == (1, "unusable_identifier")
+    assert rejection["column"] == "cell_line"
+
+
+def test_an_unversioned_spec_is_refused_by_the_cli(tmp_path, capsys) -> None:
+    unversioned = {key: value for key, value in SPEC.items() if key != "spec_version"}
+    spec_path = _write(tmp_path, "unversioned.json", json.dumps(unversioned))
+    source = _write(tmp_path, "x.csv", CSV)
+
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 1
+    assert "invalid dataset spec" in capsys.readouterr().out

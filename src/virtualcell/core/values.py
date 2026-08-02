@@ -33,20 +33,36 @@ class ParseStatus(StrEnum):
     UNPARSED = "unparsed"
 
 
-_COMPARATOR = re.compile(r"^\s*(<=|>=|≤|≥|<|>|~|≈)\s*")
-_NUMBER = re.compile(r"[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?")
-_UNCERTAINTY = re.compile(r"(?:±|\+/-|\+-)\s*([-+]?\d+(?:\.\d+)?)")
+# One definition per token, composed into every pattern below, so the lenient reader and
+# the strict whole-cell boundary can never drift apart into two grammars.
+_COMPARATOR_TOKEN = r"<=|>=|≤|≥|<|>|~|≈"
+_NUMBER_TOKEN = r"[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?"
+_UNCERTAINTY_OPERATOR = r"±|\+/-|\+-"
+_UNIT_TOKEN = (
+    r"fold|%|percent|h|hr|hrs|hour|hours|day|days|min|minutes|"
+    r"nm|µm|um|mm|cm|ml|µl|ul|mg|µg|ug|ng|kda|bp|kb"
+)
+
+_COMPARATOR = re.compile(rf"^\s*({_COMPARATOR_TOKEN})\s*")
+_NUMBER = re.compile(_NUMBER_TOKEN)
+_UNCERTAINTY = re.compile(rf"(?:{_UNCERTAINTY_OPERATOR})\s*([-+]?\d+(?:\.\d+)?)")
 # "1,234" is ambiguous (thousands separator vs decimal comma). Rather than guess, a
 # digit-comma-digit value stays UNPARSED with its raw text preserved.
 _AMBIGUOUS_SEPARATOR = re.compile(r"\d,\d")
-_UNIT_AFTER = re.compile(
-    r"^\s*[-\s]?(fold|%|percent|h|hr|hrs|hour|hours|day|days|min|minutes|"
-    r"nm|µm|um|mm|cm|ml|µl|ul|mg|µg|ug|ng|kda|bp|kb)\b",
-    re.IGNORECASE,
-)
+_UNIT_AFTER = re.compile(rf"^\s*[-\s]?({_UNIT_TOKEN})\b", re.IGNORECASE)
 _NON_NUMERIC_TOKENS = {"ns", "nd", "n/a", "na", "-", "—", ""}
 
 _COMPARATOR_CANON = {"≤": "<=", "≥": ">=", "≈": "~"}
+
+# The whole-cell boundary: the *entire* text must be a value and nothing else. Built from
+# the same tokens as the lenient reader, so it accepts exactly what that reader can
+# describe — and refuses text that merely *contains* a number.
+_WHOLE_VALUE = re.compile(
+    rf"^\s*(?:{_COMPARATOR_TOKEN})?\s*{_NUMBER_TOKEN}"
+    rf"(?:\s*(?:{_UNCERTAINTY_OPERATOR})\s*{_NUMBER_TOKEN})?"
+    rf"(?:\s*[-\s]?(?:{_UNIT_TOKEN})\b)?\s*$",
+    re.IGNORECASE,
+)
 
 
 class ParsedValue(BaseModel):
@@ -60,19 +76,38 @@ class ParsedValue(BaseModel):
     parse_status: ParseStatus = ParseStatus.UNPARSED
 
 
-def parse_value_text(text: str) -> ParsedValue:
+def is_whole_value(text: str) -> bool:
+    """Is the *entire* text a value, with nothing around it?
+
+    ``"24"`` and ``"<0.05"`` and ``"2.4 ± 0.3 fold"`` are; ``"abc24xyz"`` and
+    ``"24 (n=3)"`` are not — they merely *contain* a number.
+    """
+    return _WHOLE_VALUE.match(text.strip()) is not None
+
+
+def parse_value_text(text: str, *, strict: bool = False) -> ParsedValue:
     """Split a raw cell/span into value / comparator / uncertainty / unit.
 
     Conservative by design: ``2.4`` parses; ``2.4-fold`` parses with a unit;
     ``2.4 ± 0.3`` keeps the error separately; ``<0.05`` keeps the comparator (it is a
     bound, not a point estimate); ``increased`` / ``NS`` stay UNPARSED with no number;
     ``1,234`` stays UNPARSED because the separator is ambiguous.
+
+    ``strict`` adds a **whole-cell** boundary: the text must be a value and nothing else,
+    so ``"abc24xyz"`` and ``"24 (n=3)"`` are refused rather than yielding ``24``. Use it
+    wherever the source claims the whole field *is* the value — a declared numeric column
+    in a CSV, or a table cell. The lenient default remains for prose spans, where a number
+    legitimately sits inside surrounding text.
     """
     raw = text.strip()
     if raw.lower() in _NON_NUMERIC_TOKENS:
         return ParsedValue(raw_value=raw)
     if _AMBIGUOUS_SEPARATOR.search(raw):
         # Thousands separator or decimal comma? Refuse to guess; keep the raw text.
+        return ParsedValue(raw_value=raw)
+    if strict and not is_whole_value(raw):
+        # Text that merely contains a number is not a reading. Taking the number out of it
+        # would be the reader deciding which part of the cell was the datum.
         return ParsedValue(raw_value=raw)
 
     rest = raw

@@ -30,7 +30,7 @@ from virtualcell.ingestion import (
     ingest_table,
     read_delimited,
 )
-from virtualcell.ingestion.contracts import SourceFormat, TimeAxisKind
+from virtualcell.ingestion.contracts import SPEC_VERSION, SourceFormat, TimeAxisKind
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
 from virtualcell.knowledge.sources.base import load_into
 from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
@@ -47,6 +47,7 @@ IMR 90,50,27.5,6000,bob
 """
 
 SPEC = DatasetSpec(
+    spec_version=SPEC_VERSION,
     dataset_id="imr90_passage_series",
     source_format=SourceFormat.CSV,
     columns=[
@@ -162,3 +163,28 @@ def test_the_imported_run_is_sealed_and_traceable_to_its_source_cells() -> None:
     assert metadata["row_index"] == 0
     assert metadata["column_header"] == "PDL"
     assert metadata["raw_text"] == "12.0"
+
+
+def test_a_bound_never_reaches_the_trajectory_as_a_point_estimate() -> None:
+    """The end-to-end guard for the defect that matters most here.
+
+    A cell reading "<15.0" says the true PDL is *below* 15, not that it is 15. If that
+    number entered the series it would be indistinguishable from a measured 15.0, and the
+    trend, the slowdown detection and the resulting candidate status would all be computed
+    from a limit — wrong in a way nothing downstream could detect. It must arrive absent.
+    """
+    text = PASSAGE_CSV.replace("IMR 90,20,20.0,1800,alice", "IMR 90,20,<15.0,1800,alice")
+    result = _import(text)
+
+    bounded = next(
+        m
+        for run in result.runs
+        for observation in run.observations
+        for m in observation.measurements
+        if m.bound is not None
+    )
+    assert bounded.value == 15.0  # the limit itself is preserved on the run...
+    assert bounded.quality is not MeasurementQuality.VALID
+
+    series = run_to_passage_series(result.runs[0])
+    assert [o.cumulative_PDL for o in series] == [12.0, None, 25.0, 27.0, 27.5]

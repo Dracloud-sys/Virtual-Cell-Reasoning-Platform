@@ -33,7 +33,13 @@ from virtualcell.ingestion import (
     ingest_table,
     read_delimited,
 )
-from virtualcell.ingestion.contracts import SPEC_VERSION, SpecVersionError, TimeAxisKind
+from virtualcell.ingestion.contracts import (
+    SPEC_VERSION,
+    RowRejectionReason,
+    SpecVersionError,
+    TimeAxisKind,
+    encode_group,
+)
 from virtualcell.ingestion.readers import ReaderError
 
 CSV = """cell_line,passage,PDL,DT_min,operator,notes
@@ -45,6 +51,7 @@ IMR 90,35,NA,6000,bob,
 
 def _spec(**over) -> DatasetSpec:
     fields = {
+        "spec_version": SPEC_VERSION,
         "dataset_id": "fibroblast_passages",
         "columns": [
             ColumnSpec(header="cell_line", role=ColumnRole.IDENTIFIER),
@@ -111,7 +118,11 @@ def test_an_optional_column_may_be_absent() -> None:
 
 def test_a_spec_must_declare_a_measurement_and_one_time_axis() -> None:
     with pytest.raises(ValueError, match="at least one measurement"):
-        DatasetSpec(dataset_id="d", columns=[ColumnSpec(header="a", role=ColumnRole.IDENTIFIER)])
+        DatasetSpec(
+            spec_version=SPEC_VERSION,
+            dataset_id="d",
+            columns=[ColumnSpec(header="a", role=ColumnRole.IDENTIFIER)],
+        )
     with pytest.raises(ValueError, match="one time axis"):
         _spec(
             columns=[
@@ -370,7 +381,9 @@ def test_a_condition_without_a_declared_type_stays_a_label() -> None:
 def test_a_fractional_passage_is_refused_not_truncated() -> None:
     result = _ingest("cell_line,passage,PDL,DT_min\nIMR 90,25.5,22.0,2520\n")
     assert result.runs == []
-    assert any("whole count" in error for error in result.errors)
+    assert result.status is IngestionStatus.NO_VALID_ROWS
+    assert [r.reason for r in result.rejected_rows] == [RowRejectionReason.UNUSABLE_TIME_POINT]
+    assert "whole count" in result.rejected_rows[0].detail
 
 
 def test_a_naive_timestamp_is_refused() -> None:
@@ -383,7 +396,7 @@ def test_a_naive_timestamp_is_refused() -> None:
         ]
     )
     result = _ingest("cell_line,passage,PDL,DT_min\nIMR 90,2026-01-01T00:00:00,22.0,2520\n", spec)
-    assert any("offset" in error for error in result.errors)
+    assert "offset" in result.rejected_rows[0].detail
 
 
 def test_an_elapsed_time_axis_requires_a_unit() -> None:
@@ -400,7 +413,7 @@ def test_rows_group_into_runs_by_identifier_and_keep_their_order() -> None:
     )
     runs = _ingest(text).runs
     assert len(runs) == 2
-    imr = next(r for r in runs if "IMR_90" in r.run_id)
+    imr = next(r for r in runs if "IMR%2090" in r.run_id)
     assert [o.time_point.value for o in imr.observations] == [25, 30]
 
 
@@ -414,7 +427,7 @@ def test_a_run_is_namespaced_versioned_and_sealed() -> None:
 def test_the_untouched_identifier_survives_even_though_the_run_id_is_slugged() -> None:
     """Whitespace is stripped from the *handle* only; nothing about the data is lost."""
     run = _ingest().runs[0]
-    assert run.run_id == "ingestion:fibroblast_passages:cell_line=IMR_90"
+    assert run.run_id == "ingestion:fibroblast_passages:cell_line=IMR%2090"
     assert run.conditions["cell_line"] == "IMR 90"
     assert run.conditions["medium"] == "DMEM"  # spec-level condition carried through
 
@@ -484,3 +497,208 @@ def test_an_unreadable_file_is_a_typed_status_not_an_exception() -> None:
     result = ingest_file("no/such/file.csv", _spec())
     assert result.status is IngestionStatus.UNREADABLE_SOURCE
     assert result.errors
+
+
+# --- review round 2: bounds are never point estimates ------------------------
+
+
+def test_a_bound_is_not_a_valid_scalar_reading() -> None:
+    """A "<0.05" cell does not mean 0.05. The value is kept because the limit is real
+    information, but the reading is not a point estimate."""
+    result = _ingest("cell_line,passage,PDL,DT_min\nIMR 90,25,<0.05,2520\n")
+    decision = next(d for d in result.qc.decisions if d.column == "cumulative_PDL")
+    assert decision.rule is QCRule.BOUNDED
+    assert decision.quality is MeasurementQuality.SUSPECT
+
+    measurement = next(
+        m for m in result.runs[0].observations[0].measurements if m.name == "cumulative_PDL"
+    )
+    assert measurement.value == 0.05  # the limit is not discarded...
+    assert measurement.bound == "<"  # ...but it is unmistakably a limit
+
+
+def test_the_schema_refuses_to_read_a_bound_as_a_number() -> None:
+    """The structural guard: every consumer goes through ``numeric_value``, so a limit
+    cannot be read as a value by code that only remembered to check quality."""
+    from virtualcell.core.experiment import Measurement, MeasurementTypeError
+
+    bounded = Measurement(name="p", value=0.05, quality_flags=["bound:<"])
+    assert bounded.bound == "<"
+    assert not bounded.is_point_estimate
+    with pytest.raises(MeasurementTypeError, match="bounded"):
+        bounded.numeric_value()
+
+
+# --- review round 2: whole-cell numeric parsing ------------------------------
+
+
+@pytest.mark.parametrize("text", ["abc24xyz", "24 (n=3)", "P24", "24 units", "24 or 25"])
+def test_a_numeric_cell_that_merely_contains_a_number_is_refused(text: str) -> None:
+    """Deciding *which part* of a cell was the datum is the reader interpreting, which is
+    what a declared numeric column exists to make unnecessary."""
+    result = _ingest(f'cell_line,passage,PDL,DT_min\nIMR 90,25,"{text}",2520\n')
+    decision = next(d for d in result.qc.decisions if d.column == "cumulative_PDL")
+    assert decision.rule is QCRule.UNPARSEABLE
+
+
+@pytest.mark.parametrize("text", ["24", "24.5", "-3", "1e5", "<0.05", "2.4 ± 0.3", "2.4-fold"])
+def test_a_cell_that_is_a_value_in_full_still_parses(text: str) -> None:
+    from virtualcell.core.values import is_whole_value
+
+    assert is_whole_value(text)
+
+
+def test_the_strict_boundary_is_built_from_the_shared_grammar() -> None:
+    """Not a second parser: strict mode is the same grammar with a whole-cell anchor, so
+    the two can never drift into disagreeing about what a number is."""
+    from virtualcell.core.values import ParseStatus, parse_value_text
+
+    lenient = parse_value_text("abc24xyz")
+    strict = parse_value_text("abc24xyz", strict=True)
+    assert lenient.parsed_value == 24.0  # the literature prose path is unchanged
+    assert strict.parse_status is ParseStatus.UNPARSED
+    assert parse_value_text("24", strict=True).parsed_value == 24.0
+
+
+# --- review round 2: authoritative status when rows are rejected -------------
+
+
+def test_rejecting_every_row_is_not_a_success() -> None:
+    result = _ingest("cell_line,passage,PDL,DT_min\nIMR 90,P?,22.0,2520\nIMR 90,x,25.5,4800\n")
+    assert result.status is IngestionStatus.NO_VALID_ROWS
+    assert result.status.is_failure
+    assert result.runs == []
+    assert len(result.rejected_rows) == 2
+
+
+def test_rejecting_some_rows_is_partial_not_success() -> None:
+    """Neither answer is right on its own: real runs were produced *and* a human needs to
+    look at what was dropped."""
+    result = _ingest("cell_line,passage,PDL,DT_min\nIMR 90,25,22.0,2520\nIMR 90,x,25.5,4800\n")
+    assert result.status is IngestionStatus.PARTIAL
+    assert not result.status.is_failure  # runs were produced
+    assert len(result.runs) == 1
+    assert result.rejected_rows[0].row_index == 1
+
+
+def test_a_rejected_row_contributes_no_qc_decisions() -> None:
+    """Its cells never became measurements, so counting them would inflate the numbers a
+    human reads to judge the import."""
+    good = _ingest("cell_line,passage,PDL,DT_min\nIMR 90,25,22.0,2520\n")
+    mixed = _ingest("cell_line,passage,PDL,DT_min\nIMR 90,25,22.0,2520\nIMR 90,x,25.5,4800\n")
+    assert len(mixed.qc.decisions) == len(good.qc.decisions)
+
+
+def test_the_status_exit_codes_are_three_distinct_answers() -> None:
+    assert IngestionStatus.SUCCESS.exit_code == 0
+    assert IngestionStatus.PARTIAL.exit_code == 2
+    assert IngestionStatus.NO_VALID_ROWS.exit_code == 1
+    assert IngestionStatus.NO_ROWS.exit_code == 1
+
+
+# --- review round 2: hardened run grouping -----------------------------------
+
+
+def test_a_row_with_a_blank_required_identifier_is_rejected() -> None:
+    """Defaulting it to empty would group every such row together, silently merging
+    unrelated cultures into one run."""
+    result = _ingest("cell_line,passage,PDL,DT_min\nIMR 90,25,22.0,2520\n,30,25.5,4800\n")
+    assert [r.reason for r in result.rejected_rows] == [RowRejectionReason.UNUSABLE_IDENTIFIER]
+    assert len(result.runs) == 1
+    assert result.status is IngestionStatus.PARTIAL
+
+
+def test_unrelated_rows_with_blank_identifiers_never_merge() -> None:
+    result = _ingest("cell_line,passage,PDL,DT_min\n,25,22.0,2520\n,30,99.0,4800\n")
+    assert result.runs == []
+    assert len(result.rejected_rows) == 2
+
+
+def test_the_group_encoding_cannot_collide() -> None:
+    """Concatenating raw values with delimiters is not injective: without encoding, one
+    identifier holding a delimiter produces the key two identifiers would, and two
+    unrelated cultures silently become one run."""
+    assert encode_group({"a": "x|b=y"}) != encode_group({"a": "x", "b": "y"})
+    assert encode_group({"a": "x=y"}) != encode_group({"a": "x", "y": ""})
+    # ...and it stays whitespace-free, which a canonical run id requires.
+    assert " " not in encode_group({"cell_line": "IMR 90"})
+
+
+def test_identifier_values_containing_delimiters_survive_verbatim() -> None:
+    text = 'cell_line,passage,PDL,DT_min\n"a|b=c",25,22.0,2520\n'
+    run = _ingest(text).runs[0]
+    assert run.conditions["cell_line"] == "a|b=c"
+    assert run.run_id == "ingestion:fibroblast_passages:cell_line=a%7Cb%3Dc"
+
+
+# --- review round 2: spec versioning and numeric coherence -------------------
+
+
+def test_an_unversioned_spec_is_refused_not_assumed_to_be_current() -> None:
+    """A spec is executed; guessing which instructions it meant is how a file gets read
+    under rules its author never wrote."""
+    with pytest.raises(ValueError, match="spec_version"):
+        DatasetSpec.model_validate(
+            {"dataset_id": "d", "columns": [c.model_dump() for c in _spec().columns]}
+        )
+
+
+def test_a_newer_spec_minor_is_refused_unlike_a_newer_run_minor() -> None:
+    """The asymmetry is deliberate: a run is data a reader can carry through untouched, a
+    spec is an instruction a reader would silently fail to follow."""
+    with pytest.raises(ValueError, match="newer than this reader"):
+        _spec(spec_version="1.99")
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+def test_spec_numbers_must_be_finite(bad: float) -> None:
+    for field in ("detection_limit_low", "plausible_max"):
+        with pytest.raises(ValueError, match="finite"):
+            ColumnSpec(
+                header="PDL",
+                role=ColumnRole.MEASUREMENT,
+                value_type=MeasurementValueType.NUMERIC,
+                **{field: bad},
+            )
+    with pytest.raises(ValueError, match="finite|positive"):
+        ColumnSpec(
+            header="DT",
+            role=ColumnRole.MEASUREMENT,
+            value_type=MeasurementValueType.NUMERIC,
+            unit="hour",
+            source_unit="minute",
+            unit_factor=bad,
+        )
+
+
+@pytest.mark.parametrize("factor", [0.0, -1.0])
+def test_a_conversion_factor_must_be_positive(factor: float) -> None:
+    """A zero or negative factor is not a unit conversion, it is a different measurement."""
+    with pytest.raises(ValueError, match="positive"):
+        ColumnSpec(
+            header="DT",
+            role=ColumnRole.MEASUREMENT,
+            value_type=MeasurementValueType.NUMERIC,
+            unit="hour",
+            source_unit="minute",
+            unit_factor=factor,
+        )
+
+
+def test_an_inverted_range_is_refused() -> None:
+    with pytest.raises(ValueError, match="no reading could ever satisfy both"):
+        ColumnSpec(
+            header="PDL",
+            role=ColumnRole.MEASUREMENT,
+            value_type=MeasurementValueType.NUMERIC,
+            detection_limit_low=10.0,
+            detection_limit_high=1.0,
+        )
+    with pytest.raises(ValueError, match="range is empty"):
+        ColumnSpec(
+            header="PDL",
+            role=ColumnRole.MEASUREMENT,
+            value_type=MeasurementValueType.NUMERIC,
+            plausible_min=10.0,
+            plausible_max=1.0,
+        )

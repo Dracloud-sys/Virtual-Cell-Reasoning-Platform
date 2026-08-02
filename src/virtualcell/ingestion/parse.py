@@ -45,12 +45,17 @@ def _unparsed(cell: RawCell, column: ColumnSpec, note: str) -> ParsedCell:
 
 
 def _parse_numeric(cell: RawCell, column: ColumnSpec) -> ParsedCell:
-    parsed = parse_value_text(cell.text)
+    # ``strict``: a declared numeric column claims the *whole* field is the value, so
+    # "abc24xyz" and "24 (n=3)" are refused rather than yielding 24. Deciding which part
+    # of a cell was the datum is the reader interpreting, which is what this layer is for
+    # avoiding.
+    parsed = parse_value_text(cell.text, strict=True)
     if parsed.parse_status is not ParseStatus.PARSED or parsed.parsed_value is None:
         return _unparsed(
             cell,
             column,
-            f"no number could be read from {cell.text!r} under the platform value grammar",
+            f"{cell.text!r} is not a value in full under the platform grammar; a cell "
+            "that merely contains a number is not a reading",
         )
     return ParsedCell(
         locator=cell.locator,

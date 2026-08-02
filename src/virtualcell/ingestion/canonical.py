@@ -47,8 +47,10 @@ from virtualcell.ingestion.contracts import (
     QCDecision,
     QCReport,
     RawTable,
+    RowRejection,
+    RowRejectionReason,
     TabularIngestionResult,
-    slug_identifier,
+    encode_group,
 )
 from virtualcell.ingestion.normalize import apply_step, normalization_step
 from virtualcell.ingestion.parse import parse_row
@@ -134,12 +136,6 @@ def _run_provenance(spec: DatasetSpec, source_name: str) -> Provenance:
     )
 
 
-def _group_key(identifiers: dict[str, str]) -> str:
-    return "|".join(
-        f"{name}={slug_identifier(value)}" for name, value in sorted(identifiers.items())
-    )
-
-
 def ingest_table(table: RawTable, spec: DatasetSpec) -> TabularIngestionResult:
     """Convert one raw table into canonical runs under ``spec``.
 
@@ -178,20 +174,40 @@ def ingest_table(table: RawTable, spec: DatasetSpec) -> TabularIngestionResult:
     groups: dict[str, list[Observation]] = {}
     group_identifiers: dict[str, dict[str, str]] = {}
 
+    by_name = {c.canonical_name: c for c in spec.columns}
+
     for row_index in range(len(table.rows)):
         cells, unmapped = parse_row(cells_of(table, row_index), spec)
         _ = unmapped  # already reported at the header level; not repeated per row
 
         identifiers: dict[str, str] = {}
         conditions: dict[str, JSONScalar] = {}
+        row_decisions: list[QCDecision] = []
         measurements: list[Measurement] = []
         time_point: TimePoint | None = None
-        by_name = {c.canonical_name: c for c in spec.columns}
+        rejection: RowRejection | None = None
 
         for cell in cells:
             column = by_name[cell.column]
             if cell.role is ColumnRole.IDENTIFIER:
-                identifiers[cell.column] = str(cell.value or "")
+                # An unreadable required identifier means the row's run is unknown.
+                # Defaulting it to "" would group every such row together, silently
+                # merging unrelated cultures into one run — the one outcome grouping must
+                # never produce.
+                usable = cell.value if isinstance(cell.value, str) else None
+                if column.required and not (usable or "").strip():
+                    rejection = rejection or RowRejection(
+                        row_index=row_index,
+                        reason=RowRejectionReason.UNUSABLE_IDENTIFIER,
+                        column=cell.column,
+                        detail=(
+                            f"required identifier {cell.column!r} is blank or unreadable "
+                            f"({cell.raw_text!r}); which run this row belongs to is unknown"
+                        ),
+                    )
+                    continue
+                if usable is not None and usable.strip():
+                    identifiers[cell.column] = usable.strip()
                 continue
             if cell.role is ColumnRole.CONDITION:
                 conditions[cell.column] = cell.value
@@ -199,22 +215,38 @@ def ingest_table(table: RawTable, spec: DatasetSpec) -> TabularIngestionResult:
             if cell.role is ColumnRole.TIME_AXIS:
                 time_point = _time_point(cell, column)
                 if time_point is None:
-                    result.errors.append(
-                        f"{cell.locator}: unusable time point ({cell.parse_note}); the row "
-                        "is skipped because an observation with no time point is not an "
-                        "observation"
+                    rejection = rejection or RowRejection(
+                        row_index=row_index,
+                        reason=RowRejectionReason.UNUSABLE_TIME_POINT,
+                        column=cell.column,
+                        detail=(
+                            f"{cell.locator}: {cell.parse_note}; an observation with no "
+                            "time point is not an observation"
+                        ),
                     )
                 continue
             decision = qc_decision(cell, column)
-            decisions.append(decision)
+            row_decisions.append(decision)
             measurements.append(_measurement(cell, column, decision, steps[cell.column]))
 
-        if axis is not None and time_point is None:
+        if axis is not None and time_point is None and rejection is None:
+            rejection = RowRejection(
+                row_index=row_index,
+                reason=RowRejectionReason.UNUSABLE_TIME_POINT,
+                detail="the declared time-axis column held no usable value",
+            )
+        if rejection is not None:
+            # A rejected row contributes nothing at all: its QC decisions describe cells
+            # that never became measurements, and reporting them would inflate the counts
+            # a human reads to judge the import.
+            result.rejected_rows.append(rejection)
             continue
+
+        decisions.extend(row_decisions)
         if time_point is None:
             time_point = SimulationStepTimePoint(value=row_index)
 
-        key = _group_key(identifiers)
+        key = encode_group(identifiers)
         groups.setdefault(key, []).append(
             Observation(
                 observation_id=f"{table.source_name}:row{row_index}",
@@ -247,4 +279,12 @@ def ingest_table(table: RawTable, spec: DatasetSpec) -> TabularIngestionResult:
     result.runs = deduplicated.runs
     result.collapsed_duplicates = list(deduplicated.collapsed)
     result.collisions = list(deduplicated.collisions)
+
+    # The status is authoritative, so it must distinguish "imported everything" from
+    # "imported some of it" from "imported none of it". A caller reading counts to work
+    # that out is a caller that will eventually forget to.
+    if not result.runs:
+        result.status = IngestionStatus.NO_VALID_ROWS
+    elif result.rejected_rows:
+        result.status = IngestionStatus.PARTIAL
     return result

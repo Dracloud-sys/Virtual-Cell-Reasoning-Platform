@@ -330,6 +330,15 @@ class MeasurementTypeError(ValueError):
     """Raised when a measurement is read as a type it does not hold."""
 
 
+BOUND_FLAG_PREFIX: Final = "bound:"
+"""Quality-flag prefix marking a reading as a bound rather than a point estimate.
+
+Every producer of canonical runs uses it (``literature.canonical``,
+``ingestion.qc``), and :meth:`Measurement.numeric_value` refuses anything carrying it, so
+a limit can never be read as a value by a consumer that only remembered to check quality.
+"""
+
+
 # --- Time axis (discriminated union) ----------------------------------------
 #
 # Passage counts, elapsed culture time, simulation steps and wall-clock stamps
@@ -473,6 +482,23 @@ class Measurement(BaseModel):
         """Does this measurement hold a value that may be reasoned over arithmetically?"""
         return self.value_type is MeasurementValueType.NUMERIC and self.value is not None
 
+    @property
+    def bound(self) -> str | None:
+        """The comparator this reading is bounded by (``<``, ``>=``, …), or ``None``.
+
+        Producers record a bound as a ``bound:<comparator>`` quality flag rather than
+        folding it into the value, precisely so it cannot be lost.
+        """
+        for flag in self.quality_flags:
+            if flag.startswith(BOUND_FLAG_PREFIX):
+                return flag[len(BOUND_FLAG_PREFIX) :]
+        return None
+
+    @property
+    def is_point_estimate(self) -> bool:
+        """Is this a single measured value, rather than a bound on one?"""
+        return self.is_numeric and self.bound is None
+
     def numeric_value(self) -> float:
         """Return the value as a float, or raise :class:`MeasurementTypeError`.
 
@@ -480,7 +506,17 @@ class Measurement(BaseModel):
         refused rather than promoted to 1/0, and a numeric-looking string is refused
         rather than parsed — reading ``"24.0"`` as 24.0 is exactly the silent
         reinterpretation the value type exists to prevent.
+
+        A **bounded** reading is refused too. ``<0.05`` does not mean 0.05; it means the
+        true value is somewhere below it, and every arithmetic a consumer would perform —
+        a trend, a mean, a comparison — would be wrong in a way nothing downstream could
+        detect. Read :attr:`bound` and decide deliberately, or use :attr:`value`.
         """
+        if self.bound is not None:
+            raise MeasurementTypeError(
+                f"measurement {self.name!r} is bounded ({self.bound}{self.value!r}), not a "
+                "point estimate; reading it as a number would treat a limit as a value"
+            )
         if self.value is None:
             raise MeasurementTypeError(
                 f"measurement {self.name!r} carries no value to read "

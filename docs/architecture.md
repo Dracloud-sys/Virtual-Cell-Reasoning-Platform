@@ -327,6 +327,7 @@ model.
 | `UNPARSEABLE` | text held no readable value | `suspect`, **no value** |
 | `TYPE_MISMATCH` | value is not the column's declared type | `suspect`, **no value** |
 | `UNIT_MISMATCH` | the cell carries a different unit | `suspect`, **no value** |
+| `BOUNDED` | the cell is a bound (`<0.05`) | `suspect`, value kept as a **limit** |
 | `BELOW_DETECTION` / `ABOVE_DETECTION` | outside the declared limits | matching quality |
 | `OUT_OF_RANGE` | outside the declared plausible range | `suspect`, value kept |
 | `UNEXPECTED_CATEGORY` | not a declared category | `suspect`, value kept |
@@ -337,12 +338,23 @@ inventing one is the failure this layer exists to prevent. A reading that *was* 
 its value even when flagged, because the human reviewing the flag needs to see what was
 recorded.
 
-**One numeric grammar.** `core.values.parse_value_text` (PR8c, moved to `core` in PR13b) is
-shared with the literature pipeline, so a CSV cell and a table cell in a paper are read by
-the same conservative rules: `1,234` is refused rather than guessed, `<0.05` keeps its
-comparator as a `bound:` flag so it is never later read as a point estimate, and qualitative
-text never gains a number. A second grammar would be a second set of edge cases, and the
-edge cases are the whole point.
+**A bound is never a point estimate.** `<0.05` does not mean 0.05, and a trend, mean or
+comparison computed from it would be wrong in a way nothing downstream could detect. The
+limit is kept — it is real information — but the reading is marked `suspect` and carries a
+`bound:` flag, and `Measurement.numeric_value()` **refuses** anything carrying that flag.
+Putting the guard in the schema rather than in each consumer is the point: a consumer that
+only remembered to check `quality` still cannot read a limit as a value.
+
+**One numeric grammar, with a strict whole-cell boundary.** `core.values.parse_value_text`
+(PR8c, moved to `core` in PR13b) is shared with the literature pipeline, so a CSV cell and a
+table cell in a paper are read by the same conservative rules: `1,234` is refused rather than
+guessed, and qualitative text never gains a number. Ingestion additionally passes
+`strict=True`, which anchors the *same* token definitions to the whole field — a declared
+numeric column claims the entire cell is the value, so `abc24xyz` and `24 (n=3)` are refused
+rather than yielding `24`. Deciding which part of a cell was the datum is the reader
+interpreting. The lenient default remains for literature prose spans, where a number
+legitimately sits inside surrounding text. Both modes are built from one set of token
+regexes, so they cannot drift into disagreeing about what a number is.
 
 **No conversion this layer was not told about.** A column reporting minutes declares
 `source_unit`, `unit` and `unit_factor`; every converted value carries a `NormalizationStep`
@@ -351,12 +363,41 @@ than silently corrupted data. Unit inference, dimensional analysis, and cross-ru
 statistical normalization (batch correction, quantile) are all out — the last needs a model
 of the whole dataset, which is reasoning, not ingestion.
 
-Runs are grouped by the declared identifier columns, emitted at the current
-`SCHEMA_VERSION`, identified as `ingestion:<dataset_id>:<group>`, **sealed** with their
-PR13a checksum, and deduplicated with the PR13a semantic identity so one file cannot import
-the same measurement twice under two row numbers. Identifier values keep their original text
-in the run's conditions even though the run-id *handle* is slugged, so nothing about the data
-is lost to a naming rule.
+**Grouping cannot silently merge.** Runs group by the declared identifier columns, and a
+row whose *required* identifier is blank or unreadable is **rejected**, not defaulted:
+grouping every such row under `""` would merge unrelated cultures into one run. The group is
+encoded by percent-encoding each name and value before joining them, which is injective — no
+combination of identifier values can produce the string another combination produces, so a
+value containing `|` or `=` cannot collide with two separate identifiers. Runs are emitted at
+the current `SCHEMA_VERSION`, identified as `ingestion:<dataset_id>:<group>`, **sealed** with
+their PR13a checksum, and deduplicated with the PR13a semantic identity so one file cannot
+import the same measurement twice under two row numbers. Identifier values keep their
+original text in the run's conditions, so nothing about the data lives only in the handle.
+
+**The status is authoritative, including when rows are rejected.** Rejected rows are
+reported structurally (`RowRejection`: row index, typed reason, column, detail) and
+contribute no QC decisions, since their cells never became measurements and counting them
+would inflate the numbers a human reads. Three outcomes, three exit codes, because there are
+three answers:
+
+| status | meaning | exit |
+|---|---|---|
+| `success` | every row imported | 0 |
+| `partial` | runs produced **and** rows rejected | 2 |
+| `no_valid_rows` / `no_rows` / `spec_mismatch` / `unreadable_source` | nothing usable | 1 |
+
+A partial import must not exit 0 (the rejects would go unseen) nor 1 (the runs it did
+produce are real).
+
+**A `DatasetSpec` declares its version, and it is mandatory.** Unlike a canonical run, a
+spec is **executed** rather than relayed: every field is an instruction about how to read a
+file. A reader meeting a newer *run* minor can carry fields it does not understand through
+untouched, so accepting one loses nothing — but a newer *spec* minor may carry an
+instruction this reader would silently not follow, and the import would look successful
+while ignoring part of what the author asked for. A newer minor is therefore **refused**,
+and an unversioned spec is refused rather than assumed current. Spec numbers must also be
+coherent: finite, positive conversion factors, and no inverted detection or plausible
+ranges.
 
 **Ingestion writes nothing.** It returns runs and a QC report; whether any of it reaches a
 KnowledgeStore is a separate, deliberate act — the same rule `literature.canonical` follows.
