@@ -27,7 +27,12 @@ import re
 
 from pydantic import BaseModel, Field
 
-from virtualcell.core.experiment import ExperimentRun, SchemaVersionError
+from virtualcell.core.experiment import (
+    DedupCollision,
+    ExperimentRun,
+    SchemaVersionError,
+    deduplicate_runs,
+)
 from virtualcell.knowledge.schema import (
     AssayResult,
     Interaction,
@@ -55,6 +60,11 @@ class IngestionReport(BaseModel):
     assay_results: list[str] = Field(default_factory=list)
     interactions_added: int = 0
     skipped: list[str] = Field(default_factory=list)
+    # Duplicate handling (PR13a), reported structurally rather than as prose so a caller
+    # can act on it.
+    collapsed_duplicates: list[str] = Field(default_factory=list)
+    collisions: list[DedupCollision] = Field(default_factory=list)
+    not_deduplicated: list[str] = Field(default_factory=list)
 
 
 def _slug(name: str) -> str:
@@ -72,10 +82,18 @@ def ingest_runs(store: KnowledgeStore, runs: list[ExperimentRun]) -> IngestionRe
     ``ASSOCIATED_WITH`` edge from a measurement to its marker is added only if not already
     present, so re-ingesting the same run is a no-op on the edge set. Returns a summary;
     the graph mutation is the side effect.
+
+    Runs reporting the same observations are collapsed before anything is written
+    (:func:`deduplicate_runs`), so one import cannot write the same measurement twice under
+    two identifiers. Being *readable* and being *dedupable* are separate questions: a run
+    declaring a newer minor passes the schema check but blocks a dedup decision, so it is
+    kept and listed in ``not_deduplicated`` rather than assumed unique or assumed duplicate.
     """
     report = IngestionReport()
     seen_markers: set[str] = set()
     seen_assays: set[str] = set()
+
+    readable: list[ExperimentRun] = []
     for run in runs:
         # A consumer that reads field *meanings* out of a run it did not build. An
         # incompatible major is skipped rather than raised: one unreadable run must not
@@ -85,6 +103,14 @@ def ingest_runs(store: KnowledgeStore, runs: list[ExperimentRun]) -> IngestionRe
         except SchemaVersionError as exc:
             report.skipped.append(f"{run.run_id}: {exc}")
             continue
+        readable.append(run)
+
+    deduplicated = deduplicate_runs(readable)
+    report.collapsed_duplicates = list(deduplicated.collapsed)
+    report.collisions = list(deduplicated.collisions)
+    report.not_deduplicated = list(deduplicated.not_deduplicated)
+
+    for run in deduplicated.runs:
         measurement, meta = _single_measurement(run)
         if measurement is None:
             report.skipped.append(f"{run.run_id}: no measurement to ingest")

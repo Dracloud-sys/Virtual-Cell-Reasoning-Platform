@@ -370,10 +370,35 @@ reference domain pack. The remaining platform layers, in order:
   categorical / boolean, so a numeric assay cannot silently hold a string, read through
   `Measurement.numeric_value()`), and **condition precedence** (observation-level keys
   override run-level, resolved by the single `ExperimentRun.effective_conditions` helper).
-  Run checksums / content-hash dedup are deferred to PR13.
-- ▶ **PR13 — Structured raw-data ingestion, QC and normalization.** Assay-aware readers
-  (CSV/XLSX, qPCR Ct, FCS, imaging, omics), quality control, and normalization into the
-  canonical schema. **PR11 deliberately does not claim arbitrary raw-data interpretation.**
+  Run checksums / content-hash dedup were deferred to PR13a, where they landed.
+- ✅ **PR13a — Run integrity and identity.** Closes PR12's checksum/dedup deferral. Two
+  hashes, because "was this modified?" and "do I already have this?" are different
+  questions: `content_checksum` covers everything the run says (and works at any declared
+  version, since hashing bytes needs no understanding of the fields), while `dedup_key`
+  covers only what the run *observed* and **refuses a newer minor** — the hash spans the
+  field set this reader knows, and a newer minor may have added the very field that tells
+  two runs apart, so "cannot decide" is never reported as "same". Ordering is stated rather
+  than inherited from the serializer: observation order is significant (it is the
+  trajectory), while measurements within an observation, quality flags and condition keys
+  are sets and are normalized. `deduplicate_runs` keeps the first of each group, names every
+  collapse, and reports a structured `DedupCollision` whenever two collapsed runs do not
+  serialize identically. Adds the optional, self-verifying `ExperimentRun.checksum`, which
+  is additive and therefore the schema's first **minor** bump: **1.0 → 1.1**.
+- ▶ **PR13b — Declared tabular ingestion, QC and normalization.** **CSV/TSV only.** Driven
+  by a declared, versioned `DatasetSpec`, never by column inference — free-form BYOD CSV
+  with arbitrary column mapping stays deferred. Keeps the literature layer's three-layer
+  separation (parsed cell candidate → QC decision as the sole authority → canonical
+  conversion), reuses the PR8c numeric grammar rather than forking a second one, treats QC
+  as *acquisition* quality only (never a biological verdict), and performs no unit
+  conversion without a declared rule. Acceptance includes a benchmark case running raw CSV
+  → QC → canonical → `run_to_passage_series` → `ImmortalizationAssessmentAgent.assess`, so
+  raw data is proven to drive the shipped path end to end.
+- ▶ **PR13b-2 — XLSX behind the same `DatasetSpec`.** Split out because it lands the first
+  non-pydantic parsing dependency, which deserves its own review.
+- ▶ **PR15+ — Assay-specific readers** (qPCR Ct, FCS, imaging, omics). Deliberately *not*
+  in PR13: they need vendor/binary parsers and per-assay QC science, and should wait until
+  a second domain pack has proven the QC boundary generalizes.
+  **PR11 deliberately does not claim arbitrary raw-data interpretation.**
 - ▶ **PR14 — Generic Reasoning Kernel extraction.** Lift the domain-independent reasoning
   machinery (evidence grading, mechanistic traversal, decision assembly) out of the
   immortalization vertical so packs supply only domain policy.

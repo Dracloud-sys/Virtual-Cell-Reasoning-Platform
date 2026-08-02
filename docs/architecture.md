@@ -226,7 +226,66 @@ pack start minting runs:
   resolver, `ExperimentRun.effective_conditions(observation)`, so two readers cannot
   silently disagree about what an experiment measured.
 
-Deferred to PR13: run checksums / content-hash dedup.
+### Integrity and identity (schema 1.1, PR13a)
+
+Two hashes, because *"was this modified?"* and *"do I already have this?"* are different
+questions. One hash forced to answer both would either make a harmless re-import look like
+tampering, or make two genuinely different runs look identical.
+
+| | `content_checksum` | `dedup_key` |
+|---|---|---|
+| answers | integrity | identity |
+| covers | everything the run says, including version, `run_id`, metadata, provenance timestamps and preserved unknown fields | only what the run *observed*, plus run-level `origin_kind` / `acquisition_mode` / `source_system` / `source_run_id` / `method` |
+| newer minor | **works** — hashing bytes needs no understanding of the fields | **refused** (`DedupUnavailableError`) |
+
+`ExperimentRun.checksum` is an optional, self-verifying seal: when present it must equal
+`content_checksum`, so a stored run edited in place no longer validates. It is **excluded
+from its own input** — including it would be unsatisfiable, since writing the seal changes
+the run. Absent means "not sealed", never "verified".
+
+`dedup_key` refuses a newer minor on purpose. The hash spans the field set this reader
+knows; a newer minor may have added the very field that distinguishes two runs, and hashing
+without it would collapse records that are not duplicates. Silently merging distinct
+experimental data is the one outcome dedup must never produce, so an unknown minor means
+*cannot decide*, never *same*. Being readable and being dedupable are therefore separate
+questions, and `literature.ingestion` reports them separately.
+
+**Collection semantics are stated, not inherited from the serializer:**
+
+| collection | semantics | order | multiplicity |
+|---|---|---|---|
+| `observations` | ordered **sequence** — it *is* the trajectory | significant | significant |
+| `measurements` within an observation | unordered **multiset** — replicates are real data, so two identical readings at one time point are not one reading | normalized away | **significant** |
+| `quality_flags` | true **set** — a flag repeated twice says what it says once | normalized away | normalized away |
+| `conditions` (both levels) | mapping | normalized away | n/a |
+
+One deliberate non-normalization: *where* a condition is declared is part of identity. A
+run-level condition asserts it held for the whole run; the same key on one observation
+asserts something narrower.
+
+**Numeric identity is normalized in `dedup_key`, never in `content_checksum`.** `1` and
+`1.0` are the same measurement — `Measurement.numeric_value()` reads both as `1.0` — and
+`0.0`/`-0.0` are the same quantity, so they must not split a dedup group when a CSV reader
+emits `int` and the literature converter emits `float` for one reading. Integrity asks a
+different question: `1` and `1.0` are different bytes, so the checksum keeps them apart.
+
+**Only finite numbers.** NaN and ±Infinity are refused by every canonical numeric field
+(`Measurement.value`, `confidence`, elapsed-time values, and every `conditions`/`metadata`
+map), and refused again before hashing so a preserved newer-minor extra — unvalidated by
+design — cannot slip one through. The pre-check runs on the *python-mode* dump, because
+pydantic's JSON mode rewrites NaN to `null`: checking afterwards would let a NaN-bearing run
+and a null-bearing run seal to the same checksum, certifying data the serializer had already
+altered. `json.dumps(..., allow_nan=False)` is the final guard. A non-finite reading is a
+missing or invalid one, and `quality` is the field that says so.
+
+`deduplicate_runs` keeps the first run of each group in input order, names every collapse,
+and emits a structured `DedupCollision` (both run ids, both checksums, the shared key)
+whenever two collapsed runs do not serialize identically. Since `run_id` is in the checksum
+but not the key, two *distinct records* asserting the same observations always surface as a
+collision while a byte-identical re-import collapses quietly — one record seen twice is
+housekeeping, two records making the same claim is a fact about the data. A run whose
+version blocks a dedup decision is **kept**, never dropped: being unable to prove two runs
+are duplicates is a reason to hold both.
 
 Scope today: this is the *foundation contract, its version policy, and the first adapter*.
 It does **not** yet connect a real simulator, robot, or LIMS, and the existing
