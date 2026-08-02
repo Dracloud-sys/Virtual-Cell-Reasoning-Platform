@@ -1,0 +1,90 @@
+"""Verbatim tabular readers (PR13b): CSV and TSV only.
+
+The reader's whole job is to *not* interpret. It produces text and positions; every
+decision about what that text means happens later, where it can be traced to a declared
+rule. That separation is what makes an import auditable: if a value is wrong, it is either
+in the file or introduced by a named rule, never by a reader guessing.
+
+Deliberately not here: type sniffing, header normalization, encoding detection, blank-row
+skipping heuristics, XLSX (**PR13b-2**, which lands the first parsing dependency), and any
+vendor/binary assay format (**PR15+**).
+"""
+
+from __future__ import annotations
+
+import csv
+import io
+from pathlib import Path
+
+from virtualcell.ingestion.contracts import CellLocator, RawCell, RawTable, SourceFormat
+
+_DELIMITER: dict[SourceFormat, str] = {SourceFormat.CSV: ",", SourceFormat.TSV: "\t"}
+
+# UTF-8 with a BOM is what Excel writes on Windows, which is where most of these files come
+# from. ``utf-8-sig`` reads both, and strips the BOM so the first header is not "﻿id".
+ENCODING = "utf-8-sig"
+
+
+class ReaderError(ValueError):
+    """Raised when a source cannot be read as the declared tabular format."""
+
+
+def read_delimited(text: str, *, source_name: str, source_format: SourceFormat) -> RawTable:
+    """Read delimited text into a :class:`RawTable`, verbatim.
+
+    Cells are stripped of surrounding whitespace and nothing else: leading/trailing spaces
+    are a transport artifact, while the content between them is the datum. Short rows are
+    padded and long rows are refused — a row with more fields than headers means the file
+    is not what the spec says it is, and quietly dropping the extra would hide that.
+    """
+    delimiter = _DELIMITER[source_format]
+    rows = list(csv.reader(io.StringIO(text), delimiter=delimiter))
+    if not rows:
+        return RawTable(source_name=source_name)
+
+    headers = [cell.strip() for cell in rows[0]]
+    if not any(headers):
+        raise ReaderError(f"{source_name}: the first line is empty; expected a header row")
+
+    data: list[list[str]] = []
+    for index, row in enumerate(rows[1:]):
+        cells = [cell.strip() for cell in row]
+        if not any(cells):
+            continue  # a wholly blank line carries no cell, not even a missing one
+        if len(cells) > len(headers):
+            raise ReaderError(
+                f"{source_name}: data row {index} has {len(cells)} fields but the header "
+                f"declares {len(headers)}; refusing to guess which are extra"
+            )
+        cells.extend([""] * (len(headers) - len(cells)))
+        data.append(cells)
+
+    return RawTable(source_name=source_name, headers=headers, rows=data)
+
+
+def read_path(path: str | Path, *, source_format: SourceFormat) -> RawTable:
+    """Read a file into a :class:`RawTable`. Encoding is fixed, never sniffed."""
+    file_path = Path(path)
+    try:
+        text = file_path.read_text(encoding=ENCODING)
+    except OSError as exc:
+        raise ReaderError(f"cannot read {file_path}: {exc}") from exc
+    except UnicodeDecodeError as exc:
+        raise ReaderError(
+            f"cannot decode {file_path} as {ENCODING}; convert it rather than letting a "
+            f"reader guess an encoding: {exc}"
+        ) from exc
+    return read_delimited(text, source_name=file_path.name, source_format=source_format)
+
+
+def cells_of(table: RawTable, row_index: int) -> list[RawCell]:
+    """The located cells of one data row, in header order."""
+    return [
+        RawCell(
+            locator=CellLocator(
+                source_name=table.source_name, row_index=row_index, column_header=header
+            ),
+            text=value,
+        )
+        for header, value in zip(table.headers, table.rows[row_index], strict=True)
+    ]

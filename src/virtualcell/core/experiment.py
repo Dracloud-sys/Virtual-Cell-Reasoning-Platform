@@ -481,6 +481,11 @@ class Measurement(BaseModel):
         rather than parsed — reading ``"24.0"`` as 24.0 is exactly the silent
         reinterpretation the value type exists to prevent.
         """
+        if self.value is None:
+            raise MeasurementTypeError(
+                f"measurement {self.name!r} carries no value to read "
+                f"(quality {self.quality.value!r})"
+            )
         if not self.is_numeric:
             declared = self.value_type.value if self.value_type else "untyped"
             raise MeasurementTypeError(

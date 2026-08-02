@@ -32,6 +32,7 @@ from enum import StrEnum
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from virtualcell.core.experiment import ExperimentRun, SchemaVersionError
+from virtualcell.core.values import ParseStatus as ParseStatus
 
 # --- query -------------------------------------------------------------------
 
@@ -353,11 +354,10 @@ class ExtractedClaimCandidate(_Candidate):
     source_locator: SourceLocator
 
 
-class ParseStatus(StrEnum):
-    """Whether a numeric value could be taken from the raw source text."""
-
-    PARSED = "parsed"
-    UNPARSED = "unparsed"
+# ``ParseStatus`` is imported from ``core.values`` and re-exported here so existing
+# importers keep working. The grammar and its status vocabulary live in core because
+# ingestion (PR13b) needs the same conservative parse, and a second copy would be a second
+# set of edge cases.
 
 
 class ExtractedMeasurementCandidate(_Candidate):

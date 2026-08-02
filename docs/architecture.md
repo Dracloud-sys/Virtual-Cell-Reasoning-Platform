@@ -291,6 +291,83 @@ Scope today: this is the *foundation contract, its version policy, and the first
 It does **not** yet connect a real simulator, robot, or LIMS, and the existing
 immortalization input/API/CLI are unchanged. Raw-assay ingestion and QC land in PR13.
 
+## Declared tabular ingestion (`virtualcell.ingestion`)
+
+Turns a raw CSV/TSV export into canonical experiment runs, so an experimentalist's file can
+reach a grounded decision report without anyone hand-transcribing it into the platform's own
+shapes. **CSV/TSV only** — XLSX is PR13b-2, which lands the first parsing dependency;
+qPCR Ct, FCS, imaging and omics are PR15+.
+
+```
+file -> RawTable -> ParsedCell candidates -> QCDecision -> ExperimentRun
+```
+
+The three layers are the literature pipeline's, for the same reason: a proposal, a decision
+and a conversion are different acts, and merging any two of them is how a parse failure
+quietly becomes an observation. A `ParsedCell` carries **no** quality verdict; a `QCDecision`
+is the only thing that may assign one.
+
+**Declared, never inferred.** A `DatasetSpec` states which columns exist, what they mean,
+what type they hold and what units they are in. An unmapped column is *reported*, never
+guessed; a required column that is absent fails the run; a column deliberately not ingested
+is declared `ignored`, because an ignored column is a decision and an unmapped one is an
+oversight. Free-form column mapping stays out of scope: a guess about what a column means is
+a guess about what an experiment measured.
+
+**QC is acquisition quality, never biology.** Every rule asks whether a reading was taken,
+whether the instrument could represent it, whether it is inside the declared limits, whether
+it is one of the declared categories. None asks whether the *cells* are interesting. The
+vocabulary is exactly `MeasurementQuality`; ingestion adds no verdict of its own. The moment
+a QC rule encodes a biological judgement it stops being reusable and becomes a hidden domain
+model.
+
+| rule | when | quality |
+|---|---|---|
+| `MISSING_TOKEN` | a declared "no reading" token | `missing` |
+| `UNPARSEABLE` | text held no readable value | `suspect`, **no value** |
+| `TYPE_MISMATCH` | value is not the column's declared type | `suspect`, **no value** |
+| `UNIT_MISMATCH` | the cell carries a different unit | `suspect`, **no value** |
+| `BELOW_DETECTION` / `ABOVE_DETECTION` | outside the declared limits | matching quality |
+| `OUT_OF_RANGE` | outside the declared plausible range | `suspect`, value kept |
+| `UNEXPECTED_CATEGORY` | not a declared category | `suspect`, value kept |
+| `ACCEPTED` | none of the above | `valid` |
+
+A reading that could not be read keeps **no** value — there is nothing to keep, and
+inventing one is the failure this layer exists to prevent. A reading that *was* read keeps
+its value even when flagged, because the human reviewing the flag needs to see what was
+recorded.
+
+**One numeric grammar.** `core.values.parse_value_text` (PR8c, moved to `core` in PR13b) is
+shared with the literature pipeline, so a CSV cell and a table cell in a paper are read by
+the same conservative rules: `1,234` is refused rather than guessed, `<0.05` keeps its
+comparator as a `bound:` flag so it is never later read as a point estimate, and qualitative
+text never gains a number. A second grammar would be a second set of edge cases, and the
+edge cases are the whole point.
+
+**No conversion this layer was not told about.** A column reporting minutes declares
+`source_unit`, `unit` and `unit_factor`; every converted value carries a `NormalizationStep`
+*and* its pre-conversion number in provenance, so a wrong factor is a visible mistake rather
+than silently corrupted data. Unit inference, dimensional analysis, and cross-run
+statistical normalization (batch correction, quantile) are all out — the last needs a model
+of the whole dataset, which is reasoning, not ingestion.
+
+Runs are grouped by the declared identifier columns, emitted at the current
+`SCHEMA_VERSION`, identified as `ingestion:<dataset_id>:<group>`, **sealed** with their
+PR13a checksum, and deduplicated with the PR13a semantic identity so one file cannot import
+the same measurement twice under two row numbers. Identifier values keep their original text
+in the run's conditions even though the run-id *handle* is slugged, so nothing about the data
+is lost to a naming rule.
+
+**Ingestion writes nothing.** It returns runs and a QC report; whether any of it reaches a
+KnowledgeStore is a separate, deliberate act — the same rule `literature.canonical` follows.
+`virtualcell experiment import --spec <spec.json> --input <data.csv>` is the CLI surface, and
+its typed status is authoritative: a caller never infers failure from counts.
+
+One consequence reached back into the immortalization vertical: `canonical_to_passage_observation`
+now leaves a non-`valid` reading **absent** instead of reading it. `PassageObservation` has no
+field for a quality flag, so a suspect or below-detection value entering the trajectory engine
+would be indistinguishable from a clean one and could silently drive a candidate status.
+
 ## Literature discovery (`virtualcell.literature`)
 
 Automated literature evidence, with one rule above all: **finding/reading a paper is

@@ -28,6 +28,7 @@ from virtualcell.core.experiment import (
     AcquisitionMode,
     ExperimentRun,
     Measurement,
+    MeasurementQuality,
     MeasurementTypeError,
     Observation,
     OriginKind,
@@ -139,6 +140,11 @@ def canonical_to_passage_observation(
     Only a passage time point is accepted. Unrecognized measurements are rejected
     when ``strict`` (the default) and ignored otherwise — they cannot be
     represented on a PassageObservation, so ``strict=False`` is a documented loss.
+
+    A recognized measurement that QC did not mark ``valid`` is left absent rather than
+    read: ``PassageObservation`` has no field for a quality flag, so a suspect or
+    below-detection reading entering the trajectory would be indistinguishable from a
+    clean one.
     """
     time_point = obs.time_point
     if time_point.kind != "passage":
@@ -153,6 +159,13 @@ def canonical_to_passage_observation(
                 raise CanonicalAdapterError(
                     f"duplicate measurement {measurement.name!r} in a single observation"
                 )
+            # Only a reading QC called *valid* becomes a trajectory point. A missing,
+            # suspect, excluded or out-of-detection-range reading is left absent rather
+            # than carried: this engine has no notion of a quality flag, so a flagged
+            # value entering it would silently drive a candidate status. The reading is
+            # not lost — it stays on the canonical run, with the rule that flagged it.
+            if measurement.quality is not MeasurementQuality.VALID:
+                continue
             values[measurement.name] = _numeric_value(measurement)
         elif strict:
             raise CanonicalAdapterError(

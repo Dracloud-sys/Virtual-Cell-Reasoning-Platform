@@ -384,15 +384,23 @@ reference domain pack. The remaining platform layers, in order:
   collapse, and reports a structured `DedupCollision` whenever two collapsed runs do not
   serialize identically. Adds the optional, self-verifying `ExperimentRun.checksum`, which
   is additive and therefore the schema's first **minor** bump: **1.0 → 1.1**.
-- ▶ **PR13b — Declared tabular ingestion, QC and normalization.** **CSV/TSV only.** Driven
+- ✅ **PR13b — Declared tabular ingestion, QC and normalization.** **CSV/TSV only.** Driven
   by a declared, versioned `DatasetSpec`, never by column inference — free-form BYOD CSV
   with arbitrary column mapping stays deferred. Keeps the literature layer's three-layer
   separation (parsed cell candidate → QC decision as the sole authority → canonical
-  conversion), reuses the PR8c numeric grammar rather than forking a second one, treats QC
-  as *acquisition* quality only (never a biological verdict), and performs no unit
-  conversion without a declared rule. Acceptance includes a benchmark case running raw CSV
-  → QC → canonical → `run_to_passage_series` → `ImmortalizationAssessmentAgent.assess`, so
-  raw data is proven to drive the shipped path end to end.
+  conversion), reuses the PR8c numeric grammar — moved to `core.values` so both pipelines
+  share one implementation rather than forking a second set of edge cases — treats QC as
+  *acquisition* quality only (never a biological verdict), and performs no unit conversion
+  without a declared rule, recording the factor and the pre-conversion value so
+  normalization is reversible. Runs are grouped by declared identifiers, sealed with their
+  PR13a checksum and deduplicated on the PR13a identity. `virtualcell experiment import` is
+  the CLI surface; ingestion writes nothing to a knowledge base. Acceptance is a benchmark
+  case running raw CSV → QC → canonical → `run_to_passage_series` →
+  `ImmortalizationAssessmentAgent.assess`, proving raw data drives the shipped path end to
+  end. One consequence reached back into the vertical: a non-`valid` reading is now left
+  *absent* from a passage series rather than read, because `PassageObservation` has no field
+  for a quality flag and a flagged value would otherwise be indistinguishable from a clean
+  one.
 - ▶ **PR13b-2 — XLSX behind the same `DatasetSpec`.** Split out because it lands the first
   non-pydantic parsing dependency, which deserves its own review.
 - ▶ **PR15+ — Assay-specific readers** (qPCR Ct, FCS, imaging, omics). Deliberately *not*

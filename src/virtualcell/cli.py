@@ -9,6 +9,7 @@ Usage:
     virtualcell qa "<natural-language question>"
     virtualcell explain <entity_id>
     virtualcell assess immortalization --input assessment.json [--format json|text]
+    virtualcell experiment import --spec spec.json --input passages.csv [--format json|text]
     virtualcell ingest reactome --path <UniProt2Reactome.txt> --save graph.json
     virtualcell ingest uniprot  --path <uniprotkb_export.tsv> --load graph.json --save graph.json
     virtualcell qa "..." --load graph.json
@@ -470,6 +471,50 @@ def _cmd_ingest(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_experiment_import(args: argparse.Namespace) -> int:
+    """Import a declared tabular source into canonical experiment runs (PR13b).
+
+    Prints the runs and the QC report; writes nothing to a knowledge base. Turning
+    imported data into asserted evidence is a separate, deliberate act.
+    """
+    import json
+
+    from pydantic import ValidationError
+
+    from virtualcell.ingestion import DatasetSpec, ingest_file
+
+    try:
+        spec_payload = json.loads(Path(args.spec).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"could not read spec: {exc}")
+        return 1
+    try:
+        spec = DatasetSpec.model_validate(spec_payload)
+    except ValidationError as exc:
+        print(f"invalid dataset spec: {exc}")
+        return 1
+
+    result = ingest_file(args.input, spec)
+
+    if args.format == "json":
+        print(result.model_dump_json(indent=2))
+    else:
+        print(f"status: {result.status.value}")
+        print(f"runs: {len(result.runs)}  observations: {result.rows_ingested}")
+        print(f"qc: {result.qc.counts or '{}'}")
+        for step in result.normalizations:
+            print(f"normalized {step.column}: {step.from_unit} -> {step.to_unit} x{step.factor}")
+        if result.unmapped_columns:
+            print(f"unmapped columns (not ingested): {', '.join(result.unmapped_columns)}")
+        if result.collapsed_duplicates:
+            print(f"collapsed duplicate runs: {', '.join(result.collapsed_duplicates)}")
+        for error in result.errors:
+            print(f"error: {error}")
+
+    # The status is authoritative; a caller must not have to infer failure from counts.
+    return 1 if result.status.is_failure else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="virtualcell", description="Virtual Cell Reasoning Platform CLI"
@@ -581,6 +626,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_ingest.add_argument("--load", help="merge into an existing saved graph JSON")
     p_ingest.add_argument("--save", help="write the resulting graph to a JSON file")
     p_ingest.set_defaults(func=_cmd_ingest)
+
+    p_exp = sub.add_parser("experiment", help="canonical experiment data")
+    exp_sub = p_exp.add_subparsers(dest="experiment_command", required=True)
+    p_import = exp_sub.add_parser(
+        "import",
+        help="import a declared CSV/TSV source into canonical experiment runs",
+    )
+    p_import.add_argument("--spec", required=True, help="path to a DatasetSpec JSON file")
+    p_import.add_argument("--input", required=True, help="path to the CSV/TSV source")
+    p_import.add_argument("--format", choices=["text", "json"], default="text")
+    p_import.set_defaults(func=_cmd_experiment_import)
 
     return parser
 

@@ -153,3 +153,36 @@ def test_adapter_output_feeds_extract_trajectory() -> None:
     ta = extract_trajectory(series)  # the adapter did no reasoning; the engine does
     assert ta.state.value == "progressive_slowdown"
     assert ta.derived_DT_trend.value == "worsening"
+
+
+# --- QC-flagged readings never become trajectory points (PR13b) ---------------
+
+
+def test_a_missing_reading_is_absent_rather_than_an_error() -> None:
+    """Ingestion (PR13b) emits measurements QC marked ``missing``. They carry no value, and
+    a consumer must read that as "not measured", not as a failure."""
+    from virtualcell.core.experiment import MeasurementQuality
+
+    obs = _canonical(
+        Measurement(name="cumulative_PDL", quality=MeasurementQuality.MISSING),
+        Measurement(name="DT_hours", value=42.0, unit="hour"),
+    )
+    passage = canonical_to_passage_observation(obs)
+    assert passage.cumulative_PDL is None
+    assert passage.DT_hours == 42.0
+
+
+def test_a_qc_flagged_reading_never_enters_the_trajectory() -> None:
+    """PassageObservation has no field for a quality flag, so a suspect value entering the
+    engine would be indistinguishable from a clean one and could drive a status."""
+    from virtualcell.core.experiment import MeasurementQuality
+
+    obs = _canonical(
+        Measurement(
+            name="cumulative_PDL",
+            value=9999.0,
+            quality=MeasurementQuality.SUSPECT,
+            quality_flags=["out_of_range:9999.0"],
+        )
+    )
+    assert canonical_to_passage_observation(obs).cumulative_PDL is None
