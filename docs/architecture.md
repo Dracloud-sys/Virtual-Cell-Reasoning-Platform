@@ -291,6 +291,142 @@ Scope today: this is the *foundation contract, its version policy, and the first
 It does **not** yet connect a real simulator, robot, or LIMS, and the existing
 immortalization input/API/CLI are unchanged. Raw-assay ingestion and QC land in PR13.
 
+## Declared tabular ingestion (`virtualcell.ingestion`)
+
+Turns a raw CSV/TSV export into canonical experiment runs, so an experimentalist's file can
+reach a grounded decision report without anyone hand-transcribing it into the platform's own
+shapes. **CSV/TSV only** — XLSX is PR13b-2, which lands the first parsing dependency;
+qPCR Ct, FCS, imaging and omics are PR15+.
+
+```
+file -> RawTable -> ParsedCell candidates -> QCDecision -> ExperimentRun
+```
+
+The three layers are the literature pipeline's, for the same reason: a proposal, a decision
+and a conversion are different acts, and merging any two of them is how a parse failure
+quietly becomes an observation. A `ParsedCell` carries **no** quality verdict; a `QCDecision`
+is the only thing that may assign one.
+
+**Declared, never inferred.** A `DatasetSpec` states which columns exist, what they mean,
+what type they hold and what units they are in. An unmapped column is *reported*, never
+guessed; a required column that is absent fails the run; a column deliberately not ingested
+is declared `ignored`, because an ignored column is a decision and an unmapped one is an
+oversight. Free-form column mapping stays out of scope: a guess about what a column means is
+a guess about what an experiment measured.
+
+**QC is acquisition quality, never biology.** Every rule asks whether a reading was taken,
+whether the instrument could represent it, whether it is inside the declared limits, whether
+it is one of the declared categories. None asks whether the *cells* are interesting. The
+vocabulary is exactly `MeasurementQuality`; ingestion adds no verdict of its own. The moment
+a QC rule encodes a biological judgement it stops being reusable and becomes a hidden domain
+model.
+
+| rule | when | quality |
+|---|---|---|
+| `MISSING_TOKEN` | a declared "no reading" token | `missing` |
+| `UNPARSEABLE` | text held no readable value | `suspect`, **no value** |
+| `TYPE_MISMATCH` | value is not the column's declared type | `suspect`, **no value** |
+| `UNIT_MISMATCH` | the cell carries a different unit | `suspect`, **no value** |
+| `BOUNDED` | the cell is a bound (`<0.05`) | `suspect`, value kept as a **limit** |
+| `BELOW_DETECTION` / `ABOVE_DETECTION` | outside the declared limits | matching quality |
+| `OUT_OF_RANGE` | outside the declared plausible range | `suspect`, value kept |
+| `UNEXPECTED_CATEGORY` | not a declared category | `suspect`, value kept |
+| `ACCEPTED` | none of the above | `valid` |
+
+A reading that could not be read keeps **no** value — there is nothing to keep, and
+inventing one is the failure this layer exists to prevent. A reading that *was* read keeps
+its value even when flagged, because the human reviewing the flag needs to see what was
+recorded.
+
+**A bound is never a point estimate.** `<0.05` does not mean 0.05, and a trend, mean or
+comparison computed from it would be wrong in a way nothing downstream could detect. The
+limit is kept — it is real information — but the reading is marked `suspect` and carries a
+`bound:` flag, and `Measurement.numeric_value()` **refuses** anything carrying that flag.
+Putting the guard in the schema rather than in each consumer is the point: a consumer that
+only remembered to check `quality` still cannot read a limit as a value.
+
+**One numeric grammar, with a strict whole-cell boundary.** `core.values.parse_value_text`
+(PR8c, moved to `core` in PR13b) is shared with the literature pipeline, so a CSV cell and a
+table cell in a paper are read by the same conservative rules: `1,234` is refused rather than
+guessed, and qualitative text never gains a number. Ingestion additionally passes
+`strict=True`, which anchors the *same* token definitions to the whole field — a declared
+numeric column claims the entire cell is the value, so `abc24xyz` and `24 (n=3)` are refused
+rather than yielding `24`. A value that **overflows to infinity** (`1e999`) is refused too:
+it is syntactically a number and semantically nothing the canonical schema can hold, so
+parsing it would hand a constructor a value guaranteed to raise — turning one raw cell into
+a traceback instead of a QC verdict. Deciding which part of a cell was the datum is the reader
+interpreting. The lenient default remains for literature prose spans, where a number
+legitimately sits inside surrounding text. Both modes are built from one set of token
+regexes, so they cannot drift into disagreeing about what a number is.
+
+**No conversion this layer was not told about.** A column reporting minutes declares
+`source_unit`, `unit` and `unit_factor`; every converted value carries a `NormalizationStep`
+*and* its pre-conversion number in provenance, so a wrong factor is a visible mistake rather
+than silently corrupted data. Unit inference, dimensional analysis, and cross-run
+statistical normalization (batch correction, quantile) are all out — the last needs a model
+of the whole dataset, which is reasoning, not ingestion.
+
+**Source headers must be unique and non-empty**, checked at the reader after stripping so
+`id` and `id ` are caught. Everything downstream identifies a column by its header —
+`CellLocator` carries nothing else — so two columns sharing one cannot be told apart: one
+identifier would silently overwrite the other and lose a row's identity, and two same-named
+measurements would be indistinguishable from the declared replicates the canonical multiset
+exists to preserve. Neither is a reader's decision to make, so an ambiguous header row is an
+`unreadable_source`, not a per-row QC outcome.
+
+**Canonical names are unique across every ingested column.** Not just measurements: two
+columns resolving to one name collapse into a single entry wherever the pipeline keys by
+name, and for *identifiers* that is data loss with teeth — rows differing only in the
+shadowed column would group into one run, merging unrelated cultures while the import
+reported success. Column lookup is by source **header**, the thing the spec guarantees
+unique at the file level. `ignored` columns are exempt, since they contribute nothing.
+
+**Grouping cannot silently merge.** Runs group by the declared identifier columns, and a
+row whose *required* identifier is blank or unreadable is **rejected**, not defaulted:
+grouping every such row under `""` would merge unrelated cultures into one run. The group is
+encoded by percent-encoding each name and value before joining them, which is injective — no
+combination of identifier values can produce the string another combination produces, so a
+value containing `|` or `=` cannot collide with two separate identifiers. Runs are emitted at
+the current `SCHEMA_VERSION`, identified as `ingestion:<dataset_id>:<group>`, **sealed** with
+their PR13a checksum, and deduplicated with the PR13a semantic identity so one file cannot
+import the same measurement twice under two row numbers. Identifier values keep their
+original text in the run's conditions, so nothing about the data lives only in the handle.
+
+**The status is authoritative, including when rows are rejected.** Rejected rows are
+reported structurally (`RowRejection`: row index, typed reason, column, detail) and
+contribute no QC decisions, since their cells never became measurements and counting them
+would inflate the numbers a human reads. Three outcomes, three exit codes, because there are
+three answers:
+
+| status | meaning | exit |
+|---|---|---|
+| `success` | every row imported | 0 |
+| `partial` | runs produced **and** rows rejected | 2 |
+| `no_valid_rows` / `no_rows` / `spec_mismatch` / `unreadable_source` | nothing usable | 1 |
+
+A partial import must not exit 0 (the rejects would go unseen) nor 1 (the runs it did
+produce are real).
+
+**A `DatasetSpec` declares its version, and it is mandatory.** Unlike a canonical run, a
+spec is **executed** rather than relayed: every field is an instruction about how to read a
+file. A reader meeting a newer *run* minor can carry fields it does not understand through
+untouched, so accepting one loses nothing — but a newer *spec* minor may carry an
+instruction this reader would silently not follow, and the import would look successful
+while ignoring part of what the author asked for. A newer minor is therefore **refused**,
+and an unversioned spec is refused rather than assumed current. Spec numbers must also be
+coherent: finite, positive conversion factors, and no inverted detection or plausible
+ranges.
+
+**Ingestion writes nothing.** It returns runs and a QC report; whether any of it reaches a
+KnowledgeStore is a separate, deliberate act — the same rule `literature.canonical` follows.
+`virtualcell experiment import --spec <spec.json> --input <data.csv>` is the CLI surface, and
+its typed status is authoritative: a caller never infers failure from counts.
+
+One consequence reached back into the immortalization vertical: `canonical_to_passage_observation`
+now leaves a non-`valid` reading **absent** instead of reading it. `PassageObservation` has no
+field for a quality flag, so a suspect or below-detection value entering the trajectory engine
+would be indistinguishable from a clean one and could silently drive a candidate status.
+
 ## Literature discovery (`virtualcell.literature`)
 
 Automated literature evidence, with one rule above all: **finding/reading a paper is
