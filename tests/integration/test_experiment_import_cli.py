@@ -260,3 +260,24 @@ def test_a_spec_with_colliding_column_names_is_refused_by_the_cli(tmp_path, caps
 
     assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 1
     assert "invalid dataset spec" in capsys.readouterr().out
+
+
+# --- review round 4: an ambiguous header row is an unreadable source ---------
+
+
+def test_duplicate_headers_exit_one_as_an_unreadable_source(files, tmp_path, capsys) -> None:
+    """The file cannot be read unambiguously, so it is a source failure rather than a
+    per-row QC outcome — reported as a typed status, with no traceback."""
+    spec_path, _ = files
+    source = _write(
+        tmp_path,
+        "duplicate.csv",
+        "cell_line,cell_line,passage,PDL,DT_min\nIMR 90,BJ,25,22.0,2520\n",
+    )
+
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 1
+
+    out = capsys.readouterr().out
+    assert "status: unreadable_source" in out
+    assert "duplicate header" in out
+    assert "Traceback" not in out

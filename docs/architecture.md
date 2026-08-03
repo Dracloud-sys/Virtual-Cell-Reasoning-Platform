@@ -366,6 +366,14 @@ than silently corrupted data. Unit inference, dimensional analysis, and cross-ru
 statistical normalization (batch correction, quantile) are all out — the last needs a model
 of the whole dataset, which is reasoning, not ingestion.
 
+**Source headers must be unique and non-empty**, checked at the reader after stripping so
+`id` and `id ` are caught. Everything downstream identifies a column by its header —
+`CellLocator` carries nothing else — so two columns sharing one cannot be told apart: one
+identifier would silently overwrite the other and lose a row's identity, and two same-named
+measurements would be indistinguishable from the declared replicates the canonical multiset
+exists to preserve. Neither is a reader's decision to make, so an ambiguous header row is an
+`unreadable_source`, not a per-row QC outcome.
+
 **Canonical names are unique across every ingested column.** Not just measurements: two
 columns resolving to one name collapse into a single entry wherever the pipeline keys by
 name, and for *identifiers* that is data loss with teeth — rows differing only in the

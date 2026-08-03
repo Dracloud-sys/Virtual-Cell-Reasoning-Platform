@@ -36,6 +36,14 @@ def read_delimited(text: str, *, source_name: str, source_format: SourceFormat) 
     are a transport artifact, while the content between them is the datum. Short rows are
     padded and long rows are refused — a row with more fields than headers means the file
     is not what the spec says it is, and quietly dropping the extra would hide that.
+
+    **Headers must be unique and non-empty**, checked *after* stripping so ``id`` and
+    ``id `` are caught. Everything downstream identifies a column by its header —
+    :class:`CellLocator` carries nothing else — so two columns sharing one cannot be told
+    apart: one identifier would silently overwrite the other and lose a row's identity,
+    and two same-named measurements would be indistinguishable from the declared replicates
+    the canonical multiset is meant to preserve. Neither is something a reader may decide;
+    both are questions for whoever produced the file.
     """
     delimiter = _DELIMITER[source_format]
     rows = list(csv.reader(io.StringIO(text), delimiter=delimiter))
@@ -45,6 +53,23 @@ def read_delimited(text: str, *, source_name: str, source_format: SourceFormat) 
     headers = [cell.strip() for cell in rows[0]]
     if not any(headers):
         raise ReaderError(f"{source_name}: the first line is empty; expected a header row")
+
+    blank = [index for index, header in enumerate(headers) if not header]
+    if blank:
+        raise ReaderError(
+            f"{source_name}: header column(s) {', '.join(str(i) for i in blank)} are empty; "
+            "a column with no name cannot be declared in a spec or named in a locator"
+        )
+
+    duplicates = sorted({header for header in headers if headers.count(header) > 1})
+    if duplicates:
+        raise ReaderError(
+            f"{source_name}: duplicate header(s) {', '.join(repr(h) for h in duplicates)}; "
+            "a column is identified by its header everywhere downstream, so two columns "
+            "sharing one cannot be told apart — one identifier would silently overwrite the "
+            "other, and two same-named measurements would be indistinguishable from "
+            "declared replicates"
+        )
 
     data: list[list[str]] = []
     for index, row in enumerate(rows[1:]):

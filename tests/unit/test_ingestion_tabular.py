@@ -833,3 +833,50 @@ def test_a_unit_ending_in_a_non_word_character_is_accepted() -> None:
     assert (parsed.parsed_value, parsed.unit) == (24.0, "%")
     # The longest matching unit still wins over its own prefix.
     assert parse_value_text("48 hours", strict=True).unit == "hours"
+
+
+# --- review round 4: source headers must identify a column ------------------
+
+
+def test_a_duplicate_identifier_header_is_refused_by_the_reader() -> None:
+    """The defect: ``id,id`` was accepted and the second column silently overwrote the
+    first, so the row's identity became ``b`` and ``a`` was lost — with status success."""
+    with pytest.raises(ReaderError, match="duplicate header"):
+        read_delimited("id,id,p,v\na,b,1,10\n", source_name="s.csv", source_format=SourceFormat.CSV)
+
+
+def test_a_duplicate_measurement_header_is_refused_by_the_reader() -> None:
+    """Two columns named ``v`` produced two measurements named ``v``, which the canonical
+    multiset cannot distinguish from deliberate replicates. Only the file's author knows
+    which it was, so the reader asks rather than guesses."""
+    with pytest.raises(ReaderError, match="duplicate header"):
+        read_delimited("id,p,v,v\na,1,10,20\n", source_name="s.csv", source_format=SourceFormat.CSV)
+
+
+def test_duplicate_headers_are_detected_after_stripping() -> None:
+    """``id`` and ``id `` are the same column name; the whitespace is a transport artifact
+    and must not be able to hide a collision."""
+    with pytest.raises(ReaderError, match="duplicate header"):
+        read_delimited(
+            "id, id ,p,v\na,b,1,10\n", source_name="s.csv", source_format=SourceFormat.CSV
+        )
+
+
+def test_duplicate_headers_are_refused_in_tsv_too() -> None:
+    with pytest.raises(ReaderError, match="duplicate header"):
+        read_delimited(
+            "id\tid\tp\tv\na\tb\t1\t10\n", source_name="s.tsv", source_format=SourceFormat.TSV
+        )
+
+
+def test_an_empty_header_is_refused() -> None:
+    """A column with no name cannot be declared in a spec or named in a locator."""
+    with pytest.raises(ReaderError, match="are empty"):
+        read_delimited("id,,p,v\na,b,1,10\n", source_name="s.csv", source_format=SourceFormat.CSV)
+
+
+def test_distinct_headers_are_still_accepted() -> None:
+    table = read_delimited(
+        "id1,id2,p,v\na,b,1,10\n", source_name="s.csv", source_format=SourceFormat.CSV
+    )
+    assert table.headers == ["id1", "id2", "p", "v"]
