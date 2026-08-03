@@ -211,3 +211,52 @@ def test_an_unversioned_spec_is_refused_by_the_cli(tmp_path, capsys) -> None:
 
     assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 1
     assert "invalid dataset spec" in capsys.readouterr().out
+
+
+# --- review round 3: one bad cell must never become a traceback --------------
+
+
+def test_an_overflowing_cell_does_not_abort_the_import(files, tmp_path, capsys) -> None:
+    """A raw cell reading "1e999" must produce a structured QC verdict, not a crash: the
+    CLI exits cleanly and the run it could build is still reported."""
+    spec_path, _ = files
+    source = _write(
+        tmp_path,
+        "overflow.csv",
+        "cell_line,passage,PDL,DT_min\nIMR 90,25,1e999,2520\nIMR 90,30,25.5,4800\n",
+    )
+
+    exit_code = _run(
+        [
+            "experiment",
+            "import",
+            "--spec",
+            str(spec_path),
+            "--input",
+            str(source),
+            "--format",
+            "json",
+        ]
+    )
+    assert exit_code == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "success"
+    overflowing = next(
+        m
+        for m in payload["runs"][0]["observations"][0]["measurements"]
+        if m["name"] == "cumulative_PDL"
+    )
+    assert overflowing["value"] is None
+    assert overflowing["quality"] == "suspect"
+    assert overflowing["provenance"]["metadata"]["raw_text"] == "1e999"
+
+
+def test_a_spec_with_colliding_column_names_is_refused_by_the_cli(tmp_path, capsys) -> None:
+    colliding = json.loads(json.dumps(SPEC))
+    colliding["columns"].append({"header": "batch", "role": "identifier", "name": "cell_line"})
+    spec_path = _write(tmp_path, "colliding.json", json.dumps(colliding))
+    source = _write(tmp_path, "x.csv", CSV)
+
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 1
+    assert "invalid dataset spec" in capsys.readouterr().out

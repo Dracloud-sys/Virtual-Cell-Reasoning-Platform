@@ -174,8 +174,6 @@ def ingest_table(table: RawTable, spec: DatasetSpec) -> TabularIngestionResult:
     groups: dict[str, list[Observation]] = {}
     group_identifiers: dict[str, dict[str, str]] = {}
 
-    by_name = {c.canonical_name: c for c in spec.columns}
-
     for row_index in range(len(table.rows)):
         cells, unmapped = parse_row(cells_of(table, row_index), spec)
         _ = unmapped  # already reported at the header level; not repeated per row
@@ -188,7 +186,10 @@ def ingest_table(table: RawTable, spec: DatasetSpec) -> TabularIngestionResult:
         rejection: RowRejection | None = None
 
         for cell in cells:
-            column = by_name[cell.column]
+            # Keyed by the source header, not the canonical name: the header is what the
+            # spec guarantees unique at the file level, and looking a column up by a name
+            # two columns could share is how one shadows the other.
+            column = by_header[cell.locator.column_header]
             if cell.role is ColumnRole.IDENTIFIER:
                 # An unreadable required identifier means the row's run is unknown.
                 # Defaulting it to "" would group every such row together, silently

@@ -702,3 +702,134 @@ def test_an_inverted_range_is_refused() -> None:
             plausible_min=10.0,
             plausible_max=1.0,
         )
+
+
+# --- review round 3: canonical-name collisions cannot merge runs -------------
+
+
+def _two_identifier_spec(**over) -> DatasetSpec:
+    fields = {
+        "spec_version": SPEC_VERSION,
+        "dataset_id": "d",
+        "columns": [
+            ColumnSpec(header="id1", role=ColumnRole.IDENTIFIER),
+            ColumnSpec(header="id2", role=ColumnRole.IDENTIFIER),
+            ColumnSpec(header="p", role=ColumnRole.TIME_AXIS, time_axis=TimeAxisKind.PASSAGE),
+            ColumnSpec(
+                header="v", role=ColumnRole.MEASUREMENT, value_type=MeasurementValueType.NUMERIC
+            ),
+        ],
+    }
+    fields.update(over)
+    return DatasetSpec(**fields)
+
+
+def test_two_identifier_columns_may_not_declare_the_same_name() -> None:
+    """The defect: both columns collapse into one dict entry keyed by name, so rows
+    differing only in the shadowed column group into a single run — unrelated cultures
+    silently merged, and the import reports success."""
+    columns = _two_identifier_spec().columns
+    with pytest.raises(ValueError, match="duplicate canonical column name"):
+        _two_identifier_spec(
+            columns=[
+                ColumnSpec(header="id1", role=ColumnRole.IDENTIFIER, name="sample"),
+                ColumnSpec(header="id2", role=ColumnRole.IDENTIFIER, name="sample"),
+                *columns[2:],
+            ]
+        )
+
+
+def test_the_collision_policy_covers_every_ingested_column_not_just_measurements() -> None:
+    """A name shared by any two ingested columns collapses wherever the pipeline keys by
+    name, so the rule is stated once for all of them rather than per role."""
+    columns = _two_identifier_spec().columns
+    for clashing in (
+        ColumnSpec(header="c1", role=ColumnRole.CONDITION, name="v"),
+        ColumnSpec(header="t1", role=ColumnRole.IDENTIFIER, name="v"),
+    ):
+        with pytest.raises(ValueError, match="duplicate canonical column name"):
+            _two_identifier_spec(columns=[*columns, clashing])
+
+    # ...but an ignored column contributes nothing, so its name cannot collide.
+    _two_identifier_spec(
+        columns=[*columns, ColumnSpec(header="x", role=ColumnRole.IGNORED, name="v")]
+    )
+
+
+def test_rows_differing_in_any_identifier_stay_separate_runs() -> None:
+    """The end state the collision rule protects: two cultures, two runs."""
+    table = read_delimited(
+        "id1,id2,p,v\na,b,1,10\nx,b,2,20\n", source_name="s.csv", source_format=SourceFormat.CSV
+    )
+    result = ingest_table(table, _two_identifier_spec())
+    assert len(result.runs) == 2
+    assert {run.run_id for run in result.runs} == {
+        "ingestion:d:id1=a|id2=b",
+        "ingestion:d:id1=x|id2=b",
+    }
+    assert all(len(run.observations) == 1 for run in result.runs)
+
+
+def test_a_column_is_resolved_by_its_source_header() -> None:
+    """The header is what the spec guarantees unique at the file level; looking a column
+    up by a name two columns could share is how one shadows the other."""
+    import inspect
+
+    from virtualcell.ingestion import canonical
+
+    source = inspect.getsource(canonical.ingest_table)
+    assert "by_header[cell.locator.column_header]" in source
+
+
+# --- review round 3: non-finite values and grammar drift ---------------------
+
+
+@pytest.mark.parametrize("text", ["1e999", "-1e999", "1e999 fold"])
+def test_a_value_that_overflows_to_infinity_is_unreadable(text: str) -> None:
+    """It is syntactically a number and semantically nothing the schema can hold. Parsing
+    it would hand a constructor a value guaranteed to raise, turning one raw cell into a
+    traceback instead of a QC verdict."""
+    from virtualcell.core.values import ParseStatus, parse_value_text
+
+    assert parse_value_text(text, strict=True).parse_status is ParseStatus.UNPARSED
+    assert parse_value_text(text).parse_status is ParseStatus.UNPARSED
+
+
+def test_an_overflowing_cell_becomes_a_qc_verdict_not_a_crash() -> None:
+    result = _ingest("cell_line,passage,PDL,DT_min\nIMR 90,25,1e999,2520\n")
+    decision = next(d for d in result.qc.decisions if d.column == "cumulative_PDL")
+    assert decision.rule is QCRule.UNPARSEABLE
+    assert decision.quality is MeasurementQuality.SUSPECT
+
+    measurement = next(
+        m for m in result.runs[0].observations[0].measurements if m.name == "cumulative_PDL"
+    )
+    assert measurement.value is None
+
+
+def test_an_overflowing_uncertainty_is_refused_too() -> None:
+    from virtualcell.core.values import ParseStatus, parse_value_text
+
+    assert parse_value_text("2 ± 1e999", strict=True).parse_status is ParseStatus.UNPARSED
+
+
+def test_the_uncertainty_pattern_reuses_the_shared_number_token() -> None:
+    """The drift this catches: the uncertainty regex had its own abbreviated number, so
+    "2 ± 1e5" passed the whole-cell check built from the full token and then recorded an
+    uncertainty of 1 instead of 100000."""
+    from virtualcell.core.values import parse_value_text
+
+    parsed = parse_value_text("2 ± 1e5", strict=True)
+    assert (parsed.parsed_value, parsed.uncertainty) == (2.0, 100000.0)
+
+
+def test_a_unit_ending_in_a_non_word_character_is_accepted() -> None:
+    """``%`` is a declared unit, but a trailing ``\\b`` cannot match after it at end of
+    text, so "24%" was refused while "24 fold" was accepted."""
+    from virtualcell.core.values import is_whole_value, parse_value_text
+
+    assert is_whole_value("24%")
+    parsed = parse_value_text("24%", strict=True)
+    assert (parsed.parsed_value, parsed.unit) == (24.0, "%")
+    # The longest matching unit still wins over its own prefix.
+    assert parse_value_text("48 hours", strict=True).unit == "hours"

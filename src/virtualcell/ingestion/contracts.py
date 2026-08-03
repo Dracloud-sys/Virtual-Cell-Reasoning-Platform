@@ -270,12 +270,22 @@ class DatasetSpec(BaseModel):
             )
         if not any(c.role is ColumnRole.MEASUREMENT for c in self.columns):
             raise ValueError("a spec must declare at least one measurement column")
+        # Canonical names must be unique across *every* ingested column, not just the
+        # measurements. Two columns sharing a name collapse into one entry wherever the
+        # pipeline keys by name — and for identifiers that is data loss with teeth: rows
+        # differing only in the shadowed column would group into a single run, silently
+        # merging unrelated cultures. Ignored columns are exempt: they contribute nothing,
+        # so their names cannot collide with anything.
         names: list[str] = [
-            c.canonical_name for c in self.columns if c.role is ColumnRole.MEASUREMENT
+            c.canonical_name for c in self.columns if c.role is not ColumnRole.IGNORED
         ]
         repeated = sorted({n for n in names if names.count(n) > 1})
         if repeated:
-            raise ValueError(f"duplicate measurement names in spec: {', '.join(repeated)}")
+            raise ValueError(
+                f"duplicate canonical column name(s) in spec: {', '.join(repeated)}. "
+                "Every ingested column must resolve to a distinct name; two columns "
+                "sharing one would collapse into a single value."
+            )
         return self
 
     def by_header(self) -> dict[str, ColumnSpec]:

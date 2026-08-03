@@ -351,7 +351,10 @@ table cell in a paper are read by the same conservative rules: `1,234` is refuse
 guessed, and qualitative text never gains a number. Ingestion additionally passes
 `strict=True`, which anchors the *same* token definitions to the whole field — a declared
 numeric column claims the entire cell is the value, so `abc24xyz` and `24 (n=3)` are refused
-rather than yielding `24`. Deciding which part of a cell was the datum is the reader
+rather than yielding `24`. A value that **overflows to infinity** (`1e999`) is refused too:
+it is syntactically a number and semantically nothing the canonical schema can hold, so
+parsing it would hand a constructor a value guaranteed to raise — turning one raw cell into
+a traceback instead of a QC verdict. Deciding which part of a cell was the datum is the reader
 interpreting. The lenient default remains for literature prose spans, where a number
 legitimately sits inside surrounding text. Both modes are built from one set of token
 regexes, so they cannot drift into disagreeing about what a number is.
@@ -362,6 +365,13 @@ regexes, so they cannot drift into disagreeing about what a number is.
 than silently corrupted data. Unit inference, dimensional analysis, and cross-run
 statistical normalization (batch correction, quantile) are all out — the last needs a model
 of the whole dataset, which is reasoning, not ingestion.
+
+**Canonical names are unique across every ingested column.** Not just measurements: two
+columns resolving to one name collapse into a single entry wherever the pipeline keys by
+name, and for *identifiers* that is data loss with teeth — rows differing only in the
+shadowed column would group into one run, merging unrelated cultures while the import
+reported success. Column lookup is by source **header**, the thing the spec guarantees
+unique at the file level. `ignored` columns are exempt, since they contribute nothing.
 
 **Grouping cannot silently merge.** Runs group by the declared identifier columns, and a
 row whose *required* identifier is blank or unreadable is **rejected**, not defaulted:

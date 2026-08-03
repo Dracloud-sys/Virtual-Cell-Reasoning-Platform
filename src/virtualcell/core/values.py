@@ -16,10 +16,14 @@ What the grammar refuses is as important as what it accepts:
 * ``<0.05`` — parsed, but the comparator is kept *separately* so the value is never later
   read as a point estimate.
 * ``2.4 ± 0.3`` — the error is kept separately and never mistaken for the value.
+* ``1e999`` — syntactically a number, but it overflows to infinity, which the canonical
+  schema cannot hold. A reading that overflows is an unreadable reading, so it is refused
+  here rather than handed to a constructor guaranteed to raise on it.
 """
 
 from __future__ import annotations
 
+import math
 import re
 from enum import StrEnum
 
@@ -43,13 +47,19 @@ _UNIT_TOKEN = (
     r"nm|µm|um|mm|cm|ml|µl|ul|mg|µg|ug|ng|kda|bp|kb"
 )
 
+# A unit ends where an alphanumeric run ends. ``\b`` cannot express that: after ``%`` —
+# itself a declared unit — there is no word boundary at end of text, so ``24%`` was refused
+# while ``24 fold`` was accepted. A negative lookahead states the actual rule, and lets the
+# engine backtrack through the alternation so ``hours`` wins over ``h``.
+_UNIT_END = r"(?![A-Za-z0-9_])"
+
 _COMPARATOR = re.compile(rf"^\s*({_COMPARATOR_TOKEN})\s*")
 _NUMBER = re.compile(_NUMBER_TOKEN)
-_UNCERTAINTY = re.compile(rf"(?:{_UNCERTAINTY_OPERATOR})\s*([-+]?\d+(?:\.\d+)?)")
+_UNCERTAINTY = re.compile(rf"(?:{_UNCERTAINTY_OPERATOR})\s*({_NUMBER_TOKEN})")
 # "1,234" is ambiguous (thousands separator vs decimal comma). Rather than guess, a
 # digit-comma-digit value stays UNPARSED with its raw text preserved.
 _AMBIGUOUS_SEPARATOR = re.compile(r"\d,\d")
-_UNIT_AFTER = re.compile(rf"^\s*[-\s]?({_UNIT_TOKEN})\b", re.IGNORECASE)
+_UNIT_AFTER = re.compile(rf"^\s*[-\s]?({_UNIT_TOKEN}){_UNIT_END}", re.IGNORECASE)
 _NON_NUMERIC_TOKENS = {"ns", "nd", "n/a", "na", "-", "—", ""}
 
 _COMPARATOR_CANON = {"≤": "<=", "≥": ">=", "≈": "~"}
@@ -60,7 +70,7 @@ _COMPARATOR_CANON = {"≤": "<=", "≥": ">=", "≈": "~"}
 _WHOLE_VALUE = re.compile(
     rf"^\s*(?:{_COMPARATOR_TOKEN})?\s*{_NUMBER_TOKEN}"
     rf"(?:\s*(?:{_UNCERTAINTY_OPERATOR})\s*{_NUMBER_TOKEN})?"
-    rf"(?:\s*[-\s]?(?:{_UNIT_TOKEN})\b)?\s*$",
+    rf"(?:\s*[-\s]?(?:{_UNIT_TOKEN}){_UNIT_END})?\s*$",
     re.IGNORECASE,
 )
 
@@ -123,12 +133,21 @@ def parse_value_text(text: str, *, strict: bool = False) -> ParsedValue:
         return ParsedValue(raw_value=raw, comparator=comparator)
 
     value = float(number.group(0))
+    if not math.isfinite(value):
+        # "1e999" is syntactically a number and semantically nothing this platform can
+        # hold: the canonical schema refuses non-finite values, so parsing it would hand
+        # a downstream constructor a value guaranteed to raise. A reading that overflows
+        # is an unreadable reading, and UNPARSED is how this grammar says so — which lets
+        # QC report it as a structured verdict instead of a traceback.
+        return ParsedValue(raw_value=raw, comparator=comparator)
     tail = rest[number.end() :]
 
     uncertainty = None
     unc = _UNCERTAINTY.search(tail)
     if unc:
         uncertainty = float(unc.group(1))
+        if not math.isfinite(uncertainty):
+            return ParsedValue(raw_value=raw, comparator=comparator)
         tail = tail[unc.end() :]
 
     unit = None
