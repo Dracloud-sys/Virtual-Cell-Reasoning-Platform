@@ -1,13 +1,16 @@
-"""Verbatim tabular readers (PR13b): CSV and TSV only.
+"""Verbatim tabular readers: CSV and TSV (PR13b), XLSX (PR13b-2).
 
 The reader's whole job is to *not* interpret. It produces text and positions; every
 decision about what that text means happens later, where it can be traced to a declared
 rule. That separation is what makes an import auditable: if a value is wrong, it is either
 in the file or introduced by a named rule, never by a reader guessing.
 
+Every format converges on :func:`build_table`, so the guarantees a header row must satisfy
+are stated once and hold for all of them. A format-specific reader's only job is to turn
+its container into rows of text.
+
 Deliberately not here: type sniffing, header normalization, encoding detection, blank-row
-skipping heuristics, XLSX (**PR13b-2**, which lands the first parsing dependency), and any
-vendor/binary assay format (**PR15+**).
+skipping heuristics, and any vendor/binary assay format (**PR15+**).
 """
 
 from __future__ import annotations
@@ -29,8 +32,11 @@ class ReaderError(ValueError):
     """Raised when a source cannot be read as the declared tabular format."""
 
 
-def read_delimited(text: str, *, source_name: str, source_format: SourceFormat) -> RawTable:
-    """Read delimited text into a :class:`RawTable`, verbatim.
+def build_table(rows: list[list[str]], *, source_name: str) -> RawTable:
+    """Assemble a :class:`RawTable` from rows of text, enforcing the header contract.
+
+    The single place every format's header row is validated, so CSV, TSV and XLSX cannot
+    drift into accepting different files.
 
     Cells are stripped of surrounding whitespace and nothing else: leading/trailing spaces
     are a transport artifact, while the content between them is the datum. Short rows are
@@ -45,8 +51,6 @@ def read_delimited(text: str, *, source_name: str, source_format: SourceFormat) 
     the canonical multiset is meant to preserve. Neither is something a reader may decide;
     both are questions for whoever produced the file.
     """
-    delimiter = _DELIMITER[source_format]
-    rows = list(csv.reader(io.StringIO(text), delimiter=delimiter))
     if not rows:
         return RawTable(source_name=source_name)
 
@@ -87,9 +91,25 @@ def read_delimited(text: str, *, source_name: str, source_format: SourceFormat) 
     return RawTable(source_name=source_name, headers=headers, rows=data)
 
 
-def read_path(path: str | Path, *, source_format: SourceFormat) -> RawTable:
+def read_delimited(text: str, *, source_name: str, source_format: SourceFormat) -> RawTable:
+    """Read delimited text into a :class:`RawTable`, verbatim. See :func:`build_table`."""
+    delimiter = _DELIMITER.get(source_format)
+    if delimiter is None:
+        raise ReaderError(f"{source_format.value} is not a delimited format")
+    rows = list(csv.reader(io.StringIO(text), delimiter=delimiter))
+    return build_table(rows, source_name=source_name)
+
+
+def read_path(
+    path: str | Path, *, source_format: SourceFormat, sheet: str | None = None
+) -> RawTable:
     """Read a file into a :class:`RawTable`. Encoding is fixed, never sniffed."""
     file_path = Path(path)
+    if source_format is SourceFormat.XLSX:
+        from virtualcell.ingestion.xlsx import read_workbook
+
+        return read_workbook(file_path, sheet=sheet)
+
     try:
         text = file_path.read_text(encoding=ENCODING)
     except OSError as exc:

@@ -123,12 +123,24 @@ def _parse_time_axis(cell: RawCell, column: ColumnSpec) -> ParsedCell:
         except ValueError:
             return _unparsed(cell, column, f"{cell.text!r} is not an ISO 8601 timestamp")
         if stamp.tzinfo is None or stamp.tzinfo.utcoffset(stamp) is None:
-            return _unparsed(
-                cell,
-                column,
-                f"timestamp {cell.text!r} has no UTC offset; a naive stamp is ambiguous "
-                "across sites and instruments",
-            )
+            # A declared offset is applied only here, to a stamp that carries none of its
+            # own: a stamp that states its zone is authoritative over the spec, because it
+            # describes the reading while the spec describes the file.
+            if column.timestamp_offset is None:
+                return _unparsed(
+                    cell,
+                    column,
+                    f"timestamp {cell.text!r} has no UTC offset; a naive stamp is ambiguous "
+                    "across sites and instruments. Declare 'timestamp_offset' on the column "
+                    "if the source records times in a known zone (an xlsx workbook always "
+                    "does, since the format stores no timezone)",
+                )
+            try:
+                stamp = datetime.fromisoformat(f"{stamp.isoformat()}{column.timestamp_offset}")
+            except ValueError:
+                return _unparsed(
+                    cell, column, f"{cell.text!r} could not take the declared UTC offset"
+                )
         return ParsedCell(
             locator=cell.locator,
             column=column.canonical_name,

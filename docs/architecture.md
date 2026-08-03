@@ -293,10 +293,9 @@ immortalization input/API/CLI are unchanged. Raw-assay ingestion and QC land in 
 
 ## Declared tabular ingestion (`virtualcell.ingestion`)
 
-Turns a raw CSV/TSV export into canonical experiment runs, so an experimentalist's file can
-reach a grounded decision report without anyone hand-transcribing it into the platform's own
-shapes. **CSV/TSV only** — XLSX is PR13b-2, which lands the first parsing dependency;
-qPCR Ct, FCS, imaging and omics are PR15+.
+Turns a raw CSV/TSV/XLSX export into canonical experiment runs, so an experimentalist's file
+can reach a grounded decision report without anyone hand-transcribing it into the platform's
+own shapes. qPCR Ct, FCS, imaging and omics are PR15+.
 
 ```
 file -> RawTable -> ParsedCell candidates -> QCDecision -> ExperimentRun
@@ -365,6 +364,37 @@ regexes, so they cannot drift into disagreeing about what a number is.
 than silently corrupted data. Unit inference, dimensional analysis, and cross-run
 statistical normalization (batch correction, quantile) are all out — the last needs a model
 of the whole dataset, which is reasoning, not ingestion.
+
+### Spreadsheets (PR13b-2)
+
+XLSX sits behind the **same** `DatasetSpec`, the same header contract and the same QC — the
+container changed, the meaning did not, and a workbook and its CSV export produce the same
+`dedup_key`. Every reader funnels through one `build_table`, so the header rules are stated
+once rather than re-implemented per format. It needs the optional `virtualcell[xlsx]` extra:
+a spreadsheet parser is a dependency only some imports need, and exporting a sheet to CSV is
+always an alternative.
+
+A spreadsheet is not a delimited file with a different separator, so the reader **refuses**
+four things rather than inventing a value for them:
+
+| refused | why it would otherwise be silent |
+|---|---|
+| an unnamed sheet in a multi-sheet workbook | picking the first is a guess about which experiment the file is about, and the wrong guess still imports cleanly |
+| a formula with no cached value | openpyxl does not evaluate formulas; the cell reads blank, which QC would record as *missing* — asserting no reading was taken when one exists and cannot be seen |
+| a merged cell over the used range | a merged block has one value and several coordinates; a `CellLocator` names one row and one column |
+| an Excel error value (`#REF!`, `#DIV/0!`) | the spreadsheet already knows the cell is wrong |
+
+Cells are read as **stored**, not as displayed: a column formatted to two decimals has not
+rounded anything, and `25.0` — how Excel stores the integer 25 — is rendered `25` so a
+passage count does not look fractional to a reader that is right to refuse fractional
+passages.
+
+Excel stores **no timezone at all** — openpyxl refuses even to write one — so an Excel
+timestamp is always naive and a timestamp axis would be permanently unusable. `ColumnSpec`
+therefore accepts a declared `timestamp_offset`, applied only to a stamp that carries none of
+its own: stated by a human, never inferred, like every other reading decision here. A stamp
+that states its own zone stays authoritative, because it describes the reading while the spec
+describes the file.
 
 **Source headers must be unique and non-empty**, checked at the reader after stripping so
 `id` and `id ` are caught. Everything downstream identifies a column by its header —

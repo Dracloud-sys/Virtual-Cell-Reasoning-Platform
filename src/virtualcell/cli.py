@@ -9,7 +9,7 @@ Usage:
     virtualcell qa "<natural-language question>"
     virtualcell explain <entity_id>
     virtualcell assess immortalization --input assessment.json [--format json|text]
-    virtualcell experiment import --spec spec.json --input passages.csv [--format json|text]
+    virtualcell experiment import --spec spec.json --input passages.csv|passages.xlsx
     virtualcell ingest reactome --path <UniProt2Reactome.txt> --save graph.json
     virtualcell ingest uniprot  --path <uniprotkb_export.tsv> --load graph.json --save graph.json
     virtualcell qa "..." --load graph.json
@@ -636,10 +636,10 @@ def build_parser() -> argparse.ArgumentParser:
     exp_sub = p_exp.add_subparsers(dest="experiment_command", required=True)
     p_import = exp_sub.add_parser(
         "import",
-        help="import a declared CSV/TSV source into canonical experiment runs",
+        help="import a declared CSV/TSV/XLSX source into canonical experiment runs",
     )
     p_import.add_argument("--spec", required=True, help="path to a DatasetSpec JSON file")
-    p_import.add_argument("--input", required=True, help="path to the CSV/TSV source")
+    p_import.add_argument("--input", required=True, help="path to the CSV/TSV/XLSX source")
     p_import.add_argument("--format", choices=["text", "json"], default="text")
     p_import.set_defaults(func=_cmd_experiment_import)
 
