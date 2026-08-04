@@ -208,13 +208,24 @@ class ColumnSpec(BaseModel):
                         f"{self.time_axis.value!r} axis, which has no timezone"
                     )
                 try:
-                    datetime.fromisoformat(f"2000-01-01T00:00:00{self.timestamp_offset}")
+                    probe = datetime.fromisoformat(f"2000-01-01T00:00:00{self.timestamp_offset}")
                 except ValueError as exc:
                     raise ValueError(
                         f"column {self.header!r} timestamp_offset "
                         f"{self.timestamp_offset!r} is not an ISO 8601 UTC offset "
                         "(e.g. '+09:00', 'Z')"
                     ) from exc
+                # Parsing is not enough: an empty offset appends nothing, so the probe
+                # parses cleanly and stays *naive*. Declaring an offset that does not name
+                # a zone is worse than declaring none, because it reads as an answer to
+                # exactly the ambiguity it fails to resolve.
+                if probe.tzinfo is None or probe.utcoffset() is None:
+                    raise ValueError(
+                        f"column {self.header!r} timestamp_offset "
+                        f"{self.timestamp_offset!r} names no timezone; an offset must make "
+                        "a naive stamp aware (e.g. '+09:00', 'Z'). Omit it entirely if the "
+                        "source's zone is unknown"
+                    )
             if self.time_axis is TimeAxisKind.ELAPSED_TIME and self.time_unit is None:
                 raise ValueError(
                     f"elapsed-time column {self.header!r} must declare time_unit; an "

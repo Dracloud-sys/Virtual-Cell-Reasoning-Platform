@@ -349,3 +349,69 @@ def test_read_path_dispatches_on_the_declared_format(tmp_path) -> None:
     assert table.headers == HEADERS
     assert SourceFormat.XLSX.is_delimited is False
     assert SourceFormat.CSV.is_delimited and SourceFormat.TSV.is_delimited
+
+
+# --- review round 5: an offset must actually name a zone ---------------------
+
+
+@pytest.mark.parametrize("offset", ["", "   "])
+def test_an_offset_that_names_no_timezone_is_refused(offset: str) -> None:
+    """The defect: an empty offset appends nothing, so the validation probe parsed cleanly
+    and stayed *naive*. It then reached ingestion, left the stamp naive, and crashed inside
+    TimestampTimePoint. Declaring an offset that names no zone is worse than declaring none,
+    because it reads as an answer to exactly the ambiguity it fails to resolve."""
+    with pytest.raises(ValueError, match="names no timezone|ISO 8601 UTC offset"):
+        ColumnSpec(
+            header="t",
+            role=ColumnRole.TIME_AXIS,
+            time_axis=TimeAxisKind.TIMESTAMP,
+            timestamp_offset=offset,
+        )
+
+
+@pytest.mark.parametrize("offset", ["+09:00", "-05:00", "Z", "+00:00"])
+def test_offsets_that_do_name_a_zone_are_accepted(offset: str) -> None:
+    column = ColumnSpec(
+        header="t",
+        role=ColumnRole.TIME_AXIS,
+        time_axis=TimeAxisKind.TIMESTAMP,
+        timestamp_offset=offset,
+    )
+    assert column.timestamp_offset == offset
+
+
+def test_a_naive_stamp_never_reaches_canonical_construction(tmp_path) -> None:
+    """The second lock on the same door. Spec validation now refuses a zone-less offset, so
+    this can only be reached by constructing around it — but if it ever is, the row is
+    rejected cleanly instead of raising halfway through an import."""
+    from virtualcell.ingestion.contracts import CellLocator, RawCell
+    from virtualcell.ingestion.parse import parse_cell
+
+    column = ColumnSpec(
+        header="t",
+        role=ColumnRole.TIME_AXIS,
+        time_axis=TimeAxisKind.TIMESTAMP,
+        timestamp_offset="+09:00",
+    )
+    # model_construct bypasses validation, standing in for any future path that skips it.
+    zoneless = column.model_copy(update={"timestamp_offset": ""})
+    cell = RawCell(
+        locator=CellLocator(source_name="s.xlsx", row_index=0, column_header="t"),
+        text="2026-01-01T12:00:00",
+    )
+    parsed = parse_cell(cell, zoneless, _spec())
+    assert parsed.value is None
+    assert "timezone-naive" in (parsed.parse_note or "")
+
+
+def test_a_zoneless_offset_cannot_crash_an_xlsx_import(tmp_path) -> None:
+    """End to end: the spec is refused before any workbook is opened."""
+    path = _workbook(
+        tmp_path, rows=[["IMR 90", datetime(2026, 1, 1, 12, 0), 22.0, 2520]], name="zoneless.xlsx"
+    )
+    with pytest.raises(ValueError, match="names no timezone"):
+        _spec(columns=_timestamp_columns(""))
+    # ...and the same file with a real offset imports cleanly.
+    assert ingest_file(path, _spec(columns=_timestamp_columns("Z"))).status is (
+        IngestionStatus.SUCCESS
+    )

@@ -394,7 +394,10 @@ timestamp is always naive and a timestamp axis would be permanently unusable. `C
 therefore accepts a declared `timestamp_offset`, applied only to a stamp that carries none of
 its own: stated by a human, never inferred, like every other reading decision here. A stamp
 that states its own zone stays authoritative, because it describes the reading while the spec
-describes the file.
+describes the file. The offset must actually *name* a zone — an empty one parses cleanly and
+leaves the stamp naive, which reads as an answer to exactly the ambiguity it fails to
+resolve — and the parser re-checks awareness after applying it, so a naive stamp can never
+reach canonical construction.
 
 **Source headers must be unique and non-empty**, checked at the reader after stripping so
 `id` and `id ` are caught. Everything downstream identifies a column by its header —

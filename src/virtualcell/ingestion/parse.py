@@ -141,6 +141,17 @@ def _parse_time_axis(cell: RawCell, column: ColumnSpec) -> ParsedCell:
                 return _unparsed(
                     cell, column, f"{cell.text!r} could not take the declared UTC offset"
                 )
+            if stamp.tzinfo is None or stamp.utcoffset() is None:
+                # Spec validation already refuses an offset that names no zone; this is the
+                # second lock on the same door. A naive stamp must never reach canonical
+                # construction, where it becomes a ValidationError halfway through an
+                # import instead of a row this layer could have rejected cleanly.
+                return _unparsed(
+                    cell,
+                    column,
+                    f"the declared UTC offset {column.timestamp_offset!r} left "
+                    f"{cell.text!r} timezone-naive",
+                )
         return ParsedCell(
             locator=cell.locator,
             column=column.canonical_name,

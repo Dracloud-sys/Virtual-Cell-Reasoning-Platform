@@ -364,3 +364,23 @@ def test_declaring_the_sheet_resolves_it(tmp_path, capsys) -> None:
 
     assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 0
     assert "status: success" in capsys.readouterr().out
+
+
+def test_a_zoneless_timestamp_offset_is_refused_by_the_cli(tmp_path, capsys) -> None:
+    """An offset that names no timezone is a spec error, caught before any file is opened —
+    exit 1, a plain message, and no traceback."""
+    spec = _xlsx_spec()
+    spec["columns"][1] = {
+        "header": "passage",
+        "role": "time_axis",
+        "time_axis": "timestamp",
+        "timestamp_offset": "",
+    }
+    spec_path = _write(tmp_path, "zoneless.json", json.dumps(spec))
+    source = _xlsx(tmp_path, name="stamped.xlsx")
+
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 1
+
+    out = capsys.readouterr().out
+    assert "invalid dataset spec" in out
+    assert "Traceback" not in out
