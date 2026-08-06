@@ -103,6 +103,49 @@ The first roadmap stage and the only fully working subsystem in v0.1.
   `ground` (classify) and `synthesize` (render + call the backend) are separate, so
   evidence is tiered before any backend sees it.
 
+## Generic reasoning kernel (`virtualcell.reasoning.kernel`)
+
+The domain-independent machinery a vertical reasons *with*, lifted out of the vertical that
+first needed it (PR14a). The dividing line is one question: **would a different biology
+answer this differently?**
+
+| in the kernel | in the pack |
+|---|---|
+| how to walk the graph, deduplicate, and order what it finds | *which* links a claim may rest on |
+| where in a report a phrase counts as an assertion | *which* phrasings are forbidden |
+| that an observation is established and a conclusion from it is a hypothesis | what was observed |
+
+**`grounding`** - `ground_links(store, seeds, admits)`. Deterministic in three ways a
+decision report depends on: seed order first, so every seed's arm surfaces rather than one
+seed's shorter paths crowding out another's; then fewer hops, because a closer path is the
+stronger explanation; then target id, so equally close links never swap between runs. The
+same `(target, path)` reached twice is listed once - two seeds finding one path is one piece
+of reasoning, and repeating it would read as corroboration it is not. An absent seed raises
+rather than grounding nothing, because an empty chain would present as a graph that was
+consulted and had nothing to say. Policy arrives as an `admits` predicate; `targets_in`,
+`excludes_weak_relations` and `all_of` cover what the current verticals need. Weak-relation
+step tokens are *derived* from `RelationType`, so a renamed relation cannot leave a policy
+silently matching nothing.
+
+**`safety`** - the PR10b scope rule, made shareable. A forbidden-phrase check scans the
+conclusion and the evidence claims only. It must **not** scan `limitations` /
+`overinterpretation_risk` / `uncertainty`, because those name the forbidden phrases in order
+to prohibit them: "P53-independent does not mean P53 loss" is correct guidance, and a scanner
+that flags it has punished the report for being careful. A pack supplies the phrase list and
+may supply its own error type so a failure stays attributable to the domain.
+
+**`claims`** - two constructors, and the most consequential thing in the package. A
+*measurement* is established at 0.9 with its quality assumption attached; an
+*interpretation* is a hypothesis at 0.7, lower because reading meaning into an observation
+adds a step that can be wrong even when the observation is right. Left per-vertical those
+conventions drift, and a drifting tier is a report that overclaims while every individual
+file still looks reasonable.
+
+Nothing under `kernel/` imports from `virtualcell.agents`, and an AST test enforces it - that
+is what makes "domain-independent" checkable rather than an intention. The acceptance test
+grounds and validates a report for a domain (adipogenesis) that does not exist in this
+repository, using nothing but the kernel.
+
 ## Cell-engineering vertical (`virtualcell.agents.immortalization`)
 
 The functional domain agent. It recomputes nothing — status/flags/tiers/citations

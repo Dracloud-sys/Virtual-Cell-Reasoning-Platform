@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from virtualcell.agents.immortalization.grounding import GroundingError
+from virtualcell.agents.immortalization.grounding import GroundingError as GroundingError
 from virtualcell.agents.immortalization.models import (
     AssessmentIntent,
     ImmortalizationAssessmentInput,
@@ -29,12 +29,23 @@ from virtualcell.agents.immortalization.models import (
 from virtualcell.core.evidence import Claim, EvidenceTier
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.reasoning.decision import CandidateStatus, DecisionReport
-from virtualcell.reasoning.explain import MechanisticLink, explain
+from virtualcell.reasoning.explain import MechanisticLink
+from virtualcell.reasoning.kernel import (
+    WEAK_STEPS,
+    ground_links,
+    validate_assertions,
+)
+from virtualcell.reasoning.kernel import (
+    assertion_texts as assertion_texts,  # re-exported: the benchmark scores this scope
+)
+from virtualcell.reasoning.kernel import (
+    forbidden_phrases_in as _forbidden_phrases_in,
+)
 
 _PROVENANCE = ["curated:immortalization_seed"]
-# Rendered weak-relation steps used to distinguish established context paths from
-# the weak spontaneous route (v0 string matching; typed steps deferred to PR6+).
-_WEAK_STEPS = ("-associated_with->", "-suggests->", "-suggests_next_test->")
+# Rendered weak-relation steps, derived from the relation vocabulary by the kernel, used
+# to distinguish established context paths from the weak spontaneous route.
+_WEAK_STEPS = WEAK_STEPS
 _FORBIDDEN = (
     "without p53",
     "p53 loss",
@@ -160,55 +171,32 @@ def _path_matches_signature(target_id: str, path: list[str]) -> bool:
 
 
 def _grounded_links(store: KnowledgeStore, rule: HypothesisRule) -> list[MechanisticLink]:
-    selected: list[tuple[int, MechanisticLink]] = []
-    seen: set[tuple[str, tuple[str, ...]]] = set()
-    for order, seed_id in enumerate(rule.seed_entity_ids):
-        if store.get(seed_id) is None:
-            raise GroundingError(f"rule seed entity not in store: {seed_id}")
-        for link in explain(store, seed_id, max_hops=2).links:
-            if link.target_id not in rule.allowed_target_ids:
-                continue
-            if not _path_matches_signature(link.target_id, link.path):
-                continue
-            key = (link.target_id, tuple(link.path))
-            if key in seen:
-                continue
-            seen.add(key)
-            selected.append((order, link))
-    selected.sort(key=lambda item: (item[0], item[1].hops, item[1].target_id))
-    return [link for _, link in selected]
-
-
-def assertion_texts(report: DecisionReport) -> list[str]:
-    """The report fields that make biological *assertions*.
-
-    Forbidden-phrase checking must scan only these: the conclusion and the evidence
-    claims (where an LLM narrative would later land). It deliberately excludes the
-    curated safety-guidance fields (``limitations`` / ``overinterpretation_risk``),
-    because those *name* the forbidden phrases in order to prohibit them — e.g.
-    "P53-independent does not mean P53 loss" is correct guidance, not a violation.
-    Graph path strings are excluded too (they legitimately contain "P53-independent").
-
-    Exposed so the benchmark scorer applies exactly this scope instead of
-    re-deriving it, keeping one definition of "an assertion" in the codebase.
-    """
-    return [
-        report.conclusion,
-        *(c.statement for c in report.supporting_evidence),
-        *(c.statement for c in report.contradicting_evidence),
-    ]
+    """Ground the hypothesis rule under its per-target relation signature."""
+    return ground_links(
+        store,
+        rule.seed_entity_ids,
+        lambda link: (
+            link.target_id in rule.allowed_target_ids
+            and _path_matches_signature(link.target_id, link.path)
+        ),
+    )
 
 
 def forbidden_phrases_in(report: DecisionReport) -> list[str]:
-    """Forbidden P53/causal phrasings actually *asserted* by ``report`` (may be empty)."""
-    blob = " ".join(assertion_texts(report)).lower()
-    return [phrase for phrase in _FORBIDDEN if phrase in blob]
+    """Forbidden P53/causal phrasings actually *asserted* by ``report`` (may be empty).
+
+    The phrase list is this domain's policy; the scope it is checked against — conclusion
+    and evidence claims only, never the safety-guidance fields that quote these phrases in
+    order to prohibit them — belongs to the kernel and is shared with every vertical.
+    """
+    return _forbidden_phrases_in(report, _FORBIDDEN)
 
 
 def validate_hypothesis_report(report: DecisionReport) -> None:
     """Fail if forbidden P53/causal phrasing appears in an *assertion* field."""
-    for phrase in forbidden_phrases_in(report):
-        raise HypothesisSafetyError(f"forbidden phrasing in hypothesis report: {phrase!r}")
+    validate_assertions(
+        report, _FORBIDDEN, error=HypothesisSafetyError, context="hypothesis report"
+    )
 
 
 def build_hypothesis_report(
