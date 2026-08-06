@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
+from datetime import datetime
 from enum import StrEnum
 from typing import Final, Literal
 from urllib.parse import quote
@@ -51,7 +52,9 @@ from virtualcell.core.values import ParseStatus
 # accepted, a different major is refused.
 
 SPEC_MAJOR: Final = 1
-SPEC_MINOR: Final = 0
+# 1.1 (PR13b-2) adds the optional ``DatasetSpec.sheet`` for xlsx sources. Additive, so a
+# spec still declaring 1.0 is read unchanged.
+SPEC_MINOR: Final = 1
 SPEC_VERSION: Final = f"{SPEC_MAJOR}.{SPEC_MINOR}"
 
 
@@ -91,10 +94,19 @@ def _require_finite_number(value: float | None, field: str) -> float | None:
 
 
 class SourceFormat(StrEnum):
-    """Formats PR13b reads. XLSX is PR13b-2; it lands the first parsing dependency."""
+    """Tabular containers this layer can read.
+
+    ``xlsx`` (PR13b-2) needs the optional ``virtualcell[xlsx]`` extra — a spreadsheet parser
+    is a dependency only some imports need. Vendor and binary assay formats are PR15+.
+    """
 
     CSV = "csv"
     TSV = "tsv"
+    XLSX = "xlsx"
+
+    @property
+    def is_delimited(self) -> bool:
+        return self in (SourceFormat.CSV, SourceFormat.TSV)
 
 
 class ColumnRole(StrEnum):
@@ -157,6 +169,16 @@ class ColumnSpec(BaseModel):
     time_unit: Literal["minute", "hour", "day"] | None = None
     """Required for an ``elapsed_time`` axis."""
 
+    timestamp_offset: str | None = None
+    """The UTC offset the source recorded its timestamps in, e.g. ``"+09:00"``.
+
+    A canonical timestamp must be timezone-aware, because a naive stamp is ambiguous across
+    sites and instruments. Some containers cannot carry one at all — the xlsx format stores
+    no timezone, so an Excel timestamp is *always* naive — which would otherwise make a
+    timestamp axis unusable from a spreadsheet. Declaring the offset resolves that the way
+    everything else in this layer is resolved: stated by a human, never inferred. It is
+    applied only to a stamp that carries none of its own."""
+
     detection_limit_low: float | None = None
     detection_limit_high: float | None = None
     plausible_min: float | None = None
@@ -179,6 +201,31 @@ class ColumnSpec(BaseModel):
         if self.role is ColumnRole.TIME_AXIS:
             if self.time_axis is None:
                 raise ValueError(f"time-axis column {self.header!r} must declare time_axis")
+            if self.timestamp_offset is not None:
+                if self.time_axis is not TimeAxisKind.TIMESTAMP:
+                    raise ValueError(
+                        f"column {self.header!r} declares timestamp_offset on a "
+                        f"{self.time_axis.value!r} axis, which has no timezone"
+                    )
+                try:
+                    probe = datetime.fromisoformat(f"2000-01-01T00:00:00{self.timestamp_offset}")
+                except ValueError as exc:
+                    raise ValueError(
+                        f"column {self.header!r} timestamp_offset "
+                        f"{self.timestamp_offset!r} is not an ISO 8601 UTC offset "
+                        "(e.g. '+09:00', 'Z')"
+                    ) from exc
+                # Parsing is not enough: an empty offset appends nothing, so the probe
+                # parses cleanly and stays *naive*. Declaring an offset that does not name
+                # a zone is worse than declaring none, because it reads as an answer to
+                # exactly the ambiguity it fails to resolve.
+                if probe.tzinfo is None or probe.utcoffset() is None:
+                    raise ValueError(
+                        f"column {self.header!r} timestamp_offset "
+                        f"{self.timestamp_offset!r} names no timezone; an offset must make "
+                        "a naive stamp aware (e.g. '+09:00', 'Z'). Omit it entirely if the "
+                        "source's zone is unknown"
+                    )
             if self.time_axis is TimeAxisKind.ELAPSED_TIME and self.time_unit is None:
                 raise ValueError(
                     f"elapsed-time column {self.header!r} must declare time_unit; an "
@@ -250,6 +297,11 @@ class DatasetSpec(BaseModel):
     conditions: ScalarMap = Field(default_factory=dict)
     """Constant run-level conditions that are true of the whole file."""
 
+    sheet: str | None = None
+    """Which worksheet to read (xlsx only). Required when the workbook has more than one:
+    choosing for the author would be a guess about which experiment the file is about, and
+    the wrong guess still imports cleanly."""
+
     method: str | None = None
     """Free-text acquisition method, carried into provenance."""
 
@@ -267,6 +319,11 @@ class DatasetSpec(BaseModel):
             raise ValueError(
                 f"a run has one time axis, but the spec declares {len(axes)}: "
                 f"{', '.join(c.header for c in axes)}"
+            )
+        if self.sheet is not None and self.source_format is not SourceFormat.XLSX:
+            raise ValueError(
+                f"'sheet' is meaningful only for an xlsx source, but source_format is "
+                f"{self.source_format.value!r}; a delimited file has no worksheets"
             )
         if not any(c.role is ColumnRole.MEASUREMENT for c in self.columns):
             raise ValueError("a spec must declare at least one measurement column")

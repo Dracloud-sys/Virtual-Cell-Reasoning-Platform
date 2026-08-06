@@ -401,8 +401,16 @@ reference domain pack. The remaining platform layers, in order:
   *absent* from a passage series rather than read, because `PassageObservation` has no field
   for a quality flag and a flagged value would otherwise be indistinguishable from a clean
   one.
-- ▶ **PR13b-2 — XLSX behind the same `DatasetSpec`.** Split out because it lands the first
-  non-pydantic parsing dependency, which deserves its own review.
+- ✅ **PR13b-2 — XLSX behind the same `DatasetSpec`.** The container changed, the meaning did
+  not: a workbook and its CSV export produce the same `dedup_key`, and every reader funnels
+  through one `build_table` so the header contract is stated once. The first non-pydantic
+  parsing dependency lands as the optional `virtualcell[xlsx]` extra. Because a spreadsheet
+  is typed, formula-bearing and multi-sheet, the reader **refuses** rather than inventing a
+  value: an unnamed sheet in a multi-sheet workbook, a formula with no cached value (which
+  would read blank and be recorded as *missing*), a merged cell (no single locator), and an
+  Excel error value. Cells are read as stored rather than displayed. Excel stores no
+  timezone, so `ColumnSpec.timestamp_offset` lets a human declare the zone rather than have
+  a reader infer one — additive, hence spec `1.0 → 1.1`.
 - ▶ **PR15+ — Assay-specific readers** (qPCR Ct, FCS, imaging, omics). Deliberately *not*
   in PR13: they need vendor/binary parsers and per-assay QC science, and should wait until
   a second domain pack has proven the QC boundary generalizes.

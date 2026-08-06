@@ -281,3 +281,106 @@ def test_duplicate_headers_exit_one_as_an_unreadable_source(files, tmp_path, cap
     assert "status: unreadable_source" in out
     assert "duplicate header" in out
     assert "Traceback" not in out
+
+
+# --- PR13b-2: the same command reads a workbook ------------------------------
+
+
+def _xlsx(tmp_path, name="passages.xlsx", sheets=()):
+    from openpyxl import Workbook
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "data"
+    sheet.append(["cell_line", "passage", "PDL", "DT_min"])
+    sheet.append(["IMR 90", 25, 22.0, 2520])
+    sheet.append(["IMR 90", 30, 25.5, 4800])
+    for extra in sheets:
+        workbook.create_sheet(extra)
+    path = tmp_path / name
+    workbook.save(path)
+    return path
+
+
+def _xlsx_spec(**over) -> dict:
+    spec = json.loads(json.dumps(SPEC))
+    spec["source_format"] = "xlsx"
+    spec.update(over)
+    return spec
+
+
+def test_a_workbook_imports_through_the_same_command(tmp_path, capsys) -> None:
+    """No new command, no new flag: the container is a declared property of the spec."""
+    spec_path = _write(tmp_path, "spec.json", json.dumps(_xlsx_spec()))
+    source = _xlsx(tmp_path)
+
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 0
+
+    out = capsys.readouterr().out
+    assert "status: success" in out
+    assert "observations: 2" in out
+    assert "minute -> hour" in out
+
+
+def test_a_workbook_produces_the_same_canonical_run_as_its_csv(tmp_path, capsys) -> None:
+    spec_path = _write(tmp_path, "spec.json", json.dumps(_xlsx_spec()))
+    _run(
+        [
+            "experiment",
+            "import",
+            "--spec",
+            str(spec_path),
+            "--input",
+            str(_xlsx(tmp_path)),
+            "--format",
+            "json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    run = payload["runs"][0]
+    assert run["run_id"] == "ingestion:fibroblast_passages:cell_line=IMR%2090"
+    assert run["checksum"].startswith("sha256:")
+    doubling = next(m for m in run["observations"][0]["measurements"] if m["name"] == "DT_hours")
+    assert doubling["value"] == 42.0
+
+
+def test_an_ambiguous_workbook_exits_one_without_a_traceback(tmp_path, capsys) -> None:
+    """A multi-sheet workbook with no declared sheet is a source the reader cannot resolve,
+    reported as a typed status like any other unreadable source."""
+    spec_path = _write(tmp_path, "spec.json", json.dumps(_xlsx_spec()))
+    source = _xlsx(tmp_path, name="multi.xlsx", sheets=("notes",))
+
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 1
+
+    out = capsys.readouterr().out
+    assert "status: unreadable_source" in out
+    assert "Traceback" not in out
+
+
+def test_declaring_the_sheet_resolves_it(tmp_path, capsys) -> None:
+    spec_path = _write(tmp_path, "spec.json", json.dumps(_xlsx_spec(sheet="data")))
+    source = _xlsx(tmp_path, name="multi2.xlsx", sheets=("notes",))
+
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 0
+    assert "status: success" in capsys.readouterr().out
+
+
+def test_a_zoneless_timestamp_offset_is_refused_by_the_cli(tmp_path, capsys) -> None:
+    """An offset that names no timezone is a spec error, caught before any file is opened —
+    exit 1, a plain message, and no traceback."""
+    spec = _xlsx_spec()
+    spec["columns"][1] = {
+        "header": "passage",
+        "role": "time_axis",
+        "time_axis": "timestamp",
+        "timestamp_offset": "",
+    }
+    spec_path = _write(tmp_path, "zoneless.json", json.dumps(spec))
+    source = _xlsx(tmp_path, name="stamped.xlsx")
+
+    assert _run(["experiment", "import", "--spec", str(spec_path), "--input", str(source)]) == 1
+
+    out = capsys.readouterr().out
+    assert "invalid dataset spec" in out
+    assert "Traceback" not in out
