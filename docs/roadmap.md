@@ -415,9 +415,23 @@ reference domain pack. The remaining platform layers, in order:
   in PR13: they need vendor/binary parsers and per-assay QC science, and should wait until
   a second domain pack has proven the QC boundary generalizes.
   **PR11 deliberately does not claim arbitrary raw-data interpretation.**
-- ▶ **PR14 — Generic Reasoning Kernel extraction.** Lift the domain-independent reasoning
-  machinery (evidence grading, mechanistic traversal, decision assembly) out of the
-  immortalization vertical so packs supply only domain policy.
+- ✅ **PR14a — Reasoning kernel: grounding, assertion safety, tier conventions.** The first
+  and largest slice of the kernel extraction, chosen because each piece was already
+  duplicated or already domain-independent. Mechanistic grounding existed **twice** inside
+  the vertical — once for mechanism questions, once for hypothesis questions, identical
+  apart from the admission test — so ordering, deduplication and the missing-seed refusal
+  had two places to drift and a second domain would have made a third. The PR10b assertion
+  scope and the measurement/interpretation tier conventions were domain-independent facts
+  living inside one vertical. All three now live in `reasoning.kernel`; packs supply only
+  policy (which targets, which relations, which phrases). **Behaviour is unchanged** — same
+  suite, same scorecard, same per-question scores. An AST test forbids any kernel import
+  from `virtualcell.agents`, and the acceptance test grounds and validates a report for a
+  domain that does not exist in this repository.
+- ▶ **PR14b — Decision assembly.** Lift the report-shaping the vertical still owns
+  privately (missing-axis reporting, conflict explanation, risk/next-experiment assembly)
+  once a second pack shows which parts are genuinely shared. Deferred deliberately: unlike
+  grounding, these have exactly one implementation, and extracting a single instance
+  produces an abstraction shaped by one caller.
 - ▶ **Second domain pack (preferably adipogenesis).** Validates generality *after* kernel
   extraction — the real test of whether the boundary holds.
 - ▶ **Knowledge-learning and non-expert explanation layers.** Make

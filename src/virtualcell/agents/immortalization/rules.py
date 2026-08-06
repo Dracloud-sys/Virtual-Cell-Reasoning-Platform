@@ -24,8 +24,13 @@ from virtualcell.agents.immortalization.trajectory import (
     TrajectoryState,
     extract_trajectory,
 )
-from virtualcell.core.evidence import Claim, EvidenceTier
+from virtualcell.core.evidence import Claim
 from virtualcell.reasoning.decision import AssessmentFlag, CandidateStatus, DecisionReport
+from virtualcell.reasoning.kernel import (
+    INTERPRETATION_CONFIDENCE,
+    interpretation_claim,
+    measurement_claim,
+)
 
 _SENESCENCE_AXES = ("gammaH2AX", "SA_b_gal", "p16", "p21")
 _AXIS_LABEL = {"gammaH2AX": "gammaH2AX", "SA_b_gal": "SA-b-Gal", "p16": "p16", "p21": "p21"}
@@ -56,17 +61,13 @@ class UnsupportedIntentError(ValueError):
     """Raised when the PR5a builder is asked to handle a non-assessment intent."""
 
 
-def _measurement(statement: str) -> Claim:
-    return Claim(
-        statement=statement,
-        tier=EvidenceTier.ESTABLISHED,
-        confidence=0.9,
-        assumptions=["Input measurements are valid and quality-controlled."],
-    )
+# The tier conventions live in the kernel so they cannot drift per vertical: an
+# observation is established evidence, a conclusion drawn from one is a hypothesis.
+_measurement = measurement_claim
 
 
-def _interpretation(statement: str, confidence: float = 0.7) -> Claim:
-    return Claim(statement=statement, tier=EvidenceTier.HYPOTHESIS, confidence=confidence)
+def _interpretation(statement: str, confidence: float = INTERPRETATION_CONFIDENCE) -> Claim:
+    return interpretation_claim(statement, confidence=confidence)
 
 
 def _missing_axes(data: ImmortalizationAssessmentInput) -> list[str]:
