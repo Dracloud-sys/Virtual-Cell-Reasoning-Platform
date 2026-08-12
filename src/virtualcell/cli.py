@@ -611,10 +611,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_disc.add_argument("--output", help="write the discovery bundle as UTF-8 JSON to this path")
     p_disc.set_defaults(func=_cmd_literature_discover)
 
-    from virtualcell.platform.bootstrap import DOMAIN_SEEDS
+    from virtualcell.platform.bootstrap import shipped_domain_names
 
     p_seed = sub.add_parser("seed", help="build a bundled curated seed graph")
-    p_seed.add_argument("name", choices=sorted(DOMAIN_SEEDS))
+    p_seed.add_argument("name", choices=sorted(shipped_domain_names()))
     p_seed.add_argument("--load", help="merge into an existing saved graph JSON")
     p_seed.add_argument("--save", help="write the resulting graph to a JSON file")
     p_seed.set_defaults(func=_cmd_seed)

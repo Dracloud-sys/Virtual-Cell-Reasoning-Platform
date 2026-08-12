@@ -5,11 +5,13 @@ Adipogenesis is the first real chance to check that, and these tests check it th
 that means anything: by driving the *shipped* service, API and CLI with
 ``{"domain": "adipogenesis", ...}`` and asserting the answer is the vertical's own.
 
-They also pin the two places the claim needed help. Dispatch was already domain-neutral;
-the **store** was not — interfaces seeded one vertical by name, so a second domain
-dispatched correctly and then grounded nothing. And the shared `DecisionReport` carries the
-first vertical's status vocabulary, so the second domain's verdict has to travel on the
-envelope. Both are recorded here as behaviour rather than left as prose.
+They also pin the places the claim needed help. Dispatch was already domain-neutral; the
+**store** was not — interfaces seeded one vertical by name, so a second domain dispatched
+correctly and then grounded nothing. Fixing that first produced a *second* problem worth
+testing for: routing and seeding were then declared in two parallel lists, which is the same
+drift one level up. And the shared `DecisionReport` carries the first vertical's status
+vocabulary, so the second domain's verdict has to travel on the envelope. All of it is
+recorded here as behaviour rather than left as prose.
 """
 
 from __future__ import annotations
@@ -25,8 +27,17 @@ from fastapi.testclient import TestClient
 from virtualcell.api.main import app
 from virtualcell.cli import main as cli_main
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
-from virtualcell.platform.bootstrap import default_registry, seed_registered_domains
+from virtualcell.knowledge.schema import Gene, Interaction, Phenotype, RelationType
+from virtualcell.platform.bootstrap import (
+    SHIPPED_DOMAINS,
+    ShippedDomain,
+    default_registry,
+    seed_domain,
+    seed_registered_domains,
+    shipped_domain_names,
+)
 from virtualcell.platform.contracts import ReasoningQuery, ReasoningResponse
+from virtualcell.platform.domains import UnknownDomainError
 from virtualcell.platform.service import ReasoningService
 
 DIFFERENTIATING = {
@@ -191,3 +202,137 @@ def test_the_seed_command_can_build_the_second_domain_graph(tmp_path, capsys) ->
     assert cli_main(["seed", "adipogenesis", "--save", str(saved)]) == 0
     assert "adipogenesis" in capsys.readouterr().out
     assert saved.exists()
+
+
+# --- one declaration owns both halves of shipping a domain -------------------
+
+
+class _FakePack:
+    """A third domain that exists only inside this test."""
+
+    domain = "myogenesis"
+    supported_tasks: tuple[str, ...] = ("assess_state",)
+
+    def execute(self, query, store) -> ReasoningResponse:
+        from virtualcell.platform.contracts import DecisionSupport, QueryProvenance
+
+        return ReasoningResponse(
+            domain=self.domain,
+            task=query.task,
+            summary="Myotube formation was assessed.",
+            decision_support=DecisionSupport(status="fusing"),
+            provenance=QueryProvenance(
+                domain=self.domain,
+                task=query.task,
+                pack="myogenesis.test.v1",
+                engine="myogenesis_test",
+                explanation_level=query.explanation_level,
+            ),
+        )
+
+
+class _FakeSeed:
+    """The graph that domain reasons over."""
+
+    name = "myogenesis_seed"
+
+    def entities(self):
+        yield Gene(id="gene:MYOD1", name="MYOD1")
+        yield Phenotype(id="phenotype:myotube_formation", name="Myotube formation")
+
+    def interactions(self):
+        yield Interaction(
+            source_id="gene:MYOD1",
+            target_id="phenotype:myotube_formation",
+            relation=RelationType.PROMOTES,
+            confidence=0.9,
+        )
+
+
+@pytest.mark.parametrize("shipped", SHIPPED_DOMAINS, ids=lambda s: s.name)
+def test_every_shipped_domain_is_both_routable_and_seedable(shipped) -> None:
+    """The invariant the two parallel lists could violate. Being addressable and having a
+    graph to reason over were declared separately, so a pack without a seed dispatched
+    correctly and then grounded nothing, and a seed without a pack loaded a graph no query
+    could reach. Neither failed loudly."""
+    assert default_registry().get(shipped.name) is not None
+
+    store = InMemoryKnowledgeStore()
+    entities, _ = seed_domain(shipped.name, store)
+    assert entities > 0
+
+
+def test_the_registry_and_the_seeding_come_from_one_declaration() -> None:
+    """Not "the two lists happen to agree" — there is one list, and both derive from it."""
+    declared = set(shipped_domain_names())
+    assert set(default_registry().domains()) == declared
+
+    store = InMemoryKnowledgeStore()
+    seed_registered_domains(store)
+    per_domain = InMemoryKnowledgeStore()
+    for name in declared:
+        seed_domain(name, per_domain)
+    assert {e.id for e in store.all_entities()} == {e.id for e in per_domain.all_entities()}
+
+
+def test_no_shipped_seed_belongs_to_an_unaddressable_domain() -> None:
+    addressable = set(default_registry().domains())
+    for shipped in SHIPPED_DOMAINS:
+        assert shipped.name in addressable, f"{shipped.seed_source.__name__} is unreachable"
+
+
+def test_the_domain_name_is_taken_from_the_pack_not_written_twice() -> None:
+    """A hand-written key beside the declaration is one more thing that can disagree with
+    what the pack actually answers to."""
+    for shipped in SHIPPED_DOMAINS:
+        assert shipped.name == shipped.pack.domain
+
+
+def test_declaring_one_domain_twice_fails_loudly() -> None:
+    """The quiet outcome is the bad one: last-wins would answer queries with a pack nobody
+    chose, over a graph seeded from the other declaration."""
+    doubled = (*SHIPPED_DOMAINS, SHIPPED_DOMAINS[0])
+    with pytest.raises(ValueError, match="declared more than once"):
+        default_registry(doubled)
+
+
+def test_a_third_domain_needs_exactly_one_declaration() -> None:
+    """The PR11 claim, tested rather than asserted: one `ShippedDomain` makes a domain both
+    routable and seedable, with no API, CLI, service or contract change."""
+    third = ShippedDomain(_FakePack, _FakeSeed)
+    domains = (*SHIPPED_DOMAINS, third)
+
+    registry = default_registry(domains)
+    assert "myogenesis" in registry.domains()
+    assert registry.resolve("myogenesis", "assess_state").domain == "myogenesis"
+
+    store = InMemoryKnowledgeStore()
+    seed_registered_domains(store, domains)
+    assert store.get("gene:MYOD1") is not None
+
+    # ...and it answers through the shipped service, unchanged.
+    service = ReasoningService(store, registry)
+    response = asyncio.run(
+        service.query(
+            ReasoningQuery.model_validate({"domain": "myogenesis", "task": "assess_state"})
+        )
+    )
+    assert response.domain == "myogenesis"
+    assert response.decision_support.status == "fusing"
+
+
+def test_half_a_declaration_is_not_expressible() -> None:
+    """The strongest form of the invariant: the two halves cannot drift because a
+    declaration missing either one does not construct. There is no check to forget."""
+    with pytest.raises(TypeError):
+        ShippedDomain(_FakePack)  # a pack with no graph to reason over
+    with pytest.raises(TypeError):
+        ShippedDomain(seed_source=_FakeSeed)  # a graph no query can reach
+
+
+def test_a_domain_that_is_not_declared_stays_unknown() -> None:
+    registry = default_registry()
+    with pytest.raises(UnknownDomainError):
+        registry.get("myogenesis")
+    with pytest.raises(KeyError):
+        seed_domain("myogenesis", InMemoryKnowledgeStore())

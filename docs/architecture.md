@@ -138,16 +138,27 @@ wants both implementations in view:
    general enough; the report contract was not.**
 2. **Dispatch was domain-neutral but the store was not.** Interfaces seeded one vertical by
    name, so a second domain dispatched correctly and then grounded nothing. Which curated
-   graphs ship is now a composition decision (`bootstrap.DOMAIN_SEEDS`,
-   `seed_registered_domains`, `seed_domain`), and no interface names a vertical — including
+   graphs ship is now a composition decision, and no interface names a vertical — including
    `virtualcell seed`, which looks its argument up instead of branching on it.
+
+   Fixing that produced a second problem worth naming: routing and seeding were briefly
+   declared in two parallel lists, which is the same drift one level up — a pack without a
+   seed grounds nothing, a seed without a pack is unreachable, and neither fails loudly. A
+   domain is now declared **once**, as a `ShippedDomain` naming both its pack and its seed
+   source, and `default_registry`, `seed_domain` and `seed_registered_domains` are all
+   derived from that single tuple. The domain *name* comes from `pack.domain` rather than
+   being written again, a duplicate declaration raises at import, and the dataclass makes
+   half a declaration unconstructable — so the invariant holds by shape rather than by a
+   check someone has to remember.
 3. **The kernel needed no changes.** Grounding, the assertion-safety scope and the tier
    conventions were used unmodified by a domain they were not written for, which is the
    first real evidence that the PR14a boundary is in the right place.
 
-The PR11 claim held otherwise: registering the pack was one line in the composition root,
-with no API route, CLI command, request contract or service change — checked structurally by
-a test that asserts those modules still name no vertical.
+The PR11 claim now holds in full: **one declaration** in the composition root makes a domain
+both routable and seeded, with no API route, CLI command, request contract or service change.
+That is checked rather than asserted — a test adds a third, fictional domain via a single
+`ShippedDomain` and drives it end to end through the shipped service, and another asserts
+those interface modules still name no vertical.
 
 ## Generic reasoning kernel (`virtualcell.reasoning.kernel`)
 

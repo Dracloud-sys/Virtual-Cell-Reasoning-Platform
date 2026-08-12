@@ -5,9 +5,10 @@ A thin adapter, like the immortalization pack: it maps a generic
 converts the resulting report into the generic envelope. It contains **no** scientific
 rules — no thresholds, no status derivation, no claim construction.
 
-This pack is also the proof of the PR11 claim that adding a domain is a one-line change in
-the composition root: no API route, CLI command, request contract or service change was
-needed to make ``{"domain": "adipogenesis", "task": ...}`` answerable.
+This pack is also the proof of the PR11 claim: **one declaration** in the composition root
+(a :class:`~virtualcell.platform.bootstrap.ShippedDomain` naming this pack and its seed
+source) made ``{"domain": "adipogenesis", "task": ...}`` both answerable and grounded, with
+no API route, CLI command, request contract or service change.
 
 One place it differs from the immortalization pack, and the difference is a finding rather
 than a style choice: the vertical's status cannot ride on ``DecisionReport.candidate_status``
