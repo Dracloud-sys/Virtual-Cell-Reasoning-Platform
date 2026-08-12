@@ -1,9 +1,9 @@
-"""Curated adipogenesis seed graph — the second vertical's substrate (minimal).
+"""Curated adipogenesis seed graph — the second vertical's substrate.
 
-Deliberately small. Its job is to let the adipogenesis pack build a *real*
-:class:`~virtualcell.reasoning.decision.DecisionReport`, so the immortalization and
-adipogenesis report builders can be compared and PR14b can extract what is genuinely
-shared. It is not a complete model of adipocyte differentiation and does not pretend to be.
+Grown with the vertical: commitment and maturation are separate mechanisms, and the
+inhibitory arm is modelled rather than implied. Still not a complete model of adipocyte
+differentiation, and it does not pretend to be — in particular ``MATURE_ADIPOCYTE`` is
+deliberately outside the mechanism targets, so a maturity claim has nothing to ground on.
 
 Domain in one line: a preadipocyte becomes an adipocyte when the PPARG/CEBPA transcriptional
 program runs and the cell actually accumulates lipid. Both halves matter, and the second is

@@ -1,14 +1,14 @@
-"""The minimal adipogenesis vertical — the second data point for PR14b.
+"""The adipogenesis vertical — the second independent implementation.
 
-This vertical exists to be an *independent* second implementation, so these tests pin the
-two things that make it useful as evidence:
+These tests pin the two things that make it useful as evidence:
 
 * its own science holds (a marker panel is not a fat cell), and
 * it reaches a real report through the **kernel**, not through a copy of the
   immortalization builder.
 
-It is minimal on purpose. There is no benchmark, no trajectory engine, and no attempt at
-completeness — those belong to the expansion step after PR14b.
+Both claims were written when the vertical was minimal and both still hold now that it is
+full. The expanded axes are covered in `test_adipogenesis_expansion.py`; the scorecard lives
+in `tests/benchmarks/`.
 """
 
 from __future__ import annotations

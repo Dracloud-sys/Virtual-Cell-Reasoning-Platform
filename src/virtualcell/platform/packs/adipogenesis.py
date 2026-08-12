@@ -42,7 +42,7 @@ from virtualcell.platform.domains import QueryValidationError
 from virtualcell.reasoning.decision import DecisionReport
 
 DOMAIN = "adipogenesis"
-PACK_ID = "adipogenesis.minimal.v1"
+PACK_ID = "adipogenesis.v1"
 ENGINE = "adipogenesis_assessment"
 
 TASK_ASSESS = "assess_state"

@@ -128,7 +128,7 @@ def test_service_api_and_cli_agree(payload: dict, tmp_path, capsys) -> None:
 def test_the_answer_is_the_vertical_s_own() -> None:
     response = _service(DIFFERENTIATING)
     assert response.domain == "adipogenesis"
-    assert response.provenance.pack == "adipogenesis.minimal.v1"
+    assert response.provenance.pack == "adipogenesis.v1"
     assert response.decision_support.status == "differentiating"
     assert "adipogenic" in response.summary.lower()
 
@@ -151,6 +151,39 @@ def test_the_domain_status_travels_on_the_envelope_not_the_report() -> None:
 
     native = response.domain_details["decision_report"]
     assert native["candidate_status"] is None  # not borrowed from another domain
+
+
+def test_the_expanded_flag_vocabulary_reaches_the_envelope_untranslated() -> None:
+    """The expansion grew the vertical from two flags to seven, and the pack is a converter,
+    not an editor. Every flag the domain raises arrives on the envelope under its own name —
+    a pack that filtered or renamed them would be making a scientific decision at the
+    boundary, which is exactly what the boundary exists to prevent."""
+    response = _service(
+        {
+            "domain": "adipogenesis",
+            "task": "assess_state",
+            "experiment": {
+                "PPARG": "high",
+                "CEBPA": "high",
+                "FABP4": "absent",
+                "ADIPOQ": "absent",
+                "PLIN1": "absent",
+                "lipid_accumulation": "high",
+                "WNT_signalling": "high",
+                "viability": "absent",
+                "induction_day": 10,
+            },
+        }
+    )
+    assert response.decision_support.status == "partially_differentiated"
+    assert set(response.decision_support.flags) == {
+        "inhibitor_active",
+        "late_program_absent",
+        "viability_compromised",
+        "maturation_unverified",
+    }
+    # trend_required is the one *mapping* the pack makes, and it is not one of these.
+    assert not response.decision_support.trend_required
 
 
 def test_the_two_domains_answer_differently_from_the_same_boundary() -> None:
