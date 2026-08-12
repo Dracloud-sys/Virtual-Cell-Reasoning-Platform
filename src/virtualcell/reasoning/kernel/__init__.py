@@ -34,9 +34,10 @@ from virtualcell.reasoning.kernel.grounding import (
     GroundingError,
     LinkAdmission,
     all_of,
-    excludes_weak_relations,
     ground_links,
+    relations_in,
     rendered_step,
+    step_relations,
     targets_in,
 )
 from virtualcell.reasoning.kernel.safety import (
@@ -57,12 +58,13 @@ __all__ = [
     "LinkAdmission",
     "all_of",
     "assertion_texts",
-    "excludes_weak_relations",
     "forbidden_phrases_in",
     "ground_links",
     "interpretation_claim",
     "measurement_claim",
+    "relations_in",
     "rendered_step",
+    "step_relations",
     "targets_in",
     "validate_assertions",
 ]

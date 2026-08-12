@@ -27,25 +27,23 @@ from virtualcell.agents.immortalization.models import (
     ImmortalizationAssessmentInput,
 )
 from virtualcell.core.evidence import Claim, EvidenceTier
+from virtualcell.knowledge.schema import RelationType
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.reasoning.decision import CandidateStatus, DecisionReport
 from virtualcell.reasoning.explain import MechanisticLink
-from virtualcell.reasoning.kernel import (
-    WEAK_STEPS,
-    ground_links,
-    validate_assertions,
-)
 from virtualcell.reasoning.kernel import (
     assertion_texts as assertion_texts,  # re-exported: the benchmark scores this scope
 )
 from virtualcell.reasoning.kernel import (
     forbidden_phrases_in as _forbidden_phrases_in,
 )
+from virtualcell.reasoning.kernel import (
+    ground_links,
+    step_relations,
+    validate_assertions,
+)
 
 _PROVENANCE = ["curated:immortalization_seed"]
-# Rendered weak-relation steps, derived from the relation vocabulary by the kernel, used
-# to distinguish established context paths from the weak spontaneous route.
-_WEAK_STEPS = WEAK_STEPS
 _FORBIDDEN = (
     "without p53",
     "p53 loss",
@@ -157,10 +155,13 @@ _NEXT = [
 def _path_matches_signature(target_id: str, path: list[str]) -> bool:
     """Per-target relation signature: which relations a path to this target must use."""
     steps = " ".join(path)
+    relations = step_relations(path)
     if target_id in ("mechanism:telomere_maintenance", "mechanism:mitochondrial_function"):
-        # Established supporting context: a pure promotes path only, so a redundant
-        # detour back through the weak spontaneous route is not admitted here.
-        return "-promotes->" in steps and not any(w in steps for w in _WEAK_STEPS)
+        # Established supporting context: *every* step must be a promotion. Stated
+        # positively rather than as "contains promotes and no weak relation", because an
+        # exclusion list admits any relation added to the vocabulary later — a non-causal
+        # detour would then read here as established supporting context.
+        return bool(relations) and all(r == RelationType.PROMOTES.value for r in relations)
     if target_id == "mechanism:spontaneous_immortalization":
         return "-associated_with->" in steps
     if target_id == "phenotype:sustained_proliferation":

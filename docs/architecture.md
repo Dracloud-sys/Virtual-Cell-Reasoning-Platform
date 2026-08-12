@@ -122,10 +122,20 @@ stronger explanation; then target id, so equally close links never swap between 
 same `(target, path)` reached twice is listed once - two seeds finding one path is one piece
 of reasoning, and repeating it would read as corroboration it is not. An absent seed raises
 rather than grounding nothing, because an empty chain would present as a graph that was
-consulted and had nothing to say. Policy arrives as an `admits` predicate; `targets_in`,
-`excludes_weak_relations` and `all_of` cover what the current verticals need. Weak-relation
-step tokens are *derived* from `RelationType`, so a renamed relation cannot leave a policy
-silently matching nothing.
+consulted and had nothing to say. Policy arrives as an `admits` predicate: `targets_in`,
+`relations_in` and `all_of`.
+
+`relations_in` is stated **positively** — every step must use one of the named relations —
+and that is the point. An exclusion list is unsound over a vocabulary that grows: excluding
+only the weak relations still admits `interacts_with`, `participates_in`, `has_result`,
+`supports` and `contradicts`, none of which claim that one thing drives another, and every
+relation added later is admitted by default. Naming the admissible set keeps its meaning when
+the vocabulary changes. **Which** relations carry a mechanism is a biological judgement, so
+the set lives in the pack; the immortalization pack declares `promotes`/`inhibits`. A link
+whose path cannot be read is refused rather than assumed.
+
+Relation tokens are *derived* from `RelationType`, so a renamed relation cannot leave a
+policy silently matching nothing.
 
 **`safety`** - the PR10b scope rule, made shareable. A forbidden-phrase check scans the
 conclusion and the evidence claims only. It must **not** scan `limitations` /

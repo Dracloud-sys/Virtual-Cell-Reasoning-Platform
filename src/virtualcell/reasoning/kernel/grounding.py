@@ -19,6 +19,7 @@ any callable instead.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Iterable, Sequence
 from typing import Final
 
@@ -54,6 +55,18 @@ mechanism, and :mod:`virtualcell.reasoning.explain` already caps its tier accord
 
 WEAK_STEPS: Final[tuple[str, ...]] = tuple(rendered_step(r) for r in WEAK_RELATIONS)
 
+# ``explain`` renders a step as "<name> -<relation>-> <name>".
+_STEP_RELATION = re.compile(r"-([a-z_]+)->")
+
+
+def step_relations(path: Iterable[str]) -> list[str]:
+    """The relation used by each rendered step, in order.
+
+    A step whose relation cannot be read yields nothing, which makes
+    :func:`relations_in` refuse the link rather than assume it.
+    """
+    return [match.group(1) for step in path for match in _STEP_RELATION.finditer(step)]
+
 
 class GroundingError(ValueError):
     """Raised when a policy names a seed entity the store does not contain.
@@ -75,16 +88,23 @@ def targets_in(allowed: Iterable[str]) -> LinkAdmission:
     return lambda link: link.target_id in permitted
 
 
-def excludes_weak_relations() -> LinkAdmission:
-    """Admit only links whose every step is a causal relation.
+def relations_in(allowed: Iterable[RelationType | str]) -> LinkAdmission:
+    """Admit only links whose **every** step uses one of ``allowed``.
 
-    For a *mechanism* claim this is the difference between "A promotes B" and "A has been
-    seen alongside B". Both are real; only one is a mechanism.
+    Stated positively on purpose. An exclusion list is unsound over a vocabulary that
+    grows: every relation added to :class:`RelationType` afterwards is admitted by default,
+    including ones that carry no causal claim at all. A policy that says "these relations,
+    and no others" keeps its meaning when the vocabulary changes — a new relation is
+    refused until someone decides it belongs.
+
+    A link whose path this cannot read is refused rather than assumed: an unreadable step
+    is exactly the case where guessing is worst.
     """
+    permitted = {r.value if isinstance(r, RelationType) else r for r in allowed}
 
     def admits(link: MechanisticLink) -> bool:
-        joined = " ".join(link.path)
-        return not any(step in joined for step in WEAK_STEPS)
+        relations = step_relations(link.path)
+        return len(relations) == len(link.path) and all(r in permitted for r in relations)
 
     return admits
 

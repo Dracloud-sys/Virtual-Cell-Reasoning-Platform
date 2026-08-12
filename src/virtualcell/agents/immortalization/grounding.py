@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from virtualcell.agents.immortalization.limitations import get_mechanism_rule
 from virtualcell.agents.immortalization.models import ConstructType, ImmortalizationAssessmentInput
+from virtualcell.knowledge.schema import RelationType
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.reasoning.decision import DecisionReport
 from virtualcell.reasoning.kernel import (
@@ -22,8 +23,8 @@ from virtualcell.reasoning.kernel import (
 )
 from virtualcell.reasoning.kernel import (
     all_of,
-    excludes_weak_relations,
     ground_links,
+    relations_in,
     targets_in,
 )
 
@@ -50,11 +51,16 @@ _CONCLUSION = {
 }
 
 
-# Weak/associative relations are non-mechanistic (they belong to the Q9 hypothesis
-# route). A mechanism path that traverses one is excluded even if it ends on an
-# allowlisted target, so the P53-independent spontaneous route cannot leak into a
-# Q5/Q6 chain via a shared target such as sustained_proliferation.
-_WEAK_STEPS = ("-associated_with->", "-suggests->", "-suggests_next_test->")
+# Which relations may carry a *mechanism* claim in this domain — stated positively, and
+# stated here rather than in the kernel because it is a biological judgement. Only
+# promotes/inhibits assert that one thing acts on another; everything else in the
+# vocabulary (association, suggestion, co-participation, an assay result) describes a
+# connection without claiming one drives the other. Naming the admissible set rather than
+# excluding the weak ones means a relation added to the vocabulary later is refused until
+# someone decides it belongs, instead of silently entering every mechanism chain. It also
+# keeps the P53-independent spontaneous route out of a Q5/Q6 chain even where the two
+# share a target such as sustained_proliferation.
+_MECHANISTIC_RELATIONS = (RelationType.PROMOTES, RelationType.INHIBITS)
 
 
 def build_mechanism_report(
@@ -68,7 +74,10 @@ def build_mechanism_report(
     chain = ground_links(
         store,
         rule.seed_entity_ids,
-        all_of(targets_in(_ALLOWLIST[data.construct_type]), excludes_weak_relations()),
+        all_of(
+            targets_in(_ALLOWLIST[data.construct_type]),
+            relations_in(_MECHANISTIC_RELATIONS),
+        ),
     )
 
     return DecisionReport(

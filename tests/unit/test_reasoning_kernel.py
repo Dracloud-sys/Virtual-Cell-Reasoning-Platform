@@ -21,7 +21,14 @@ import pytest
 
 from virtualcell.core.evidence import EvidenceTier
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
-from virtualcell.knowledge.schema import Gene, Interaction, Pathway, Phenotype, RelationType
+from virtualcell.knowledge.schema import (
+    Gene,
+    Interaction,
+    Pathway,
+    Phenotype,
+    Protein,
+    RelationType,
+)
 from virtualcell.reasoning.decision import DecisionReport
 from virtualcell.reasoning.kernel import (
     INTERPRETATION_CONFIDENCE,
@@ -31,22 +38,30 @@ from virtualcell.reasoning.kernel import (
     GroundingError,
     all_of,
     assertion_texts,
-    excludes_weak_relations,
     forbidden_phrases_in,
     ground_links,
     interpretation_claim,
     measurement_claim,
+    relations_in,
     rendered_step,
+    step_relations,
     targets_in,
     validate_assertions,
 )
 
 # A domain this repository knows nothing about: two genes, one causal arm and one merely
-# associative arm, converging on the same phenotype.
+# associative arm, converging on the same phenotype — plus two *non-causal, non-weak*
+# relations, which are the case an exclusion-based policy silently admits.
 GENE_A, GENE_B = "gene:adipoq", "gene:leptin"
 CAUSAL = "pathway:lipid_storage"
 ASSOCIATED = "pathway:inflammation"
 PHENOTYPE = "phenotype:adipocyte_maturation"
+PARTNER = "protein:perilipin"
+CO_PATHWAY = "pathway:lipid_droplet_assembly"
+
+# This pack's judgement about which relations may carry a *mechanism* claim. Stated by the
+# pack, not the kernel: only promotes/inhibits assert that one thing acts on another.
+CAUSAL_RELATIONS = (RelationType.PROMOTES, RelationType.INHIBITS)
 
 
 def _store() -> InMemoryKnowledgeStore:
@@ -57,6 +72,8 @@ def _store() -> InMemoryKnowledgeStore:
         Pathway(id=CAUSAL, name="Lipid storage"),
         Pathway(id=ASSOCIATED, name="Inflammation"),
         Phenotype(id=PHENOTYPE, name="Adipocyte maturation"),
+        Protein(id=PARTNER, name="Perilipin"),
+        Pathway(id=CO_PATHWAY, name="Lipid droplet assembly"),
     ):
         store.upsert(entity)
     for source, target, relation in (
@@ -64,6 +81,11 @@ def _store() -> InMemoryKnowledgeStore:
         (CAUSAL, PHENOTYPE, RelationType.PROMOTES),
         (GENE_B, ASSOCIATED, RelationType.ASSOCIATED_WITH),
         (ASSOCIATED, PHENOTYPE, RelationType.SUGGESTS),
+        # Neither causal nor weak: a binding partner, and a pathway the causal arm merely
+        # takes part in. Both would pass a "not weak" filter while asserting nothing about
+        # one thing driving another.
+        (GENE_A, PARTNER, RelationType.INTERACTS_WITH),
+        (CAUSAL, CO_PATHWAY, RelationType.PARTICIPATES_IN),
     ):
         store.add_interaction(
             Interaction(source_id=source, target_id=target, relation=relation, confidence=0.9)
@@ -74,25 +96,85 @@ def _store() -> InMemoryKnowledgeStore:
 # --- the boundary is structural ----------------------------------------------
 
 
+def _domain_imports(module: pathlib.Path, package: tuple[str, ...]) -> list[str]:
+    """Modules under ``virtualcell.agents`` that ``module`` imports, relative ones resolved.
+
+    Relative imports are the hole a naive scan leaves: ``from ....agents import rules``
+    carries no module path a prefix check would recognise, so it would pass silently.
+    """
+    tree = ast.parse(module.read_text(encoding="utf-8"))
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names |= {alias.name for alias in node.names}
+        elif isinstance(node, ast.ImportFrom):
+            if node.level:
+                # ``level`` counts dots: 1 is this package, 2 its parent, and so on.
+                base = package[: len(package) - node.level + 1]
+                names.add(".".join([*base, node.module] if node.module else base))
+            else:
+                names.add(node.module or "")
+    return sorted(
+        name
+        for name in names
+        if name == "virtualcell.agents" or name.startswith("virtualcell.agents.")
+    )
+
+
+def _package_of(module: pathlib.Path, root: pathlib.Path) -> tuple[str, ...]:
+    return module.relative_to(root).parent.parts
+
+
 def test_the_kernel_knows_about_no_domain() -> None:
     """The claim "domain-independent" is only worth making if something checks it. A single
-    import from ``agents`` would turn the kernel into a second copy of one vertical."""
-    package = pathlib.Path("src/virtualcell/reasoning/kernel")
-    modules = sorted(package.glob("*.py"))
+    import from ``agents`` would turn the kernel into a second copy of one vertical.
+
+    ``rglob`` rather than ``glob``: a nested subpackage is exactly where such an import
+    would hide from a scan that only looked at the top level.
+    """
+    root = pathlib.Path("src")
+    modules = sorted((root / "virtualcell/reasoning/kernel").rglob("*.py"))
     assert modules, "kernel package not found"
 
     for module in modules:
-        tree = ast.parse(module.read_text(encoding="utf-8"))
-        imported = {
-            node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
-        } | {
-            alias.name
-            for node in ast.walk(tree)
-            if isinstance(node, ast.Import)
-            for alias in node.names
-        }
-        offenders = [name for name in imported if name.startswith("virtualcell.agents")]
-        assert not offenders, f"{module.name} imports a domain: {offenders}"
+        offenders = _domain_imports(module, _package_of(module, root))
+        assert not offenders, f"{module} imports a domain: {offenders}"
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "from virtualcell.agents.immortalization import rules",
+        "import virtualcell.agents.immortalization.rules",
+        "from ....agents.immortalization import rules",  # relative: three packages up
+        "from ....agents import immortalization",
+    ],
+)
+def test_the_boundary_check_actually_detects_a_leak(tmp_path, statement: str) -> None:
+    """A guard nobody has seen fail is a guard nobody knows works. Each of these is a real
+    way to reach a vertical from a nested kernel module."""
+    root = tmp_path / "src"
+    nested = root / "virtualcell/reasoning/kernel/nested"
+    nested.mkdir(parents=True)
+    leaky = nested / "leaky.py"
+    leaky.write_text(statement + "\n", encoding="utf-8")
+
+    assert _domain_imports(leaky, _package_of(leaky, root))
+
+
+def test_the_boundary_check_does_not_flag_innocent_imports(tmp_path) -> None:
+    root = tmp_path / "src"
+    nested = root / "virtualcell/reasoning/kernel/nested"
+    nested.mkdir(parents=True)
+    clean = nested / "clean.py"
+    clean.write_text(
+        "import re\n"
+        "from virtualcell.knowledge.store import KnowledgeStore\n"
+        "from ..grounding import ground_links\n",
+        encoding="utf-8",
+    )
+
+    assert _domain_imports(clean, _package_of(clean, root)) == []
 
 
 def test_weak_steps_are_derived_from_the_relation_vocabulary() -> None:
@@ -116,7 +198,7 @@ def test_a_foreign_domain_grounds_a_mechanism_with_kernel_only() -> None:
     chain = ground_links(
         _store(),
         [GENE_A, GENE_B],
-        all_of(targets_in({PHENOTYPE, CAUSAL}), excludes_weak_relations()),
+        all_of(targets_in({PHENOTYPE, CAUSAL}), relations_in(CAUSAL_RELATIONS)),
     )
 
     # The causal arm only, closest first. The associative arm reaches the same phenotype
@@ -134,6 +216,71 @@ def test_a_policy_that_admits_weak_relations_gets_them() -> None:
     chain = ground_links(_store(), [GENE_B], targets_in({PHENOTYPE, ASSOCIATED}))
     assert {link.target_id for link in chain} == {ASSOCIATED, PHENOTYPE}
     assert all(link.tier is EvidenceTier.HYPOTHESIS for link in chain)
+
+
+# --- the relation policy is positive, not an exclusion list -------------------
+
+
+def test_a_causal_policy_admits_a_promotes_path() -> None:
+    chain = ground_links(
+        _store(), [GENE_A], all_of(targets_in({CAUSAL}), relations_in(CAUSAL_RELATIONS))
+    )
+    assert [step_relations(link.path) for link in chain] == [["promotes"]]
+
+
+@pytest.mark.parametrize(
+    ("seed", "target", "relation"),
+    [(GENE_A, PARTNER, "interacts_with"), (CAUSAL, CO_PATHWAY, "participates_in")],
+)
+def test_a_causal_policy_refuses_relations_that_are_not_causal(
+    seed: str, target: str, relation: str
+) -> None:
+    """The defect this replaced: ``interacts_with`` and ``participates_in`` are neither
+    causal nor weak, so an exclusion list built from the weak relations admitted them while
+    claiming every step was causal. Binding to something and taking part in something are
+    real facts that assert nothing about one thing driving another."""
+    store = _store()
+    reachable = ground_links(store, [seed], targets_in({target}))
+    assert [step_relations(link.path) for link in reachable] == [[relation]]  # the graph has it...
+
+    admitted = ground_links(
+        store, [seed], all_of(targets_in({target}), relations_in(CAUSAL_RELATIONS))
+    )
+    assert admitted == []  # ...and the causal policy refuses it
+
+
+def test_a_mixed_two_hop_path_is_refused_if_any_step_is_not_causal() -> None:
+    """Every step must qualify, not just the first. ADIPOQ promotes lipid storage, which
+    participates in droplet assembly — the promotes step does not make the second one
+    causal, and a policy that checked only for the presence of a causal relation would
+    have admitted the whole path."""
+    store = _store()
+    reachable = ground_links(store, [GENE_A], targets_in({CO_PATHWAY}))
+    assert step_relations(reachable[0].path) == ["promotes", "participates_in"]
+
+    admitted = ground_links(
+        store, [GENE_A], all_of(targets_in({CO_PATHWAY}), relations_in(CAUSAL_RELATIONS))
+    )
+    assert admitted == []
+
+
+def test_a_relation_policy_accepts_enum_members_or_their_values() -> None:
+    store = _store()
+    by_enum = ground_links(store, [GENE_A], relations_in([RelationType.PROMOTES]))
+    by_value = ground_links(store, [GENE_A], relations_in(["promotes"]))
+    assert [link.target_id for link in by_enum] == [link.target_id for link in by_value]
+    assert by_enum
+
+
+def test_a_pack_may_admit_any_relation_it_declares() -> None:
+    """The kernel holds no opinion about which relations mean what — a pack that wants
+    binding partners declares them and gets them."""
+    chain = ground_links(
+        _store(),
+        [GENE_A],
+        all_of(targets_in({PARTNER}), relations_in([RelationType.INTERACTS_WITH])),
+    )
+    assert [link.target_id for link in chain] == [PARTNER]
 
 
 # --- the traversal contract ---------------------------------------------------

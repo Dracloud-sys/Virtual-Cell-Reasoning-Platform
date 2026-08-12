@@ -427,11 +427,20 @@ reference domain pack. The remaining platform layers, in order:
   suite, same scorecard, same per-question scores. An AST test forbids any kernel import
   from `virtualcell.agents`, and the acceptance test grounds and validates a report for a
   domain that does not exist in this repository.
-- ▶ **PR14b — Decision assembly.** Lift the report-shaping the vertical still owns
-  privately (missing-axis reporting, conflict explanation, risk/next-experiment assembly)
-  once a second pack shows which parts are genuinely shared. Deferred deliberately: unlike
-  grounding, these have exactly one implementation, and extracting a single instance
-  produces an abstraction shaped by one caller.
+- ▶ **Minimal adipogenesis vertical.** Deliberately **before** PR14b, not after. Decision
+  assembly currently has exactly one implementation, and extracting a single instance
+  produces an abstraction shaped entirely by its only caller — which is how a "generic"
+  kernel ends up encoding one domain's assumptions under a neutral name. A second
+  assembly has to exist before anyone can see which parts are actually shared. Minimal on
+  purpose: enough of a pack to build a real `DecisionReport`, not a full vertical, since
+  its job at this point is to be a second data point.
+- ▶ **Compare the two assemblies.** Read the immortalization and adipogenesis report
+  builders side by side and record what is common (and what only looked common).
+- ▶ **PR14b — Shared decision assembly.** Extract what the comparison showed to be
+  shared — missing-axis reporting, conflict explanation, risk and next-experiment
+  assembly — leaving domain-specific shaping in the packs.
+- ▶ **Expand the adipogenesis pack.** Grow it into a full second vertical on the extracted
+  kernel, which is also the real test of whether the extraction was right.
 - ▶ **Second domain pack (preferably adipogenesis).** Validates generality *after* kernel
   extraction — the real test of whether the boundary holds.
 - ▶ **Knowledge-learning and non-expert explanation layers.** Make
