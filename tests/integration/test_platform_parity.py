@@ -189,7 +189,7 @@ def test_repeated_queries_are_deterministic() -> None:
 def test_api_distinguishes_unknown_domain_from_unsupported_task() -> None:
     with TestClient(app) as client:
         unknown = client.post(
-            "/reasoning/query", json={"domain": "adipogenesis", "task": "assess_state"}
+            "/reasoning/query", json={"domain": "myogenesis", "task": "assess_state"}
         )
         unsupported = client.post(
             "/reasoning/query", json={"domain": "immortalization", "task": "predict_yield"}
@@ -224,7 +224,7 @@ def test_api_does_not_leak_stack_traces() -> None:
 @pytest.mark.parametrize(
     "payload,expected",
     [
-        ({"domain": "adipogenesis", "task": "assess_state"}, 2),
+        ({"domain": "myogenesis", "task": "assess_state"}, 2),
         ({"domain": "immortalization", "task": "predict_yield"}, 2),
         ({"domain": "immortalization"}, 1),
     ],

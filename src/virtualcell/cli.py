@@ -229,8 +229,7 @@ def _cmd_query(args: argparse.Namespace) -> int:
 
     from pydantic import ValidationError
 
-    from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
-    from virtualcell.platform.bootstrap import default_registry
+    from virtualcell.platform.bootstrap import default_registry, seed_registered_domains
     from virtualcell.platform.contracts import ReasoningQuery
     from virtualcell.platform.domains import (
         QueryValidationError,
@@ -256,7 +255,8 @@ def _cmd_query(args: argparse.Namespace) -> int:
         store = load_store(args.load)
     else:
         store = InMemoryKnowledgeStore()
-    load_into(ImmortalizationSeedSource(), store)
+    # Every registered domain's graph: this command is domain-neutral, so its store is too.
+    seed_registered_domains(store)
 
     # Only compose the literature agent when the request actually opts in, so an offline
     # query never even constructs a provider.
@@ -402,7 +402,7 @@ def _cmd_literature_discover(args: argparse.Namespace) -> int:
 
 
 def _cmd_seed(args: argparse.Namespace) -> int:
-    from virtualcell.knowledge.sources.base import load_into
+    from virtualcell.platform.bootstrap import seed_domain
 
     if args.load:
         from virtualcell.knowledge.persistence import load_store
@@ -411,11 +411,11 @@ def _cmd_seed(args: argparse.Namespace) -> int:
     else:
         store = InMemoryKnowledgeStore()
 
-    if args.name == "immortalization":
-        from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
-
-        n_entities, n_interactions = load_into(ImmortalizationSeedSource(), store)
-    else:  # pragma: no cover - argparse restricts choices
+    # Which curated graphs ship is a composition decision, so this command looks the name
+    # up rather than branching on it: the CLI names no vertical.
+    try:
+        n_entities, n_interactions = seed_domain(args.name, store)
+    except KeyError:  # pragma: no cover - argparse restricts choices
         print(f"unknown seed: {args.name}")
         return 1
 
@@ -611,8 +611,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_disc.add_argument("--output", help="write the discovery bundle as UTF-8 JSON to this path")
     p_disc.set_defaults(func=_cmd_literature_discover)
 
+    from virtualcell.platform.bootstrap import DOMAIN_SEEDS
+
     p_seed = sub.add_parser("seed", help="build a bundled curated seed graph")
-    p_seed.add_argument("name", choices=["immortalization"])
+    p_seed.add_argument("name", choices=sorted(DOMAIN_SEEDS))
     p_seed.add_argument("--load", help="merge into an existing saved graph JSON")
     p_seed.add_argument("--save", help="write the resulting graph to a JSON file")
     p_seed.set_defaults(func=_cmd_seed)
