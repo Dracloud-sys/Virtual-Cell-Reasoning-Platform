@@ -194,7 +194,9 @@ def _is_conflicting(data: AdipogenesisAssessmentInput) -> bool:
     )
 
 
-def _flags(data: AdipogenesisAssessmentInput) -> list[AdipogenesisFlag]:
+def _flags(
+    data: AdipogenesisAssessmentInput, status: DifferentiationStatus
+) -> list[AdipogenesisFlag]:
     """What a reader must know alongside the status, whatever it turns out to be."""
     flags: list[AdipogenesisFlag] = []
     if data.positive(INHIBITOR_MARKERS):
@@ -216,7 +218,14 @@ def _flags(data: AdipogenesisAssessmentInput) -> list[AdipogenesisFlag]:
         flags.append(AdipogenesisFlag.VIABILITY_COMPROMISED)
     if _is_conflicting(data):
         flags.append(AdipogenesisFlag.CONFLICTING_EVIDENCE)
-    if not data.positive(MATURATION_MARKERS):
+    if status in (
+        DifferentiationStatus.DIFFERENTIATING,
+        DifferentiationStatus.PARTIALLY_DIFFERENTIATED,
+    ):
+        # Unconditional on a positive call, including when ADIPOQ and PLIN1 are high.
+        # Suppressing it there would imply that marker positivity verifies maturity, and
+        # nothing in this vertical measures adipocyte *function* - which is what maturity
+        # would take. On a negative or undecided call the caveat is noise.
         flags.append(AdipogenesisFlag.MATURATION_UNVERIFIED)
     return flags
 
@@ -451,7 +460,15 @@ def _validation(
     ):
         goals.append("Independent confirmation of lipid content by a second assay")
         if AdipogenesisFlag.MATURATION_UNVERIFIED in flags:
-            goals.append("Adipocyte maturity, which this assessment does not establish")
+            unread = [m for m in MATURATION_MARKERS if not data.has_reading(m)]
+            if unread:
+                goals.append(f"Maturation markers with no reading ({', '.join(unread)})")
+            # Asked for even when those markers are high: they narrow the maturity question
+            # without answering it, and only function can answer it.
+            goals.append(
+                "Adipocyte maturity by functional characterisation, which marker "
+                "expression does not establish"
+            )
     if data.is_present(FUNCTIONAL_MARKER) and not data.has_reading(EFFICIENCY_MARKER):
         goals.append("Proportion of the culture that differentiated")
     if AdipogenesisFlag.VIABILITY_COMPROMISED in flags:
@@ -523,7 +540,7 @@ def assess(data: AdipogenesisAssessmentInput, store: KnowledgeStore) -> Adipogen
         )
 
     status = _status(data)
-    flags = _flags(data)
+    flags = _flags(data, status)
     missing = _missing(data)
 
     report = DecisionReport(
