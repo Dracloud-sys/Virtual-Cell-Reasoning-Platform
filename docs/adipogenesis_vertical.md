@@ -161,3 +161,10 @@ negative result, and no other test in the suite would notice.
    around them via `DecisionSupport` at no cost, exactly as PR14b predicted. The trajectory
    quartet was likewise not needed — time is a modifier here, not a series. The trigger for
    that migration remains the third domain, not this one.
+4. **`provenance.pack` is a compatibility surface, not a description.** The expansion briefly
+   renamed `PACK_ID` from `adipogenesis.minimal.v1` to `adipogenesis.v1` on the accurate
+   grounds that the pack is no longer minimal — and that is beside the point. The string
+   ships on every response, so anything already keying off it reads a rename as a *different
+   pack*. It stays at `adipogenesis.minimal.v1`, pinned on the product path by
+   `tests/integration/test_adipogenesis_provenance_pin.py`; renaming or versioning it is a
+   provenance-policy change with its own migration, not a side effect of growing a domain.

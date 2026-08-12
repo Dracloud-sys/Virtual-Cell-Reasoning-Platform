@@ -128,7 +128,7 @@ def test_service_api_and_cli_agree(payload: dict, tmp_path, capsys) -> None:
 def test_the_answer_is_the_vertical_s_own() -> None:
     response = _service(DIFFERENTIATING)
     assert response.domain == "adipogenesis"
-    assert response.provenance.pack == "adipogenesis.v1"
+    assert response.provenance.pack == "adipogenesis.minimal.v1"
     assert response.decision_support.status == "differentiating"
     assert "adipogenic" in response.summary.lower()
 
