@@ -16,11 +16,20 @@ answer this differently?**
   hypothesis — no. :mod:`~virtualcell.reasoning.kernel.claims` fixes that convention so it
   cannot drift per vertical, which is how a report starts overclaiming while every
   individual file still looks reasonable.
+* Working out which required axes went unmeasured, and collecting a suggestion list without
+  repeats — no. :mod:`~virtualcell.reasoning.kernel.assembly`, and deliberately nothing more
+  than that: two verticals read side by side shared almost no other procedure.
+* *Which* axes are required, and which assay answers which gap — yes. The pack's.
 
 Nothing here imports from :mod:`virtualcell.agents`, and a test enforces that. It is what
 makes "domain-independent" a checkable property rather than an intention.
 """
 
+from virtualcell.reasoning.kernel.assembly import (
+    UNMEASURED,
+    missing_axes,
+    ordered_unique,
+)
 from virtualcell.reasoning.kernel.claims import (
     INTERPRETATION_CONFIDENCE,
     MEASUREMENT_CONFIDENCE,
@@ -49,6 +58,7 @@ from virtualcell.reasoning.kernel.safety import (
 
 __all__ = [
     "DEFAULT_MAX_HOPS",
+    "UNMEASURED",
     "INTERPRETATION_CONFIDENCE",
     "MEASUREMENT_CONFIDENCE",
     "WEAK_RELATIONS",
@@ -62,6 +72,8 @@ __all__ = [
     "ground_links",
     "interpretation_claim",
     "measurement_claim",
+    "missing_axes",
+    "ordered_unique",
     "relations_in",
     "rendered_step",
     "step_relations",
