@@ -126,3 +126,38 @@ conflict explanation — immortalization has one, adipogenesis now has one, and 
 to call that a shared pattern. It is not: the two decide *which* readings conflict by entirely
 different biology, and PR14b already recorded that container-sharing is not procedure-sharing.
 Both build a `list[str]`; nothing else is common.
+
+## Benchmark
+
+`tests/benchmarks/adipogenesis_v0.{md,yaml}` + `eval_adipogenesis_v0.py`. Ten questions
+through `AdipogenesisDomainPack.execute` — the product path, per the PR10b rule that a
+benchmark scoring a private copy of the logic scores nothing. Hard axes (status, forbidden
+phrases, required and forbidden flags) fail a question; soft axes (named gaps, a next step
+that addresses the gap, stated limitations, maturity not assumed) only cost points, so a
+report can be correct and still visibly weak.
+
+Current: **10/10, all twelve points.**
+
+Q3 and Q9 differ in exactly one reading — viability — and expect different verdicts. If that
+difference ever stops changing the answer, the vertical is reading a dying culture as a
+negative result, and no other test in the suite would notice.
+
+## What building it revealed
+
+1. **The distinction that took the most work was not scientific, it was epistemic.** Three
+   of the four rewrites during implementation were the same mistake in different clothes:
+   treating *"we did not look"* as *"we looked and it was not there."* An unmeasured
+   completion panel became `partially_differentiated`; an unstated induction day became "too
+   early to tell". Both make silence into evidence. The fix in each case narrowed the rule to
+   require a *stated* reading, which is also why `induction_day` could stay optional.
+2. **The benchmark's soft axes paid for themselves on the first run.** ADI-Q1 scored 11/12
+   because ADIPOQ and PLIN1 being high suppressed `maturation_unverified` — which quietly
+   says marker positivity verifies maturity. Nothing in this vertical measures adipocyte
+   *function*, and only function could answer that, so the caveat is now unconditional on a
+   positive call (and scoped to positive calls, where it was previously noise on negatives).
+   No status assertion would have caught this: the label was right.
+3. **Expansion did not need the abstractions PR14b declined to extract.** `candidate_status`
+   and `flags` are still first-vertical residue on `DecisionReport`; the full vertical routes
+   around them via `DecisionSupport` at no cost, exactly as PR14b predicted. The trajectory
+   quartet was likewise not needed — time is a modifier here, not a series. The trigger for
+   that migration remains the third domain, not this one.

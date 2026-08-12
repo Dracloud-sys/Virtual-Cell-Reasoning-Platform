@@ -105,12 +105,16 @@ The first roadmap stage and the only fully working subsystem in v0.1.
 
 ## Second vertical: adipogenesis (`virtualcell.agents.adipogenesis`)
 
-Minimal on purpose. It exists to be an **independent second implementation** of decision
-assembly, because an abstraction extracted from a single caller is shaped entirely by that
-caller — so PR14b needs a second one in view before it can tell what is genuinely shared
-from what merely looked shared. It was written against the kernel and deliberately *not* by
-copying `agents/immortalization/rules.py`; a test forbids it importing the first vertical,
-so any similarity between them is evidence rather than an artifact.
+Started minimal, on purpose. It existed first to be an **independent second implementation**
+of decision assembly, because an abstraction extracted from a single caller is shaped
+entirely by that caller — so PR14b needed a second one in view before it could tell what is
+genuinely shared from what merely looked shared. It was written against the kernel and
+deliberately *not* by copying `agents/immortalization/rules.py`; a test forbids it importing
+the first vertical, so any similarity between them is evidence rather than an artifact.
+PR15 then grew it into a full vertical — six axes, five statuses, seven flags and its own
+scorecard — **without changing the kernel**, which is the strongest evidence so far that the
+PR14a boundary is in the right place. Full scope in
+[`adipogenesis_vertical.md`](adipogenesis_vertical.md).
 
 Its one scientific commitment: **a marker panel is not a fat cell.** The PPARG/CEBPA program
 running says the cell is trying; lipid in the cell says it succeeded. `differentiating`
@@ -119,9 +123,21 @@ is reported as *insufficient* with the missing measurement named — the adipoge
 of the immortalization rule that a proliferation signal never confirms a candidate without a
 measured senescence axis.
 
-Its status vocabulary has four values rather than three, because *why* a culture is not
+Its status vocabulary has five values rather than three, because *why* a culture is not
 differentiating changes what a researcher does next: a program that never started is a
-protocol question, a program held down by WNT or DLK1 is a biology question.
+protocol question, a program held down by WNT or DLK1 is a biology question. Two values are
+deliberately **absent**. There is no `mature` — proving maturity from a marker panel is the
+overclaim this vertical exists to refuse, so maturity is an axis and a recommendation, never
+a verdict. There is no "culture compromised" either: low viability is not a different
+biological state, it is a reason the reading cannot be trusted, so it yields
+`insufficient_evidence` plus a flag.
+
+The expansion's hardest rule was not any axis but a distinction that runs through all of
+them: **"we did not look" is not "we looked and it was not there."** An unmeasured completion
+panel is a gap; a measured-negative one is a stage. Time is treated the same way — the
+induction day is a *modifier* that changes what absent completion markers mean, not a series,
+and a *stated* early day withholds a failure call while an unstated one manufactures no
+doubt.
 
 ### What building it revealed
 
@@ -152,7 +168,10 @@ wants both implementations in view:
    check someone has to remember.
 3. **The kernel needed no changes.** Grounding, the assertion-safety scope and the tier
    conventions were used unmodified by a domain they were not written for, which is the
-   first real evidence that the PR14a boundary is in the right place.
+   first real evidence that the PR14a boundary is in the right place. This survived the
+   PR15 expansion: growing the vertical from two axes to six and from two flags to seven
+   forced zero kernel changes, and the two functions PR14b extracted (`missing_axes`,
+   `ordered_unique`) were the two the expansion used most.
 
 The PR11 claim now holds in full: **one declaration** in the composition root makes a domain
 both routable and seeded, with no API route, CLI command, request contract or service change.
@@ -746,6 +765,15 @@ parallel — one canonical implementation per intent. Forbidden-phrase scoring r
 production notion of an *assertion* field (`hypotheses.assertion_texts`: conclusion plus
 evidence claims), so required safety guidance such as "P53-independent does not mean P53
 loss" is not mistaken for the violation it prohibits.
+
+**The second vertical is scored the same way (PR15).** `tests/benchmarks/adipogenesis_v0.*`
+puts ten questions through `AdipogenesisDomainPack.execute` under the same product-path rule.
+The transfer is the point: the domains share no rules, no vocabulary and no failure modes,
+and the benchmark *shape* carried across unchanged — hard axes that fail a question, soft
+axes that only cost points so a report can be correct and still visibly weak, and
+forbidden-phrase scoring over assertion fields only. The soft axes justified themselves on
+the first run by catching a suppressed maturity caveat that no status assertion would have
+revealed.
 
 PR9-c adds **entity resolution** (`literature.resolution.resolve_literature_markers`): a
 `lit:marker` is bridged onto the curated ontology node carrying the same
