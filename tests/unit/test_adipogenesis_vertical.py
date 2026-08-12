@@ -98,6 +98,7 @@ def test_nothing_measured_is_insufficient_and_names_every_missing_axis() -> None
         "CEBPA",
         "FABP4",
         "ADIPOQ",
+        "PLIN1",
         "lipid_accumulation",
     }
 
