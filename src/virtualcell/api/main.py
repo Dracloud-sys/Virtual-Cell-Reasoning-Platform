@@ -29,13 +29,13 @@ async def lifespan(app: FastAPI):
 
         store = load_store(graph_path)
     else:
-        from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
+        from virtualcell.platform.bootstrap import seed_registered_domains
 
         store = InMemoryKnowledgeStore()
         load_into(SampleDataSource(), store)
-        # Also seed the immortalization graph so the mechanism/hypothesis reports of
-        # the ImmortalizationAssessmentAgent can be grounded via the API.
-        load_into(ImmortalizationSeedSource(), store)
+        # Every registered domain's curated graph, so a pack that dispatches can also
+        # ground. The API names no vertical.
+        seed_registered_domains(store)
     app.state.knowledge_store = store
 
     # The literature agent is composed here (defaulting to the real Europe PMC provider)

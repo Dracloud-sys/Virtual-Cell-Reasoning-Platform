@@ -428,15 +428,32 @@ reference domain pack. The remaining platform layers, in order:
   suite, same scorecard, same per-question scores. An AST test forbids any kernel import
   from `virtualcell.agents`, and the acceptance test grounds and validates a report for a
   domain that does not exist in this repository.
-- ▶ **Minimal adipogenesis vertical.** Deliberately **before** PR14b, not after. Decision
+- ✅ **Minimal adipogenesis vertical.** Deliberately **before** PR14b, not after. Decision
   assembly currently has exactly one implementation, and extracting a single instance
   produces an abstraction shaped entirely by its only caller — which is how a "generic"
   kernel ends up encoding one domain's assumptions under a neutral name. A second
   assembly has to exist before anyone can see which parts are actually shared. Minimal on
   purpose: enough of a pack to build a real `DecisionReport`, not a full vertical, since
-  its job at this point is to be a second data point.
+  its job at this point is to be a second data point. Landed with three findings for the
+  comparison: the shared `DecisionReport.candidate_status` carries **immortalization's**
+  status vocabulary, so a second domain's verdict has to travel on the envelope instead;
+  dispatch was domain-neutral but the **store** was not (interfaces seeded one vertical by
+  name, so a second domain routed correctly and then grounded nothing — now a composition
+  decision); and the **kernel needed no changes at all**, which is the first real evidence
+  the PR14a boundary sits in the right place.
 - ▶ **Compare the two assemblies.** Read the immortalization and adipogenesis report
-  builders side by side and record what is common (and what only looked common).
+  builders side by side and record what is common (and what only looked common). The
+  comparison must cover the *shape of the shared contract*, not only the builders, because
+  the second vertical already showed `DecisionReport` carrying first-vertical residue.
+  Candidates to examine as **residue** (present because immortalization needed them, not
+  because a report needs them): `candidate_status` — whose vocabulary a second domain
+  cannot use — plus `flags`, `trajectory`, `derived_input`, `input_conflicts` and
+  `blocked_overrides`. Candidates to examine as a genuine **cross-domain core**:
+  `conclusion`, `supporting_evidence`, `contradicting_evidence`, `mechanistic_chain`,
+  `uncertainty`, `missing_axes`, `conflict_explanation`, `limitations`,
+  `overinterpretation_risk`, `recommended_validation`, `next_experiment`. Nothing is
+  extracted or re-typed at this step: the output is a recorded reading, and PR14b acts on
+  it.
 - ▶ **PR14b — Shared decision assembly.** Extract what the comparison showed to be
   shared — missing-axis reporting, conflict explanation, risk and next-experiment
   assembly — leaving domain-specific shaping in the packs.

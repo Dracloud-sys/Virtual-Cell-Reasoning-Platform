@@ -372,7 +372,7 @@ def test_unsupported_domain_cannot_use_immortalization_reasoning() -> None:
     with pytest.raises(UnknownDomainError):
         _query(
             {
-                "domain": "adipogenesis",
+                "domain": "myogenesis",
                 "task": "assess_state",
                 "experiment": {"intent": "immortalization_assessment"},
             }

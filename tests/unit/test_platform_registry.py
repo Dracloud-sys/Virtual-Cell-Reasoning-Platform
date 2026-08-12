@@ -15,9 +15,13 @@ from virtualcell.platform.packs.immortalization import ImmortalizationDomainPack
 
 
 class _StubPack:
-    """A second domain, proving the registry is not immortalization-shaped."""
+    """A third, fictional domain, proving the registry is not shaped by either shipped one.
 
-    domain = "adipogenesis"
+    It used to be called "adipogenesis"; that name now belongs to a real registered pack, so
+    a stub wearing it would stop testing anything.
+    """
+
+    domain = "myogenesis"
     supported_tasks = ("assess_state",)
 
     def execute(self, query, store) -> ReasoningResponse:  # pragma: no cover - not run
@@ -28,7 +32,9 @@ def test_default_registry_resolves_immortalization() -> None:
     registry = default_registry()
     pack = registry.resolve("immortalization", "assess_state")
     assert isinstance(pack, ImmortalizationDomainPack)
-    assert registry.domains() == ["immortalization"]
+    # Every shipped pack, sorted. Immortalization is the reference vertical, not the only
+    # one, and nothing about resolving it depends on that.
+    assert registry.domains() == ["adipogenesis", "immortalization"]
     assert registry.tasks("immortalization") == [
         "assess_state",
         "explain_mechanism",
@@ -39,8 +45,8 @@ def test_default_registry_resolves_immortalization() -> None:
 def test_unknown_domain_is_rejected_explicitly() -> None:
     registry = default_registry()
     with pytest.raises(UnknownDomainError) as exc:
-        registry.resolve("adipogenesis", "assess_state")
-    assert "adipogenesis" in str(exc.value)
+        registry.resolve("myogenesis", "assess_state")
+    assert "myogenesis" in str(exc.value)
 
 
 def test_unsupported_task_is_rejected_explicitly() -> None:
@@ -53,7 +59,7 @@ def test_unsupported_task_is_rejected_explicitly() -> None:
 def test_unknown_domain_never_falls_back_to_immortalization() -> None:
     # The failure mode that would silently answer a different science question.
     registry = default_registry()
-    for domain in ("adipogenesis", "myogenesis", "", "IMMORTALIZATION"):
+    for domain in ("myogenesis", "osteogenesis", "", "IMMORTALIZATION", "ADIPOGENESIS"):
         with pytest.raises(UnknownDomainError):
             registry.get(domain or "unset")
 
@@ -62,11 +68,11 @@ def test_registration_is_deterministic_and_additive() -> None:
     registry = DomainRegistry()
     registry.register(ImmortalizationDomainPack())
     registry.register(_StubPack())
-    assert registry.domains() == ["adipogenesis", "immortalization"]  # sorted, stable
+    assert registry.domains() == ["immortalization", "myogenesis"]  # sorted, stable
     # A newly registered domain is addressable immediately, with its own task set.
-    assert registry.resolve("adipogenesis", "assess_state").domain == "adipogenesis"
+    assert registry.resolve("myogenesis", "assess_state").domain == "myogenesis"
     with pytest.raises(UnsupportedTaskError):
-        registry.resolve("adipogenesis", "explain_mechanism")
+        registry.resolve("myogenesis", "explain_mechanism")
 
 
 def test_duplicate_domain_registration_is_an_error() -> None:
@@ -102,8 +108,8 @@ def test_default_registry_instances_are_independent() -> None:
     # Each call composes a fresh registry, so tests and callers cannot leak state.
     first, second = default_registry(), default_registry()
     first.register(_StubPack())
-    assert "adipogenesis" in first
-    assert "adipogenesis" not in second
+    assert "myogenesis" in first
+    assert "myogenesis" not in second
 
 
 def test_registry_holds_no_domain_specific_rules() -> None:
@@ -137,5 +143,5 @@ def test_registry_holds_no_domain_specific_rules() -> None:
 
 
 def test_query_contract_carries_domain_for_dispatch() -> None:
-    query = ReasoningQuery(domain="adipogenesis", task="assess_state")
-    assert query.domain == "adipogenesis"  # not coerced toward the reference vertical
+    query = ReasoningQuery(domain="myogenesis", task="assess_state")
+    assert query.domain == "myogenesis"  # not coerced toward any registered vertical

@@ -103,6 +103,63 @@ The first roadmap stage and the only fully working subsystem in v0.1.
   `ground` (classify) and `synthesize` (render + call the backend) are separate, so
   evidence is tiered before any backend sees it.
 
+## Second vertical: adipogenesis (`virtualcell.agents.adipogenesis`)
+
+Minimal on purpose. It exists to be an **independent second implementation** of decision
+assembly, because an abstraction extracted from a single caller is shaped entirely by that
+caller — so PR14b needs a second one in view before it can tell what is genuinely shared
+from what merely looked shared. It was written against the kernel and deliberately *not* by
+copying `agents/immortalization/rules.py`; a test forbids it importing the first vertical,
+so any similarity between them is evidence rather than an artifact.
+
+Its one scientific commitment: **a marker panel is not a fat cell.** The PPARG/CEBPA program
+running says the cell is trying; lipid in the cell says it succeeded. `differentiating`
+therefore requires the functional axis, and a positive qPCR panel with no lipid measurement
+is reported as *insufficient* with the missing measurement named — the adipogenesis analogue
+of the immortalization rule that a proliferation signal never confirms a candidate without a
+measured senescence axis.
+
+Its status vocabulary has four values rather than three, because *why* a culture is not
+differentiating changes what a researcher does next: a program that never started is a
+protocol question, a program held down by WNT or DLK1 is a biology question.
+
+### What building it revealed
+
+Three findings, recorded rather than fixed in passing, because each is a PR14b decision that
+wants both implementations in view:
+
+1. **The shared report contract carries the first vertical's status vocabulary.**
+   `DecisionReport.candidate_status` is typed to `CandidateStatus`
+   (`possible_candidate` / `senescence_or_stress_prone` / `insufficient_evidence`), and there
+   is no honest way to say "differentiating" in it. Borrowing `possible_candidate` would make
+   two domains' statuses indistinguishable downstream, so the adipogenesis verdict travels
+   *beside* the report in `AdipogenesisAssessment` and reaches callers on
+   `DecisionSupport.status`, which is domain-neutral. **The platform envelope was already
+   general enough; the report contract was not.**
+2. **Dispatch was domain-neutral but the store was not.** Interfaces seeded one vertical by
+   name, so a second domain dispatched correctly and then grounded nothing. Which curated
+   graphs ship is now a composition decision, and no interface names a vertical — including
+   `virtualcell seed`, which looks its argument up instead of branching on it.
+
+   Fixing that produced a second problem worth naming: routing and seeding were briefly
+   declared in two parallel lists, which is the same drift one level up — a pack without a
+   seed grounds nothing, a seed without a pack is unreachable, and neither fails loudly. A
+   domain is now declared **once**, as a `ShippedDomain` naming both its pack and its seed
+   source, and `default_registry`, `seed_domain` and `seed_registered_domains` are all
+   derived from that single tuple. The domain *name* comes from `pack.domain` rather than
+   being written again, a duplicate declaration raises at import, and the dataclass makes
+   half a declaration unconstructable — so the invariant holds by shape rather than by a
+   check someone has to remember.
+3. **The kernel needed no changes.** Grounding, the assertion-safety scope and the tier
+   conventions were used unmodified by a domain they were not written for, which is the
+   first real evidence that the PR14a boundary is in the right place.
+
+The PR11 claim now holds in full: **one declaration** in the composition root makes a domain
+both routable and seeded, with no API route, CLI command, request contract or service change.
+That is checked rather than asserted — a test adds a third, fictional domain via a single
+`ShippedDomain` and drives it end to end through the shipped service, and another asserts
+those interface modules still name no vertical.
+
 ## Generic reasoning kernel (`virtualcell.reasoning.kernel`)
 
 The domain-independent machinery a vertical reasons *with*, lifted out of the vertical that
