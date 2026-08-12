@@ -10,9 +10,10 @@ that move the project closer to a full digital organism.
 > **Immortalization is the first validated reasoning vertical and reference
 > implementation**, not the product's subject. As of PR11 it is registered as the first
 > *domain pack* behind a domain-neutral query boundary; PR12–PR14 add the canonical
-> schema, raw-data ingestion/QC, and the generic reasoning kernel, after which a second
-> domain pack (preferably adipogenesis) validates generality. Knowledge-learning and
-> non-expert explanation are later platform layers.
+> schema, raw-data ingestion/QC, and the generic reasoning kernel. Adipogenesis then lands
+> as the second domain pack — partly *before* PR14b, because shared decision assembly needs
+> a second implementation to be extracted from — and a third domain tests cross-domain
+> generality. Knowledge-learning and non-expert explanation are later platform layers.
 
 | Stage | Name | Status |
 |------:|------|--------|
@@ -415,11 +416,37 @@ reference domain pack. The remaining platform layers, in order:
   in PR13: they need vendor/binary parsers and per-assay QC science, and should wait until
   a second domain pack has proven the QC boundary generalizes.
   **PR11 deliberately does not claim arbitrary raw-data interpretation.**
-- ▶ **PR14 — Generic Reasoning Kernel extraction.** Lift the domain-independent reasoning
-  machinery (evidence grading, mechanistic traversal, decision assembly) out of the
-  immortalization vertical so packs supply only domain policy.
-- ▶ **Second domain pack (preferably adipogenesis).** Validates generality *after* kernel
-  extraction — the real test of whether the boundary holds.
+- ✅ **PR14a — Reasoning kernel: grounding, assertion safety, tier conventions.** The first
+  and largest slice of the kernel extraction, chosen because each piece was already
+  duplicated or already domain-independent. Mechanistic grounding existed **twice** inside
+  the vertical — once for mechanism questions, once for hypothesis questions, identical
+  apart from the admission test — so ordering, deduplication and the missing-seed refusal
+  had two places to drift and a second domain would have made a third. The PR10b assertion
+  scope and the measurement/interpretation tier conventions were domain-independent facts
+  living inside one vertical. All three now live in `reasoning.kernel`; packs supply only
+  policy (which targets, which relations, which phrases). **Behaviour is unchanged** — same
+  suite, same scorecard, same per-question scores. An AST test forbids any kernel import
+  from `virtualcell.agents`, and the acceptance test grounds and validates a report for a
+  domain that does not exist in this repository.
+- ▶ **Minimal adipogenesis vertical.** Deliberately **before** PR14b, not after. Decision
+  assembly currently has exactly one implementation, and extracting a single instance
+  produces an abstraction shaped entirely by its only caller — which is how a "generic"
+  kernel ends up encoding one domain's assumptions under a neutral name. A second
+  assembly has to exist before anyone can see which parts are actually shared. Minimal on
+  purpose: enough of a pack to build a real `DecisionReport`, not a full vertical, since
+  its job at this point is to be a second data point.
+- ▶ **Compare the two assemblies.** Read the immortalization and adipogenesis report
+  builders side by side and record what is common (and what only looked common).
+- ▶ **PR14b — Shared decision assembly.** Extract what the comparison showed to be
+  shared — missing-axis reporting, conflict explanation, risk and next-experiment
+  assembly — leaving domain-specific shaping in the packs.
+- ▶ **Expand the adipogenesis pack.** Grow it into a full second vertical on the extracted
+  kernel, which is also the real test of whether the extraction was right.
+- ▶ **Third-domain validation / cross-domain generality test.** Two verticals can share an
+  abstraction by coincidence — the second was, after all, written by people who had just
+  read the first. A third domain is where the boundary is actually tested: it exists to
+  check that a pack can be written against the kernel *without changing it*, and any kernel
+  change the third domain forces is the finding, not routine work.
 - ▶ **Knowledge-learning and non-expert explanation layers.** Make
   `explanation_level` actually change the explanation, so a non-expert can learn the
   concepts, interpret raw data, and follow the basis of a research judgment. Until then

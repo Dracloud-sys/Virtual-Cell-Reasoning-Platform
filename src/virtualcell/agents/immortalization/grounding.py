@@ -15,9 +15,18 @@ from __future__ import annotations
 
 from virtualcell.agents.immortalization.limitations import get_mechanism_rule
 from virtualcell.agents.immortalization.models import ConstructType, ImmortalizationAssessmentInput
+from virtualcell.knowledge.schema import RelationType
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.reasoning.decision import DecisionReport
-from virtualcell.reasoning.explain import MechanisticLink, explain
+from virtualcell.reasoning.kernel import (
+    GroundingError as GroundingError,  # re-exported: the vertical's callers raise on it
+)
+from virtualcell.reasoning.kernel import (
+    all_of,
+    ground_links,
+    relations_in,
+    targets_in,
+)
 
 _Q5_TARGETS = {"mechanism:telomere_maintenance", "mechanism:replicative_senescence"}
 _Q6_TARGETS = _Q5_TARGETS | {
@@ -42,40 +51,16 @@ _CONCLUSION = {
 }
 
 
-# Weak/associative relations are non-mechanistic (they belong to the Q9 hypothesis
-# route). A mechanism path that traverses one is excluded even if it ends on an
-# allowlisted target, so the P53-independent spontaneous route cannot leak into a
-# Q5/Q6 chain via a shared target such as sustained_proliferation.
-_WEAK_STEPS = ("-associated_with->", "-suggests->", "-suggests_next_test->")
-
-
-class GroundingError(ValueError):
-    """Raised when a rule seed entity is absent from the store."""
-
-
-def _is_mechanistic(link: MechanisticLink) -> bool:
-    return not any(weak in step for step in link.path for weak in _WEAK_STEPS)
-
-
-def _grounded_links(
-    store: KnowledgeStore, seed_ids: list[str], allowlist: set[str]
-) -> list[MechanisticLink]:
-    selected: list[tuple[int, MechanisticLink]] = []
-    seen: set[tuple[str, tuple[str, ...]]] = set()
-    for order, seed_id in enumerate(seed_ids):
-        if store.get(seed_id) is None:
-            raise GroundingError(f"rule seed entity not in store: {seed_id}")
-        for link in explain(store, seed_id, max_hops=2).links:
-            if link.target_id not in allowlist or not _is_mechanistic(link):
-                continue
-            key = (link.target_id, tuple(link.path))
-            if key in seen:
-                continue
-            seen.add(key)
-            selected.append((order, link))
-    # Seed order first (so TERT and CDK4 arms both surface), then closeness, then id.
-    selected.sort(key=lambda item: (item[0], item[1].hops, item[1].target_id))
-    return [link for _, link in selected]
+# Which relations may carry a *mechanism* claim in this domain — stated positively, and
+# stated here rather than in the kernel because it is a biological judgement. Only
+# promotes/inhibits assert that one thing acts on another; everything else in the
+# vocabulary (association, suggestion, co-participation, an assay result) describes a
+# connection without claiming one drives the other. Naming the admissible set rather than
+# excluding the weak ones means a relation added to the vocabulary later is refused until
+# someone decides it belongs, instead of silently entering every mechanism chain. It also
+# keeps the P53-independent spontaneous route out of a Q5/Q6 chain even where the two
+# share a target such as sustained_proliferation.
+_MECHANISTIC_RELATIONS = (RelationType.PROMOTES, RelationType.INHIBITS)
 
 
 def build_mechanism_report(
@@ -83,7 +68,17 @@ def build_mechanism_report(
 ) -> DecisionReport:
     """Assemble a mechanism DecisionReport (Q5/Q6) from the catalog rule + graph."""
     rule = get_mechanism_rule(data)  # validates mechanism intent + supported construct
-    chain = _grounded_links(store, rule.seed_entity_ids, _ALLOWLIST[data.construct_type])
+    # Domain policy, stated declaratively: a mechanism claim may rest only on an
+    # intent-relevant target, and only on a path that is causal end to end. The walk,
+    # the deduplication and the ordering belong to the kernel.
+    chain = ground_links(
+        store,
+        rule.seed_entity_ids,
+        all_of(
+            targets_in(_ALLOWLIST[data.construct_type]),
+            relations_in(_MECHANISTIC_RELATIONS),
+        ),
+    )
 
     return DecisionReport(
         conclusion=_CONCLUSION[data.construct_type],
