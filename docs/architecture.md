@@ -201,6 +201,17 @@ to prohibit them: "P53-independent does not mean P53 loss" is correct guidance, 
 that flags it has punished the report for being careful. A pack supplies the phrase list and
 may supply its own error type so a failure stays attributable to the domain.
 
+**`assembly`** (PR14b) - `missing_axes` and `ordered_unique`. Two functions, and that is
+deliberate: reading the immortalization and adipogenesis builders side by side
+([the comparison](pr14b_assembly_comparison.md)) found almost no shared *procedure*. Nearly
+every concern is either content generation that is pure biology, or a field both verticals
+happen to fill; what they actually share is a report *shape*. Extracting more would have meant
+inventing structure the evidence does not show. `missing_axes` performs the one subtraction
+both were doing - required minus measured, in declared order, with one definition of "no
+reading" - and `ordered_unique` collects a suggestion list without repeats, because a repeated
+assay reads as emphasis nobody intended while sorting would lose the priority the order
+carries.
+
 **`claims`** - two constructors, and the most consequential thing in the package. A
 *measurement* is established at 0.9 with its quality assumption attached; an
 *interpretation* is a hypothesis at 0.7, lower because reading meaning into an observation

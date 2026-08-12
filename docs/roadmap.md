@@ -441,7 +441,7 @@ reference domain pack. The remaining platform layers, in order:
   name, so a second domain routed correctly and then grounded nothing — now a composition
   decision); and the **kernel needed no changes at all**, which is the first real evidence
   the PR14a boundary sits in the right place.
-- ▶ **Compare the two assemblies.** Read the immortalization and adipogenesis report
+- ✅ **Compare the two assemblies.** Read the immortalization and adipogenesis report
   builders side by side and record what is common (and what only looked common). The
   comparison must cover the *shape of the shared contract*, not only the builders, because
   the second vertical already showed `DecisionReport` carrying first-vertical residue.
@@ -454,9 +454,16 @@ reference domain pack. The remaining platform layers, in order:
   `overinterpretation_risk`, `recommended_validation`, `next_experiment`. Nothing is
   extracted or re-typed at this step: the output is a recorded reading, and PR14b acts on
   it.
-- ▶ **PR14b — Shared decision assembly.** Extract what the comparison showed to be
-  shared — missing-axis reporting, conflict explanation, risk and next-experiment
-  assembly — leaving domain-specific shaping in the packs.
+- ✅ **PR14b — Shared decision assembly.** The comparison decided the scope, and the answer
+  was *small*: the two builders share almost no procedure, only a report shape. Extracted
+  `missing_axes` and `ordered_unique` — the one subtraction and the one list mechanic both
+  verticals were doing — and nothing else. Conflict explanation, uncertainty, limitations,
+  risks and next-assay choice stayed in the packs, because each exists in one vertical only
+  or gives a different answer for a different biology. `candidate_status`/`flags` were
+  confirmed as residue but **not migrated**: adipogenesis routes around them at no cost via
+  the already-neutral `DecisionSupport`, so the migration would be paid in churn against the
+  benchmark scorer for a tidiness no caller wants. The trigger to do it is the third domain,
+  not discomfort.
 - ▶ **Expand the adipogenesis pack.** Grow it into a full second vertical on the extracted
   kernel, which is also the real test of whether the extraction was right.
 - ▶ **Third-domain validation / cross-domain generality test.** Two verticals can share an

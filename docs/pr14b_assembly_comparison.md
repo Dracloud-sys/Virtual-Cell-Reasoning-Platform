@@ -146,3 +146,45 @@ merely sitting there unused.
 Explicitly **not** moved: the trajectory quartet (free to ignore) and the relevance trio (a
 different problem). Touching them would be a large schema rewrite driven by tidiness rather
 than by anything either vertical needs.
+
+## PR14b outcome
+
+### Extracted
+
+`reasoning/kernel/assembly.py` — `missing_axes` and `ordered_unique`, plus the `UNMEASURED`
+convention. Both verticals call them; behaviour is unchanged in both. That is the whole
+extraction, because it is the whole overlap.
+
+### Contract: what was decided about the residue, and why nothing moved yet
+
+`candidate_status` and `flags` are real residue — they carry immortalization's vocabulary in
+a shared model, and adipogenesis cannot use either. Four migrations were considered:
+
+| option | cost | verdict |
+|---|---|---|
+| **A** — remove status/flags from the report, keep them only on the platform `DecisionSupport` | touches the benchmark scorer, the CLI printer, the pack, the parity tests and every immortalization test | large, and the scorer reads `report.candidate_status` directly |
+| **B** — retype as `status: str` | small | **loses the enum validation** that stops a typo becoming a status; explicitly a last resort |
+| **C** — base report plus a domain extension | large schema rewrite | not justified by two verticals |
+| **D** — add a domain-neutral verdict *beside* the existing fields | small and additive | leaves two representations of one thing — adding residue to fix residue |
+
+None is worth doing **now**, and that is the finding rather than a deferral. The residue costs
+adipogenesis nothing today: its verdict already reaches every caller through
+`DecisionSupport.status`, which is domain-neutral and was general enough all along. A
+migration would therefore be paid entirely in churn against the most safety-critical code in
+the repository — the benchmark scorer and the immortalization report — to buy a tidiness no
+caller is asking for.
+
+The condition that changes this is a third domain, which the roadmap already sequences next.
+At that point the residue stops being one vertical's leftover and becomes a pattern, and
+option A becomes worth its cost — with `DecisionSupport` already proven as the destination by
+two domains rather than one.
+
+Recorded so the next person does not have to re-derive it: **the trigger is a third domain
+needing an in-report verdict, not general discomfort with the field.**
+
+### Deliberately untouched
+
+The trajectory quartet (`trajectory`, `derived_input`, `input_conflicts`, `blocked_overrides`)
+— first-vertical concepts, but generically typed and optional, so a second domain ignores them
+for free. The relevance trio (`cell_type_relevance`, `species_relevance`, `actionability`) —
+unimplemented in both verticals, a specification question rather than a residue question.
