@@ -45,8 +45,10 @@ from virtualcell.knowledge.schema import RelationType
 from virtualcell.knowledge.sources.adipogenesis_seed import (
     ADIPOCYTE,
     CEBPA,
+    COMMITMENT,
     LIPID_LADEN,
     LIPOGENESIS,
+    MATURATION,
     PPARG,
     PROGRAM,
     UNDIFFERENTIATED,
@@ -75,10 +77,15 @@ _PROVENANCE = ["curated:adipogenesis_seed"]
 _MECHANISTIC_RELATIONS = (RelationType.PROMOTES, RelationType.INHIBITS)
 _MECHANISM_SEEDS = [PPARG, CEBPA, WNT10B]
 _MECHANISM_TARGETS = {
+    COMMITMENT,
     PROGRAM,
     LIPOGENESIS,
     LIPID_LADEN,
     ADIPOCYTE,
+    # The maturation *mechanism*, reached only through differentiation. The mature-adipocyte
+    # phenotype is deliberately not a target: a chain terminating there would read as a
+    # maturity claim, which is exactly what this vertical refuses to assert.
+    MATURATION,
     WNT_SIGNALLING,
     UNDIFFERENTIATED,
 }
@@ -561,9 +568,11 @@ def build_mechanism_report(
 
     report = DecisionReport(
         conclusion=(
-            "PPARG and CEBPA drive the adipogenic transcription program, which supports "
-            "lipogenesis and lipid accumulation; WNT/beta-catenin signalling restrains the "
-            "same program, so commitment reflects the balance between them."
+            "PPARG and CEBPA drive adipogenic commitment and the transcription program that "
+            "follows it, which supports lipogenesis and lipid accumulation; WNT/beta-catenin "
+            "signalling restrains the same commitment, so whether a preadipocyte enters the "
+            "lineage reflects the balance between them. Maturation lies downstream of "
+            "differentiation and is a separate question."
         ),
         candidate_status=None,
         supporting_evidence=[
