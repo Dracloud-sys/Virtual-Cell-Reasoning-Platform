@@ -30,6 +30,8 @@ from virtualcell.reasoning.kernel import (
     INTERPRETATION_CONFIDENCE,
     interpretation_claim,
     measurement_claim,
+    missing_axes,
+    ordered_unique,
 )
 
 _SENESCENCE_AXES = ("gammaH2AX", "SA_b_gal", "p16", "p21")
@@ -71,13 +73,18 @@ def _interpretation(statement: str, confidence: float = INTERPRETATION_CONFIDENC
 
 
 def _missing_axes(data: ImmortalizationAssessmentInput) -> list[str]:
-    values = {
+    """Which senescence axes were not measured.
+
+    *Which* axes are required is this domain's judgement; the subtraction is the kernel's.
+    ``MarkerValue.UNKNOWN`` is this vertical's spelling of "no reading".
+    """
+    values: dict[str, object] = {
         "gammaH2AX": data.gammaH2AX,
         "SA_b_gal": data.SA_b_gal,
         "p16": data.p16,
         "p21": data.p21,
     }
-    return [axis for axis in _SENESCENCE_AXES if values[axis] == MarkerValue.UNKNOWN]
+    return missing_axes(_SENESCENCE_AXES, values, unmeasured={MarkerValue.UNKNOWN})
 
 
 def _supporting(data: ImmortalizationAssessmentInput, status: CandidateStatus) -> list[Claim]:
@@ -209,10 +216,9 @@ def _validation_and_experiments(
     # Only recommend measuring axes that are actually missing (don't re-run measured ones).
     if missing:
         recommended.append("Senescence axis (gammaH2AX / SA-b-Gal / p16 / p21)")
-        for axis in missing:
-            assay = _AXIS_ASSAY[axis]
-            if assay not in next_experiment:
-                next_experiment.append(assay)
+        # Two axes can share an assay (p16 and p21 are one qPCR), so the suggestions are
+        # de-duplicated on the way out rather than guarded at every append.
+        next_experiment.extend(_AXIS_ASSAY[axis] for axis in missing)
 
     # Telomere/TERT are never in the v0 input, so always worth verifying.
     recommended.append("Telomere-maintenance axis (telomere length, TERT activity)")
@@ -227,7 +233,7 @@ def _validation_and_experiments(
         recommended.append("Distinguish acute stress from established senescence")
         next_experiment.append("Time-course re-measurement of gammaH2AX and senescence markers")
 
-    return recommended, next_experiment
+    return ordered_unique(recommended), ordered_unique(next_experiment)
 
 
 def _trajectory_uncertainty(trajectory: TrajectoryAssessment) -> list[str]:

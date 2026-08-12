@@ -48,6 +48,8 @@ from virtualcell.reasoning.kernel import (
     ground_links,
     interpretation_claim,
     measurement_claim,
+    missing_axes,
+    ordered_unique,
     relations_in,
     targets_in,
     validate_assertions,
@@ -228,10 +230,14 @@ def _contradicting(
 
 
 def _missing(data: AdipogenesisAssessmentInput) -> list[str]:
-    missing = [m for m in MOLECULAR_MARKERS if data.value(m) in (None, "unknown")]
-    if data.value(FUNCTIONAL_MARKER) in (None, "unknown"):
-        missing.append(FUNCTIONAL_MARKER)
-    return missing
+    """Which axes were not measured — the molecular panel and the functional one.
+
+    Both groups go through the same kernel subtraction; that this domain requires *two*
+    kinds of axis, and that the functional one is not optional, is its own judgement.
+    """
+    required = (*MOLECULAR_MARKERS, FUNCTIONAL_MARKER)
+    values: dict[str, object] = {axis: data.value(axis) for axis in required}
+    return missing_axes(required, values)
 
 
 def _next_experiments(status: DifferentiationStatus, missing: list[str]) -> list[str]:
@@ -244,7 +250,7 @@ def _next_experiments(status: DifferentiationStatus, missing: list[str]) -> list
         experiments.append("WNT/beta-catenin pathway activity assay")
     if status is DifferentiationStatus.DIFFERENTIATING:
         experiments.append("Time-course lipid quantification to confirm the trend")
-    return experiments
+    return ordered_unique(experiments)
 
 
 def assess(data: AdipogenesisAssessmentInput, store: KnowledgeStore) -> AdipogenesisAssessment:
