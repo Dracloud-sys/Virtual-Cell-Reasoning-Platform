@@ -10,9 +10,10 @@ that move the project closer to a full digital organism.
 > **Immortalization is the first validated reasoning vertical and reference
 > implementation**, not the product's subject. As of PR11 it is registered as the first
 > *domain pack* behind a domain-neutral query boundary; PR12–PR14 add the canonical
-> schema, raw-data ingestion/QC, and the generic reasoning kernel, after which a second
-> domain pack (preferably adipogenesis) validates generality. Knowledge-learning and
-> non-expert explanation are later platform layers.
+> schema, raw-data ingestion/QC, and the generic reasoning kernel. Adipogenesis then lands
+> as the second domain pack — partly *before* PR14b, because shared decision assembly needs
+> a second implementation to be extracted from — and a third domain tests cross-domain
+> generality. Knowledge-learning and non-expert explanation are later platform layers.
 
 | Stage | Name | Status |
 |------:|------|--------|
@@ -441,8 +442,11 @@ reference domain pack. The remaining platform layers, in order:
   assembly — leaving domain-specific shaping in the packs.
 - ▶ **Expand the adipogenesis pack.** Grow it into a full second vertical on the extracted
   kernel, which is also the real test of whether the extraction was right.
-- ▶ **Second domain pack (preferably adipogenesis).** Validates generality *after* kernel
-  extraction — the real test of whether the boundary holds.
+- ▶ **Third-domain validation / cross-domain generality test.** Two verticals can share an
+  abstraction by coincidence — the second was, after all, written by people who had just
+  read the first. A third domain is where the boundary is actually tested: it exists to
+  check that a pack can be written against the kernel *without changing it*, and any kernel
+  change the third domain forces is the finding, not routine work.
 - ▶ **Knowledge-learning and non-expert explanation layers.** Make
   `explanation_level` actually change the explanation, so a non-expert can learn the
   concepts, interpret raw data, and follow the basis of a research judgment. Until then
