@@ -42,6 +42,10 @@ from virtualcell.platform.domains import QueryValidationError
 from virtualcell.reasoning.decision import DecisionReport
 
 DOMAIN = "adipogenesis"
+# Kept at ".minimal.v1" deliberately. This string is not a description of the vertical -
+# it ships on every response as `provenance.pack`, so anything already keying off it (stored
+# reports, downstream filters) reads a rename as a different pack. Renaming it is a
+# provenance-policy change with its own migration, not a side effect of expanding a domain.
 PACK_ID = "adipogenesis.minimal.v1"
 ENGINE = "adipogenesis_assessment"
 

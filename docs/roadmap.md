@@ -464,8 +464,21 @@ reference domain pack. The remaining platform layers, in order:
   the already-neutral `DecisionSupport`, so the migration would be paid in churn against the
   benchmark scorer for a tidiness no caller wants. The trigger to do it is the third domain,
   not discomfort.
-- ▶ **Expand the adipogenesis pack.** Grow it into a full second vertical on the extracted
-  kernel, which is also the real test of whether the extraction was right.
+- ✅ **PR15 — Expand the adipogenesis pack.** Grown into a full second vertical on the
+  extracted kernel: six axes, five statuses, seven flags, its own 34-node seed graph, and a
+  ten-question reasoning scorecard run through the product path. **Kernel changes: zero** —
+  the extraction held, and the acceptance criterion held with it (the kernel still knows no
+  biology; the AST guard that forbids it importing `virtualcell.agents` never had to move).
+  Three findings worth carrying forward. (1) The expansion's real work was not adding axes
+  but keeping *"we did not look"* separate from *"we looked and it was not there"* — an
+  unmeasured completion panel is a gap, a measured-negative one is a stage, and two early
+  drafts collapsed that distinction before the tests caught it. (2) Time stayed a
+  **modifier**, not a series: the induction day changes what absent completion markers mean
+  and nothing else, so the trajectory quartet PR14b declined to migrate was not needed and
+  was not forced. (3) The benchmark's soft axes earned their keep on the first run —
+  `maturation_unverified` was being suppressed when ADIPOQ and PLIN1 were high, which implies
+  marker positivity verifies maturity; the caveat is now unconditional on a positive call.
+  See [`adipogenesis_vertical.md`](adipogenesis_vertical.md).
 - ▶ **Third-domain validation / cross-domain generality test.** Two verticals can share an
   abstraction by coincidence — the second was, after all, written by people who had just
   read the first. A third domain is where the boundary is actually tested: it exists to

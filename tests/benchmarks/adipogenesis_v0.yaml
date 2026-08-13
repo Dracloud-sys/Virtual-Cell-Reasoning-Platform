@@ -1,0 +1,188 @@
+# Adipogenesis reasoning benchmark v0
+#
+# Ten fixed questions the second vertical must answer well. Scored on reasoning quality,
+# not on getting a label right: a scenario passes only if it reaches the correct status AND
+# names what is missing, refuses the overclaims, and proposes a next step that would actually
+# reduce the uncertainty it reported.
+#
+# Deliberately weighted toward the ways an adipogenesis call goes wrong - a marker panel read
+# as a fat cell, lipid from the medium read as differentiation, a dying culture read as a
+# negative result - because those are the mistakes that cost a programme real time.
+
+questions:
+  - id: ADI-Q1
+    title: Complete program with lipid
+    input:
+      PPARG: high
+      CEBPA: high
+      FABP4: high
+      ADIPOQ: high
+      PLIN1: high
+      lipid_accumulation: high
+      lipid_efficiency: high
+      induction_day: 10
+    expect_status: differentiating
+    require_evidence: [supporting]
+    forbid_flags: [function_unmeasured, conflicting_evidence]
+    require_flags: []
+    expect_missing: []
+    expect_next_experiment_contains: []
+    notes: The unambiguous positive. Must still not claim maturity.
+
+  - id: ADI-Q2
+    title: Positive panel, nobody measured lipid
+    input:
+      PPARG: high
+      CEBPA: high
+      FABP4: high
+      ADIPOQ: high
+      PLIN1: high
+      induction_day: 10
+    expect_status: insufficient_evidence
+    require_flags: [function_unmeasured]
+    expect_missing: [lipid_accumulation]
+    expect_next_experiment_contains: [Oil Red O]
+    notes: >
+      The core rule. A marker panel is not a fat cell, and this is the most common way an
+      adipogenesis result is overcalled.
+
+  - id: ADI-Q3
+    title: Program absent, lipid absent, late enough to judge
+    input:
+      PPARG: absent
+      CEBPA: absent
+      FABP4: absent
+      ADIPOQ: absent
+      PLIN1: absent
+      lipid_accumulation: absent
+      viability: high
+      induction_day: 10
+    expect_status: not_differentiating
+    forbid_flags: [viability_compromised]
+    expect_missing: []
+    notes: A genuine negative, with a healthy culture ruling out the confounder.
+
+  - id: ADI-Q4
+    title: Inhibitor active, program never started
+    input:
+      PPARG: absent
+      CEBPA: absent
+      lipid_accumulation: absent
+      WNT_signalling: high
+      induction_day: 10
+    expect_status: differentiation_inhibited
+    require_flags: [inhibitor_active]
+    require_evidence: [contradicting]
+    expect_next_experiment_contains: [WNT]
+    notes: >
+      Held back rather than unresponsive. A different finding with a different next step,
+      which is why it is not collapsed into not_differentiating.
+
+  - id: ADI-Q5
+    title: Inhibitor active alongside a partial program
+    input:
+      PPARG: high
+      CEBPA: high
+      FABP4: absent
+      ADIPOQ: absent
+      PLIN1: absent
+      lipid_accumulation: high
+      WNT_signalling: high
+      induction_day: 10
+    expect_status: partially_differentiated
+    require_flags: [inhibitor_active, late_program_absent]
+    notes: >
+      Commitment happened despite the inhibitor. The inhibitor is reported, but it does not
+      erase evidence that the program started.
+
+  - id: ADI-Q6
+    title: Lipid without the commitment program
+    input:
+      PPARG: absent
+      CEBPA: absent
+      lipid_accumulation: high
+      induction_day: 8
+    expect_status: insufficient_evidence
+    require_flags: [conflicting_evidence]
+    require_conflict_explanation: true
+    expect_next_experiment_contains: [Lipid-free control]
+    notes: >
+      Cells load lipid from rich media without differentiating. Reporting this as a weak
+      positive is how a medium artifact becomes a result.
+
+  - id: ADI-Q7
+    title: Almost nothing measured
+    input:
+      PPARG: unknown
+    expect_status: insufficient_evidence
+    require_flags: [function_unmeasured]
+    expect_missing: [PPARG, CEBPA, FABP4, ADIPOQ, PLIN1, lipid_accumulation]
+    notes: Every required axis named, and no verdict invented from silence.
+
+  - id: ADI-Q8
+    title: Morphology looks right, the measurements do not support it
+    input:
+      morphology: high
+      PPARG: unknown
+      lipid_accumulation: unknown
+      induction_day: 8
+    expect_status: insufficient_evidence
+    require_flags: [function_unmeasured]
+    expect_missing: [PPARG, lipid_accumulation]
+    notes: >
+      Morphology corroborates and never decides. A vertical that let it decide would be
+      reading a photograph as an assay.
+
+  - id: ADI-Q9
+    title: Dying culture with no differentiation markers
+    input:
+      PPARG: absent
+      CEBPA: absent
+      FABP4: absent
+      ADIPOQ: absent
+      PLIN1: absent
+      lipid_accumulation: absent
+      viability: absent
+      induction_day: 10
+    expect_status: insufficient_evidence
+    require_flags: [viability_compromised]
+    require_evidence: [contradicting]
+    expect_next_experiment_contains: [Viability assay]
+    notes: >
+      The confounder Q3 rules out. "Not differentiating" and "dying" look identical on a
+      panel and have completely different fixes, so the negative call is withheld.
+
+  - id: ADI-Q10
+    title: Mechanism explanation
+    input:
+      intent: mechanism_explanation
+    expect_status: null
+    require_mechanistic_chain: true
+    require_inhibitory_arm: true
+    notes: >
+      A mechanism question has no status. Both arms must appear - a chain showing only the
+      driving half would present a one-sided mechanism.
+
+# Applied to every scenario. Each is a real way to overclaim from these readings.
+forbidden_phrases:
+  - mature adipocyte
+  - fully differentiated
+  - terminally differentiated
+  - transdifferentiation
+  - proves the cells are fat
+  - ready for harvest
+  - suitable for consumption
+  - food safe
+
+# Reasoning-quality points, scored per scenario on top of the hard status check.
+soft_criteria:
+  - id: names_missing_axes
+    description: Every required axis with no reading is named.
+  - id: next_step_addresses_gap
+    description: At least one proposed experiment addresses the reported uncertainty.
+  - id: limitations_stated
+    description: The report states its limitations rather than leaving them implied.
+  - id: maturity_not_assumed
+    description: >
+      Any report reaching a positive call flags that maturity is unverified, rather than
+      letting differentiation stand in for it.
