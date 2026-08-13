@@ -52,6 +52,10 @@ def baseline_status(markers: dict) -> tuple[CandidateStatus, list[AssessmentFlag
     # Orthogonal flags.
     if markers.get("adipogenic_retention") == "lost":
         flags.append(AssessmentFlag.FUNCTIONALITY_COMPROMISED)
+    # Reported beside the status, never through it: instability does not stop the cells
+    # proliferating, so it cannot retract a call the proliferation axes support.
+    if markers.get("genomic_stability") == "abnormal":
+        flags.append(AssessmentFlag.GENOMIC_INSTABILITY_DETECTED)
     if markers.get("DT_trend") == "worsening" and markers.get("PDL_trend") == "increasing":
         flags.append(AssessmentFlag.TREND_NEEDED)
 

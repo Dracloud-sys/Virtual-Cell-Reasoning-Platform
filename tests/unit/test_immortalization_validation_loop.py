@@ -74,7 +74,6 @@ def test_retained_retention_raises_no_functionality_flag() -> None:
 # --- gap A: the retention axis answers, and nothing downstream changes --------
 
 
-@pytest.mark.xfail(strict=True, reason="PR16 gap: retention outcome does not change the plan")
 def test_a_measured_retention_loss_changes_what_to_do_next() -> None:
     """`lost` and `retained` currently return identical plans. If measuring an axis cannot
     change the next action, the measurement was decorative."""
@@ -83,7 +82,6 @@ def test_a_measured_retention_loss_changes_what_to_do_next() -> None:
     assert lost.next_experiment != retained.next_experiment
 
 
-@pytest.mark.xfail(strict=True, reason="PR16 gap: unverified functionality is never surfaced")
 def test_unmeasured_retention_surfaces_as_a_validation_gap() -> None:
     """Silence about an unmeasured axis reads as "nothing to check here". Differentiation
     capacity is exactly the axis a cultured-meat programme cannot skip."""
@@ -92,7 +90,6 @@ def test_unmeasured_retention_surfaces_as_a_validation_gap() -> None:
     assert "differentiation" in guidance
 
 
-@pytest.mark.xfail(strict=True, reason="PR16 gap: unknown is indistinguishable from retained")
 def test_unmeasured_retention_is_not_treated_as_retained() -> None:
     unknown = _report(adipogenic_retention=RetentionValue.UNKNOWN)
     retained = _report(adipogenic_retention=RetentionValue.RETAINED)
@@ -102,25 +99,23 @@ def test_unmeasured_retention_is_not_treated_as_retained() -> None:
 # --- gap B: genomic stability cannot be stated at all -------------------------
 
 
-@pytest.mark.xfail(strict=True, reason="PR16 gap: no typed genomic-stability axis")
 def test_genomic_stability_is_a_typed_input_axis() -> None:
     assert "genomic_stability" in ImmortalizationAssessmentInput.model_fields
 
 
-@pytest.mark.xfail(strict=True, reason="PR16 gap: generic measurements are never consumed")
-def test_a_genomic_stability_result_handed_in_generically_reaches_the_reasoning() -> None:
-    """The user-facing symptom: an abnormal karyotype is accepted, echoed back in
-    `derived_input`, and changes nothing — no flag, no evidence, no risk, no plan change."""
-    silent = _report(measurements={"karyotype": "abnormal", "genomic_stability": "lost"})
-    baseline = _report()
-    assert (silent.flags, silent.contradicting_evidence, silent.overinterpretation_risk) != (
-        baseline.flags,
-        baseline.contradicting_evidence,
-        baseline.overinterpretation_risk,
-    )
+def test_an_unrecognised_measurement_key_is_preserved_and_silently_unconsumed() -> None:
+    """A recorded finding, not a desired contract — see `docs/immortalization_validation_axes.md`.
+
+    The typed axis fixes the case that mattered, but the generic escape hatch is unchanged:
+    a key the vertical does not recognise is accepted, echoed back in `derived_input`, and
+    reaches no reasoning, with nothing in the response telling the caller which of their
+    measurements were used. Pinned here so that whoever fixes measurement-consumption
+    transparency has to come to this test and delete it deliberately.
+    """
+    unknown_key = _report(measurements={"telomere_length_kb": "4.2"})
+    assert unknown_key.model_dump() == _report().model_dump()  # byte-identical: no trace at all
 
 
-@pytest.mark.xfail(strict=True, reason="PR16 gap: genomic stability is never asked for")
 def test_unverified_genomic_stability_is_surfaced_by_the_assessment() -> None:
     """The mechanism path demands genomic stability in its very first recommendation. The
     assessment path never mentions it, so the two halves of the vertical disagree."""

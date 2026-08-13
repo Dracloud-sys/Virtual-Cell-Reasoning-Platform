@@ -72,6 +72,24 @@ class RetentionValue(StrEnum):
     UNKNOWN = "unknown"
 
 
+class GenomicStabilityValue(StrEnum):
+    """Genomic-stability vocabulary.
+
+    One axis, not two. Karyotyping is the assay that *measures* genomic stability, so
+    modelling ``karyotype`` and ``genomic_stability`` as separate inputs would create two
+    authorities over one biological fact and admit ``karyotype=abnormal`` alongside
+    ``genomic_stability=stable`` with no rule for reconciling them. The axis is the
+    conclusion; which assay produced it is provenance, not a second opinion.
+
+    ``abnormal`` deliberately does not say *how* abnormal. This vertical has no validated
+    scale for that, and an honest coarse label beats a number nobody can defend.
+    """
+
+    STABLE = "stable"
+    ABNORMAL = "abnormal"
+    UNKNOWN = "unknown"
+
+
 class PassageObservation(BaseModel):
     """A single passage-level measurement (PR7 raw time-series observation).
 
@@ -117,6 +135,7 @@ class ImmortalizationAssessmentInput(BaseModel):
     p16: MarkerValue = MarkerValue.UNKNOWN
     p21: MarkerValue = MarkerValue.UNKNOWN
     adipogenic_retention: RetentionValue = RetentionValue.UNKNOWN
+    genomic_stability: GenomicStabilityValue = GenomicStabilityValue.UNKNOWN
 
     # Data not (yet) consumed by the baseline (e.g. DT_series, PPARG, OilRedO) is
     # preserved here rather than force-fit into the marker vocabulary.
@@ -149,4 +168,5 @@ class ImmortalizationAssessmentInput(BaseModel):
             "p16": self.p16,
             "p21": self.p21,
             "adipogenic_retention": self.adipogenic_retention,
+            "genomic_stability": self.genomic_stability,
         }

@@ -45,6 +45,11 @@ class AssessmentFlag(StrEnum):
 
     FUNCTIONALITY_COMPROMISED = "functionality_compromised"
     TREND_NEEDED = "trend_needed"
+    GENOMIC_INSTABILITY_DETECTED = "genomic_instability_detected"
+    """Measured genomic instability. Orthogonal on purpose: a line can proliferate
+    indefinitely *and* be genomically unstable, and folding that into the status would
+    either invalidate a candidate the proliferation data supports or hide a safety
+    finding behind a proliferation verdict."""
 
 
 class DecisionReport(BaseModel):
