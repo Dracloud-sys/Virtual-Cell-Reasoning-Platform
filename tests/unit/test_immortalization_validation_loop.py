@@ -123,7 +123,6 @@ def test_unverified_genomic_stability_is_surfaced_by_the_assessment() -> None:
     assert "genomic" in guidance or "karyotype" in guidance
 
 
-@pytest.mark.xfail(strict=True, reason="PR16 gap: no observation path into genomic instability")
 def test_the_graph_can_reach_genomic_instability_from_a_readout() -> None:
     """`phenotype:genomic_instability` exists as a node with nothing pointing into it: it is
     reachable only as a *next test* to run, never as a state that was observed."""
