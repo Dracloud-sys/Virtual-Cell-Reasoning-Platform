@@ -1,0 +1,123 @@
+# Immortalization validation-loop benchmark v0
+#
+# Separate from immortalization_v0 on purpose. That scorecard asks "did it judge the
+# culture correctly". This one asks a question no per-question score can express:
+#
+#   does measuring what the platform asked for change what the platform says next?
+#
+# Every scenario is the same `possible_candidate` culture with one validation axis varied,
+# so anything that moves is attributable to the axis and nothing else. Each scenario asserts
+# BOTH halves at once - the status must not move, and the plan must.
+
+base: &base
+  domain: immortalization
+  task: assess_state
+  experiment: &markers
+    species: bovine
+    cell_type: fibroblast
+    PDL_trend: increasing
+    DT_trend: stable
+    gammaH2AX: low
+    SA_b_gal: low
+    p16: low
+    p21: low
+
+questions:
+  - id: IMM-VAL-1
+    title: Genomic stability never measured
+    <<: *base
+    experiment:
+      <<: *markers
+      genomic_stability: unknown
+    expect_status: possible_candidate
+    forbid_flags: [genomic_instability_detected]
+    expect_validation_contains: [Genomic stability]
+    expect_next_contains: [Karyotype / genomic-stability assay]
+    notes: >
+      The gap the assessment path never surfaced, while the mechanism path listed it as
+      recommendation #1. The two halves of one vertical disagreed about whether it mattered.
+
+  - id: IMM-VAL-2
+    title: Genomic stability measured and stable
+    <<: *base
+    experiment:
+      <<: *markers
+      genomic_stability: stable
+    expect_status: possible_candidate
+    forbid_flags: [genomic_instability_detected]
+    expect_evidence_contains: Genomic stability is reported as stable.
+    forbid_validation_contains: [Genomic stability]
+    forbid_next_contains: [Karyotype / genomic-stability assay]
+    expect_risk_contains: does not establish a safe
+    notes: >
+      The invariant that gives the loop its point: an answered axis stops being asked about.
+      And answered is not cleared - a stable read at one timepoint is not a safe line.
+
+  - id: IMM-VAL-3
+    title: Genomic instability detected
+    <<: *base
+    experiment:
+      <<: *markers
+      genomic_stability: abnormal
+    expect_status: possible_candidate
+    require_flags: [genomic_instability_detected]
+    expect_evidence_contains: Genomic stability is reported as abnormal.
+    forbid_next_contains: [Karyotype / genomic-stability assay]
+    expect_next_contains: [clonal and progressing]
+    expect_risk_contains: genomically unstable
+    notes: >
+      Status must not move - the cells really are still proliferating. And the measurement
+      must not be treated as missing: the follow-up asks the next question, not the same one.
+
+  - id: IMM-VAL-4
+    title: Differentiation capacity never measured
+    <<: *base
+    experiment:
+      <<: *markers
+      adipogenic_retention: unknown
+    expect_status: possible_candidate
+    forbid_flags: [functionality_compromised]
+    expect_validation_contains: [Differentiation capacity]
+    expect_next_contains: [Differentiation assay]
+    notes: >
+      Previously indistinguishable from `retained`. Silence about an unmeasured axis reads
+      as "nothing to check here", and this is the axis a cultured-meat programme cannot skip.
+
+  - id: IMM-VAL-5
+    title: Differentiation capacity retained
+    <<: *base
+    experiment:
+      <<: *markers
+      adipogenic_retention: retained
+    expect_status: possible_candidate
+    forbid_flags: [functionality_compromised]
+    expect_evidence_contains: Adipogenic differentiation capacity is retained.
+    forbid_validation_contains: [Differentiation capacity]
+    expect_risk_contains: one axis of utility
+    notes: Answered, so not re-asked - and one axis of utility is not a usable line.
+
+  - id: IMM-VAL-6
+    title: Differentiation capacity lost
+    <<: *base
+    experiment:
+      <<: *markers
+      adipogenic_retention: lost
+    expect_status: possible_candidate
+    require_flags: [functionality_compromised]
+    expect_evidence_contains: Adipogenic differentiation capacity is lost.
+    expect_next_contains: [earlier-passage reference]
+    expect_risk_contains: Do not conflate immortalization with utility
+    notes: >
+      The follow-up is not "repeat the assay". The open question is whether capacity was
+      lost in culture or the protocol never worked, and those have different fixes.
+
+# Applied to every scenario. Closing a validation loop is exactly when a report starts
+# sounding like a clearance certificate.
+forbidden_phrases:
+  - safe cell line
+  - genetically safe
+  - non-tumorigenic
+  - validated for production
+  - production-ready
+  - food safe
+  - fully functional
