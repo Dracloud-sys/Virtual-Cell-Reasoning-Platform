@@ -71,6 +71,13 @@ SUST, SEN, GENOM, LOSSDIFF = (
     "phenotype:loss_of_differentiation",
 )
 PDL, DT, H2AX, SABGAL = "marker:PDL", "marker:DT", "marker:gammaH2AX", "marker:SA_b_gal"
+# Readouts for the two orthogonal validation axes. Deliberately `marker:` and not `assay:`:
+# an assay is what you *run*, a marker is what it *reads*, and only a reading can indicate a
+# phenotype. `marker:karyotype` and `assay:karyotype` are therefore both present and are not
+# duplicates - the assay is the SUGGESTS_NEXT_TEST target, the marker carries the INDICATES
+# edge. (`assay:differentiation -INDICATES-> loss_of_differentiation` predates this rule and
+# is left in place; see docs/immortalization_validation_axes.md.)
+KARYOTYPE, DIFFCAP = "marker:karyotype", "marker:differentiation_capacity"
 KARYO, DIFF, TELOMERE_ASSAY, TERT_ASSAY = (
     "assay:karyotype",
     "assay:differentiation",
@@ -125,6 +132,8 @@ _MARKERS = [
     (DT, "DT (doubling time)", "functional"),
     (H2AX, "gammaH2AX", "molecular"),
     (SABGAL, "SA-beta-Gal", "molecular"),
+    (KARYOTYPE, "Karyotype (chromosomal complement)", "cytogenetic"),
+    (DIFFCAP, "Differentiation capacity (adipogenic / myogenic)", "functional"),
 ]
 _ASSAYS = [
     (KARYO, "Karyotype / genomic-stability assay"),
@@ -173,6 +182,11 @@ _EDGES: list[tuple[str, RelationType, str, float, list[str]]] = [
     (SUST, _R.SUGGESTS_NEXT_TEST, TERT_ASSAY, 0.8, _CURATED),
     # A (weak) differentiation assay result indicates loss of differentiation.
     (DIFF, _R.INDICATES, LOSSDIFF, 0.7, _CURATED),
+    # The observation paths for the two validation axes. Without these, both risk phenotypes
+    # were reachable only as a test to run - present in the graph as things to worry about,
+    # with no way to record having looked.
+    (KARYOTYPE, _R.INDICATES, GENOM, 0.85, _CURATED),
+    (DIFFCAP, _R.INDICATES, LOSSDIFF, 0.85, _CURATED),
 ]
 
 

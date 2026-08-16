@@ -44,6 +44,7 @@ _MARKER_FIELDS = (
     "p16",
     "p21",
     "adipogenic_retention",
+    "genomic_stability",
 )
 # Keys consumed as typed fields (everything else is preserved in ``measurements``).
 _TOP_LEVEL = {*_MARKER_FIELDS, "species", "cell_type", "construct", "observations"}

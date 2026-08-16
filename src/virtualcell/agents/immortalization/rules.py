@@ -15,6 +15,7 @@ from virtualcell.agents.immortalization.effective_markers import reconcile_marke
 from virtualcell.agents.immortalization.models import (
     ASSESSMENT_INTENTS,
     AssessmentIntent,
+    GenomicStabilityValue,
     ImmortalizationAssessmentInput,
     MarkerValue,
     RetentionValue,
@@ -32,6 +33,7 @@ from virtualcell.reasoning.kernel import (
     measurement_claim,
     missing_axes,
     ordered_unique,
+    validate_assertions,
 )
 
 _SENESCENCE_AXES = ("gammaH2AX", "SA_b_gal", "p16", "p21")
@@ -59,8 +61,57 @@ _CONCLUSIONS = {
 }
 
 
+# --- orthogonal validation axes ------------------------------------------------
+#
+# Deliberately *not* senescence axes. These do not decide the candidate status; they decide
+# whether a candidate is a line worth using. Merging the two lists is the tempting move and
+# the wrong one - an unmeasured karyotype would start blocking a candidate call that the
+# senescence and proliferation axes fully support.
+#
+# Each axis has three strings and the distinction between them is the point of PR16:
+#   gap      - "we have not measured this yet"
+#   follow_up- "we measured it, and the result opened a *different* question"
+# A measured axis must never reappear as a gap; that is the loop the vertical left open.
+
+_GENOMIC_GAP = "Genomic stability"
+_GENOMIC_ASSAY = "Karyotype / genomic-stability assay"
+_GENOMIC_FOLLOW_UP = "Whether the detected genomic abnormality is clonal and progressing"
+_GENOMIC_FOLLOW_UP_ASSAY = (
+    "Repeat karyotyping at a later passage to test whether the abnormality is clonal "
+    "and progressing"
+)
+
+_FUNCTION_GAP = "Differentiation capacity (adipogenic / myogenic)"
+_FUNCTION_ASSAY = "Differentiation assay (adipogenic / myogenic)"
+_FUNCTION_FOLLOW_UP = "Whether differentiation capacity was lost in culture or never present"
+_FUNCTION_FOLLOW_UP_ASSAY = (
+    "Differentiation assay on an earlier-passage reference, to separate capacity lost in "
+    "culture from a protocol that never worked"
+)
+
+# Phrasings a *validated* axis must never license. Checked over assertion fields only
+# (conclusion + evidence), because the risk lines below quote these ideas in order to
+# forbid them - the PR10b scope rule, reused unchanged from the kernel.
+_FORBIDDEN = (
+    "safe cell line",
+    "genetically safe",
+    "non-tumorigenic",
+    "non tumorigenic",
+    "validated for production",
+    "production ready",
+    "production-ready",
+    "food safe",
+    "food-safe",
+    "fully functional",
+)
+
+
 class UnsupportedIntentError(ValueError):
     """Raised when the PR5a builder is asked to handle a non-assessment intent."""
+
+
+class ImmortalizationSafetyError(ValueError):
+    """Raised when an assessment report asserts a safety or fitness claim it cannot support."""
 
 
 # The tier conventions live in the kernel so they cannot drift per vertical: an
@@ -105,6 +156,10 @@ def _supporting(data: ImmortalizationAssessmentInput, status: CandidateStatus) -
         claims.append(_measurement("SA-b-Gal staining is low."))
     if data.p16 == MarkerValue.NORMAL:
         claims.append(_measurement("p16 is at a normal level."))
+    if data.genomic_stability == GenomicStabilityValue.STABLE:
+        claims.append(_measurement("Genomic stability is reported as stable."))
+    if data.adipogenic_retention == RetentionValue.RETAINED:
+        claims.append(_measurement("Adipogenic differentiation capacity is retained."))
     if status == CandidateStatus.POSSIBLE_CANDIDATE:
         claims.append(
             _interpretation(
@@ -137,6 +192,15 @@ def _contradicting(data: ImmortalizationAssessmentInput, status: CandidateStatus
         claims.append(_measurement("p21 is elevated."))
     if data.adipogenic_retention == RetentionValue.LOST:
         claims.append(_measurement("Adipogenic differentiation capacity is lost."))
+    if data.genomic_stability == GenomicStabilityValue.ABNORMAL:
+        claims.append(_measurement("Genomic stability is reported as abnormal."))
+        claims.append(
+            _interpretation(
+                "Detected genomic instability does not retract the proliferation reading; "
+                "it bears on whether the line is suitable for downstream use, which this "
+                "assessment does not establish."
+            )
+        )
     missing = _missing_axes(data)
     if missing:
         labels = ", ".join(_AXIS_LABEL[a] for a in missing)
@@ -202,6 +266,25 @@ def _risks(
             "Do not conflate immortalization with utility: lost differentiation can make the "
             "line unsuitable despite sustained proliferation."
         )
+    if AssessmentFlag.GENOMIC_INSTABILITY_DETECTED in flags:
+        risks.append(
+            "Do not treat a genomically unstable line as usable: instability bears on safety "
+            "and on the reproducibility of downstream results, neither of which this "
+            "assessment evaluates."
+        )
+    # A satisfied validation axis is the other way a report overclaims, and the newer risk:
+    # closing the loop must not turn 'measured' into 'cleared'.
+    if data.genomic_stability == GenomicStabilityValue.STABLE:
+        risks.append(
+            "A stable genomic-stability reading at one timepoint does not establish a safe, "
+            "non-tumorigenic or production-ready line; stability is a trend, and safety "
+            "requires separate validation."
+        )
+    if data.adipogenic_retention == RetentionValue.RETAINED:
+        risks.append(
+            "Retained differentiation capacity is one axis of utility; it does not establish "
+            "that the line is fully functional, production-ready or food-safe."
+        )
     return risks
 
 
@@ -227,6 +310,24 @@ def _validation_and_experiments(
     if status == CandidateStatus.POSSIBLE_CANDIDATE:
         recommended.append("Replicative-capacity trend over long-term passage")
         next_experiment.append("Long-term PDL tracking")
+
+    # The orthogonal validation axes. Each contributes at most one of three things, and
+    # never a gap for an axis that already has an answer.
+    if data.genomic_stability == GenomicStabilityValue.UNKNOWN:
+        recommended.append(_GENOMIC_GAP)
+        next_experiment.append(_GENOMIC_ASSAY)
+    elif data.genomic_stability == GenomicStabilityValue.ABNORMAL:
+        recommended.append(_GENOMIC_FOLLOW_UP)
+        next_experiment.append(_GENOMIC_FOLLOW_UP_ASSAY)
+    # STABLE contributes nothing: the axis is answered, and repeating the assay would be
+    # asking a question that already has an answer.
+
+    if data.adipogenic_retention == RetentionValue.UNKNOWN:
+        recommended.append(_FUNCTION_GAP)
+        next_experiment.append(_FUNCTION_ASSAY)
+    elif data.adipogenic_retention == RetentionValue.LOST:
+        recommended.append(_FUNCTION_FOLLOW_UP)
+        next_experiment.append(_FUNCTION_FOLLOW_UP_ASSAY)
 
     # Conflicting evidence warrants re-measurement over time (explicitly allowed).
     if data.intent == AssessmentIntent.CONFLICTING_EVIDENCE_ASSESSMENT:
@@ -290,7 +391,7 @@ def build_decision_report(data: ImmortalizationAssessmentInput) -> DecisionRepor
     recommended, next_experiment = _validation_and_experiments(effective, status, missing)
     uncertainty = _trajectory_uncertainty(trajectory) if trajectory else []
 
-    return DecisionReport(
+    report = DecisionReport(
         conclusion=_CONCLUSIONS[status],
         candidate_status=status,
         flags=flags,
@@ -309,3 +410,7 @@ def build_decision_report(data: ImmortalizationAssessmentInput) -> DecisionRepor
         blocked_overrides=blocked,
         # relevance scores intentionally left None (no scoring formula yet).
     )
+    validate_assertions(
+        report, _FORBIDDEN, error=ImmortalizationSafetyError, context="assessment report"
+    )
+    return report

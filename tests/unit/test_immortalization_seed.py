@@ -22,7 +22,7 @@ def _seeded() -> InMemoryKnowledgeStore:
 def test_seed_loads_expected_shape() -> None:
     store = _seeded()
     n_entities, n_interactions = load_into(ImmortalizationSeedSource(), InMemoryKnowledgeStore())
-    assert (n_entities, n_interactions) == (26, 28)
+    assert (n_entities, n_interactions) == (28, 30)  # +2 validation-axis readouts (PR16)
     for eid in (
         "gene:TERT",
         "gene:CDK4",
@@ -115,3 +115,23 @@ def test_reviewed_edge_refinements() -> None:
     }
     assert "phenotype:loss_of_differentiation" in diff_targets
     assert all(i.relation != "contradicts" for i in interactions)
+
+
+def test_both_risk_phenotypes_can_be_reached_from_a_readout() -> None:
+    """PR16 graph closure. Both risk phenotypes existed as nodes with nothing pointing into
+    them - things to worry about, with no way to record having looked.
+
+    The edges are hung on `marker:` nodes, not `assay:` nodes, because an assay is what you
+    run and a marker is what it reads; only a reading can indicate a phenotype.
+    """
+    store = _seeded()
+    for readout, phenotype in (
+        ("marker:karyotype", "phenotype:genomic_instability"),
+        ("marker:differentiation_capacity", "phenotype:loss_of_differentiation"),
+    ):
+        indicated = {e.target_id for e in store.edges(readout) if e.relation == "indicates"}
+        assert phenotype in indicated, readout
+
+    # The assay and the readout are distinct nodes on purpose, not duplicates.
+    assert store.get("assay:karyotype") is not None
+    assert store.get("marker:karyotype") is not None

@@ -479,6 +479,23 @@ reference domain pack. The remaining platform layers, in order:
   `maturation_unverified` was being suppressed when ADIPOQ and PLIN1 were high, which implies
   marker positivity verifies maturity; the caveat is now unconditional on a positive call.
   See [`adipogenesis_vertical.md`](adipogenesis_vertical.md).
+- ✅ **PR16 — Close the immortalization validation loop.** Inserted ahead of third-domain
+  validation because driving the shipped product turned up a gap that no test had: the vertical
+  told researchers to verify genomic stability and differentiation capacity, and could not read
+  the answer back. Measure what it asked for, hand the result in, and the report was
+  byte-identical to never having measured it. Genomic stability is now a typed axis, both axes
+  follow one rule (`unknown` → a gap and the assay that closes it; answered → silence; adverse →
+  a follow-up that asks the *next* question, never the same assay again), and neither may move
+  `CandidateStatus` — a line can proliferate indefinitely *and* be genomically unstable.
+  Closing the loop opened the opposite failure, so a clearance-claim guard closes that too:
+  measured is not cleared. Kernel changes: zero. Four findings recorded rather than fixed,
+  the load-bearing one being **measurement-consumption transparency** — nothing in a response
+  distinguishes a measurement that was used from one that was ignored. See
+  [`immortalization_validation_axes.md`](immortalization_validation_axes.md).
+- ▶ **Measurement-consumption transparency.** Follow-up split out of PR16. A caller cannot tell
+  which of their submitted measurements the reasoning actually consumed; an unrecognised key is
+  preserved and silently ignored. Platform-wide contract question spanning ingestion and the
+  response envelope, so it is not an immortalization fix.
 - ▶ **Third-domain validation / cross-domain generality test.** Two verticals can share an
   abstraction by coincidence — the second was, after all, written by people who had just
   read the first. A third domain is where the boundary is actually tested: it exists to
