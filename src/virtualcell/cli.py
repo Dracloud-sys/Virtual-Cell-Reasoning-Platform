@@ -316,6 +316,7 @@ def _print_query_text(response) -> None:
         "mechanistic links",
         [f"[{link.tier.value}] {' | '.join(link.path)}" for link in response.mechanistic_links],
     )
+    _measurement_consumption(response)
     _block("missing information", response.missing_information)
     _block("limitations", response.limitations)
     _block("overinterpretation risks", response.overinterpretation_risks)
@@ -325,6 +326,38 @@ def _print_query_text(response) -> None:
     if response.literature.evidence:
         for claim in response.literature.evidence:
             print(f"  - [{claim.tier.value}] {claim.statement}")
+
+
+def _measurement_consumption(response) -> None:
+    """One compact block: what the reasoning did with what was submitted.
+
+    Unsupported names are printed first and unconditionally, because that is the line a
+    user needs to see - it usually means a typo, and it is the state that was previously
+    invisible. The rest is grouped by outcome so the block stays short as the number of
+    axes grows.
+    """
+    report = response.measurement_consumption
+    if not report.entries:
+        return
+
+    print()
+    print("measurements:")
+    if report.unsupported:
+        print(f"  ! not recognised (ignored): {', '.join(report.unsupported)}")
+    groups: dict[str, list[str]] = {}
+    for entry in report.entries:
+        if entry.status.value == "unsupported":
+            continue
+        groups.setdefault(entry.status.value, []).append(entry.submitted_as)
+    labels = {
+        "used_for_status": "used for the status",
+        "used_for_guidance": "used for guidance only",
+        "quality_excluded": "excluded on quality",
+        "not_applicable": "not used here",
+    }
+    for status, label in labels.items():
+        if groups.get(status):
+            print(f"  {label}: {', '.join(groups[status])}")
 
 
 def _cmd_literature_discover(args: argparse.Namespace) -> int:

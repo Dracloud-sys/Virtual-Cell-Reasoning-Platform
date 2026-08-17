@@ -492,10 +492,20 @@ reference domain pack. The remaining platform layers, in order:
   the load-bearing one being **measurement-consumption transparency** — nothing in a response
   distinguishes a measurement that was used from one that was ignored. See
   [`immortalization_validation_axes.md`](immortalization_validation_axes.md).
-- ▶ **Measurement-consumption transparency.** Follow-up split out of PR16. A caller cannot tell
-  which of their submitted measurements the reasoning actually consumed; an unrecognised key is
-  preserved and silently ignored. Platform-wide contract question spanning ingestion and the
-  response envelope, so it is not an immortalization fix.
+- ✅ **PR17 — Measurement-consumption transparency.** The PR16 follow-up, and a platform
+  contract rather than an immortalization fix: `ReasoningResponse.measurement_consumption`
+  reports, for every key the caller submitted, whether it reached the verdict
+  (`used_for_status`), was consulted for flags/safety/next steps only (`used_for_guidance`),
+  had nothing to consult it for (`not_applicable`), was not recognised at all (`unsupported`),
+  or was distrusted by QC (`quality_excluded`) — with the reason, the purposes, and the
+  provenance. The vocabulary lives in `core.consumption` and imports nothing from
+  `virtualcell`; *which* measurement is in which state is declared per pack, and the two packs
+  genuinely disagree (adipogenesis counts inhibition and viability as status axes;
+  immortalization treats every flag-raising axis as guidance, per PR16). Strictly additive:
+  no status, tier, citation, confidence or benchmark score moved. Two findings surfaced that a
+  caller could not previously have discovered — `handle_hypothesis` reads *no* submitted
+  value, and `species`/`cell_type` steer nothing. See
+  [`measurement_consumption.md`](measurement_consumption.md).
 - ▶ **Third-domain validation / cross-domain generality test.** Two verticals can share an
   abstraction by coincidence — the second was, after all, written by people who had just
   read the first. A third domain is where the boundary is actually tested: it exists to

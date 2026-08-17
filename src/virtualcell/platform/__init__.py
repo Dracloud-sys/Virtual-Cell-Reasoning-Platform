@@ -8,6 +8,12 @@ the first reference domain pack, not as the platform's subject.
 
 from __future__ import annotations
 
+from virtualcell.core.consumption import (
+    ConsumptionLedger,
+    ConsumptionReport,
+    ConsumptionStatus,
+    MeasurementConsumption,
+)
 from virtualcell.platform.bootstrap import default_registry
 from virtualcell.platform.contracts import (
     DecisionSupport,
@@ -29,6 +35,9 @@ from virtualcell.platform.domains import (
 from virtualcell.platform.service import ReasoningService
 
 __all__ = [
+    "ConsumptionLedger",
+    "ConsumptionReport",
+    "ConsumptionStatus",
     "DecisionSupport",
     "DomainError",
     "DomainPack",
@@ -36,6 +45,7 @@ __all__ = [
     "ExplanationLevel",
     "LiteratureOutcome",
     "LiteratureStatus",
+    "MeasurementConsumption",
     "QueryProvenance",
     "QueryValidationError",
     "ReasoningQuery",

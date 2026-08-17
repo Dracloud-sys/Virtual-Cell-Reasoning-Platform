@@ -6,6 +6,48 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Measurement-consumption transparency (PR17).** `ReasoningResponse` gained
+  `measurement_consumption`, reporting for every key the caller submitted what the reasoning
+  did with it: `used_for_status` (reached the verdict), `used_for_guidance` (consulted for
+  flags, evidence, safety caveats or next experiments, but not for the status),
+  `not_applicable` (submitted, with nothing for this task or this reading to consult it for),
+  `unsupported` (the domain does not recognise the name), or `quality_excluded` (QC did not
+  mark it `valid`). Each entry carries `submitted_as`, `canonical_name`, `used_for`, `reason`,
+  `provenance` and a computed `affected_status`; the report adds `unsupported` and
+  `status_inputs` summaries. Exposed identically on the Python service, HTTP and CLI
+  `--format json`, with a compact block in CLI `--format text`.
+
+  This closes the gap where an unrecognised key — a typo such as `gamaH2AX` — was accepted,
+  preserved on the input, and reached no reasoning, producing a response byte-identical to not
+  having submitted it.
+
+  **Compatibility: strictly additive.** The field is defaulted, so existing clients are
+  unaffected and a pack with no declared policy reports nothing rather than something wrong.
+  No `candidate_status`, flag, evidence tier, citation, confidence or claim text changed, and
+  both scorecards hold with identical per-question scores. The vocabulary lives in
+  `virtualcell.core.consumption` (not `platform`) because the canonical-experiment adapters
+  under `agents` need it too, and an `agents → platform` import closes a dependency cycle.
+
+  New public API: `virtualcell.core.consumption.{ConsumptionStatus, MeasurementConsumption,
+  ConsumptionReport, ConsumptionLedger}`, re-exported from `virtualcell.platform`; and
+  `virtualcell.agents.immortalization.run_consumption(run)`, the reporting companion to
+  `run_to_passage_series` that names which canonical measurements QC kept out and why.
+
+  The field invariants are enforced by a `model_validator` on `MeasurementConsumption`, not
+  only by the builder, so a deserialised payload or a future pack cannot express a
+  self-contradicting entry: `canonical_name` is `None` **if and only if** the status is
+  `unsupported`; consumed states must name at least one `used_for` purpose and must carry no
+  `reason`; unconsumed states must carry a non-blank `reason` and no `used_for`. Entries are
+  frozen. `provenance` is not required on the general model, though the canonical conversion
+  path always supplies one.
+
+  Known limitations are recorded in [`docs/measurement_consumption.md`](docs/measurement_consumption.md):
+  `used_for_guidance` means "was read for these purposes", not "changed the output";
+  `quality_excluded` is not yet reachable from a `ReasoningQuery` because the query contract
+  carries `PassageObservation`s, which have no quality flag; and an unrecognised key is
+  reported rather than rejected.
+
 ### Changed
 - **Contract notes (PR7 hardening).** Relative to the last *released* version, the PR7
   output is additive. However, one change happened *within* the unreleased PR7 line and

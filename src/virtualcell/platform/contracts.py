@@ -28,6 +28,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from virtualcell.core.consumption import ConsumptionReport
 from virtualcell.core.evidence import Claim
 from virtualcell.reasoning.explain import MechanisticLink
 
@@ -195,6 +196,12 @@ class ReasoningResponse(BaseModel):
     recommended_next_experiments: list[str] = Field(default_factory=list)
 
     literature: LiteratureOutcome = Field(default_factory=LiteratureOutcome)
+
+    # What the reasoning did with each submitted measurement. Additive and defaulted, so a
+    # domain that has not declared a consumption policy reports nothing rather than
+    # something wrong, and every pre-existing caller keeps working unchanged.
+    measurement_consumption: ConsumptionReport = Field(default_factory=ConsumptionReport)
+
     provenance: QueryProvenance
 
     # The domain's native report, preserved verbatim. The envelope normalises; this

@@ -23,6 +23,7 @@ from virtualcell.agents.immortalization.models import (
     ImmortalizationAssessmentInput,
     PassageObservation,
 )
+from virtualcell.core.consumption import ConsumptionLedger, ConsumptionReport
 from virtualcell.core.experiment import (
     SCHEMA_VERSION,
     AcquisitionMode,
@@ -180,6 +181,56 @@ def canonical_to_passage_observation(
         cumulative_PDL=values.get(_PDL_NAME),
         DT_hours=values.get(_DT_NAME),
     )
+
+
+def run_consumption(run: ExperimentRun) -> ConsumptionReport:
+    """What ``run_to_passage_series`` would do with each measurement on a canonical run.
+
+    The companion to the conversion, not a second implementation of it: both read the same
+    two rules — a name this vertical recognises, and a QC verdict of ``valid`` — and this
+    one reports the outcome instead of applying it. A caller can therefore see *why* a
+    reading never reached the trajectory, which the conversion alone could only express by
+    the reading's absence.
+
+    The distinction that matters is between the two ways a value disappears. An
+    unrecognised name is a modelling gap (or a typo); a recognised name that QC flagged is
+    a value the engine *wanted* and could not trust. Collapsing them would hide a data
+    problem inside a schema problem.
+
+    Provenance names the observation index, so an exclusion is traceable to the passage it
+    came from rather than to the run as a whole.
+    """
+    ledger = ConsumptionLedger()
+    for index, observation in enumerate(run.observations):
+        origin = f"{run.run_id}:observations[{index}]"
+        for measurement in observation.measurements:
+            if measurement.name not in _RECOGNIZED:
+                ledger.unsupported(
+                    measurement.name,
+                    reason=(
+                        "no field on a PassageObservation carries this measurement, so it "
+                        "cannot enter the trajectory"
+                    ),
+                    provenance=origin,
+                )
+            elif measurement.quality is not MeasurementQuality.VALID:
+                ledger.quality_excluded(
+                    measurement.name,
+                    canonical_name=measurement.name,
+                    reason=(
+                        f"QC recorded this reading as {measurement.quality.value!r}; the "
+                        "trajectory engine has no notion of a quality flag, so a flagged "
+                        "value entering it would be indistinguishable from a clean one"
+                    ),
+                    provenance=origin,
+                )
+            else:
+                ledger.used_for_status(
+                    measurement.name,
+                    used_for=["trajectory", "candidate_status"],
+                    provenance=origin,
+                )
+    return ledger.report()
 
 
 def passage_series_to_run(

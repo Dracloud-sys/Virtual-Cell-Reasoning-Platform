@@ -14,6 +14,7 @@ from virtualcell.agents.immortalization.adapters import (
     input_from_scenario,
     passage_observation_to_canonical,
     passage_series_to_run,
+    run_consumption,
     run_to_passage_series,
 )
 from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
@@ -55,6 +56,7 @@ __all__ = [
     "TrajectoryThresholds",
     "baseline_status",
     "canonical_to_passage_observation",
+    "run_consumption",
     "extract_trajectory",
     "input_from_scenario",
     "passage_observation_to_canonical",
