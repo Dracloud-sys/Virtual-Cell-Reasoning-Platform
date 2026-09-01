@@ -22,10 +22,12 @@ from dataclasses import dataclass
 
 from virtualcell.knowledge.sources.adipogenesis_seed import AdipogenesisSeedSource
 from virtualcell.knowledge.sources.base import DataSource, load_into
+from virtualcell.knowledge.sources.genome_editing_seed import GenomeEditingSeedSource
 from virtualcell.knowledge.sources.immortalization_seed import ImmortalizationSeedSource
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.platform.domains import DomainPack, DomainRegistry
 from virtualcell.platform.packs.adipogenesis import AdipogenesisDomainPack
+from virtualcell.platform.packs.genome_editing import GenomeEditingDomainPack
 from virtualcell.platform.packs.immortalization import ImmortalizationDomainPack
 
 
@@ -54,6 +56,8 @@ class ShippedDomain:
 SHIPPED_DOMAINS: tuple[ShippedDomain, ...] = (
     ShippedDomain(ImmortalizationDomainPack, ImmortalizationSeedSource),
     ShippedDomain(AdipogenesisDomainPack, AdipogenesisSeedSource),
+    # The third domain: one line, and it is addressable, grounded and describable.
+    ShippedDomain(GenomeEditingDomainPack, GenomeEditingSeedSource),
 )
 
 

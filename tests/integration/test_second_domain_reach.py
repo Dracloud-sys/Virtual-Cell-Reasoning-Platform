@@ -37,6 +37,7 @@ from virtualcell.platform.bootstrap import (
     shipped_domain_names,
 )
 from virtualcell.platform.contracts import ReasoningQuery, ReasoningResponse
+from virtualcell.platform.description import DomainDescription, TaskDescription
 from virtualcell.platform.domains import UnknownDomainError
 from virtualcell.platform.service import ReasoningService
 
@@ -74,7 +75,7 @@ def _service(payload: dict) -> ReasoningResponse:
 
 def test_both_domains_are_registered_and_neither_shadows_the_other() -> None:
     registry = default_registry()
-    assert registry.domains() == ["adipogenesis", "immortalization"]
+    assert registry.domains() == ["adipogenesis", "genome_editing", "immortalization"]
     assert registry.tasks("adipogenesis") == ["assess_state", "explain_mechanism"]
     assert "handle_hypothesis" in registry.tasks("immortalization")
 
@@ -245,6 +246,21 @@ class _FakePack:
 
     domain = "myogenesis"
     supported_tasks: tuple[str, ...] = ("assess_state",)
+
+    def describe(self) -> DomainDescription:
+        """Even a stub must describe itself: the registry refuses a pack a caller could not
+        introspect, because an un-introspectable domain is one callers send invented axis
+        names to."""
+        return DomainDescription(
+            domain=self.domain,
+            summary="A fictional domain that exists only inside this test.",
+            tasks=(TaskDescription(name="assess_state", purpose="does nothing"),),
+            axes=(),
+        )
+
+    def validate_experiment(self, task, experiment) -> None:
+        """The stub accepts anything: it exists to prove the registry is not shaped by a
+        shipped pack, not to model a domain."""
 
     def execute(self, query, store) -> ReasoningResponse:
         from virtualcell.platform.contracts import DecisionSupport, QueryProvenance

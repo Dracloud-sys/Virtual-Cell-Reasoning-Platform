@@ -16,6 +16,27 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class MarkerValue(StrEnum):
+    """The only readings a marker axis accepts.
+
+    Typed rather than left as a free string, and the reason is the failure it prevents rather
+    than tidiness. ``PPARG: "hgih"`` used to be accepted and then, because it matched neither
+    the present set nor the absent set, treated exactly like ``unknown`` - so a typo became
+    "we did not look at it", silently, in the one vertical that exists to keep those two
+    apart. A description that promised this vocabulary while the model accepted anything was
+    also a contract that lied, which matters more now that a caller can read that description
+    and believe it.
+
+    The four values are the ones the vertical always documented; nothing that used to be valid
+    has become invalid.
+    """
+
+    HIGH = "high"
+    LOW = "low"
+    ABSENT = "absent"
+    UNKNOWN = "unknown"
+
+
 class AdipogenesisIntent(StrEnum):
     """What the caller is asking about."""
 
@@ -104,9 +125,11 @@ viability and morphology are optional: they refine or block a call, never enable
 # more expensive mistake, because the culture is discarded.
 LATE_PROGRAM_EXPECTED_BY_DAY = 6
 
-_PRESENT = ("high",)
-_ABSENT = ("low", "absent")
-_NO_READING = (None, "unknown")
+# Semantics over the vocabulary, unchanged: `low` and `absent` are both *results*, and only
+# `unknown` (or an omitted field) means nobody looked.
+_PRESENT = (MarkerValue.HIGH,)
+_ABSENT = (MarkerValue.LOW, MarkerValue.ABSENT)
+_NO_READING = (None, MarkerValue.UNKNOWN)
 
 
 class AdipogenesisAssessmentInput(BaseModel):
@@ -119,20 +142,20 @@ class AdipogenesisAssessmentInput(BaseModel):
     cell_type: str | None = None
 
     # A. early program / B. late program
-    PPARG: str | None = None  # noqa: N815 - marker names mirror the gene symbols
-    CEBPA: str | None = None  # noqa: N815
-    FABP4: str | None = None  # noqa: N815
-    ADIPOQ: str | None = None  # noqa: N815
-    PLIN1: str | None = None  # noqa: N815
+    PPARG: MarkerValue | None = None  # noqa: N815 - marker names mirror the gene symbols
+    CEBPA: MarkerValue | None = None  # noqa: N815
+    FABP4: MarkerValue | None = None  # noqa: N815
+    ADIPOQ: MarkerValue | None = None  # noqa: N815
+    PLIN1: MarkerValue | None = None  # noqa: N815
     # C. functional lipid
-    lipid_accumulation: str | None = None
-    lipid_efficiency: str | None = None
+    lipid_accumulation: MarkerValue | None = None
+    lipid_efficiency: MarkerValue | None = None
     # D. inhibition
-    WNT_signalling: str | None = None  # noqa: N815
-    DLK1: str | None = None  # noqa: N815
+    WNT_signalling: MarkerValue | None = None  # noqa: N815
+    DLK1: MarkerValue | None = None  # noqa: N815
     # E. viability / F. morphology
-    viability: str | None = None
-    morphology: str | None = None
+    viability: MarkerValue | None = None
+    morphology: MarkerValue | None = None
 
     induction_day: int | None = Field(default=None, ge=0)
     """Days since induction. Not a time series — a modifier. The same readings mean
@@ -142,7 +165,7 @@ class AdipogenesisAssessmentInput(BaseModel):
     measurements: dict[str, str] = Field(default_factory=dict)
     """Anything else the caller recorded, carried through untouched and never interpreted."""
 
-    def value(self, marker: str) -> str | None:
+    def value(self, marker: str) -> MarkerValue | None:
         return getattr(self, marker, None)
 
     def measured(self, markers: tuple[str, ...]) -> list[str]:

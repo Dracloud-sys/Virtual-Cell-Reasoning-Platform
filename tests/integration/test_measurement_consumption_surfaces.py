@@ -137,7 +137,7 @@ def test_context_fields_are_reported_as_unread_rather_than_implied_to_matter() -
         if e.submitted_as == "species"
     )
     assert entry.status is ConsumptionStatus.NOT_APPLICABLE
-    assert "no deterministic builder" in (entry.reason or "")
+    assert "no rule in this domain reads it" in (entry.reason or "")
 
 
 def test_a_task_that_reads_no_measurement_says_so_for_every_one_of_them() -> None:

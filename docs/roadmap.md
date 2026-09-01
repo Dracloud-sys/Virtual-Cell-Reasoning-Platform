@@ -506,11 +506,29 @@ reference domain pack. The remaining platform layers, in order:
   caller could not previously have discovered — `handle_hypothesis` reads *no* submitted
   value, and `species`/`cell_type` steer nothing. See
   [`measurement_consumption.md`](measurement_consumption.md).
-- ▶ **Third-domain validation / cross-domain generality test.** Two verticals can share an
-  abstraction by coincidence — the second was, after all, written by people who had just
-  read the first. A third domain is where the boundary is actually tested: it exists to
-  check that a pack can be written against the kernel *without changing it*, and any kernel
-  change the third domain forces is the finding, not routine work.
+- ✅ **PR18 — Third-domain validation + domain self-description.** Genome-edit validation
+  lands as the third vertical, chosen for the *shape* of its decision rather than its subject:
+  it judges a molecular claim about a construct, and it must know **how** a value was measured
+  before it can say what the value means (a PCR band is not a genotype, in either direction).
+  Neither existing vertical had any notion that evidence strength varies by instrument, which
+  made it the sharpest available probe. **Kernel changes: zero**; one line in the composition
+  root; benchmark 10/10, written before the implementation. Alongside it, `DomainPack.describe()`
+  returns a `DomainDescription` — tasks, purposes, per-task required and read axes, and every
+  axis with its vocabulary, value type, kind and unmeasured spelling. That declaration is now
+  the **single source**: PR17's private `_STATUS_AXES` / `_GUIDANCE_AXES` are gone and each
+  pack's consumption ledger is *derived* from `AxisKind`, so a pack cannot advertise one thing
+  and report another. Three findings recorded rather than fixed — `candidate_status` is still
+  immortalization's (the third domain routed around it rather than being blocked),
+  `missing_information` is not round-trippable as an axis name, and adipogenesis does not
+  enum-validate its markers. See [`genome_editing_vertical.md`](genome_editing_vertical.md)
+  and [`third_domain_selection.md`](third_domain_selection.md).
+- ▶ **MCP server.** Designed, not built — [`mcp_server_design.md`](mcp_server_design.md).
+  Three tools (`list_domains`, `describe_domain`, `reason`) over `src/virtualcell/mcp/`, using
+  `platform` only and naming no vertical. The order was deliberate: an MCP tool schema built on
+  an unvalidated abstraction breaks when the abstraction moves, and the abstraction is now
+  validated. The load-bearing risk it must mitigate is that every safety boundary this platform
+  has built lives *inside* the report as text, and nothing forces a summarising model to relay
+  it.
 - ▶ **Knowledge-learning and non-expert explanation layers.** Make
   `explanation_level` actually change the explanation, so a non-expert can learn the
   concepts, interpret raw data, and follow the basis of a research judgment. Until then
