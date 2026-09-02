@@ -148,7 +148,11 @@ with its own justification. Left in place, recorded here.
 an assay to the marker it yields, so `assay:karyotype` and `marker:karyotype` sit in the graph
 unconnected. Inventing a relation for one PR would be worse than the gap.
 
-**3. Measurement-consumption transparency.** The typed axis fixes the case that mattered, but
+**3. Measurement-consumption transparency — closed by PR17.** Resolved on the *envelope*
+rather than in the `DecisionReport`: an unconsumed key still leaves the domain report
+byte-identical (correct — nothing consumed it), and `ReasoningResponse.measurement_consumption`
+now says so out loud. See [`measurement_consumption.md`](measurement_consumption.md). The
+original finding read: The typed axis fixes the case that mattered, but
 the generic `measurements` escape hatch is unchanged: an unrecognised key is accepted,
 preserved, and reaches no reasoning, and **nothing in the response distinguishes a measurement
 that was used from one that was ignored**. A caller who submits `telomere_length_kb` gets a

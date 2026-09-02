@@ -22,6 +22,7 @@ from pydantic import ValidationError
 from virtualcell.agents.immortalization.adapters import input_from_scenario
 from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
 from virtualcell.agents.immortalization.models import ImmortalizationAssessmentInput
+from virtualcell.core.consumption import ConsumptionLedger, ConsumptionReport
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.platform.contracts import (
     DecisionSupport,
@@ -54,6 +55,63 @@ _DEFAULT_ASSESS_INTENT = "immortalization_assessment"
 # because it is a decision the caller must act on.
 _TREND_FLAG = "trend_needed"
 
+# --- measurement-consumption policy -------------------------------------------
+#
+# A *declaration*, not a rule: it says which purpose reads which axis, and nothing about
+# what any value means. Deriving that would put science in the adapter, which is the one
+# thing this pack must never contain.
+#
+# The split mirrors PR16 exactly. Axes `baseline_status` reads to reach a verdict are
+# status axes; genomic stability and differentiation retention report *beside* the verdict,
+# so they stay guidance however loudly they flag. Collapsing the two here would quietly
+# undo the separation PR16 was written to create.
+
+_STATUS_AXES: tuple[str, ...] = ("PDL_trend", "DT_trend", "gammaH2AX", "SA_b_gal", "p16", "p21")
+_STATUS_PURPOSES = ["candidate_status", "evidence"]
+
+_GUIDANCE_AXES: dict[str, list[str]] = {
+    "adipogenic_retention": [
+        "flag:functionality_compromised",
+        "evidence",
+        "overinterpretation_risk",
+        "recommended_validation",
+        "next_experiment",
+    ],
+    "genomic_stability": [
+        "flag:genomic_instability_detected",
+        "evidence",
+        "overinterpretation_risk",
+        "recommended_validation",
+        "next_experiment",
+    ],
+}
+
+# Carried on the validated input and preserved in provenance, but no builder reads them.
+# Saying so is the point: a caller who believes `species` changes the reasoning is wrong,
+# and until now nothing told them.
+_CONTEXT_ONLY = ("species", "cell_type")
+_CONTEXT_REASON = (
+    "carried as request context and preserved in the response, but no deterministic "
+    "builder in this vertical reads it"
+)
+_UNMEASURED = ("unknown", "None", "")
+_UNMEASURED_REASON = (
+    "submitted without a reading ('unknown'), so there was nothing for the reasoning to "
+    "consult; it is reported as a gap rather than as a value"
+)
+_MECHANISM_REASON = (
+    "'explain_mechanism' explains what a construct does; it reads the construct and the "
+    "curated mechanism rule, never measured values"
+)
+_HYPOTHESIS_REASON = (
+    "'handle_hypothesis' answers from a fixed, citation-bound policy whose status and "
+    "claims are the same for every input; no submitted value can move it"
+)
+_UNSUPPORTED_REASON = (
+    "the immortalization vertical has no axis with this name; the value is preserved on "
+    "the assessment input but reaches no reasoning"
+)
+
 
 class ImmortalizationDomainPack:
     """Connects the immortalization vertical to the generic query boundary."""
@@ -64,7 +122,118 @@ class ImmortalizationDomainPack:
     def execute(self, query: ReasoningQuery, store: KnowledgeStore) -> ReasoningResponse:
         data = self._to_assessment_input(query)
         report = ImmortalizationAssessmentAgent(store=store).assess(data)
-        return self._to_response(query, report, data)
+        response = self._to_response(query, report, data)
+        response.measurement_consumption = self._consumption(query, data)
+        return response
+
+    # --- measurement consumption (declaration only; nothing is re-derived) ----
+
+    def _consumption(
+        self, query: ReasoningQuery, data: ImmortalizationAssessmentInput
+    ) -> ConsumptionReport:
+        """What the reasoning did with each key the caller submitted.
+
+        Only submitted keys are listed. An axis nobody sent is not "unconsumed" - it is a
+        gap, and ``missing_information`` already reports it; listing it twice would make an
+        omission look like a rejection.
+        """
+        ledger = ConsumptionLedger(provenance="query.experiment")
+        unread = self._unread_task_reason(query.task)
+
+        for key in query.experiment:
+            if key == "intent":  # request routing, not a measurement
+                continue
+            if key in _CONTEXT_ONLY:
+                ledger.not_applicable(key, reason=_CONTEXT_REASON)
+            elif key == "construct":
+                self._record_construct(ledger, query)
+            elif key == "observations":
+                self._record_series(ledger, data, unread=unread)
+            elif key in _STATUS_AXES:
+                self._record_axis(ledger, key, data, _STATUS_PURPOSES, unread=unread, status=True)
+            elif key in _GUIDANCE_AXES:
+                self._record_axis(
+                    ledger, key, data, _GUIDANCE_AXES[key], unread=unread, status=False
+                )
+            else:
+                # The state that used to be invisible: preserved on the input, read by
+                # nothing. Usually a typo, occasionally an axis this vertical has not
+                # modelled - and the two look identical from here, so say only what is true.
+                ledger.unsupported(key, reason=_UNSUPPORTED_REASON)
+        return ledger.report()
+
+    @staticmethod
+    def _unread_task_reason(task: str) -> str | None:
+        """Why this task reads no measured value at all, or ``None`` if it reads them."""
+        if task == TASK_MECHANISM:
+            return _MECHANISM_REASON
+        if task == TASK_HYPOTHESIS:
+            return _HYPOTHESIS_REASON
+        return None
+
+    @staticmethod
+    def _record_construct(ledger: ConsumptionLedger, query: ReasoningQuery) -> None:
+        if query.task == TASK_MECHANISM:
+            ledger.used_for_guidance(
+                "construct",
+                canonical_name="construct_type",
+                used_for=[
+                    "mechanistic_chain",
+                    "limitations",
+                    "recommended_validation",
+                    "next_experiment",
+                ],
+            )
+        else:
+            ledger.not_applicable(
+                "construct",
+                canonical_name="construct_type",
+                reason=(
+                    f"task {query.task!r} judges measured markers; the construct selects a "
+                    "mechanism rule and is read only by 'explain_mechanism'"
+                ),
+            )
+
+    @staticmethod
+    def _record_axis(
+        ledger: ConsumptionLedger,
+        key: str,
+        data: ImmortalizationAssessmentInput,
+        purposes: list[str],
+        *,
+        unread: str | None,
+        status: bool,
+    ) -> None:
+        if unread is not None:
+            ledger.not_applicable(key, reason=unread)
+        elif str(getattr(data, key, None)) in _UNMEASURED:
+            ledger.not_applicable(key, reason=_UNMEASURED_REASON)
+        elif status:
+            ledger.used_for_status(key, used_for=purposes)
+        else:
+            ledger.used_for_guidance(key, used_for=purposes)
+
+    @staticmethod
+    def _record_series(
+        ledger: ConsumptionLedger, data: ImmortalizationAssessmentInput, *, unread: str | None
+    ) -> None:
+        if unread is not None:
+            ledger.not_applicable("observations", canonical_name="passage_series", reason=unread)
+        elif not data.observations:
+            ledger.not_applicable(
+                "observations",
+                canonical_name="passage_series",
+                reason="an empty passage series has nothing to derive a trend from",
+            )
+        else:
+            # A series can override a snapshot trend, so it can reach the verdict. Whether
+            # it did on *this* request is recorded by the report's own `derived_input` and
+            # `blocked_overrides`, which the pack reports rather than recomputes.
+            ledger.used_for_status(
+                "observations",
+                canonical_name="passage_series",
+                used_for=["trajectory", "PDL_trend", "DT_trend", "candidate_status"],
+            )
 
     # --- request adaptation --------------------------------------------------
 

@@ -27,10 +27,16 @@ from virtualcell.agents.adipogenesis.assessment import (
     build_mechanism_report,
 )
 from virtualcell.agents.adipogenesis.models import (
+    EFFICIENCY_MARKER,
+    INHIBITOR_MARKERS,
+    MORPHOLOGY_MARKER,
+    REQUIRED_AXES,
+    VIABILITY_MARKER,
     AdipogenesisAssessmentInput,
     AdipogenesisFlag,
     AdipogenesisIntent,
 )
+from virtualcell.core.consumption import ConsumptionLedger, ConsumptionReport
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.platform.contracts import (
     DecisionSupport,
@@ -57,6 +63,49 @@ _TASK_INTENT = {
     TASK_MECHANISM: AdipogenesisIntent.MECHANISM_EXPLANATION,
 }
 
+# --- measurement-consumption policy -------------------------------------------
+#
+# A declaration of which purpose reads which axis, and nothing about what a value means.
+#
+# Worth comparing against the immortalization pack, because the split lands in a different
+# place: there, *every* axis that raises a flag is guidance. Here, inhibition and viability
+# genuinely gate the verdict - an active inhibitor reaches `differentiation_inhibited`, and
+# a failing culture withholds the negative call - so they are status axes. Only efficiency
+# and morphology refine a call they can never make. That difference is the science, and it
+# is why this declaration lives in the pack rather than in the platform.
+
+_STATUS_AXES: tuple[str, ...] = (
+    *REQUIRED_AXES,
+    *INHIBITOR_MARKERS,
+    VIABILITY_MARKER,
+    "induction_day",
+)
+_STATUS_PURPOSES = ["differentiation_status", "evidence"]
+
+_GUIDANCE_AXES: dict[str, list[str]] = {
+    EFFICIENCY_MARKER: ["evidence", "uncertainty", "recommended_validation", "next_experiment"],
+    MORPHOLOGY_MARKER: ["evidence", "next_experiment"],
+}
+
+_CONTEXT_ONLY = ("species", "cell_type")
+_CONTEXT_REASON = (
+    "carried as request context and preserved in the response, but no rule in this "
+    "vertical reads it"
+)
+_NO_READING = (None, "unknown", "")
+_UNMEASURED_REASON = (
+    "submitted without a reading ('unknown'), so there was nothing to consult; it is "
+    "reported as a missing axis rather than as a value"
+)
+_MECHANISM_REASON = (
+    "'explain_mechanism' explains the adipogenic program from the curated graph; it reads "
+    "no measured value"
+)
+_UNSUPPORTED_REASON = (
+    "the adipogenesis vertical has no axis with this name; the value is preserved on the "
+    "assessment input but reaches no reasoning"
+)
+
 
 class AdipogenesisDomainPack:
     """Connects the adipogenesis vertical to the generic query boundary."""
@@ -68,9 +117,57 @@ class AdipogenesisDomainPack:
         data = self._to_input(query)
         if query.task == TASK_MECHANISM:
             report = build_mechanism_report(data, store)
-            return self._to_response(query, report, DecisionSupport())
-        outcome = assess(data, store)
-        return self._to_response(query, outcome.report, self._decision_support(outcome))
+            response = self._to_response(query, report, DecisionSupport())
+        else:
+            outcome = assess(data, store)
+            response = self._to_response(query, outcome.report, self._decision_support(outcome))
+        response.measurement_consumption = self._consumption(query, data)
+        return response
+
+    # --- measurement consumption (declaration only; nothing is re-derived) ----
+
+    def _consumption(
+        self, query: ReasoningQuery, data: AdipogenesisAssessmentInput
+    ) -> ConsumptionReport:
+        """What the reasoning did with each key the caller submitted.
+
+        A reading of ``absent`` or ``low`` is a *result*, and is reported as consumed:
+        "we looked and it was not there" is the finding half this vertical exists to keep
+        separate from "we did not look". Only ``unknown`` lands in ``not_applicable``.
+        """
+        ledger = ConsumptionLedger(provenance="query.experiment")
+        mechanism = query.task == TASK_MECHANISM
+
+        for key in query.experiment:
+            if key == "intent":
+                continue
+            if key in _CONTEXT_ONLY:
+                ledger.not_applicable(key, reason=_CONTEXT_REASON)
+            elif mechanism:
+                ledger.not_applicable(key, reason=_MECHANISM_REASON)
+            elif key in _STATUS_AXES:
+                self._record_axis(ledger, key, data, _STATUS_PURPOSES, status=True)
+            elif key in _GUIDANCE_AXES:
+                self._record_axis(ledger, key, data, _GUIDANCE_AXES[key], status=False)
+            else:
+                ledger.unsupported(key, reason=_UNSUPPORTED_REASON)
+        return ledger.report()
+
+    @staticmethod
+    def _record_axis(
+        ledger: ConsumptionLedger,
+        key: str,
+        data: AdipogenesisAssessmentInput,
+        purposes: list[str],
+        *,
+        status: bool,
+    ) -> None:
+        if getattr(data, key, None) in _NO_READING:
+            ledger.not_applicable(key, reason=_UNMEASURED_REASON)
+        elif status:
+            ledger.used_for_status(key, used_for=purposes)
+        else:
+            ledger.used_for_guidance(key, used_for=purposes)
 
     # --- request adaptation --------------------------------------------------
 

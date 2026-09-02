@@ -103,17 +103,20 @@ def test_genomic_stability_is_a_typed_input_axis() -> None:
     assert "genomic_stability" in ImmortalizationAssessmentInput.model_fields
 
 
-def test_an_unrecognised_measurement_key_is_preserved_and_silently_unconsumed() -> None:
-    """A recorded finding, not a desired contract — see `docs/immortalization_validation_axes.md`.
+def test_an_unrecognised_measurement_key_does_not_perturb_the_domain_report() -> None:
+    """The PR16 finding, resolved — and resolved *outside* this report, deliberately.
 
-    The typed axis fixes the case that mattered, but the generic escape hatch is unchanged:
-    a key the vertical does not recognise is accepted, echoed back in `derived_input`, and
-    reaches no reasoning, with nothing in the response telling the caller which of their
-    measurements were used. Pinned here so that whoever fixes measurement-consumption
-    transparency has to come to this test and delete it deliberately.
+    An unrecognised key still reaches no reasoning, so the ``DecisionReport`` is byte-identical
+    with and without it. That is correct: a key nothing consumed must not alter a verdict, and
+    it is exactly why measurement-consumption transparency could not move a benchmark score.
+
+    What was wrong was that the fact was undiscoverable. It now travels on the *envelope* as
+    ``ReasoningResponse.measurement_consumption`` (see
+    `tests/integration/test_measurement_consumption_surfaces.py`), which is the right layer:
+    what the reasoning did with an input is a platform contract, not a biological conclusion.
     """
     unknown_key = _report(measurements={"telomere_length_kb": "4.2"})
-    assert unknown_key.model_dump() == _report().model_dump()  # byte-identical: no trace at all
+    assert unknown_key.model_dump() == _report().model_dump()
 
 
 def test_unverified_genomic_stability_is_surfaced_by_the_assessment() -> None:
