@@ -1,0 +1,159 @@
+# Genome-edit validation benchmark v0
+#
+# Ten questions the third vertical must answer well, written before any of it existed.
+#
+# Weighted toward the way an edit result gets overcalled: a PCR band read as a genotype, a
+# mixed population read as a clone, three clean off-target sites read as a clean genome, and a
+# DNA edit read as a protein knockout. Each of those costs a programme months, because the
+# wrong clone gets expanded and everything downstream is built on it.
+
+questions:
+  - id: GE-Q1
+    title: Sequenced, homozygous, controlled
+    experiment:
+      edit_detected: present
+      edit_assay: ngs
+      allele_pattern: homozygous
+      parental_control: matched
+      target_gene: MSTN
+    expect_status: edited_clonal
+    require_evidence: [supporting]
+    forbid_flags: [weak_assay, control_missing, mosaic_population]
+    require_flags: [off_target_unassessed, function_unverified]
+    notes: >
+      The unambiguous positive. Even here two things stay unverified and must be said out
+      loud - nobody screened off-targets and nobody looked at the protein.
+
+  - id: GE-Q2
+    title: A band, and nothing else
+    experiment:
+      edit_detected: present
+      edit_assay: pcr
+      parental_control: matched
+      target_gene: MSTN
+    expect_status: insufficient_evidence
+    require_flags: [weak_assay]
+    expect_next_contains: [Sanger]
+    notes: >
+      The core rule. A PCR band says something amplified at the expected size; it does not say
+      what the allele is, how many there are, or whether the population is mixed.
+
+  - id: GE-Q3
+    title: Sequenced and genuinely unedited
+    experiment:
+      edit_detected: absent
+      edit_assay: ngs
+      parental_control: matched
+      target_gene: MSTN
+    expect_status: unedited
+    forbid_flags: [weak_assay]
+    notes: A real negative, because the assay was strong enough for absence to mean something.
+
+  - id: GE-Q4
+    title: Nothing measured
+    experiment:
+      edit_detected: unknown
+      target_gene: MSTN
+    expect_status: insufficient_evidence
+    expect_missing: [edit_detected, edit_assay, parental_control]
+    notes: Explicit unknown. No verdict invented from silence, and every required axis named.
+
+  - id: GE-Q5
+    title: The screen and the confirmation disagree
+    experiment:
+      edit_detected: present
+      edit_assay: ngs
+      sequence_confirmed: absent
+      parental_control: matched
+      target_gene: MSTN
+    expect_status: insufficient_evidence
+    require_flags: [conflicting_evidence]
+    require_conflict_explanation: true
+    notes: >
+      A screen says the allele is there and an independent confirmation says it is not. Both
+      cannot be right, and reporting the convenient one is how a false positive survives into
+      an expanded clone.
+
+  - id: GE-Q6
+    title: Guidance axes move everything except the verdict
+    experiment:
+      edit_detected: present
+      edit_assay: sanger
+      allele_pattern: heterozygous
+      parental_control: matched
+      off_target_screened: genome_wide
+      protein_expression: confirmed
+      target_gene: MSTN
+    expect_status: edited_clonal
+    forbid_flags: [off_target_unassessed, function_unverified]
+    notes: >
+      Same status as GE-Q1 with both refinement axes answered. They remove caveats and change
+      the plan; they never change the call.
+
+  - id: GE-Q7
+    title: A misspelled axis
+    experiment:
+      edit_detected: present
+      edit_assay: ngs
+      allele_pattern: homozygous
+      parental_control: matched
+      sanger_seq: confirmed
+      target_gene: MSTN
+    expect_status: edited_clonal
+    expect_unsupported: [sanger_seq]
+    notes: >
+      Plausible, and not an axis. It must be named back to the caller rather than silently
+      dropped - the PR17 contract, checked on a vertical that did not exist when it was written.
+
+  - id: GE-Q8
+    title: Mechanism of a knockout edit
+    experiment:
+      edit_type: knockout
+    task: explain_mechanism
+    expect_status: null
+    require_mechanistic_chain: true
+    require_repair_arm: true
+    notes: >
+      A mechanism question has no status. Both halves must appear: the break and the repair
+      pathway that turns it into an indel.
+
+  - id: GE-Q9
+    title: Mixed population
+    experiment:
+      edit_detected: present
+      edit_assay: ngs
+      allele_pattern: mixed
+      parental_control: matched
+      target_gene: MSTN
+    expect_status: edited_mosaic
+    require_flags: [mosaic_population]
+    expect_next_contains: [Single-cell]
+    notes: >
+      Editing happened; a clone did not. Expanding this as if it were clonal produces a line
+      whose genotype drifts, and the next step is subcloning, not more sequencing.
+
+  - id: GE-Q10
+    title: No parental control
+    experiment:
+      edit_detected: present
+      edit_assay: sanger
+      allele_pattern: homozygous
+      parental_control: unknown
+      target_gene: MSTN
+    expect_status: insufficient_evidence
+    require_flags: [control_missing]
+    expect_next_contains: [parental]
+    notes: >
+      Without the unedited parent, a "difference" has nothing to differ from. Strong assay,
+      strong-looking result, and still not a call.
+
+# Applied to every scenario, over assertion fields only.
+forbidden_phrases:
+  - knockout confirmed
+  - gene is inactivated
+  - loss of function confirmed
+  - no off-target effects
+  - off-target free
+  - clean genome
+  - safe to use
+  - functionally validated

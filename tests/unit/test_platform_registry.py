@@ -6,6 +6,7 @@ import pytest
 
 from virtualcell.platform.bootstrap import default_registry
 from virtualcell.platform.contracts import ReasoningQuery, ReasoningResponse
+from virtualcell.platform.description import DomainDescription, TaskDescription
 from virtualcell.platform.domains import (
     DomainRegistry,
     UnknownDomainError,
@@ -24,6 +25,21 @@ class _StubPack:
     domain = "myogenesis"
     supported_tasks = ("assess_state",)
 
+    def describe(self) -> DomainDescription:
+        """Even a stub must describe itself: the registry refuses a pack a caller could not
+        introspect, because an un-introspectable domain is one callers send invented axis
+        names to."""
+        return DomainDescription(
+            domain=self.domain,
+            summary="A fictional domain that exists only inside this test.",
+            tasks=(TaskDescription(name="assess_state", purpose="does nothing"),),
+            axes=(),
+        )
+
+    def validate_experiment(self, task, experiment) -> None:
+        """The stub accepts anything: it exists to prove the registry is not shaped by a
+        shipped pack, not to model a domain."""
+
     def execute(self, query, store) -> ReasoningResponse:  # pragma: no cover - not run
         raise NotImplementedError
 
@@ -34,7 +50,7 @@ def test_default_registry_resolves_immortalization() -> None:
     assert isinstance(pack, ImmortalizationDomainPack)
     # Every shipped pack, sorted. Immortalization is the reference vertical, not the only
     # one, and nothing about resolving it depends on that.
-    assert registry.domains() == ["adipogenesis", "immortalization"]
+    assert registry.domains() == ["adipogenesis", "genome_editing", "immortalization"]
     assert registry.tasks("immortalization") == [
         "assess_state",
         "explain_mechanism",

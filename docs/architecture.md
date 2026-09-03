@@ -179,6 +179,61 @@ That is checked rather than asserted — a test adds a third, fictional domain v
 `ShippedDomain` and drives it end to end through the shipped service, and another asserts
 those interface modules still name no vertical.
 
+## Third vertical: genome editing (`virtualcell.agents.genome_editing`)
+
+The generality test. Two verticals can share an abstraction by coincidence — the second was
+written by people who had just read the first — so the boundary is only validated by a domain
+whose *decision shape* differs from both. Genome-edit validation judges a **molecular claim
+about a construct** rather than a cell state, and it must know **how** a value was measured
+before it can say what the value means:
+
+```
+PCR band                ->  a band is not a genotype
+Sanger / NGS + alleles  ->  a genotype
+```
+
+A negative from PCR is weak evidence of absence; a negative from sequencing is a finding.
+Neither existing vertical has any notion that evidence strength varies by instrument, which is
+what made this the sharpest available probe of whether the claim-tier conventions generalise.
+
+**Kernel changes: zero.** One line in the composition root, and the domain is addressable,
+grounded, describable and transparent. Full scope in
+[`genome_editing_vertical.md`](genome_editing_vertical.md); the candidate comparison behind the
+choice — including the two domains that were considered and rejected, one of them *because* it
+would have passed too easily — is in [`third_domain_selection.md`](third_domain_selection.md).
+
+Two statuses are deliberately absent, and they are the safety boundary: no
+`functional_knockout` (a DNA edit says nothing about the protein) and no `off_target_free`
+(three clean predicted sites are not a clean genome).
+
+## Domain self-description (`virtualcell.platform.description`)
+
+A `DomainPack` must now answer *what can I send you?* — tasks with their purposes and required
+axes, and every axis with its canonical name, value type, accepted vocabulary,
+required/optional status, whether it can move the verdict or only refine it, and how to spell
+"no reading was taken".
+
+The split is the one the reasoning kernel already lives under: the platform owns the **shape**,
+the pack owns **which axis is which**. `description.py` imports no vertical.
+
+Two things make it more than documentation.
+
+1. **It is the single declaration.** PR17 stated the axes twice — as Pydantic fields and again
+   as private `_STATUS_AXES` / `_GUIDANCE_AXES` tuples — with nothing keeping them in step.
+   Those tuples are gone: `AxisKind` is the one statement, and each pack's consumption ledger
+   is *derived* from it by `derive_consumption`, so a pack cannot advertise one thing and
+   report another. The procedure moved to the platform; the declarations stayed in the packs.
+2. **It is required, not optional.** `DomainRegistry.register` refuses a pack that cannot
+   describe itself, because a domain a caller cannot introspect is one they will send invented
+   axis names to — and PR17 established that those are accepted and read by nothing.
+
+What remains is the seam between a description and the Pydantic model that validates input,
+and that is held by a test running over *every* registered pack rather than a chosen one, so a
+fourth domain is covered the day it is registered.
+
+It is also the contract the planned MCP server reads; see
+[`mcp_server_design.md`](mcp_server_design.md). Nothing MCP-specific exists in the tree.
+
 ## Generic reasoning kernel (`virtualcell.reasoning.kernel`)
 
 The domain-independent machinery a vertical reasons *with*, lifted out of the vertical that

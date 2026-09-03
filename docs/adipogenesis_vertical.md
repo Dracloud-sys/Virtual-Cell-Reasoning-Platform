@@ -168,3 +168,22 @@ negative result, and no other test in the suite would notice.
    pack*. It stays at `adipogenesis.minimal.v1`, pinned on the product path by
    `tests/integration/test_adipogenesis_provenance_pin.py`; renaming or versioning it is a
    provenance-policy change with its own migration, not a side effect of growing a domain.
+
+## Boundary hardening: marker axes are strictly validated
+
+Marker axes were `str | None`, so any string was accepted. Because an unrecognised string
+matched neither the present set (`high`) nor the absent set (`low` / `absent`), it was then
+treated exactly like `unknown` — **a typo became "we did not look at it"**, silently, in the
+vertical built to keep those two apart. `PPARG: "hgih"` produced a confident report that had
+quietly dropped the marker.
+
+They are now typed to `MarkerValue` (`high` / `low` / `absent` / `unknown`), the four values
+this vertical always documented. Nothing that used to be valid became invalid; an omitted field
+still means no reading, `absent` is still a result, and every benchmark score is unchanged. An
+invalid string is now a validation error — `422` on the API, a non-zero exit on the CLI —
+instead of a silent gap.
+
+The second reason is the domain description added alongside the third vertical: it publishes
+this vocabulary to callers, and a description that promises four values while the model accepts
+anything is a contract that lies. That matters more now that an agent can read it and believe
+it.

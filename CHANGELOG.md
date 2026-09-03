@@ -7,6 +7,79 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Third reasoning vertical: genome-edit validation (PR18).** `{"domain": "genome_editing"}`
+  is answerable on the service, HTTP and CLI, with its own curated seed graph (21 nodes /
+  22 edges), four-value status vocabulary, six flags, and a ten-question benchmark written
+  before the implementation (10/10). Chosen for the shape of its decision rather than its
+  subject: it judges a molecular claim about a construct, and the verdict turns on **how** a
+  value was measured, not on the value — a PCR band reaches no conclusion in either direction.
+  **Kernel changes: zero**, and one line in the composition root.
+
+  New public API: `virtualcell.agents.genome_editing.*` and
+  `virtualcell.knowledge.sources.genome_editing_seed.GenomeEditingSeedSource`.
+
+- **Domain self-description (PR18).** `DomainPack.describe()` returns a `DomainDescription`
+  (`virtualcell.platform.description`): tasks with purposes, per-task required and read axes,
+  and each axis's canonical name, description, value type, vocabulary, required flag, kind
+  (`status` / `guidance` / `context`) and unmeasured spelling. Reachable as
+  `DomainRegistry.describe(domain)` and `.descriptions()`.
+
+  **Breaking for third-party packs only:** `register()` now refuses a pack without a
+  `describe()` method. No shipped pack, request contract or response shape changed.
+
+  This replaces PR17's private `_STATUS_AXES` / `_GUIDANCE_AXES` duplication: `AxisKind` is now
+  the single declaration and each pack's `measurement_consumption` is derived from it via
+  `derive_consumption`. One consequence is visible in responses — the `reason` text on
+  `not_applicable` entries is now uniform across domains rather than per-pack prose, and a
+  `not_applicable` entry for an axis a *task* does not read now says so explicitly. Statuses,
+  flags, evidence, tiers, citations, confidences and benchmark scores are unchanged.
+
+- **Strict validation on adipogenesis marker axes (PR18 hardening).** The eleven categorical
+  marker axes (`PPARG`, `CEBPA`, `FABP4`, `ADIPOQ`, `PLIN1`, `lipid_accumulation`,
+  `lipid_efficiency`, `WNT_signalling`, `DLK1`, `viability`, `morphology`) were typed
+  `str | None` and accepted any string. Because an unrecognised value matched neither the
+  present set (`high`) nor the absent set (`low` / `absent`), it was then treated exactly like
+  `unknown` — so `PPARG: "hgih"` produced a confident report that had silently dropped the
+  marker, in the one vertical whose purpose is separating "we did not look" from "we looked and
+  it was not there".
+
+  They are now typed to `virtualcell.agents.adipogenesis.models.MarkerValue`
+  (`high` / `low` / `absent` / `unknown`).
+
+  **Compatibility: every previously documented value stays valid** and an omitted field still
+  means no reading. What changes is that an *invalid* value is now refused at the boundary
+  rather than absorbed: HTTP `422`, CLI exit `1`, `QueryValidationError` in-process, where
+  before it returned `200` with the axis treated as unmeasured. Statuses, flags, evidence,
+  tiers, citations, confidences and all benchmark scores are unchanged.
+
+  This is boundary hardening for invalid input, and it also makes the new domain description
+  honest: a description that publishes a four-value vocabulary while the model accepts anything
+  is a contract that lies — which matters far more now that an agent can read it.
+
+- **`DomainPack.validate_experiment(task, experiment)` (PR18 hardening).** Runs a domain's real
+  input validation without executing any reasoning, raising `QueryValidationError` on a payload
+  the domain cannot accept. Added so the platform can check a description against the input
+  contract it describes **without knowing which vertical it is talking to** — the drift test
+  previously mapped three domain names to three Pydantic model classes, which quietly made "a
+  new domain is validated the moment it is registered" untrue. The validation source stays
+  inside the pack.
+
+  Also new: `virtualcell.platform.domains.validate_pack(pack)`, the full consistency check
+  (description domain matches the pack, described tasks match `supported_tasks`, no duplicate
+  task, no task naming an undeclared axis, and **every declared axis is a payload the pack's own
+  validation accepts**). `register()` performs the cheap structural subset; `validate_pack`
+  adds the per-axis probe, which costs a validation call per axis and belongs in a composition
+  test rather than a constructor. `virtualcell.platform.description.probe_value(axis)` supports
+  both.
+
+  **Breaking for third-party packs only:** `register()` now refuses a pack without
+  `describe()` or `validate_experiment()`, and refuses a description that contradicts the pack.
+  No shipped pack, request contract or response shape changed.
+
+- **`docs/mcp_server_design.md`** — design only. Three tools (`list_domains`,
+  `describe_domain`, `reason`) over `src/virtualcell/mcp/`. **No MCP package, server,
+  dependency or tool registration is added in this change.**
+
 - **Measurement-consumption transparency (PR17).** `ReasoningResponse` gained
   `measurement_consumption`, reporting for every key the caller submitted what the reasoning
   did with it: `used_for_status` (reached the verdict), `used_for_guidance` (consulted for
