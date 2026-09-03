@@ -67,8 +67,11 @@ def test_every_registered_domain_describes_itself() -> None:
 
 
 def test_a_description_can_only_be_read_for_a_queryable_domain() -> None:
+    """The stand-in name is deliberately one no vertical could ever claim. An earlier draft
+    used "myogenesis", which is a plausible fourth domain - and a test that starts failing
+    the day someone registers it is testing the wrong thing."""
     with pytest.raises(UnknownDomainError):
-        REGISTRY.describe("myogenesis")
+        REGISTRY.describe("not-a-registered-domain")
 
 
 def test_described_tasks_are_the_tasks_the_registry_will_dispatch() -> None:
@@ -248,12 +251,30 @@ def test_a_context_axis_really_is_read_by_nothing(domain: str) -> None:
     if not context:
         pytest.skip(f"{domain} declares no context axes")
 
-    baseline = _service({"domain": domain, "task": task, "experiment": {}})
+    def answer(experiment: dict) -> tuple[dict, object]:
+        """What must not move, and what is allowed to.
+
+        Two things legitimately differ when a context value is sent, and neither is an
+        answer: the consumption ledger reports the submitted key, and ``domain_details``
+        preserves the validated input verbatim - the losslessness the packs exist to have.
+        Everything else on the envelope *is* the answer and must be identical.
+
+        The native report is compared too when a pack publishes one, but by presence rather
+        than by assumption: a fourth domain that structures `domain_details` differently is
+        checked on the envelope alone instead of erroring on a missing key.
+        """
+        response = _service({"domain": domain, "task": task, "experiment": experiment})
+        envelope = response.model_dump(mode="json")
+        envelope.pop("measurement_consumption", None)
+        envelope.pop("domain_details", None)
+        return envelope, response.domain_details.get("decision_report")
+
+    baseline_envelope, baseline_report = answer({})
     for axis in context:
-        with_context = _service(
-            {"domain": domain, "task": task, "experiment": {axis.name: "something"}}
+        envelope, report = answer({axis.name: "something"})
+        assert envelope == baseline_envelope, (
+            f"{domain}.{axis.name} is declared context but changed the answer"
         )
-        assert (
-            with_context.domain_details["decision_report"]
-            == baseline.domain_details["decision_report"]
-        ), f"{domain}.{axis.name} is declared context but changed the report"
+        assert report == baseline_report, (
+            f"{domain}.{axis.name} is declared context but changed the domain report"
+        )
