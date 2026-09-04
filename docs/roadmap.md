@@ -561,43 +561,55 @@ reference domain pack. The remaining platform layers, in order:
   `ruff format --check`, and a kernel-unchanged diff against `origin/main`. Uses a
   scratch `--basetemp` outside the repository, because a basetemp *inside* it once fed
   fixture files to `ruff check .` and produced phantom lint errors.
-- ▶ **MCP server.** Designed, not built — [`mcp_server_design.md`](mcp_server_design.md).
-  Three tools (`list_domains`, `describe_domain`, `reason`) over `src/virtualcell/mcp/`, using
-  `platform` only and naming no vertical. The order was deliberate: an MCP tool schema built on
-  an unvalidated abstraction breaks when the abstraction moves, and the abstraction is now
-  validated. The load-bearing risk it must mitigate is that every safety boundary this platform
-  has built lives *inside* the report as text, and nothing forces a summarising model to relay
-  it.
+- ✅ **MCP server.** Built — [`mcp_server_design.md`](mcp_server_design.md). Three tools
+  (`list_domains`, `describe_domain`, `reason`) in `src/virtualcell/mcp/`, over the same
+  `ReasoningService` the API and CLI use, behind the optional `virtualcell[mcp]` extra. The
+  order was deliberate: an MCP tool schema built on an unvalidated abstraction breaks when
+  the abstraction moves, and both blocking prerequisites had to close first (PR18 strict
+  categorical validation, PR19 canonical round trip).
+
+  The load-bearing risk is not correctness but **summarisation**: every safety boundary this
+  platform has built lives *inside* the report as text, and nothing forces a calling model to
+  relay it. Three verticals' worth of refusals can evaporate in one summarisation step. So the
+  mitigation is structural rather than advisory — the answer is a Pydantic model whose field
+  order puts the status, what was ignored, what is missing, the limitations and the
+  overinterpretation risks *before* the summary, and the SDK derives both the output schema
+  and the serialized object from that declaration. A caller cannot receive the summary without
+  having already been handed the caveats.
+
+  Two decisions came out of building it. A tool typed "answer **or** refusal" has its payload
+  wrapped by the SDK under a single `result` property, which flattens exactly that ordering —
+  so anticipated failures travel on the tool-error channel instead, carrying a parseable
+  `ToolRefusal` that names the tool which fixes them. And the SDK import is confined to one
+  module, so the payload shapes and the safety text stay testable, and importable, without it.
+
+  The adapter names no vertical and contains no per-domain branch; a test registers a domain
+  this repository does not ship and drives all three tools against it.
 ### What comes next, in order
 
 Nothing below is implemented. Each is an independent PR, and none starts before the
 previous one is merged with main CI green.
 
-1. **MCP server** — implement [`mcp_server_design.md`](mcp_server_design.md): three tools
-   (`list_domains`, `describe_domain`, `reason`) under `src/virtualcell/mcp/`, using the
-   `platform` public surface only, naming no vertical, behind an optional dependency extra
-   so a default install gains no new requirement. Both blocking prerequisites are now
-   closed (PR18 strict categorical validation, PR19 canonical round trip).
-2. **Neutral decision status** — decide what to do about the residue PR14b recorded and
+1. **Neutral decision status** — decide what to do about the residue PR14b recorded and
    PR18 confirmed: the shared `DecisionReport.candidate_status` owns *immortalization's*
    vocabulary, and the two newer verticals route around it via `DecisionSupport.status`.
    The third domain was the stated trigger and it has arrived. An investigation-first
    item: writing an ADR that explains why the current structure stays is an acceptable
    outcome if the migration costs more churn than it returns.
-3. **Canonical `ExperimentRun` query integration** — connect the ingestion path to the
+2. **Canonical `ExperimentRun` query integration** — connect the ingestion path to the
    reasoning path. Today raw data reaches `ExperimentRun` and a domain adapter, and the
    handoff into `ReasoningService` is manual. Until this lands, `quality_excluded` is not
    reachable from the query surface at all.
-4. **First assay-specific reader** — compare candidates before writing one (see
+3. **First assay-specific reader** — compare candidates before writing one (see
    [Assay-specific readers](#platform-sequence-after-pr11) above); the winner must connect
    to a real decision axis in a shipped vertical.
-5. **Explanation layer** — make `explanation_level` actually change the explanation, so a
+4. **Explanation layer** — make `explanation_level` actually change the explanation, so a
    non-expert can learn the concepts, interpret raw data, and follow the basis of a
    research judgment. Until then the level is carried as provenance only. The deterministic
    report is generated first and the narrative is presentation-only: status, evidence tier,
    citations and confidence never move, and limitations and overinterpretation risks are
    never omitted.
-6. **Evidence provenance** — per-edge `evidence_tier` and source provenance, so a single
+5. **Evidence provenance** — per-edge `evidence_tier` and source provenance, so a single
    paper's `PROMOTES` is not treated as strongly as a textbook edge (see the deferral note
    below, which this supersedes when it starts).
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today

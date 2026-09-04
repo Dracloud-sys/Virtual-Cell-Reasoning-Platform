@@ -7,6 +7,38 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **MCP server.** `src/virtualcell/mcp/` exposes three tools — `list_domains`,
+  `describe_domain` and `reason` — over the same `ReasoningService` the API and CLI use.
+  No new request type, no MCP-specific reasoning path, no re-derivation: the adapter is a
+  fourth surface, not a new capability. Install with `pip install "virtualcell[mcp]"` and
+  run with `python -m virtualcell.mcp`.
+
+  **Ordering is the safety mechanism.** Every boundary this platform has built lives inside
+  the report as text, and nothing forces a summarising model to relay it — three verticals'
+  worth of refusals can evaporate in one summarisation step. So `reason` returns a model
+  whose field order puts the status (and an explicit reason when it is null), the
+  measurements the domain did not recognise, the missing inputs, the limitations and the
+  overinterpretation risks *before* the summary. The SDK derives both the output schema and
+  the serialized object from that declaration, so the order is structural rather than a
+  convention a client has to honour.
+
+  Two decisions came out of building it against the real SDK. A tool typed "answer **or**
+  refusal" has its payload wrapped under a single `result` property, which flattens exactly
+  that ordering — so an anticipated failure travels on the tool-error channel instead,
+  carrying a parseable `ToolRefusal` that names the tool which fixes it (`unknown_domain`,
+  `unsupported_task`, `invalid_experiment`, `malformed_query`). And the SDK import is
+  confined to `virtualcell.mcp.server`, so the payload shapes and the safety text stay
+  importable — and testable — without the extra installed.
+
+  The adapter names no vertical, imports no `virtualcell.agents` module and holds no
+  per-domain branch; everything domain-specific arrives through `DomainRegistry` and
+  `DomainDescription`. A test registers a domain this repository does not ship and drives
+  all three tools against it, and an AST guard fails if any module under
+  `src/virtualcell/mcp/` ever mentions a registered domain by name.
+
+  Strictly additive. No pack, kernel or scientific rule changed; all four scorecards hold
+  their per-question scores and the CLI and API responses are byte-identical.
+
 - **Round-trippable missing inputs (PR19).** `ReasoningResponse.missing_inputs` carries typed
   `MissingInput` entries beside the existing `missing_information` strings: a stable `id`, the
   **canonical** `canonical_axis` to resubmit, a human `label`, `why`, the `task` that needs it,

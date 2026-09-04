@@ -1,10 +1,18 @@
 # MCP server: design
 
-**Design only. Nothing in this document is implemented, and no MCP package, server, dependency
-or tool registration exists in the tree.** The order is deliberate — third-domain validation
-first, MCP second — because an MCP tool schema built on an unvalidated abstraction breaks when
-the abstraction moves. It has now been validated by a third domain, so this can be built next
-without that risk.
+**Implemented.** `src/virtualcell/mcp/` ships the three tools below behind the optional
+`virtualcell[mcp]` extra; this document is now the rationale for what exists rather than a
+plan for what does not. The order was deliberate — third-domain validation first, MCP second
+— because an MCP tool schema built on an unvalidated abstraction breaks when the abstraction
+moves.
+
+Two things landed differently from the sketch below, and both are recorded where they were
+decided: the payload ordering is carried by the **field order of a Pydantic result model**
+(the SDK derives the output schema and the serialized object from it, so the ordering is
+structural rather than a convention), and an anticipated failure travels on the SDK's
+**tool-error channel** rather than as a return value — a tool typed "answer or refusal" has
+its payload wrapped by the SDK under a single `result` property, and that wrapper would
+flatten the very ordering this design exists to guarantee.
 
 ## Why MCP is the right surface
 

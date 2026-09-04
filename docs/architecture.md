@@ -36,7 +36,7 @@ a domain touches neither the API, the CLI, nor the kernel.
 
 ```
    ┌──────────────────────────────────────────────────────────────┐
-   │ virtualcell query   POST /reasoning/query   (MCP: planned)   │  surfaces
+   │ virtualcell query   POST /reasoning/query   MCP: reason      │  surfaces
    └───────────────────────────┬──────────────────────────────────┘
                                │  ReasoningQuery
                  ┌─────────────▼──────────────┐

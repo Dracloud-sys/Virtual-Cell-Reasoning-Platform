@@ -51,6 +51,7 @@ Where a data-driven model (e.g. AlphaCell, STATE) predicts *what* changes under 
 - **Measurement-consumption transparency** (PR17): `ReasoningResponse.measurement_consumption` says, for every key you submitted, whether it reached the verdict (`used_for_status`), informed only flags/safety/next steps (`used_for_guidance`), had nothing to consult it for (`not_applicable`), was **not recognised at all** (`unsupported`), or was distrusted by QC (`quality_excluded`).
 - **Domain self-description** (PR18): `DomainPack.describe()` returns tasks, per-task required/read axes, and each axis's canonical name, value type, vocabulary, kind, and the spelling for "no reading was taken". It is the single source — each pack's consumption ledger is *derived* from it, so a pack cannot advertise one thing and report another. Every categorical axis is strictly validated: `PPARG: "hgih"` is refused, not silently read as `unknown`.
 - **Round-trippable missing inputs** (PR19): `ReasoningResponse.missing_inputs` carries the **canonical** key to resubmit (`SA_b_gal`) beside the human label (`SA-b-Gal`), with a stable id `{domain}.axis.{canonical_axis}`. Only gaps a caller can actually fill appear there — validation goals and next experiments keep their own fields, so the list needs no filtering before use.
+- **MCP server**: three tools — `list_domains`, `describe_domain`, `reason` — over the same service the API and CLI use, so an LLM agent reaches the platform without a bespoke integration. `pip install "virtualcell[mcp]"`, then `python -m virtualcell.mcp`. The `reason` result is ordered so the status, the measurements it ignored, what is still missing, the limitations and the overinterpretation risks all come **before** the summary: a model that summarises the top of the payload cannot drop the caveats, because it reaches them first.
 - FastAPI app exposing `/health`, knowledge, agent, and reasoning endpoints.
 - `pytest` suite, `ruff`-clean (`ruff check` + `ruff format`) codebase, GitHub Actions CI, and a one-command local gate (`python scripts/verify.py`) that runs the suite, all four scorecards, lint and a kernel-unchanged check.
 
@@ -200,13 +201,14 @@ src/virtualcell/
 ├── orchestration/  # multi-agent orchestrator and the evidence query orchestrator
 ├── simulation/     # interface only: CellState / TimeStep / SimulationEngine protocol,
 │                   #   no concrete engine (dynamic ML simulation is out of scope)
+├── mcp/            # MCP adapter: three tools over the platform surface, no biology
 ├── api/            # FastAPI app
 └── cli.py          # command-line entry point
 ```
 
-Every surface funnels through one path — `API / CLI → ReasoningService.query() →
-DomainRegistry → DomainPack → agent` — which is why adding a domain touches
-neither the API, the CLI, nor the kernel.
+Every surface funnels through one path — `API / CLI / MCP → ReasoningService.query()
+→ DomainRegistry → DomainPack → agent` — which is why adding a domain touches
+neither the API, the CLI, the MCP adapter, nor the kernel.
 
 ## Tech stack
 
@@ -214,8 +216,8 @@ Python 3.12 · uv · Ruff · Pydantic v2 · pytest.
 
 Optional extras, installed only when used: `api` (FastAPI + uvicorn) · `llm`
 (Anthropic Claude, with a deterministic offline fallback so nothing requires a
-key) · `xlsx` (openpyxl) · `orchestration` (LangGraph) · `graph` (Neo4j) ·
-`vector` (Qdrant).
+key) · `xlsx` (openpyxl) · `mcp` (the official MCP Python SDK) · `orchestration`
+(LangGraph) · `graph` (Neo4j) · `vector` (Qdrant).
 
 The Neo4j and Qdrant backends are **interface skeletons** — the classes and the
 extras exist, the methods raise `NotImplementedError`; the working knowledge
