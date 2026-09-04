@@ -7,6 +7,43 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Round-trippable missing inputs (PR19).** `ReasoningResponse.missing_inputs` carries typed
+  `MissingInput` entries beside the existing `missing_information` strings: a stable `id`, the
+  **canonical** `canonical_axis` to resubmit, a human `label`, `why`, the `task` that needs it,
+  and the `value_type` / `vocabulary` / `minimum` / `maximum` / `unmeasured_value` needed to
+  construct a valid value without a second round trip.
+
+  **Only missing experiment inputs.** Validation goals, next experiments, limitations and
+  risks keep their own response fields; nothing is duplicated here. A list named "missing
+  inputs" that also held advice would force every consumer to filter it before acting, and
+  advisory entries had no stable identity - their ids were list positions, so reordering a
+  recommendation reassigned an id to a different sentence. `id` is now
+  `{domain}.axis.{canonical_axis}`, derived from identity rather than wording or order.
+  `resubmittable` is retained as a computed field that is always true, stating the promise
+  explicitly rather than leaving it to be inferred from the field name.
+
+  This closes the last blocking MCP prerequisite. Immortalization reported `SA-b-Gal` for an
+  axis a caller must send as `SA_b_gal`, so an agent that echoed the platform's own string was
+  told its correct measurement was an unrecognised key - a contract failure, not a caller
+  mistake.
+
+  `AxisDescription` gained `display_label`, making the three names explicit and distinct:
+  `name` is the public query key, `canonical_name` the internal model field, `display_label`
+  prose. Resolution happens at each pack's conversion boundary by **exact lookup** against its
+  own declaration, never by normalising punctuation; a pack reporting a gap its description
+  does not declare raises `UnknownRequirementError` rather than shipping a keyless
+  requirement.
+
+  A `MissingInput` refuses to express the failure it exists to prevent: a resubmittable kind
+  must name an axis, and a non-resubmittable one must not carry a key an agent could mistake
+  for a field.
+
+  **Compatibility: strictly additive.** `missing_information` keeps its exact values and
+  order - `SA-b-Gal` included, and still refused as an experiment key. No status, flag, claim
+  text, tier, citation, confidence, mechanistic chain or recommendation changed, and all four
+  scorecards hold with identical per-question scores. CLI `--format text` now prints
+  `SA-b-Gal  (send as: SA_b_gal)`; `--format json` is additive only.
+
 - **Third reasoning vertical: genome-edit validation (PR18).** `{"domain": "genome_editing"}`
   is answerable on the service, HTTP and CLI, with its own curated seed graph (21 nodes /
   22 edges), four-value status vocabulary, six flags, and a ten-question benchmark written

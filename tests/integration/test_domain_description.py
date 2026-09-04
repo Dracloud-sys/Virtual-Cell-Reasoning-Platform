@@ -164,16 +164,21 @@ def test_required_axes_are_the_ones_reported_missing_when_nothing_is_sent(domain
 
 
 def test_missing_information_is_not_always_round_trippable_as_an_axis_name() -> None:
-    """A finding this milestone surfaced, deliberately still open.
+    """Closed by PR19 on the *envelope*, and this test is why it stayed open here.
 
     Immortalization reports its unmeasured senescence axes under display labels - `SA-b-Gal`
     for the axis a caller must send as `SA_b_gal`. A caller that echoes `missing_information`
     back as an experiment key therefore gets `unsupported`, which is precisely the loop an MCP
     client would run: read what is missing, measure it, send it under the name it was given.
 
-    Not fixed here because `_AXIS_LABEL` also spells the label inside an existing evidence
-    claim, and this milestone must not change claim text. Recorded in
-    `docs/mcp_server_design.md` as a prerequisite the MCP server cannot ship without.
+    `missing_information` still reports the display label, deliberately: it is prose for a
+    person, the same label appears inside an existing evidence claim, and changing either
+    would break a compatibility surface to fix a machine-readability problem. The fix went
+    where the problem was - `ReasoningResponse.missing_inputs` now carries the canonical key,
+    proved end to end in `test_missing_input_round_trip.py`.
+
+    So this test still passes, and now means the opposite of what it once did: the string
+    field is *allowed* to be human-facing precisely because a typed field is authoritative.
     """
     missing = _service(
         {"domain": "immortalization", "task": "assess_state", "experiment": {}}

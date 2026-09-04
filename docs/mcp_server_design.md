@@ -55,6 +55,36 @@ Validates into the existing `ReasoningQuery` and calls the existing `ReasoningSe
 No new request type, no MCP-specific reasoning path, no re-derivation. The response is the
 existing `ReasoningResponse`, **reordered** (below) rather than reshaped.
 
+#### Which field answers which question
+
+Each of these says one thing. **The tool must read them separately and must never merge them
+or turn one into another.**
+
+| the question | the field |
+|---|---|
+| what can I measure and send to improve this answer? | **`missing_inputs`** |
+| what should a person verify? | `recommended_validation` |
+| what experiment comes next? | `recommended_next_experiments` |
+| what does this answer not establish? | `limitations` |
+| what must not be concluded from it? | `overinterpretation_risks` |
+| which of my measurements were actually used? | `measurement_consumption` |
+
+Three rules follow, and each prevents a specific failure:
+
+- **Follow-up input comes from `missing_inputs`, never from `missing_information`.** The
+  string list is prose for a person and may spell an axis as `SA-b-Gal`; only the typed list
+  carries `canonical_axis`. Copying a display label into an `experiment` key is how a correct
+  measurement gets reported back as unrecognised.
+- **Never turn a recommendation into an experiment key.** `recommended_validation` and
+  `recommended_next_experiments` are lab work and goals — "Karyotype / genomic-stability
+  assay" is something to *do*, not a field to fill in. Relay them to the user and **do not
+  synthesise a value for them**; inventing a karyotype result is exactly the failure this
+  platform exists to prevent. They are deliberately *not* present in `missing_inputs`, so
+  there is nothing to filter and no way to confuse the two.
+- **`vocabulary`, `minimum`/`maximum` and `unmeasured_value` come with the requirement**, so a
+  valid value can be built without a second `describe_domain` call. Sending
+  `unmeasured_value` is not supplying the measurement — it restates that nobody looked.
+
 ## `unsupported` is the self-correction channel
 
 PR17's ledger is the feedback loop that makes an LLM caller safe to run unattended:
@@ -132,23 +162,35 @@ A second test worth having: adding a fourth domain must change **zero** lines un
 | axis / vocabulary introspection | `DomainDescription` (this milestone) |
 | per-task input requirements | `TaskDescription.required_axes` / `reads_axes` |
 | a self-correction channel | `measurement_consumption` (PR17) |
+| resubmittable inputs | `missing_inputs` / `MissingInput` (PR19) |
 | a validated abstraction | three domains, zero kernel changes |
 
 ## Prerequisites — blocking, not advisory
 
-**The MCP server must not ship until these are closed.** Both are cases where an agent would
-be misled by something the platform told it, which is worse than an agent that has to guess.
+Both were cases where an agent would be misled by something the platform *told* it, which is
+worse than an agent that has to guess. **Both are now closed, and no blocking prerequisite
+remains.**
 
-### 1. `missing_information` must round-trip as an axis name — **OPEN, blocking**
+### 1. `missing_information` must round-trip as an axis name — **CLOSED (PR19)**
 
-Immortalization reports display labels (`SA-b-Gal`) rather than axis names (`SA_b_gal`). The
-loop an MCP client runs is exactly: read what is missing → measure it → send it back under the
-name it was given. Today that returns `unsupported`, so the agent is told its correct
-measurement is an unrecognised key.
+Immortalization reported display labels (`SA-b-Gal`) for an axis a caller sends as `SA_b_gal`,
+so an agent echoing the platform's own string was told its correct measurement was an
+unrecognised key — a contract failure rather than a caller mistake.
 
-Not fixed in PR18 because the same label is spelled inside an existing evidence claim and that
-milestone must not change claim text. Pinned by
-`test_missing_information_is_not_always_round_trippable_as_an_axis_name`.
+Closed additively. `missing_information` keeps its exact strings and order; the new
+`ReasoningResponse.missing_inputs` carries typed `MissingInput` entries with the **canonical**
+key for every gap a caller can actually fill — and *only* those. Advice keeps its own fields,
+so the list named "missing inputs" needs no filtering before use, and every id is
+`{domain}.axis.{canonical_axis}`, stable against rewording and reordering. Resolution happens at each pack's
+conversion boundary against its own `AxisDescription.display_label`, by exact lookup — never
+by normalising punctuation, because identity is the one thing that must not be guessed. A pack
+reporting a gap its description does not declare raises rather than shipping a keyless
+requirement.
+
+Walked end to end for every registered domain in
+`tests/integration/test_missing_input_round_trip.py`: read the requirement, measure it, send
+it back under the supplied key, and assert it does not come back `unsupported` and the gap
+actually closes.
 
 ### 2. Every categorical axis must be strictly validated — **CLOSED (PR18 hardening)**
 
