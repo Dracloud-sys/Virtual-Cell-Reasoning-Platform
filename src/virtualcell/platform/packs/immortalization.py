@@ -42,9 +42,11 @@ from virtualcell.platform.description import (
     AxisDescription,
     AxisKind,
     DomainDescription,
+    MissingInput,
     TaskDescription,
     ValueType,
     derive_consumption,
+    resolve_missing_inputs,
 )
 from virtualcell.platform.domains import QueryValidationError
 from virtualcell.reasoning.decision import AssessmentFlag, CandidateStatus, DecisionReport
@@ -85,10 +87,15 @@ _STATUS_PURPOSES = ("candidate_status", "evidence")
 _UNKNOWN = "unknown"
 
 
-def _marker(name: str, description: str) -> AxisDescription:
+def _marker(name: str, description: str, *, display_label: str | None = None) -> AxisDescription:
     return AxisDescription(
         name=name,
         description=description,
+        # How the vertical spells this axis in prose. `missing_axes` and the "key senescence
+        # axes are unmeasured (...)" claim both use it, and a caller echoing that string back
+        # as an experiment key would be told their correct measurement is unrecognised. The
+        # label is declared here so the conversion boundary can resolve it exactly.
+        display_label=display_label,
         value_type=ValueType.CATEGORICAL,
         vocabulary=_MARKER_VOCAB,
         kind=AxisKind.STATUS,
@@ -103,7 +110,11 @@ _AXES: tuple[AxisDescription, ...] = (
     _marker("PDL_trend", "Population-doubling-level trend across passages."),
     _marker("DT_trend", "Doubling-time trend across passages."),
     _marker("gammaH2AX", "Double-strand-break marker."),
-    _marker("SA_b_gal", "Senescence-associated beta-galactosidase staining."),
+    _marker(
+        "SA_b_gal",
+        "Senescence-associated beta-galactosidase staining.",
+        display_label="SA-b-Gal",
+    ),
     _marker("p16", "CDKN2A/p16 level."),
     _marker("p21", "CDKN1A/p21 level."),
     AxisDescription(
@@ -252,7 +263,22 @@ class ImmortalizationDomainPack:
         report = ImmortalizationAssessmentAgent(store=store).assess(data)
         response = self._to_response(query, report, data)
         response.measurement_consumption = self._consumption(query, data)
+        response.missing_inputs = self._missing_inputs(query, report)
         return response
+
+    def _missing_inputs(self, query: ReasoningQuery, report) -> list[MissingInput]:
+        """Resolve the native report's missing axes into keys a caller can send.
+
+        Only ``missing_axes``. Validation goals and next experiments stay in their own
+        response fields, where each says one thing; copying them here would make a caller
+        filter a list named "missing inputs" before it could use any of it.
+
+        The resolution happens *here*, at the conversion boundary, using this domain's own
+        declaration - not by normalising strings in the platform. `SA-b-Gal` is this
+        vertical's display label for the axis a caller sends as `SA_b_gal`, and only the
+        declaration knows that.
+        """
+        return resolve_missing_inputs(DESCRIPTION, task=query.task, missing=report.missing_axes)
 
     # --- measurement consumption (derived from the declaration above) --------
 

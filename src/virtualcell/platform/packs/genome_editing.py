@@ -52,9 +52,11 @@ from virtualcell.platform.description import (
     AxisDescription,
     AxisKind,
     DomainDescription,
+    MissingInput,
     TaskDescription,
     ValueType,
     derive_consumption,
+    resolve_missing_inputs,
 )
 from virtualcell.platform.domains import QueryValidationError
 from virtualcell.reasoning.decision import DecisionReport
@@ -278,9 +280,25 @@ class GenomeEditingDomainPack:
             response = self._to_response(query, report, DecisionSupport())
         else:
             outcome = assess(data, store)
-            response = self._to_response(query, outcome.report, self._decision_support(outcome))
+            report = outcome.report
+            response = self._to_response(query, report, self._decision_support(outcome))
         response.measurement_consumption = self._consumption(query, data)
+        response.missing_inputs = self._missing_inputs(query, report)
         return response
+
+    def _missing_inputs(self, query: ReasoningQuery, report) -> list[MissingInput]:
+        """Resolve the native report's missing axes into keys a caller can send.
+
+        Only ``missing_axes``. Validation goals and next experiments stay in their own
+        response fields, where each says one thing; copying them here would make a caller
+        filter a list named "missing inputs" before it could use any of it.
+
+        The resolution happens *here*, at the conversion boundary, using this domain's own
+        declaration - not by normalising strings in the platform. Every axis here is already
+        spelled as its own key, so the resolution is an identity; doing it through the
+        declaration anyway keeps it correct if a display label is ever introduced.
+        """
+        return resolve_missing_inputs(DESCRIPTION, task=query.task, missing=report.missing_axes)
 
     # --- request adaptation --------------------------------------------------
 

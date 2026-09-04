@@ -317,7 +317,7 @@ def _print_query_text(response) -> None:
         [f"[{link.tier.value}] {' | '.join(link.path)}" for link in response.mechanistic_links],
     )
     _measurement_consumption(response)
-    _block("missing information", response.missing_information)
+    _missing_inputs(response)
     _block("limitations", response.limitations)
     _block("overinterpretation risks", response.overinterpretation_risks)
     _block("recommended validation", response.recommended_validation)
@@ -326,6 +326,27 @@ def _print_query_text(response) -> None:
     if response.literature.evidence:
         for claim in response.literature.evidence:
             print(f"  - [{claim.tier.value}] {claim.statement}")
+
+
+def _missing_inputs(response) -> None:
+    """The axes a caller can measure and send back, with the key beside the label.
+
+    Only inputs. Validation goals and next experiments keep their own blocks below, because
+    they are advice rather than fields - printing them here would invite someone to treat
+    "Karyotype / genomic-stability assay" as a value to fill in.
+
+    The key is shown whenever it is not simply the label repeated, which is the whole point:
+    `SA-b-Gal` reads well and is not sendable.
+    """
+    if not response.missing_inputs:
+        return
+    print()
+    print("missing inputs:")
+    for requirement in response.missing_inputs:
+        if requirement.canonical_axis != requirement.label:
+            print(f"  - {requirement.label} (send as: {requirement.canonical_axis})")
+        else:
+            print(f"  - {requirement.label}")
 
 
 def _measurement_consumption(response) -> None:

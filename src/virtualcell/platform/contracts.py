@@ -30,6 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from virtualcell.core.consumption import ConsumptionReport
 from virtualcell.core.evidence import Claim
+from virtualcell.platform.description import MissingInput
 from virtualcell.reasoning.explain import MechanisticLink
 
 
@@ -187,6 +188,18 @@ class ReasoningResponse(BaseModel):
     mechanistic_links: list[MechanisticLink] = Field(default_factory=list)
 
     missing_information: list[str] = Field(default_factory=list)
+    """What the domain does not have, phrased for a person. Kept exactly as it was, including
+    entries spelled as display labels — it is a compatibility surface now, and
+    ``missing_inputs`` is what a program should read."""
+
+    missing_inputs: list[MissingInput] = Field(default_factory=list)
+    """The same gaps, typed, with the *canonical* key for every one a caller can actually
+    send. Additive and defaulted, so a pack that has not declared its requirements reports
+    nothing rather than something wrong.
+
+    It exists because a caller that echoed ``missing_information`` back as an ``experiment``
+    key could be told its correct measurement was an unrecognised name. That is a contract
+    failure, not a caller mistake: the platform handed them the string."""
     uncertainties: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
     overinterpretation_risks: list[str] = Field(default_factory=list)

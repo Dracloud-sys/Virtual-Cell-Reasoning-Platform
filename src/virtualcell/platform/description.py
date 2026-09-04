@@ -27,11 +27,11 @@ fails.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 
 from virtualcell.core.consumption import ConsumptionLedger, ConsumptionReport
 
@@ -73,10 +73,27 @@ class AxisDescription(BaseModel):
     """The key to send. What a caller writes, not what it resolves to internally."""
 
     canonical_name: str | None = None
-    """What it resolves to, when that differs from ``name`` — immortalization accepts
-    ``construct`` and stores ``construct_type``. Defaults to ``name``, and is spelled the same
-    as the field on :class:`~virtualcell.core.consumption.MeasurementConsumption` so a caller
-    can join a description to a consumption ledger without a mapping table."""
+    """The *internal model field* this axis resolves to, when that differs from ``name`` —
+    immortalization accepts ``construct`` and stores ``construct_type``. Defaults to ``name``,
+    and is spelled the same as the field on
+    :class:`~virtualcell.core.consumption.MeasurementConsumption` so a caller can join a
+    description to a consumption ledger without a mapping table."""
+
+    display_label: str | None = None
+    """How a human should see this axis written — ``SA-b-Gal`` for the axis a caller must send
+    as ``SA_b_gal``. Defaults to ``name``.
+
+    Three names, and confusing them is the bug this field exists to end:
+
+    ==================  =========================================================
+    ``name``            the **public key**; the only one that belongs in a query
+    ``canonical_name``  the internal model field it validates against
+    ``display_label``   prose; safe to print, never safe to send
+    ==================  =========================================================
+
+    A response that reports an unmeasured axis by its display label sends any caller that
+    echoes it back into ``unsupported``, which is a contract failure rather than a caller
+    mistake — the platform handed them the string."""
 
     description: str
     value_type: ValueType
@@ -132,6 +149,10 @@ class AxisDescription(BaseModel):
     def resolved_name(self) -> str:
         return self.canonical_name or self.name
 
+    @property
+    def label(self) -> str:
+        return self.display_label or self.name
+
 
 def probe_value(axis: AxisDescription) -> Any:
     """A minimal value of the right shape for ``axis``.
@@ -149,6 +170,78 @@ def probe_value(axis: AxisDescription) -> Any:
         ValueType.SERIES: [],
         ValueType.TEXT: "x",
     }[axis.value_type]
+
+
+class MissingInput(BaseModel):
+    """One **missing experiment input**: an axis the caller can measure and send back.
+
+    Deliberately narrow. A report also carries validation goals, assays to run and free prose,
+    and an earlier draft copied all of that in here under a ``kind`` discriminator. That was
+    wrong three ways. The field is called *missing inputs*, so a caller reasonably reads every
+    entry as something they can supply. Mixing advice in forces every consumer to filter before
+    it can act. And the advisory entries had no stable identity - their ids were positions in a
+    list, so reordering a recommendation silently reassigned an id to a different sentence.
+
+    The advice has not gone anywhere. ``recommended_validation``, ``recommended_next_experiments``,
+    ``limitations`` and ``overinterpretation_risks`` are older, clearer contracts and each says
+    one thing; a caller reads them directly. This field answers exactly one question: *what can
+    I measure and send to make the answer better?*
+
+    Additive beside ``ReasoningResponse.missing_information``, which keeps its exact strings and
+    order. That one is what a person reads; this is what a program reads.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    """``{domain}.axis.{canonical_axis}`` - derived from identity, not from wording or list
+    position, so the same axis keeps the same id across two responses that phrase or order
+    things differently."""
+
+    canonical_axis: str
+    """The ``experiment`` key to send. Required, not optional: an entry that cannot name a key
+    is not a missing input, and admitting one would put the caller back to guessing."""
+
+    label: str
+    """Human-readable. **Never a query key**, even when it happens to equal one."""
+
+    why: str
+    task: str
+    """The task that needs it. A requirement is not domain-wide: a mechanism question needs
+    none of the marker axes an assessment does."""
+
+    value_type: ValueType
+    vocabulary: tuple[str, ...] = ()
+    minimum: float | None = None
+    maximum: float | None = None
+    unmeasured_value: str | None = None
+    """Everything needed to construct a valid value without a second round trip, copied from
+    the axis declaration rather than restated. ``unmeasured_value`` is included so a caller can
+    recognise it and know **not** to send it: it restates that nobody looked."""
+
+    @model_validator(mode="after")
+    def _names_a_real_key(self) -> MissingInput:
+        if not self.canonical_axis.strip():
+            raise ValueError(f"missing input {self.id!r} must name a canonical axis")
+        if self.vocabulary and self.value_type is not ValueType.CATEGORICAL:
+            raise ValueError(
+                f"missing input {self.id!r} lists a vocabulary but is "
+                f"{self.value_type.value}, not categorical"
+            )
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def resubmittable(self) -> bool:
+        """Always true, and stated rather than implied.
+
+        Every entry in this list is sendable by construction — that is the whole narrowing.
+        The field is kept as a constant so an MCP client reading the JSON sees the promise
+        made explicitly instead of inferring it from a field name, and so that any future
+        widening of the contract is forced to make this stop being constant, which is exactly
+        the review conversation such a change should trigger.
+        """
+        return True
 
 
 class TaskDescription(BaseModel):
@@ -346,3 +439,68 @@ def derive_consumption(
                 key, canonical_name=axis.resolved_name, used_for=list(axis.used_for)
             )
     return ledger.report()
+
+
+# --- resolving what a domain says is missing into what a caller can send ---------
+
+
+class UnknownRequirementError(ValueError):
+    """Raised when a pack reports a missing axis its own description does not declare."""
+
+
+def resolve_missing_inputs(
+    description: DomainDescription,
+    *,
+    task: str,
+    missing: Sequence[str],
+) -> list[MissingInput]:
+    """Turn a domain's native "what I do not have" into keys a caller can actually send.
+
+    ``missing`` holds whatever the vertical reports as unmeasured, which may be spelled for a
+    human: immortalization says ``SA-b-Gal`` for the axis a caller must send as ``SA_b_gal``.
+    Each entry is matched against the declaration by **name first, then display label** - an
+    exact lookup, never a normalisation. Stripping punctuation would resolve this case and
+    quietly mis-resolve the first axis whose label is not a decoration of its name, and
+    identity is the one thing that must not be inferred.
+
+    Two failures raise rather than ship a misleading entry:
+
+    * a name matching neither is a bug in the pack, and swallowing it would leave a caller
+      with a gap nobody named;
+    * a *context* axis reported as missing is a category error. Nothing reads a context field,
+      so its absence is not a gap - PR17's ``not_applicable`` already says what happens to one.
+
+    Only inputs come back. Validation goals and assays live in ``recommended_validation`` and
+    ``recommended_next_experiments``, which are older and clearer contracts.
+    """
+    by_name = {axis.name: axis for axis in description.axes}
+    by_label = {axis.label: axis for axis in description.axes}
+
+    requirements: list[MissingInput] = []
+    for entry in missing:
+        axis = by_name.get(entry) or by_label.get(entry)
+        if axis is None:
+            raise UnknownRequirementError(
+                f"domain {description.domain!r} reports {entry!r} as missing, but declares no "
+                "axis with that name or display label; a caller could not act on it"
+            )
+        if axis.kind is AxisKind.CONTEXT:
+            raise UnknownRequirementError(
+                f"domain {description.domain!r} reports context axis {entry!r} as a missing "
+                "input, but no rule reads it, so its absence is not a gap a caller can close"
+            )
+        requirements.append(
+            MissingInput(
+                id=f"{description.domain}.axis.{axis.name}",
+                canonical_axis=axis.name,
+                label=axis.label,
+                why=axis.description,
+                task=task,
+                value_type=axis.value_type,
+                vocabulary=axis.vocabulary,
+                minimum=axis.minimum,
+                maximum=axis.maximum,
+                unmeasured_value=axis.unmeasured_value,
+            )
+        )
+    return requirements
