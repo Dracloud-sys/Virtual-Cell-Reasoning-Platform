@@ -30,38 +30,60 @@ roadmap records the sequence.
 
 ## Layered view
 
+The load-bearing path since PR11 is the **platform seam**: one entry point, one
+registry, one pack per domain. Every surface goes through it, which is why adding
+a domain touches neither the API, the CLI, nor the kernel.
+
 ```
-                         ┌─────────────────────────┐
-                         │         API / CLI        │  interaction surface
-                         └────────────┬────────────┘
-                                      │
-                         ┌────────────▼────────────┐
-                         │      Orchestration       │  LangGraph: routes work
-                         │      (agent graph)       │  between agents
-                         └────────────┬────────────┘
-                                      │
-        ┌───────────────┬────────────┼────────────┬───────────────┐
-        │               │            │            │               │
-   ┌────▼────┐    ┌─────▼────┐  ┌────▼────┐  ┌────▼─────┐   ┌──────▼─────┐
-   │ Genome  │    │Transcrip.│  │Metabol. │  │Signaling │   │ Literature │  specialized
-   │  Agent  │    │  Agent   │  │  Agent  │  │  Agent   │   │   Agent    │  agents ...
-   └────┬────┘    └─────┬────┘  └────┬────┘  └────┬─────┘   └──────┬─────┘
-        └───────────────┴───────┬────┴────────────┴────────────────┘
-                                │
-              ┌─────────────────▼──────────────────┐
-              │           Core abstractions          │  BaseAgent, contracts,
-              │  (agent / evidence / confidence)     │  EvidenceTier, registry
-              └─────────────────┬──────────────────┘
-                                │
-        ┌───────────────────────┼───────────────────────┐
-        │                       │                       │
-  ┌─────▼──────┐        ┌───────▼───────┐        ┌──────▼───────┐
-  │ Knowledge  │        │  Simulation   │        │   Data       │
-  │   Base     │        │   Engine      │        │  Sources     │
-  │ (graph +   │        │ (dynamic,     │        │ (GO, KEGG,   │
-  │  vector)   │        │  time-based)  │        │  UniProt...) │
-  └────────────┘        └───────────────┘        └──────────────┘
+   ┌──────────────────────────────────────────────────────────────┐
+   │ virtualcell query   POST /reasoning/query   (MCP: planned)   │  surfaces
+   └───────────────────────────┬──────────────────────────────────┘
+                               │  ReasoningQuery
+                 ┌─────────────▼──────────────┐
+                 │  ReasoningService.query()  │  platform.service
+                 │  domain resolution, task   │  owns NO biology
+                 │  dispatch, literature      │
+                 │  orchestration, provenance │
+                 └─────────────┬──────────────┘
+                               │
+                 ┌─────────────▼──────────────┐
+                 │       DomainRegistry       │  platform.domains
+                 └─────────────┬──────────────┘
+                               │
+      ┌────────────────────────┼────────────────────────┐
+┌─────▼──────────┐     ┌───────▼────────┐     ┌─────────▼──────┐
+│ immortalization│     │  adipogenesis  │     │ genome_editing │  DomainPacks
+│      pack      │     │      pack      │     │      pack      │  platform.packs
+└─────┬──────────┘     └───────┬────────┘     └─────────┬──────┘
+      │   describe() / validate_experiment() / execute()│
+┌─────▼────────────────────────────────────────────────▼───────┐
+│           agents.<domain>  —  the scientific rules           │  knows biology
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+                 ┌─────────────▼──────────────┐
+                 │      reasoning.kernel      │  grounding, assertion safety,
+                 │      knows NO biology      │  tier conventions, missing_axes
+                 └─────────────┬──────────────┘
+                               │
+     ┌─────────────────────────┼─────────────────────────┐
+┌────▼───────┐        ┌────────▼───────┐        ┌────────▼──────┐
+│ Knowledge  │        │   Ingestion    │        │  Literature   │
+│   Base     │        │ DatasetSpec →  │        │ discovery →   │
+│ in-memory  │        │ QC → canonical │        │ … → weak,     │
+│ + JSON;    │        │ ExperimentRun  │        │ pending_review│
+│ Neo4j and  │        └────────────────┘        └───────────────┘
+│ Qdrant are │
+│ skeletons  │
+└────────────┘
 ```
+
+The older `BaseAgent` registry still exists alongside this seam, reached through
+`virtualcell agents` and `POST /agents/{name}/run`. It holds the Literature,
+Literature Discovery, Validation and Immortalization Assessment agents plus five
+interface stubs, and the `orchestration` package (LangGraph, an optional extra)
+routes between them. A vertical does **not** have to be a `BaseAgent`:
+adipogenesis and genome-edit validation are domain packs only, and do not appear
+in `virtualcell agents`. See [`agents.md`](agents.md).
 
 ## Core abstractions (`virtualcell.core`)
 
@@ -233,6 +255,68 @@ fourth domain is covered the day it is registered.
 
 It is also the contract the planned MCP server reads; see
 [`mcp_server_design.md`](mcp_server_design.md). Nothing MCP-specific exists in the tree.
+
+## What the answer says about itself (`ReasoningResponse`)
+
+Two fields exist because a report that is *correct* can still mislead a caller who
+cannot see what it did with their input. Both are strictly additive: neither moves
+a status, tier, citation, confidence, claim or recommendation.
+
+### `measurement_consumption` — what happened to each key you sent
+
+`virtualcell.core.consumption` holds the vocabulary and imports nothing from the
+rest of the package, so a pack can classify without depending on the platform.
+Every key the caller submitted lands in exactly one state:
+
+| state | meaning |
+|---|---|
+| `used_for_status` | it reached the verdict |
+| `used_for_guidance` | it informed flags, safety or next steps, but not the verdict |
+| `not_applicable` | recognised, but this task had nothing to consult it for |
+| `unsupported` | **not recognised at all** — the answer was computed without it |
+| `quality_excluded` | recognised and read, then distrusted by QC |
+
+`unsupported` is the one that changes behaviour rather than merely informing: a
+caller that mistypes `gammaH2AX` as `gamaH2AX` previously received a confident
+report that had silently ignored the marker it cared about most. It is also the
+self-correction channel an automated caller runs on — see
+[`mcp_server_design.md`](mcp_server_design.md).
+
+*Which* measurement is in which state is not decided here. It is **derived** from
+each pack's `DomainDescription` via `AxisKind`, so a pack cannot advertise one
+thing in `describe()` and report another in its ledger. The packs genuinely
+disagree — adipogenesis counts inhibition and viability as status axes, while
+immortalization treats every flag-raising axis as guidance — and that disagreement
+is domain science, not inconsistency.
+
+### `missing_inputs` — what to measure, under a name you can send back
+
+`missing_information` is prose for a person and may spell an axis `SA-b-Gal`.
+`missing_inputs` is the machine-resubmittable form of the same gaps: a stable
+`id` of `{domain}.axis.{canonical_axis}`, the canonical key, the display label,
+the task that needs it, and the `value_type` / `vocabulary` / bounds /
+`unmeasured_value` needed to build a valid value without asking again.
+
+Three names had been one, and separating them is the whole fix:
+
+| name | what it is | example |
+|---|---|---|
+| `name` | the public query key a caller sends | `SA_b_gal` |
+| `canonical_name` | the internal model field | `SA_b_gal` |
+| `display_label` | prose for a human report | `SA-b-Gal` |
+
+Two rules keep it honest. Resolution is **exact lookup** against the pack's own
+declaration — never punctuation normalisation, because identity is the one thing
+that must not be guessed — and a pack reporting a gap its description does not
+declare raises `UnknownRequirementError` rather than shipping a requirement with
+no key.
+
+The list holds **only gaps a caller can fill**. Validation goals, next
+experiments, limitations and risks keep their own response fields and are never
+duplicated here, so a consumer needs no filter before acting on it. "Karyotype /
+genomic-stability assay" is lab work to *do*, not a field to fill in; synthesising
+a value for it is exactly the failure this platform exists to prevent.
+
 
 ## Generic reasoning kernel (`virtualcell.reasoning.kernel`)
 
