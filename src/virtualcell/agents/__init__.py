@@ -1,8 +1,14 @@
 """Specialized agents.
 
 Importing this package registers all built-in agents with the default registry.
-The Literature and Immortalization Assessment agents are functional; the other
-specialized domain agents are interface stubs.
+Literature, Literature Discovery, Validation and Immortalization Assessment are
+functional; Genome, Transcription, Protein Interaction, Metabolism and Signaling
+are interface stubs (see ``base_stub.py``).
+
+This registry is **not** the domain-pack registry. The adipogenesis and
+genome-editing verticals live under ``virtualcell.agents.<domain>`` but are
+reached through ``virtualcell.platform`` rather than being registered here, so
+they do not appear in ``virtualcell agents``. See ``docs/agents.md``.
 """
 
 from __future__ import annotations

@@ -44,6 +44,21 @@ to [Semantic Versioning](https://semver.org/).
   scorecards hold with identical per-question scores. CLI `--format text` now prints
   `SA-b-Gal  (send as: SA_b_gal)`; `--format json` is additive only.
 
+- **Developer harness: `CLAUDE.md` and `scripts/verify.py`.** One command —
+  `python scripts/verify.py` — runs the full suite, the benchmark suite, every scorecard,
+  `ruff check`, `ruff format --check` and a kernel-unchanged diff against `origin/main`,
+  and exits non-zero if any of them fails. Scorecards are discovered by globbing
+  `tests/benchmarks/eval_*_v0.py`, so a new vertical's scorecard is picked up without
+  registering it anywhere. `--fast` skips the scorecards; `--base <ref>` retargets the
+  kernel diff.
+
+  pytest runs with a `--basetemp` created outside the repository and removed afterwards:
+  a basetemp *inside* the tree once fed fixture files to `ruff check .` and produced
+  phantom lint errors that belonged to no source file.
+
+  Tooling only — no `src/` or `tests/` change, and the test count is identical to the
+  commit it was branched from.
+
 - **Third reasoning vertical: genome-edit validation (PR18).** `{"domain": "genome_editing"}`
   is answerable on the service, HTTP and CLI, with its own curated seed graph (21 nodes /
   22 edges), four-value status vocabulary, six flags, and a ten-question benchmark written

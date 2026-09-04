@@ -17,18 +17,25 @@ that move the project closer to a full digital organism.
 
 | Stage | Name | Status |
 |------:|------|--------|
-| 1 | Cellular Knowledge Base | **In progress (v0.1: working in-memory core)** |
-| 2 | AI-assisted Literature Mining | Interface stub (Literature Agent) |
-| 3 | Gene Regulatory Network Modeling | Planned |
+| 1 | Cellular Knowledge Base | **In progress** — working in-memory graph, Reactome/UniProt/IntAct connectors, JSON-snapshot persistence, three curated domain seed graphs. Neo4j/Qdrant remain interface skeletons. |
+| 2 | AI-assisted Literature Mining | **Functional pipeline** (PR8b–PR9c) — Europe PMC discovery → source-anchored extraction → deterministic verification → canonical conversion → reviewed weak ingestion → entity resolution. Everything it writes stays `pending_review` and weak. |
+| 3 | Gene Regulatory Network Modeling | Planned (TF→target edges in the backlog) |
 | 4 | Cell Signaling Network | Interface stub (Signaling Agent) |
 | 5 | Epigenetic Regulation | Planned |
 | 6 | Metabolic Network | Interface stub (Metabolism Agent) |
-| 7 | Protein Interaction Network | Interface stub (Protein Interaction Agent) |
+| 7 | Protein Interaction Network | **Partial** — IntAct `INTERACTS_WITH` edges are ingested and traversed; the dedicated Protein Interaction Agent is still an interface stub |
 | 8 | Cellular State Prediction | Planned |
 | 9 | Digital Cell | Planned |
 | 10 | Digital Tissue | Planned |
 | 11 | Digital Organ | Planned |
 | 12 | Digital Organism | Planned |
+
+The 12 stages are the north star and describe the *biological* ladder. They do
+not track the platform work that actually ships week to week — the domain-neutral
+reasoning boundary, the canonical experiment schema, ingestion/QC, the reasoning
+kernel and the verticals built on it. That sequence is recorded in
+[Platform sequence after PR11](#platform-sequence-after-pr11) below, and it is
+the list to read for current status.
 
 ## Strategic positioning (decided 2026-07-06)
 
@@ -79,13 +86,16 @@ Genome → Epigenome → Transcriptome → Proteome → Metabolome
        → Cell State → Cell Behavior → Tissue Dynamics
 ```
 
-## v0.1 scope
+## v0.1 scope (historical — what the first release set out to do)
 
 - Working Stage 1 knowledge base (in-memory), with graph/vector backends as
   interfaces.
 - Full architecture scaffold: agents, orchestration, simulation, API, CLI.
-- Reference stub agent (Literature) demonstrating the query → evidence-tagged
-  `Claim` flow.
+- Reference agent (Literature) demonstrating the query → evidence-tagged
+  `Claim` flow. *(Written when it was the only working agent; it has since been
+  joined by Literature Discovery, Validation and Immortalization Assessment, and
+  by three domain packs behind the platform seam. See
+  [`agents.md`](agents.md) for current status.)*
 
 ## Near-term (post v0.1)
 
@@ -412,10 +422,14 @@ reference domain pack. The remaining platform layers, in order:
   Excel error value. Cells are read as stored rather than displayed. Excel stores no
   timezone, so `ColumnSpec.timestamp_offset` lets a human declare the zone rather than have
   a reader infer one — additive, hence spec `1.0 → 1.1`.
-- ▶ **PR15+ — Assay-specific readers** (qPCR Ct, FCS, imaging, omics). Deliberately *not*
-  in PR13: they need vendor/binary parsers and per-assay QC science, and should wait until
-  a second domain pack has proven the QC boundary generalizes.
-  **PR11 deliberately does not claim arbitrary raw-data interpretation.**
+- ▶ **Assay-specific readers** (qPCR Ct, FCS, imaging, targeted genotyping, omics).
+  Deliberately *not* in PR13: they need vendor/binary parsers and per-assay QC science, and
+  should wait until a second domain pack has proven the QC boundary generalizes — which it
+  now has. Still unbuilt, and still gated on a *candidate comparison* before any code: the
+  first reader must connect to a real decision axis in one of the three shipped verticals.
+  **The platform deliberately does not claim arbitrary raw-data interpretation.**
+  *(Originally labelled "PR15+" here; PR15 was subsequently used for the adipogenesis
+  expansion, so the label is dropped rather than left pointing at unrelated work.)*
 - ✅ **PR14a — Reasoning kernel: grounding, assertion safety, tier conventions.** The first
   and largest slice of the kernel extraction, chosen because each piece was already
   duplicated or already domain-independent. Mechanistic grounding existed **twice** inside
@@ -522,6 +536,31 @@ reference domain pack. The remaining platform layers, in order:
   `missing_information` is not round-trippable as an axis name, and adipogenesis does not
   enum-validate its markers. See [`genome_editing_vertical.md`](genome_editing_vertical.md)
   and [`third_domain_selection.md`](third_domain_selection.md).
+- ✅ **PR19 — Round-trippable missing inputs.** Closes the second of PR18's three findings,
+  and the last **blocking** MCP prerequisite. The loop an automated caller runs is short —
+  read what is missing → measure it → send it back under the name you were given — and
+  immortalization broke it: `missing_information` reported `SA-b-Gal` for an axis a caller
+  must send as `SA_b_gal`, so an agent echoing the platform's own string was told its
+  correct measurement was an unrecognised key. That is a contract failure, not a caller
+  mistake. `AxisDescription` now separates three names that had been one — `name` (the
+  public query key), `canonical_name` (the internal model field) and `display_label`
+  (prose) — and `ReasoningResponse.missing_inputs` carries typed `MissingInput` entries
+  with the canonical key, a stable `{domain}.axis.{canonical_axis}` id, and the
+  `value_type` / `vocabulary` / bounds / `unmeasured_value` needed to build a valid value
+  without a second round trip. Resolution is **exact lookup** against each pack's own
+  declaration, never punctuation normalisation, because identity is the one thing that must
+  not be guessed; a pack reporting a gap its description does not declare raises rather
+  than shipping a keyless requirement. Scoped deliberately to **resubmittable axes only** —
+  an early draft also listed validation goals and next experiments, which forced every
+  consumer to filter the list before acting and gave advisory entries list-position ids
+  that reordering would reassign. Strictly additive: `missing_information` keeps its exact
+  values and order, and all four scorecards hold with identical per-question scores.
+- ✅ **Dev harness (`CLAUDE.md`, `scripts/verify.py`).** Not a feature — the local gate that
+  makes the rules above checkable in one command: full suite, benchmarks, every scorecard
+  (discovered by glob, so a new vertical needs no registration), `ruff check`,
+  `ruff format --check`, and a kernel-unchanged diff against `origin/main`. Uses a
+  scratch `--basetemp` outside the repository, because a basetemp *inside* it once fed
+  fixture files to `ruff check .` and produced phantom lint errors.
 - ▶ **MCP server.** Designed, not built — [`mcp_server_design.md`](mcp_server_design.md).
   Three tools (`list_domains`, `describe_domain`, `reason`) over `src/virtualcell/mcp/`, using
   `platform` only and naming no vertical. The order was deliberate: an MCP tool schema built on
@@ -529,10 +568,38 @@ reference domain pack. The remaining platform layers, in order:
   validated. The load-bearing risk it must mitigate is that every safety boundary this platform
   has built lives *inside* the report as text, and nothing forces a summarising model to relay
   it.
-- ▶ **Knowledge-learning and non-expert explanation layers.** Make
-  `explanation_level` actually change the explanation, so a non-expert can learn the
-  concepts, interpret raw data, and follow the basis of a research judgment. Until then
-  the level is carried as provenance only.
+### What comes next, in order
+
+Nothing below is implemented. Each is an independent PR, and none starts before the
+previous one is merged with main CI green.
+
+1. **MCP server** — implement [`mcp_server_design.md`](mcp_server_design.md): three tools
+   (`list_domains`, `describe_domain`, `reason`) under `src/virtualcell/mcp/`, using the
+   `platform` public surface only, naming no vertical, behind an optional dependency extra
+   so a default install gains no new requirement. Both blocking prerequisites are now
+   closed (PR18 strict categorical validation, PR19 canonical round trip).
+2. **Neutral decision status** — decide what to do about the residue PR14b recorded and
+   PR18 confirmed: the shared `DecisionReport.candidate_status` owns *immortalization's*
+   vocabulary, and the two newer verticals route around it via `DecisionSupport.status`.
+   The third domain was the stated trigger and it has arrived. An investigation-first
+   item: writing an ADR that explains why the current structure stays is an acceptable
+   outcome if the migration costs more churn than it returns.
+3. **Canonical `ExperimentRun` query integration** — connect the ingestion path to the
+   reasoning path. Today raw data reaches `ExperimentRun` and a domain adapter, and the
+   handoff into `ReasoningService` is manual. Until this lands, `quality_excluded` is not
+   reachable from the query surface at all.
+4. **First assay-specific reader** — compare candidates before writing one (see
+   [Assay-specific readers](#platform-sequence-after-pr11) above); the winner must connect
+   to a real decision axis in a shipped vertical.
+5. **Explanation layer** — make `explanation_level` actually change the explanation, so a
+   non-expert can learn the concepts, interpret raw data, and follow the basis of a
+   research judgment. Until then the level is carried as provenance only. The deterministic
+   report is generated first and the narrative is presentation-only: status, evidence tier,
+   citations and confidence never move, and limitations and overinterpretation risks are
+   never omitted.
+6. **Evidence provenance** — per-edge `evidence_tier` and source provenance, so a single
+   paper's `PROMOTES` is not treated as strongly as a textbook edge (see the deferral note
+   below, which this supersedes when it starts).
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
   (proliferation fraction, endogenous TERT/CDK4, quantitative p16/p21/γH2AX) still
   need assay-aware normalization before they can move status; and the optional
