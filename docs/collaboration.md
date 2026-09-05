@@ -48,6 +48,32 @@ Recommended default (a hybrid of "all-git" and "all-manual"):
 - If **GPT cannot browse**: the human must also paste the current file/diff to GPT
   (higher divergence risk — keep snippets tied to a commit hash).
 
+## The work queue (`claude-ready`)
+
+Step 2 of the loop — "the human lands the spec and points Claude at it" — has a concrete
+form: **one open GitHub issue labeled `claude-ready`**, filed from the *Claude-ready task*
+template (`.github/ISSUE_TEMPLATE/claude_ready_task.md`).
+
+The label is a queue of depth one, and the routine treats depth as a hard gate:
+
+| Open `claude-ready` issues | Routine behavior |
+|---:|---|
+| 0 | reports `NO_READY_WORK`, changes nothing |
+| 1 | branches `claude/<work-id>-<short-name>` off latest `origin/main` and works it |
+| >1 | reports `AMBIGUOUS_QUEUE`, changes nothing |
+
+Refusing to pick between two ready issues is deliberate. Choosing which work matters next is
+a strategy call, and strategy is GPT's and the human's layer — an implementer that picks for
+itself has quietly taken the decision.
+
+The template's sections are the contract, not prose: allowed paths, forbidden paths,
+non-goals and stop conditions bound the diff, and the kernel stays at zero changes unless the
+issue authorizes them in writing. The benchmark questions go in the issue, before the
+implementation exists — questions written afterwards only describe whatever got built.
+
+The issue is closed by the merged PR, not by the routine. Claude never merges its own PR;
+it pushes a Draft PR and reports `READY_FOR_GPT_REVIEW`, which hands step 5 back to GPT.
+
 ## Guardrails
 
 1. **Single writer to git.** Only Claude commits, to avoid two-writer races.
