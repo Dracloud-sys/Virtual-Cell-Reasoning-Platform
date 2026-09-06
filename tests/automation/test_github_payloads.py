@@ -11,7 +11,12 @@ import json
 from pathlib import Path
 
 import pytest
-from automation.github_payloads import SchemaError, read_pull_requests, read_queue
+from automation.github_payloads import (
+    SchemaError,
+    read_open_pull_requests,
+    read_pull_requests,
+    read_queue,
+)
 
 WORK_ID = "vcrp-ops-002"
 
@@ -221,3 +226,55 @@ def test_a_page_that_is_not_an_object_fails_the_read() -> None:
 def test_an_error_response_where_a_pull_request_list_belongs_raises() -> None:
     with pytest.raises(SchemaError):
         read_pull_requests(_fixture("rest_error_401"), work_id=WORK_ID)
+
+
+# --- the listing `finalize` judges the deliverable from ---------------------------------------
+
+
+def _pull(**overrides) -> dict:
+    pull = {
+        "number": 42,
+        "state": "open",
+        "draft": True,
+        "title": f"[{WORK_ID}] t",
+        "head": {"ref": f"claude/{WORK_ID}-gate", "sha": "a" * 40},
+        "base": {"ref": "main"},
+    }
+    pull.update(overrides)
+    return pull
+
+
+def test_an_open_draft_is_read_with_the_fields_completion_is_judged_on() -> None:
+    (pull,) = read_open_pull_requests([_pull()])
+
+    assert (pull.number, pull.draft, pull.base_ref) == (42, True, "main")
+    assert pull.head_ref.endswith("-gate")
+
+
+def test_a_listing_that_omits_draft_is_refused_rather_than_guessed() -> None:
+    payload = _pull()
+    payload.pop("draft")
+
+    with pytest.raises(SchemaError) as raised:
+        read_open_pull_requests([payload])
+
+    assert "draft" in str(raised.value)
+
+
+def test_a_draft_flag_of_the_wrong_type_is_not_a_value() -> None:
+    with pytest.raises(SchemaError):
+        read_open_pull_requests([_pull(draft="true")])
+
+
+def test_closed_pull_requests_are_not_the_deliverable() -> None:
+    assert read_open_pull_requests([_pull(state="closed")]) == ()
+
+
+def test_an_error_envelope_where_the_deliverable_belongs_raises() -> None:
+    with pytest.raises(SchemaError):
+        read_open_pull_requests(_fixture("rest_error_401"))
+
+
+def test_a_pull_request_with_an_unreadable_head_raises() -> None:
+    with pytest.raises(SchemaError):
+        read_open_pull_requests([_pull(head="claude/x")])

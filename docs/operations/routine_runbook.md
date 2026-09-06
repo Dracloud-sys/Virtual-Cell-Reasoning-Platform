@@ -29,10 +29,20 @@ python scripts/automation/cli.py postflight --request phase2.json --token .autom
 
 # ...the push happens here: git push origin HEAD:<the branch phase one bound>...
 
-# after the push - ask the remote what the branch carries, then record and release
+# ...then query the pull requests AGAIN and write completion.json...
+
+# after the push - ask the remote what the branch carries, check the deliverable, record, release
 python scripts/automation/cli.py finalize --request phase1.json --token .automation/lock.json \
-    --confirmation .automation/confirmation.json
+    --confirmation .automation/confirmation.json --completion .automation/completion.json
 ```
+
+**The repository is not a request field at all.** Which repository, which remote, which base
+branch and which refs come from [`run_target.json`](run_target.json), committed for the same
+reason the approver list is. Reading the base "off the remote" proves nothing if the caller
+picked the remote — and before this, `target.remote`, `lock.remote` and `state.remote` were all
+the agent's to write. A request may **repeat** those values; a request that differs from them is
+a schema error. `preflight` also checks, before taking the lock, that `git remote get-url origin`
+in this checkout really is the configured repository.
 
 **Neither the base nor the branch is an argument any more.** `postflight` measures the diff from
 the SHA phase one read off the remote, and `finalize` asks `git ls-remote` what the bound branch
@@ -67,20 +77,32 @@ writes the applied id to durable state. Recording before the push means a failed
 a different commit, and the verified commit sitting on some *other* branch are all
 `BLOCKED_SCOPE`, and all leave the token in place so the run can be retried.
 
+**A pushed branch is not the deliverable.** The Routine's output is a **draft pull request
+targeting `main`**, so `finalize` takes `--completion`: the pull request listing, queried again
+after the push. It must show exactly one open pull request for this work item, `draft: true`,
+from the bound branch, at the commit `postflight` verified, targeting the configured base — and,
+on a revision run, the pull request the approved instruction was written on. Anything else
+refuses **without recording or releasing anything**: the run is unfinished rather than finished
+badly, so open or fix the pull request and run `finalize` again.
+
+That last clause is not a nicety. On the revision path, pushing the changes to a second
+`claude/<work-id>-*` branch and recording the instruction as applied would retire it while the
+pull request its author is reading stayed exactly as it was.
+
 **A `finalize` whose release fails is not a finished run.** It exits non-zero, keeps the token
 and confirmation so `release` can retry, and prints the `git push --force-with-lease` line that
 clears the ref by hand. Exit 0 with the lock still held would strand every later run on
 `ALREADY_RUNNING` after deleting the artifacts needed to free it. Re-running `finalize` is safe:
 recording an already-recorded revision is a no-op, and the remote check is unchanged.
 
-**There is no default lock.** A request whose `lock` field is missing, misspelled, or names
-`file`/`memory` is `INVALID_SPEC` — the store used to fall back to an in-process one, which for
-a scheduled run (one container each) is not a weaker lock but no lock at all, reported in every
-line of output as though it were real. `--development` permits the local stores for tests, and
-a scheduled run must never pass it. The same applies to `state`: if any approved revision is in
-play and no durable state store is configured, `preflight` refuses **before** taking the lock,
-because the alternative is discovering it after the push, when the work has already been done
-twice.
+**There is no default lock, and no request-chosen one.** In production both stores are built
+from `run_target.json`; under `--development` a request supplies them itself, and a `lock` field
+that is missing, misspelled, or names `file`/`memory` without the flag is `INVALID_SPEC`. The
+store used to fall back to an in-process one, which for a scheduled run (one container each) is
+not a weaker lock but no lock at all, reported in every line of output as though it were real. A
+scheduled run must never pass `--development`. A request may also never state
+`applied_revision_ids`: "this was already done" is the one answer that makes a run skip work, so
+it comes from the durable store or not at all.
 
 **Exit 0 means the step succeeded and the next may begin, and nothing else does:**
 
@@ -108,14 +130,16 @@ not summarise them: parsing, filtering and refusing all happen in code that a te
   "approvals": [ "<raw review / review-comment payloads>" ],
   "existing_branches": ["claude/vcrp-ops-002-thing"],
   "workdir": ".",
-  "target": {
-    "remote": "origin",
-    "branch": "claude/vcrp-ops-002-thing",
-    "base_branch": "main",
-    "repository": "Dracloud-sys/Virtual-Cell-Reasoning-Platform"
-  },
-  "lock":  {"kind": "git-ref", "remote": "origin", "workdir": "."},
-  "state": {"kind": "git-ref", "remote": "origin", "workdir": "."}
+  "target": {"branch": "claude/vcrp-ops-002-thing"}
+}
+```
+
+and `completion.json`, written after the push and read only by `finalize`:
+
+```json
+{
+  "captured_at": "2026-09-06T06:20:00+00:00",
+  "pull_requests": [ "<raw list_pull_requests response, queried after the push>" ]
 }
 ```
 
@@ -132,12 +156,18 @@ not summarise them: parsing, filtering and refusing all happen in code that a te
   **schema error**, not an ignored field — the agent writes the request, so a list it can point
   at is a list it can write. They come from [`run_approvers.json`](run_approvers.json), which
   changes only by a reviewed commit, and an empty list approves nobody.
-- **`target`** is read once, by `preflight`, and then frozen into the token. `base_branch` is
-  resolved on the remote — not from the container's `origin/main`, which may be days old — and
-  stored as a full 40-character SHA that must already be present locally, or the run is
-  `BLOCKED_ENVIRONMENT` with "fetch the base first". The branch must belong to this work item.
-  Later steps may repeat these fields, but not change them: a mismatch is `BLOCKED_SCOPE`.
-- **`applied_revision_ids`** may not be stated in the request outside `--development`. Which
+- **`target.branch`** is the only part of the target a request supplies, and it must begin with
+  the configured prefix and this work id. Everything else — remote, base branch, repository, the
+  lock namespace, the state ref — comes from `run_target.json`; stating a *different* value is a
+  schema error, and stating the same value is allowed. `preflight` resolves `base_branch` on the
+  remote (not from the container's `origin/main`, which may be days old), stores the full
+  40-character SHA in the token, and refuses with `BLOCKED_ENVIRONMENT` if this checkout does not
+  already have that commit. Later steps may repeat the target's fields, but not change them: a
+  mismatch is `BLOCKED_SCOPE`.
+- **`pull_requests` in `completion.json`** must carry `draft` for every entry. A listing that
+  omits it is refused rather than guessed: assuming `true` completes a run that published a
+  ready-for-review pull request, and assuming `false` refuses every correct run.
+- **`applied_revision_ids`** may never be stated in a request, `--development` included. Which
   revisions have been carried out is a fact the durable state store keeps, not one the agent
   asserts.
 
@@ -189,8 +219,8 @@ that labels on creation makes queueing a side effect of opening a tab. A person 
 | `BLOCKED_ENVIRONMENT` | interpreter below 3.12, or dependencies missing | fix the environment's setup script; do not hand-install and re-run, or the next run breaks the same way |
 | `ALREADY_RUNNING` | another run holds the lock | wait, or follow *Recovery* below if nothing is actually running |
 | `AWAITING_REVIEW` | a pull request for this work is open | review it. A second branch for the same issue is a fork, not progress |
-| `AMBIGUOUS_PULL_REQUEST` | two open pull requests claim this work id | close or retarget one. The run will not pick |
-| `BLOCKED_SCOPE` | a needed change is outside the issue's allowed paths, a later step named a different base or branch than the token, or the remote does not carry the commit that was verified | widen the issue deliberately, or split the work — never the diff. From `finalize`, check whether the push actually landed on the bound branch |
+| `AMBIGUOUS_PULL_REQUEST` | two open pull requests claim this work id, at the start or at completion | close or retarget one. The run will not pick |
+| `BLOCKED_SCOPE` | a needed change is outside the issue's allowed paths; a later step named a different base or branch than the token; the remote does not carry the commit that was verified; or the deliverable is missing, not a draft, on the wrong branch, at the wrong commit, or targeting the wrong base | widen the issue deliberately, or split the work — never the diff. From `finalize`, check whether the push landed on the bound branch and whether the draft pull request exists; then run `finalize` again |
 
 ## Revising a pull request that is under review
 

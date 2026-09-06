@@ -32,6 +32,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
+from .completion import OpenPullRequest
 from .preflight import LinkedPullRequest
 from .queue import QueueIssue, QueueRead
 from .spec_contract import extract_work_id
@@ -183,6 +184,48 @@ def read_pull_requests(
             continue
         linked.append(LinkedPullRequest(number=number, work_id=work_id, head_sha=sha))
     return tuple(linked)
+
+
+def read_open_pull_requests(payload: Iterable[Mapping[str, Any]]) -> tuple[OpenPullRequest, ...]:
+    """Every open pull request in a raw listing, with the fields completion is judged on.
+
+    Separate from :func:`read_pull_requests`, which answers "is a reviewer already holding this
+    work item" and needs only the number and head SHA. Completion asks a different question and
+    needs the branch, the base and the draft flag — and refuses a payload that omits `draft`
+    rather than guessing, because both guesses are wrong in a way that matters: assuming true
+    completes a run that published a ready-for-review pull request, and assuming false refuses
+    every correct run.
+    """
+    if isinstance(payload, Mapping):
+        envelope = _envelope_error(payload)
+        raise SchemaError(envelope or "the pull request response is an object, not a list")
+
+    pulls: list[OpenPullRequest] = []
+    for raw in payload:
+        if not isinstance(raw, Mapping):
+            raise SchemaError(f"a pull request entry is {type(raw).__name__}, not an object")
+        if str(raw.get("state") or "open").lower() != "open":
+            continue
+        number = raw.get("number")
+        if not isinstance(number, int) or isinstance(number, bool):
+            raise SchemaError(f"a pull request has no usable number: {raw.get('number')!r}")
+        head, base = raw.get("head") or {}, raw.get("base") or {}
+        if not isinstance(head, Mapping) or not isinstance(base, Mapping):
+            raise SchemaError(f"pull request #{number} carries an unreadable head or base")
+        draft = raw.get("draft")
+        if not isinstance(draft, bool):
+            raise SchemaError(f"pull request #{number} does not report whether it is a draft")
+        pulls.append(
+            OpenPullRequest(
+                number=number,
+                head_ref=str(head.get("ref") or ""),
+                head_sha=str(head.get("sha") or ""),
+                base_ref=str(base.get("ref") or ""),
+                draft=draft,
+                title=str(raw.get("title") or ""),
+            )
+        )
+    return tuple(pulls)
 
 
 def issue_work_id(issue: QueueIssue) -> str | None:

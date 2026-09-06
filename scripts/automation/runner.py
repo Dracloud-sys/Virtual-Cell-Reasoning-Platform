@@ -55,8 +55,15 @@ from pathlib import Path
 from typing import Any
 
 from .approvals import ApproverConfigError, load_approvers, parse_approvals
+from .completion import CompletionInputs, check_completion
 from .environment import probe_environment
-from .github_payloads import APPROVAL_LABEL, SchemaError, read_pull_requests, read_queue
+from .github_payloads import (
+    APPROVAL_LABEL,
+    SchemaError,
+    read_open_pull_requests,
+    read_pull_requests,
+    read_queue,
+)
 from .gitrefs import (
     GitRefLockStore,
     GitRefStateStore,
@@ -68,6 +75,13 @@ from .locking import FileLockStore, InMemoryLockStore, LockStore
 from .outcomes import Outcome, Status
 from .postflight import PostflightInputs, run_postflight
 from .preflight import GateInputs, run_preflight
+from .production import (
+    CONFIG_PATH,
+    ProductionTarget,
+    TargetConfigError,
+    checkout_problem,
+    load_target,
+)
 from .queue import QueueRead
 from .tokens import (
     BoundRevision,
@@ -89,6 +103,21 @@ APPROVERS_PATH = "docs/operations/run_approvers.json"
 #: scheduled run gets a container to itself, so falling back to either is not a weaker lock — it
 #: is no lock, silently, from a missing line in a JSON file.
 PRODUCTION_LOCK_KIND = "git-ref"
+
+#: Values the committed production target decides. A request may repeat them; it may not differ.
+#: Written as (block, field, what the config says), because "the agent chose the remote it would
+#: then be checked against" is the whole bug this closes.
+FROZEN_BY_CONFIG: tuple[tuple[str, str, str], ...] = (
+    ("target", "remote", "remote"),
+    ("target", "base_branch", "base_branch"),
+    ("target", "repository", "repository"),
+    ("lock", "kind", ""),
+    ("lock", "remote", "remote"),
+    ("lock", "namespace", "lock_namespace"),
+    ("state", "kind", ""),
+    ("state", "remote", "remote"),
+    ("state", "ref", "state_ref"),
+)
 
 _FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 
@@ -113,6 +142,8 @@ class RunRequest:
     #: Test and development only, and set by a command-line flag rather than by the request, so
     #: the file the agent writes cannot grant itself a lock nobody else can see.
     allow_local_stores: bool = False
+    #: The committed production target. None only under --development.
+    config: ProductionTarget | None = None
 
     @classmethod
     def load(cls, path: Path, *, allow_local_stores: bool = False) -> RunRequest:
@@ -124,7 +155,29 @@ class RunRequest:
                 "a run request may not choose its approvers; they come from "
                 f"{APPROVERS_PATH}, which changes only by a reviewed commit"
             )
-        return cls(raw, path, allow_local_stores)
+        config = None if allow_local_stores else load_target(_repo_root() / CONFIG_PATH)
+        request = cls(raw, path, allow_local_stores, config)
+        request._refuse_overrides()
+        return request
+
+    def _refuse_overrides(self) -> None:
+        """A request may repeat what the committed config says. It may not differ from it.
+
+        This is the same rule as the approver list, for the same reason: reading the base "off
+        the remote" proves nothing if the caller picked the remote.
+        """
+        if self.config is None:
+            return
+        for block, field, attribute in FROZEN_BY_CONFIG:
+            stated = (self.raw.get(block) or {}).get(field)
+            if stated is None:
+                continue
+            expected = getattr(self.config, attribute) if attribute else PRODUCTION_LOCK_KIND
+            if str(stated) != expected:
+                raise RequestSchemaError(
+                    f"a run request may not choose {block}.{field}: it says {stated!r} and "
+                    f"{CONFIG_PATH} says {expected!r}, which changes only by a reviewed commit"
+                )
 
     @property
     def work_id(self) -> str:
@@ -162,6 +215,12 @@ class RunRequest:
         looked, in every report it wrote, exactly like a run that held a real one. A store that
         no other container can see is not a weak lock; it is the absence of one.
         """
+        if self.config is not None:
+            return GitRefLockStore(
+                remote=self.config.remote,
+                workdir=self.workdir,
+                namespace=self.config.lock_namespace,
+            )
         spec = self.raw.get("lock") or {}
         kind = str(spec.get("kind") or "")
         if kind == PRODUCTION_LOCK_KIND:
@@ -193,6 +252,10 @@ class RunRequest:
         None is only survivable when the run has no revision to record; `preflight` refuses the
         combination rather than letting `finalize` discover it after the push.
         """
+        if self.config is not None:
+            return GitRefStateStore(
+                remote=self.config.remote, workdir=self.workdir, ref=self.config.state_ref
+            )
         spec = self.raw.get("state") or {}
         kind = str(spec.get("kind") or "")
         if kind == "":
@@ -210,7 +273,9 @@ class RunRequest:
         store = self.state_store()
         if store is not None:
             return store.load()
-        if self.raw.get("applied_revision_ids") and not self.allow_local_stores:
+        if self.raw.get("applied_revision_ids"):
+            # Unconditional, development included: "this was already done" is the one answer that
+            # makes a run skip work, so it may never come from the file the agent writes.
             raise RequestSchemaError(
                 "a run request may not declare which revisions have already been applied; that "
                 "comes from the durable state store"
@@ -246,7 +311,7 @@ def _load(args: argparse.Namespace) -> tuple[RunRequest | None, Outcome | None]:
         request = RunRequest.load(
             args.request, allow_local_stores=getattr(args, "development", False)
         )
-    except RequestSchemaError as error:
+    except (RequestSchemaError, TargetConfigError) as error:
         return None, Outcome(Status.INVALID_SPEC, str(error))
     except (OSError, json.JSONDecodeError) as error:
         return None, Outcome(Status.BLOCKED_GITHUB_ACCESS, f"unreadable run request: {error}")
@@ -327,15 +392,42 @@ def _commit_present(workdir: Path, sha: str) -> bool:
     return proc.returncode == 0
 
 
+def _effective_target(request: RunRequest) -> dict[str, str]:
+    """The target's fields, with the committed config overriding anything the request says."""
+    spec = dict(request.declared_target())
+    if request.config is not None:
+        spec |= {
+            "remote": request.config.remote,
+            "base_branch": request.config.base_branch,
+            "repository": request.config.repository,
+        }
+    return spec
+
+
+def _branch_prefix(request: RunRequest) -> str:
+    return request.config.branch_prefix if request.config is not None else "claude/"
+
+
 def _target_shape(request: RunRequest) -> Outcome | None:
-    """Whether the request declares a target at all. Checked before the lock, like a schema."""
-    spec = request.declared_target()
-    if not all(spec.get(field) for field in ("remote", "branch", "base_branch")):
+    """What can be checked before the lock: the branch, and that this is the right checkout.
+
+    The checkout identity belongs here rather than after the lock. It costs one local `git
+    remote get-url`, it does not depend on anything the queue says, and a container that cloned
+    a different repository must not be the one that takes the production lock.
+    """
+    spec = _effective_target(request)
+    required = ("remote", "branch", "base_branch")
+    if not all(spec.get(field) for field in required):
+        missing = ", ".join(f"target.{f}" for f in required if not spec.get(f))
         return Outcome(
             Status.INVALID_SPEC,
-            "the request must declare target.remote, target.branch and target.base_branch; "
-            "they are bound at phase one and no later step may choose them",
+            f"the request must declare {missing}; the branch is bound at phase one and no later "
+            "step may choose it",
         )
+    if request.config is not None:
+        problem = checkout_problem(request.config, workdir=request.workdir)
+        if problem is not None:
+            return Outcome(Status.BLOCKED_GITHUB_ACCESS, problem)
     return None
 
 
@@ -346,18 +438,21 @@ def _resolve_target(request: RunRequest) -> tuple[BoundTarget | None, Outcome | 
     a container whose refs may be days old, and it is stored as a full SHA. Everything after
     this reads it from the token: a `--base` chosen at postflight time is a caller deciding how
     much of its own work to submit for inspection, which on a resumed branch means `HEAD~1`
-    hides every commit but the last.
+    hides every commit but the last. Which remote and which base branch are not the request's
+    to choose either — those come from the committed production target.
     """
-    spec = request.declared_target()
+    spec = _effective_target(request)
     remote, branch = spec["remote"], spec["branch"]
     base_branch = spec["base_branch"]
     workdir = Path(spec.get("workdir") or request.workdir)
-    if not branch.startswith(f"claude/{request.work_id}"):
+    expected = f"{_branch_prefix(request)}{request.work_id}"
+    if not branch.startswith(expected):
         # Checked here, after the queue has confirmed the work id against the issue, so that a
         # run pointed at the wrong issue reports the mismatch rather than the branch name.
         return None, Outcome(
             Status.INVALID_SPEC,
-            f"branch {branch!r} does not belong to work item {request.work_id!r}",
+            f"branch {branch!r} does not begin with {expected!r}, so it does not belong to this "
+            "work item",
         )
     try:
         base_sha = remote_head(remote, base_branch, workdir=workdir)
@@ -383,6 +478,33 @@ def _resolve_target(request: RunRequest) -> tuple[BoundTarget | None, Outcome | 
             "have; fetch the base before starting, or the diff would be measured from nothing",
         )
     return target, None
+
+
+def _hand_back(store: LockStore, work_id: str, owner: str, refusal: Outcome) -> Outcome:
+    """Refuse, give the lock back, and say so when the release itself did not work.
+
+    A release failure used to be dropped on this path: the refusal was reported and the lock
+    stayed on the remote with nothing recording that it had. Every later run would then report
+    `ALREADY_RUNNING` for a run that ended minutes ago.
+    """
+    ref = store.ref(work_id) if hasattr(store, "ref") else work_id
+    sha = store.token_for(work_id) or ""
+    recovery = f"recover with `git push --force-with-lease={ref}:{sha} <remote> :{ref}`"
+    try:
+        released = store.release(work_id, owner)
+    except LockUnavailable as error:
+        return Outcome(
+            refusal.status,
+            f"{refusal.detail}; AND the lock could not be released: {error}. {recovery}",
+            {**refusal.evidence, "lock_released": "no", "lock_ref": ref},
+        )
+    if not released:
+        return Outcome(
+            refusal.status,
+            f"{refusal.detail}; AND the release was refused, so the lock may be stuck. {recovery}",
+            {**refusal.evidence, "lock_released": "no", "lock_ref": ref},
+        )
+    return refusal.with_evidence(lock_released="yes")
 
 
 def command_preflight(args: argparse.Namespace) -> Outcome:
@@ -452,9 +574,9 @@ def command_preflight(args: argparse.Namespace) -> Outcome:
     target, failure = _resolve_target(request)
     if failure is not None:
         # The lock was taken a few lines ago and this run is over; holding it would block the
-        # next one for a reason that has already ended.
-        store.release(request.work_id, owner)
-        return failure
+        # next one for a reason that has already ended — and a release that fails is reported
+        # rather than swallowed.
+        return _hand_back(store, request.work_id, owner, failure)
     assert target is not None
 
     issue = (request.queue().issues or ())[0]
@@ -786,6 +908,47 @@ def _rev(workdir: Path, ref: str) -> str | None:
     return proc.stdout.strip() if proc.returncode == 0 else None
 
 
+def _completion(
+    args: argparse.Namespace, token: LockToken, target: BoundTarget, confirmation: Confirmation
+) -> Outcome:
+    """Read the re-queried pull request payload and judge the deliverable against the token."""
+    try:
+        raw = json.loads(args.completion.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return Outcome(
+            Status.BLOCKED_GITHUB_ACCESS,
+            f"no usable completion evidence ({error}); finalize needs the pull request listing "
+            "queried after the push",
+        )
+    if not isinstance(raw, dict):
+        return Outcome(Status.BLOCKED_GITHUB_ACCESS, "the completion evidence is not an object")
+
+    captured = str(raw.get("captured_at") or "")
+    if not captured or not token.captured_after(captured):
+        return Outcome(
+            Status.BLOCKED_GITHUB_ACCESS,
+            "the completion evidence does not assert that it was captured after the lock was "
+            "taken, so it may predate the pull request it is supposed to prove",
+        )
+    try:
+        pulls = read_open_pull_requests(raw.get("pull_requests") or [])
+    except SchemaError as error:
+        return Outcome(
+            Status.BLOCKED_GITHUB_ACCESS, f"the pull request listing did not parse: {error}"
+        )
+
+    return check_completion(
+        CompletionInputs(
+            work_id=token.work_id,
+            branch=target.branch,
+            base_branch=target.base_branch,
+            verified_head=confirmation.verified_head,
+            pull_requests=pulls,
+            revision_pull_request=token.revision.pull_request if token.revision else None,
+        )
+    )
+
+
 def command_finalize(args: argparse.Namespace) -> Outcome:
     """After the push: ask the *remote* what the branch carries, then record and release.
 
@@ -858,6 +1021,12 @@ def command_finalize(args: argparse.Namespace) -> Outcome:
             {"remote_head": landed, "claimed": args.pushed_sha},
         )
 
+    # The branch is only half the deliverable. The Routine's output is a draft pull request, and
+    # a run that pushed a branch nobody was asked to look at has not finished.
+    deliverable = _completion(args, token, target, confirmation)
+    if not deliverable.proceeds:
+        return deliverable
+
     if token.revision is not None:
         recorder = request.state_store()
         if recorder is None:
@@ -879,6 +1048,7 @@ def command_finalize(args: argparse.Namespace) -> Outcome:
         "recorded_revision": token.revision.record_id if token.revision else "none",
         "remote_head": landed,
         "branch": target.branch,
+        **deliverable.evidence,
     }
     try:
         released = _release(store, token)
@@ -905,8 +1075,7 @@ def command_finalize(args: argparse.Namespace) -> Outcome:
     args.confirmation.unlink(missing_ok=True)
     return Outcome(
         Status.READY_TO_IMPLEMENT,
-        f"{landed[:12]} is on {target.remote} {target.branch}, verified; work item "
-        f"{token.work_id} complete",
+        f"{deliverable.detail}; work item {token.work_id} complete",
         {**evidence, "lock_released": "yes"},
     )
 
@@ -974,6 +1143,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if name == "finalize":
             # A claim about what was pushed. `git ls-remote` decides; this only has to agree.
             step.add_argument("--pushed-sha", default="")
+            step.add_argument("--completion", required=True, type=Path)
 
     args = parser.parse_args(argv)
     handlers = {

@@ -95,6 +95,31 @@ to [Semantic Versioning](https://semver.org/).
   pushes and finalizes, and "postflight passed but nothing was pushed" is a real unpushed branch
   rather than a test that declines to call `finalize`.
 
+  **Which repository a run acts on is committed, not requested.** Reading the base off "the
+  remote" proves nothing while the caller picks the remote, and `target.remote`,
+  `target.base_branch`, `lock.remote` and `state.remote` all came out of the request file — so
+  pointing phase one at another reachable repository bound that as production and every later
+  check verified the wrong thing carefully. `docs/operations/run_target.json` now names the
+  repository, remote, base branch, branch prefix, lock namespace and state ref; a request may
+  repeat those values but a request that differs from them is a schema error; and `preflight`
+  checks, before taking the lock, that `git remote get-url origin` in this checkout normalises
+  to the configured repository. A request may never state `applied_revision_ids` at all.
+
+  **A pushed branch is not the deliverable.** `finalize` said `work item complete` once the
+  remote carried the verified commit, but the Routine's output is a **draft pull request
+  targeting `main`**, and a branch with no pull request is work done where nobody was asked to
+  look at it. `finalize` now takes `--completion`: a pull request listing queried after the
+  push, which must show exactly one open pull request for the work item, `draft: true`, from the
+  bound branch, at the verified commit, targeting the configured base — and on a revision run,
+  the pull request the approved instruction was written on. Anything else refuses without
+  recording or releasing anything, because on the revision path pushing to a second
+  `claude/<work-id>-*` branch and recording the instruction as applied would retire it while the
+  pull request its author is reading stayed exactly as it was.
+
+  **A release that fails on the way out of `preflight` is reported.** It used to be dropped: the
+  refusal was printed and the lock stayed on the remote with nothing saying so, which is how one
+  bad run becomes every later run reporting `ALREADY_RUNNING`.
+
   **An entry point that runs where the Routine starts.** `python scripts/automation/cli.py
   preflight ...` works from the repository root with nothing set up. The command documented in
   the previous round needed `scripts/` on `PYTHONPATH` and failed exactly where it is used

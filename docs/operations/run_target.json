@@ -1,0 +1,17 @@
+{
+  "_comment": [
+    "The repository, remote and refs an unattended run is allowed to act on.",
+    "Committed on purpose, for the same reason the approver list is: the run request is",
+    "written by the agent, so anything it could name is anything it could choose. Reading",
+    "the base off 'the remote' is only a guarantee if something other than the caller",
+    "decides which remote that is.",
+    "A request may repeat these values; it may not differ from them. Changing this file is",
+    "a reviewed commit."
+  ],
+  "repository": "Dracloud-sys/Virtual-Cell-Reasoning-Platform",
+  "remote": "origin",
+  "base_branch": "main",
+  "branch_prefix": "claude/",
+  "lock_namespace": "refs/vcrp-locks",
+  "state_ref": "refs/vcrp-state/applied-revisions"
+}

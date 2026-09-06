@@ -20,8 +20,15 @@ Exit code 0 means the step succeeded and the next may begin, and nothing else do
 from __future__ import annotations
 
 from .approvals import ApproverConfigError, load_approvers, parse_approvals
+from .completion import CompletionInputs, OpenPullRequest, check_completion
 from .environment import EnvironmentFacts, find_interpreter, probe_environment
-from .github_payloads import APPROVAL_LABEL, SchemaError, read_pull_requests, read_queue
+from .github_payloads import (
+    APPROVAL_LABEL,
+    SchemaError,
+    read_open_pull_requests,
+    read_pull_requests,
+    read_queue,
+)
 from .gitrefs import (
     GitRefLockStore,
     GitRefStateStore,
@@ -33,6 +40,14 @@ from .locking import FileLockStore, InMemoryLockStore, LockStore, acquire
 from .outcomes import EXIT_CODES, Outcome, Status
 from .postflight import PostflightInputs, changed_paths, run_postflight
 from .preflight import GateInputs, LinkedPullRequest, run_preflight
+from .production import (
+    CONFIG_PATH,
+    ProductionTarget,
+    TargetConfigError,
+    checkout_problem,
+    load_target,
+    normalise_repository,
+)
 from .queue import QueueIssue, QueueRead
 from .revisions import RevisionInstruction, actionable, rejections
 from .scope import KERNEL_PATH, PathChange, PathPolicy, parse_path_policy, unsafe_reason
@@ -48,12 +63,14 @@ from .tokens import (
 
 __all__ = [
     "APPROVAL_LABEL",
+    "CONFIG_PATH",
     "EXIT_CODES",
     "KERNEL_PATH",
     "REQUIRED_SECTIONS",
     "ApproverConfigError",
     "BoundRevision",
     "BoundTarget",
+    "CompletionInputs",
     "Confirmation",
     "EnvironmentFacts",
     "FileLockStore",
@@ -65,28 +82,36 @@ __all__ = [
     "LockToken",
     "LockStore",
     "LockUnavailable",
+    "OpenPullRequest",
     "Outcome",
     "PathChange",
     "PathPolicy",
     "PostflightInputs",
+    "ProductionTarget",
     "QueueIssue",
     "QueueRead",
     "RevisionInstruction",
     "SchemaError",
     "SpecReport",
     "StateCorrupt",
+    "TargetConfigError",
     "Status",
     "acquire",
     "actionable",
     "changed_paths",
+    "check_completion",
+    "checkout_problem",
     "extract_work_id",
     "fingerprint_of",
     "find_interpreter",
     "load_approvers",
+    "load_target",
     "parse_approvals",
+    "normalise_repository",
     "parse_path_policy",
     "probe_environment",
     "sha256_of",
+    "read_open_pull_requests",
     "read_pull_requests",
     "read_queue",
     "remote_head",

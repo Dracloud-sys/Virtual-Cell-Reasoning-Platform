@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 import subprocess
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -46,6 +46,20 @@ def _issue(body: str | None = None) -> dict:
 
 def _passes(workdir: Path, base: str, unchanged) -> tuple[int, str]:
     return 0, "All checks passed."
+
+
+def _draft_pr(head_sha: str, **overrides) -> dict:
+    """The deliverable as GitHub reports it: one open draft, bound branch, targeting main."""
+    pull = {
+        "number": 42,
+        "state": "open",
+        "draft": True,
+        "title": f"[{WORK_ID}] gate",
+        "head": {"ref": BRANCH, "sha": head_sha},
+        "base": {"ref": "main"},
+    }
+    pull.update(overrides)
+    return pull
 
 
 class _Chain:
@@ -133,7 +147,26 @@ class _Chain:
             argv += ["--base", base]
         return main(argv)
 
-    def finalize(self, request: Path | None = None, *, pushed: str = "") -> int:
+    def completion(
+        self, *, pulls: list[dict] | None = None, captured_at: str | None = None
+    ) -> Path:
+        """The pull request listing, re-queried after the push. Correct unless a test breaks it."""
+        payload = {
+            "captured_at": captured_at or datetime.now(UTC).isoformat(timespec="seconds"),
+            "pull_requests": [_draft_pr(self.verified_head())] if pulls is None else pulls,
+        }
+        path = self.tmp / "completion.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path
+
+    def finalize(
+        self,
+        request: Path | None = None,
+        *,
+        pushed: str = "",
+        pulls: list[dict] | None = None,
+        completion: Path | None = None,
+    ) -> int:
         argv = [
             "finalize",
             "--request",
@@ -142,6 +175,8 @@ class _Chain:
             str(self.token),
             "--confirmation",
             str(self.confirmation),
+            "--completion",
+            str(completion or self.completion(pulls=pulls)),
             "--development",
         ]
         if pushed:
@@ -262,6 +297,130 @@ def test_a_pushed_sha_the_remote_contradicts_is_refused(chain: _Chain) -> None:
     assert chain.finalize(pushed="0" * 40) == EXIT_CODES[Status.BLOCKED_SCOPE]
 
 
+# --- the deliverable: a draft pull request, not just a pushed branch --------------------------
+
+
+def _pushed(chain: _Chain) -> str:
+    """Run the chain as far as a verified, pushed branch, and return the verified head."""
+    chain.preflight()
+    chain.confirm()
+    head = chain.work()
+    assert chain.postflight() == 0
+    chain.ws.push(BRANCH)
+    return head
+
+
+def test_a_pushed_branch_with_no_pull_request_is_not_a_finished_run(chain: _Chain) -> None:
+    """The Routine's output is a draft PR; a branch nobody was asked to look at is not it."""
+    _pushed(chain)
+
+    code = chain.finalize(pulls=[])
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert chain.token.exists()  # the run is unfinished: it can open the PR and retry
+    assert chain.confirmation.exists()
+
+
+def test_a_pull_request_that_is_not_a_draft_does_not_complete_the_run(chain: _Chain) -> None:
+    head = _pushed(chain)
+
+    code = chain.finalize(pulls=[_draft_pr(head, draft=False)])
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert chain.token.exists()
+
+
+def test_a_pull_request_targeting_something_other_than_main_is_refused(chain: _Chain) -> None:
+    head = _pushed(chain)
+
+    code = chain.finalize(pulls=[_draft_pr(head, base={"ref": "some-other-branch"})])
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+
+
+def test_a_pull_request_at_a_different_commit_is_refused(chain: _Chain) -> None:
+    _pushed(chain)
+
+    code = chain.finalize(pulls=[_draft_pr("0" * 40)])
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+
+
+def test_a_pull_request_from_another_branch_for_this_work_is_refused(chain: _Chain) -> None:
+    """Same work id, different branch: the reviewer is reading somewhere the work did not land."""
+    head = _pushed(chain)
+
+    code = chain.finalize(
+        pulls=[_draft_pr(head, head={"ref": f"claude/{WORK_ID}-elsewhere", "sha": head})]
+    )
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+
+
+def test_two_open_pull_requests_for_one_work_item_are_not_a_choice(chain: _Chain) -> None:
+    head = _pushed(chain)
+
+    code = chain.finalize(pulls=[_draft_pr(head), _draft_pr(head, number=43)])
+
+    assert code == EXIT_CODES[Status.AMBIGUOUS_PULL_REQUEST]
+
+
+def test_a_listing_that_does_not_say_whether_a_pull_request_is_a_draft_is_refused(
+    chain: _Chain,
+) -> None:
+    """Both guesses are wrong: assume true and a ready PR completes, assume false and none does."""
+    head = _pushed(chain)
+    payload = _draft_pr(head)
+    payload.pop("draft")
+
+    code = chain.finalize(pulls=[payload])
+
+    assert code == EXIT_CODES[Status.BLOCKED_GITHUB_ACCESS]
+
+
+def test_completion_evidence_from_before_the_lock_is_refused(chain: _Chain) -> None:
+    _pushed(chain)
+    stale = (datetime.now(UTC) - timedelta(hours=1)).isoformat(timespec="seconds")
+
+    code = chain.finalize(completion=chain.completion(captured_at=stale))
+
+    assert code == EXIT_CODES[Status.BLOCKED_GITHUB_ACCESS]
+
+
+def test_a_completion_refusal_leaves_the_lock_held_and_the_revision_unrecorded(
+    chain: _Chain,
+) -> None:
+    """Unlike a scope violation, this run is not over: the PR can be opened and finalize retried."""
+    extras = _revision_request(chain)
+    chain.preflight(chain.phase1(**extras))
+    chain.confirm(chain.phase2(**extras))
+    chain.work()
+    chain.postflight(chain.phase2(**extras))
+    chain.ws.push(BRANCH)
+
+    refused = chain.finalize(chain.phase1(**extras), pulls=[])
+    retried = chain.finalize(chain.phase1(**extras))
+
+    assert refused == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert retried == 0
+    assert "rev-1" in _applied_ids(chain)
+
+
+def test_a_revision_recorded_against_the_wrong_pull_request_is_refused(chain: _Chain) -> None:
+    """The bound instruction was written on #42; retiring it against #43 retires it falsely."""
+    extras = _revision_request(chain)
+    chain.preflight(chain.phase1(**extras))
+    chain.confirm(chain.phase2(**extras))
+    head = chain.work()
+    chain.postflight(chain.phase2(**extras))
+    chain.ws.push(BRANCH)
+
+    code = chain.finalize(chain.phase1(**extras), pulls=[_draft_pr(head, number=43)])
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert _applied(chain) == ""
+
+
 # --- the base, as phase one froze it ----------------------------------------------------------
 
 
@@ -321,26 +480,64 @@ def test_a_misspelled_lock_kind_is_refused_rather_than_ignored(chain: _Chain) ->
     assert chain.preflight(request) == EXIT_CODES[Status.INVALID_SPEC]
 
 
-def test_a_local_lock_without_the_development_flag_is_refused(chain: _Chain, capsys) -> None:
+def test_the_whole_test_request_is_refused_without_the_development_flag(
+    chain: _Chain, capsys
+) -> None:
+    """Everything in this file points at a temporary bare repo. Production says where it goes."""
     code = main(["preflight", "--request", str(chain.phase1()), "--token", str(chain.token)])
 
     assert code == EXIT_CODES[Status.INVALID_SPEC]
-    assert "visible to one container only" in capsys.readouterr().out
+    assert "run_target.json" in capsys.readouterr().out
     assert not chain.token.exists()
 
 
-def test_a_git_ref_lock_needs_no_flag(chain: _Chain) -> None:
+def test_a_git_ref_lock_is_taken_and_given_back(chain: _Chain) -> None:
+    """The production kind, exercised against the bare remote the development flag allows."""
     request = chain.phase1(
         lock={"kind": "git-ref", "remote": str(chain.ws.remote), "workdir": str(chain.ws.root)}
     )
 
-    code = main(["preflight", "--request", str(request), "--token", str(chain.token)])
-
-    assert code == 0
-    assert main(["release", "--request", str(request), "--token", str(chain.token)]) == 0
+    assert chain.preflight(request) == 0
+    assert chain.ws.git("ls-remote", str(chain.ws.remote), f"refs/vcrp-locks/{WORK_ID}") != ""
+    assert (
+        main(
+            [
+                "release",
+                "--request",
+                str(request),
+                "--token",
+                str(chain.token),
+                "--development",
+            ]
+        )
+        == 0
+    )
+    assert chain.ws.git("ls-remote", str(chain.ws.remote), f"refs/vcrp-locks/{WORK_ID}") == ""
 
 
 # --- releasing, and failing to ---------------------------------------------------------------
+
+
+def test_a_base_branch_the_remote_does_not_have_gives_the_lock_back(chain: _Chain) -> None:
+    code = chain.preflight(chain.phase1(target={"base_branch": "no-such-branch"}))
+
+    assert code == EXIT_CODES[Status.BLOCKED_GITHUB_ACCESS]
+    assert chain.preflight() == 0  # the lock was handed back
+
+
+def test_a_release_that_fails_on_the_way_out_of_preflight_is_reported(
+    chain: _Chain, monkeypatch, capsys
+) -> None:
+    """It used to be dropped: the refusal was printed and the lock quietly stayed on the remote."""
+    monkeypatch.setattr("automation.locking.FileLockStore.release", lambda *a, **k: False)
+
+    code = chain.preflight(chain.phase1(target={"base_branch": "no-such-branch"}))
+    printed = capsys.readouterr().out
+
+    assert code == EXIT_CODES[Status.BLOCKED_GITHUB_ACCESS]
+    assert "no-such-branch" in printed
+    assert "the lock may be stuck" in printed
+    assert "force-with-lease" in printed
 
 
 def test_a_release_that_fails_is_not_a_finished_run(chain: _Chain, monkeypatch) -> None:
@@ -459,8 +656,7 @@ def test_a_request_may_not_declare_what_has_already_been_applied(chain: _Chain, 
     extras.pop("state")
     extras["applied_revision_ids"] = ["rev-1"]
 
-    request = chain.phase1(**extras)
-    code = main(["preflight", "--request", str(request), "--token", str(chain.token)])
+    code = chain.preflight(chain.phase1(**extras))
 
     assert code == EXIT_CODES[Status.INVALID_SPEC]
     assert "which revisions have already been applied" in capsys.readouterr().out
