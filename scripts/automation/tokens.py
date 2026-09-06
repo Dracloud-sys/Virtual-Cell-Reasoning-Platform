@@ -8,6 +8,10 @@ issue it chose, a hash of the exact body it validated, the pull requests it saw,
 not passed along later — the revision instruction it selected. Anything a later step needs to
 know about phase one comes from here rather than from a file the agent can edit in between.
 
+**The bound target** is the branch, the remote and the base SHA, resolved by `preflight` and
+carried in the token. They were free arguments once — `--base` on `postflight`, `--branch` on
+`finalize` — which meant the two steps that judge the work also chose what to judge it against.
+
 **The confirmation artifact** is written by `confirm` and is what `postflight` demands. Without
 it, `preflight → postflight` skips the re-read entirely, which was possible until now: the token
 alone was enough.
@@ -27,10 +31,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import secrets
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+
+_FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _now() -> str:
@@ -39,6 +46,43 @@ def _now() -> str:
 
 def sha256_of(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class BoundTarget:
+    """Where the work lands, and what it is measured against. Decided once, at phase one.
+
+    Both halves used to be free arguments on later commands, and both were the same bug wearing
+    different clothes. `postflight --base HEAD~1` on a resumed branch measures the last commit
+    and calls the three before it unchanged; `finalize --branch` let the step that proves the
+    push landed pick which branch to look at. Neither is the caller's decision, so neither is
+    passed in any more: phase one resolves `base_branch` on the remote, records the full SHA it
+    got, and every later step reads it from here.
+    """
+
+    #: The remote the branch is pushed to and the base is resolved against.
+    remote: str
+    #: The branch this run's work belongs on, `claude/<work-id>-<name>`.
+    branch: str
+    #: The branch the diff is measured from, resolved once and then frozen.
+    base_branch: str
+    #: What `base_branch` pointed at when the lock was taken. Full 40 characters, never a ref.
+    base_sha: str
+    #: Where git runs. Bound too, so a later step cannot judge a different working copy.
+    workdir: str
+    repository: str = ""
+
+    def problem(self) -> str | None:
+        """Why this target cannot be acted on, or None when it can."""
+        if not self.remote.strip():
+            return "names no remote"
+        if not self.branch.strip():
+            return "names no branch"
+        if not self.base_branch.strip():
+            return "names no base branch"
+        if not _FULL_SHA.match(self.base_sha.strip().lower()):
+            return f"base {self.base_sha!r} is not a full 40-character SHA"
+        return None
 
 
 @dataclass(frozen=True)
@@ -87,6 +131,9 @@ class LockToken:
     pull_requests: tuple[str, ...] = ()
     existing_branches: tuple[str, ...] = ()
     revision: BoundRevision | None = None
+    #: The branch, remote and base SHA phase one resolved. Later steps take them from here
+    #: rather than from a flag, which is what makes them the same run's.
+    target: BoundTarget | None = None
 
     @classmethod
     def mint(
@@ -102,6 +149,7 @@ class LockToken:
         pull_requests: tuple[str, ...] = (),
         existing_branches: tuple[str, ...] = (),
         revision: BoundRevision | None = None,
+        target: BoundTarget | None = None,
     ) -> LockToken:
         return cls(
             work_id=work_id,
@@ -116,6 +164,7 @@ class LockToken:
             pull_requests=pull_requests,
             existing_branches=existing_branches,
             revision=revision,
+            target=target,
         )
 
     @property
@@ -134,15 +183,17 @@ class LockToken:
         if missing:
             raise ValueError(f"lock token is missing {', '.join(sorted(missing))}")
         revision = raw.get("revision")
+        target = raw.get("target")
         return cls(
             **{
                 key: raw[key]
                 for key in cls.__dataclass_fields__
-                if key not in {"revision", "pull_requests", "existing_branches"}
+                if key not in {"revision", "target", "pull_requests", "existing_branches"}
             },
             pull_requests=tuple(raw.get("pull_requests") or ()),
             existing_branches=tuple(raw.get("existing_branches") or ()),
             revision=BoundRevision(**revision) if revision else None,
+            target=BoundTarget(**target) if target else None,
         )
 
     def captured_after(self, captured_at: str) -> bool:

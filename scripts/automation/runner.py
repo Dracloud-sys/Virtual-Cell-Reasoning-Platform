@@ -5,10 +5,10 @@
         --confirmation confirm.json
     #   ...the implementation happens here...
     python scripts/automation/cli.py postflight --request p2.json --token lock.json \
-        --confirmation confirm.json --base origin/main
+        --confirmation confirm.json
     #   ...the push happens here...
     python scripts/automation/cli.py finalize   --request p3.json --token lock.json \
-        --confirmation confirm.json --branch claude/... --pushed-sha <sha>
+        --confirmation confirm.json
 
 Five commands, because the run has five moments where it can be wrong, and one process cannot
 straddle them. What ties them together is not the sequence — a sequence is a suggestion — but a
@@ -19,14 +19,23 @@ chain each step has to present:
   another run can delete the ref and take it while that file still looks convincing.
 * **the confirmation artifact.** `postflight` refuses without one bound to the same token, so
   `preflight → postflight` cannot skip the re-read.
-* **the token's own copy of the decision.** The issue body hash and the selected revision live
-  in the token, so widening `allowed paths` in the request file after phase one changes nothing.
+* **the token's own copy of the decision.** The issue body hash, the selected revision, and the
+  branch, remote and base SHA live in the token, so widening `allowed paths` in the request file
+  after phase one changes nothing, and neither does naming a different base or branch.
 
-And two rules about giving the lock back. A `confirm` that refuses **releases the lock** and
+Two things this file will not take the caller's word for. The **base** is resolved from the
+remote at phase one and stored as a full SHA, because `postflight --base HEAD~1` on a resumed
+branch inspects the last commit and calls the three before it unchanged. And the **pushed
+commit** is read with `git ls-remote`, because a `--pushed-sha` from the caller's own
+`git rev-parse HEAD` is equally true when the push failed, went elsewhere, or never ran.
+
+And three rules about giving the lock back. A `confirm` that refuses **releases the lock** and
 clears the token and marker, because otherwise a withdrawn label leaves every later run
 reporting `ALREADY_RUNNING`. A revision is recorded **only by `finalize`**, after the remote
 branch is shown to carry the exact commit that passed verification — recording before the push
-means a failed push leaves "already applied" true and the fix absent.
+means a failed push leaves "already applied" true and the fix absent. And a `finalize` whose
+release **fails** exits non-zero and keeps the token, because deleting the artifacts needed to
+retry the release, and calling that success, strands the lock permanently.
 
 Exit code 0 means the step succeeded and the next may begin. Nothing else does.
 """
@@ -36,6 +45,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import re
 import secrets
 import subprocess
 import sys
@@ -47,13 +57,26 @@ from typing import Any
 from .approvals import ApproverConfigError, load_approvers, parse_approvals
 from .environment import probe_environment
 from .github_payloads import APPROVAL_LABEL, SchemaError, read_pull_requests, read_queue
-from .gitrefs import GitRefLockStore, GitRefStateStore, LockUnavailable, StateCorrupt
+from .gitrefs import (
+    GitRefLockStore,
+    GitRefStateStore,
+    LockUnavailable,
+    StateCorrupt,
+    remote_head,
+)
 from .locking import FileLockStore, InMemoryLockStore, LockStore
 from .outcomes import Outcome, Status
 from .postflight import PostflightInputs, run_postflight
 from .preflight import GateInputs, run_preflight
 from .queue import QueueRead
-from .tokens import BoundRevision, Confirmation, LockToken, fingerprint_of, sha256_of
+from .tokens import (
+    BoundRevision,
+    BoundTarget,
+    Confirmation,
+    LockToken,
+    fingerprint_of,
+    sha256_of,
+)
 
 #: What `scripts/verify.py` needs before its result means anything.
 REQUIRED_DEPENDENCIES: tuple[str, ...] = ("pydantic", "pytest", "ruff")
@@ -61,6 +84,13 @@ REQUIRED_DEPENDENCIES: tuple[str, ...] = ("pydantic", "pytest", "ruff")
 #: Committed, and *only* here. The request file is written by the agent, so an approver list it
 #: could point at is an approver list it could write itself.
 APPROVERS_PATH = "docs/operations/run_approvers.json"
+
+#: The one lock a scheduled run may use. `file` and `memory` are visible to one container, and a
+#: scheduled run gets a container to itself, so falling back to either is not a weaker lock — it
+#: is no lock, silently, from a missing line in a JSON file.
+PRODUCTION_LOCK_KIND = "git-ref"
+
+_FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _importable(name: str) -> bool:
@@ -80,9 +110,12 @@ class RunRequest:
 
     raw: dict[str, Any]
     path: Path
+    #: Test and development only, and set by a command-line flag rather than by the request, so
+    #: the file the agent writes cannot grant itself a lock nobody else can see.
+    allow_local_stores: bool = False
 
     @classmethod
-    def load(cls, path: Path) -> RunRequest:
+    def load(cls, path: Path, *, allow_local_stores: bool = False) -> RunRequest:
         raw = json.loads(path.read_text(encoding="utf-8"))
         if "approvers_file" in raw or "approvers" in raw:
             # Refused rather than ignored: a request that tried to name its own approvers was
@@ -91,11 +124,15 @@ class RunRequest:
                 "a run request may not choose its approvers; they come from "
                 f"{APPROVERS_PATH}, which changes only by a reviewed commit"
             )
-        return cls(raw, path)
+        return cls(raw, path, allow_local_stores)
 
     @property
     def work_id(self) -> str:
         return str(self.raw.get("work_id") or "")
+
+    @property
+    def workdir(self) -> Path:
+        return Path(str(self.raw.get("workdir") or "."))
 
     @property
     def captured_at(self) -> str:
@@ -118,31 +155,70 @@ class RunRequest:
         return tuple(self.raw.get("existing_branches") or ())
 
     def lock_store(self) -> LockStore:
+        """The lock, or a refusal. There is no default.
+
+        The previous version defaulted to :class:`InMemoryLockStore`, which meant a run request
+        that simply omitted its `lock` field ran with a lock private to its own process — and
+        looked, in every report it wrote, exactly like a run that held a real one. A store that
+        no other container can see is not a weak lock; it is the absence of one.
+        """
         spec = self.raw.get("lock") or {}
-        kind = str(spec.get("kind") or "memory")
-        if kind == "git-ref":
-            return GitRefLockStore(
-                remote=str(spec["remote"]),
-                workdir=Path(str(spec.get("workdir") or ".")),
-                namespace=str(spec.get("namespace") or "refs/vcrp-locks"),
-            )
-        if kind == "file":
+        kind = str(spec.get("kind") or "")
+        if kind == PRODUCTION_LOCK_KIND:
+            try:
+                return GitRefLockStore(
+                    remote=str(spec["remote"]),
+                    workdir=Path(str(spec.get("workdir") or self.workdir)),
+                    namespace=str(spec.get("namespace") or "refs/vcrp-locks"),
+                )
+            except KeyError as error:
+                raise RequestSchemaError(f"the git-ref lock names no {error}") from error
+        if kind in {"file", "memory"}:
+            if not self.allow_local_stores:
+                raise RequestSchemaError(
+                    f"lock kind {kind!r} is visible to one container only; a scheduled run needs "
+                    f"{PRODUCTION_LOCK_KIND}. Pass --development to use it in a test"
+                )
+            if kind == "memory":
+                return InMemoryLockStore()
             return FileLockStore(Path(str(spec["directory"])))
-        return InMemoryLockStore()
+        raise RequestSchemaError(
+            f"no usable lock: kind {kind or '(missing)'!r} is not {PRODUCTION_LOCK_KIND}. A "
+            "missing or misspelled lock is a run with no mutual exclusion at all"
+        )
 
     def state_store(self) -> GitRefStateStore | None:
+        """The durable memory of which revisions have been carried out, or None if unconfigured.
+
+        None is only survivable when the run has no revision to record; `preflight` refuses the
+        combination rather than letting `finalize` discover it after the push.
+        """
         spec = self.raw.get("state") or {}
-        if str(spec.get("kind") or "none") != "git-ref":
+        kind = str(spec.get("kind") or "")
+        if kind == "":
             return None
-        return GitRefStateStore(
-            remote=str(spec["remote"]), workdir=Path(str(spec.get("workdir") or "."))
-        )
+        if kind != "git-ref":
+            raise RequestSchemaError(f"state kind {kind!r} is not durable across containers")
+        try:
+            return GitRefStateStore(
+                remote=str(spec["remote"]), workdir=Path(str(spec.get("workdir") or self.workdir))
+            )
+        except KeyError as error:
+            raise RequestSchemaError(f"the git-ref state store names no {error}") from error
 
     def applied_revision_ids(self) -> frozenset[str]:
         store = self.state_store()
-        if store is None:
-            return frozenset(self.raw.get("applied_revision_ids") or ())
-        return store.load()
+        if store is not None:
+            return store.load()
+        if self.raw.get("applied_revision_ids") and not self.allow_local_stores:
+            raise RequestSchemaError(
+                "a run request may not declare which revisions have already been applied; that "
+                "comes from the durable state store"
+            )
+        return frozenset(self.raw.get("applied_revision_ids") or ())
+
+    def declared_target(self) -> dict[str, str]:
+        return {str(k): str(v) for k, v in (self.raw.get("target") or {}).items()}
 
 
 def report(outcome: Outcome, *, as_json: bool) -> str:
@@ -165,13 +241,26 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _load(path: Path) -> tuple[RunRequest | None, Outcome | None]:
+def _load(args: argparse.Namespace) -> tuple[RunRequest | None, Outcome | None]:
     try:
-        return RunRequest.load(path), None
+        request = RunRequest.load(
+            args.request, allow_local_stores=getattr(args, "development", False)
+        )
     except RequestSchemaError as error:
         return None, Outcome(Status.INVALID_SPEC, str(error))
     except (OSError, json.JSONDecodeError) as error:
         return None, Outcome(Status.BLOCKED_GITHUB_ACCESS, f"unreadable run request: {error}")
+    return request, None
+
+
+def _store(request: RunRequest) -> tuple[LockStore | None, Outcome | None]:
+    """The lock, or the reason there is none. Never a fallback nobody asked for."""
+    try:
+        return request.lock_store(), None
+    except RequestSchemaError as error:
+        return None, Outcome(Status.INVALID_SPEC, str(error))
+    except OSError as error:
+        return None, Outcome(Status.BLOCKED_GITHUB_ACCESS, f"cannot reach the lock store: {error}")
 
 
 def _read_token(path: Path) -> tuple[LockToken | None, Outcome | None]:
@@ -231,23 +320,106 @@ def _abandon(store: LockStore, token: LockToken, refusal: Outcome, *paths: Path)
 # --- phase one -------------------------------------------------------------------------------
 
 
+def _commit_present(workdir: Path, sha: str) -> bool:
+    proc = subprocess.run(
+        ["git", "cat-file", "-e", f"{sha}^{{commit}}"], cwd=workdir, capture_output=True, text=True
+    )
+    return proc.returncode == 0
+
+
+def _target_shape(request: RunRequest) -> Outcome | None:
+    """Whether the request declares a target at all. Checked before the lock, like a schema."""
+    spec = request.declared_target()
+    if not all(spec.get(field) for field in ("remote", "branch", "base_branch")):
+        return Outcome(
+            Status.INVALID_SPEC,
+            "the request must declare target.remote, target.branch and target.base_branch; "
+            "they are bound at phase one and no later step may choose them",
+        )
+    return None
+
+
+def _resolve_target(request: RunRequest) -> tuple[BoundTarget | None, Outcome | None]:
+    """Freeze where this run pushes and what it is measured against. Runs under the lock.
+
+    The base is read from the **remote**, not from whatever `origin/main` happens to point at in
+    a container whose refs may be days old, and it is stored as a full SHA. Everything after
+    this reads it from the token: a `--base` chosen at postflight time is a caller deciding how
+    much of its own work to submit for inspection, which on a resumed branch means `HEAD~1`
+    hides every commit but the last.
+    """
+    spec = request.declared_target()
+    remote, branch = spec["remote"], spec["branch"]
+    base_branch = spec["base_branch"]
+    workdir = Path(spec.get("workdir") or request.workdir)
+    if not branch.startswith(f"claude/{request.work_id}"):
+        # Checked here, after the queue has confirmed the work id against the issue, so that a
+        # run pointed at the wrong issue reports the mismatch rather than the branch name.
+        return None, Outcome(
+            Status.INVALID_SPEC,
+            f"branch {branch!r} does not belong to work item {request.work_id!r}",
+        )
+    try:
+        base_sha = remote_head(remote, base_branch, workdir=workdir)
+    except LockUnavailable as error:
+        return None, Outcome(Status.BLOCKED_GITHUB_ACCESS, str(error))
+    if base_sha is None:
+        return None, Outcome(Status.BLOCKED_GITHUB_ACCESS, f"{remote} has no branch {base_branch}")
+    target = BoundTarget(
+        remote=remote,
+        branch=branch,
+        base_branch=base_branch,
+        base_sha=base_sha,
+        workdir=str(workdir),
+        repository=spec.get("repository") or "",
+    )
+    problem = target.problem()
+    if problem is not None:
+        return None, Outcome(Status.INVALID_SPEC, f"the target {problem}")
+    if not _commit_present(workdir, base_sha):
+        return None, Outcome(
+            Status.BLOCKED_ENVIRONMENT,
+            f"{base_branch} is at {base_sha[:12]} on {remote}, which this checkout does not "
+            "have; fetch the base before starting, or the diff would be measured from nothing",
+        )
+    return target, None
+
+
 def command_preflight(args: argparse.Namespace) -> Outcome:
-    request, failure = _load(args.request)
+    request, failure = _load(args)
     if failure is not None:
         return failure
     assert request is not None
+
+    failure = _target_shape(request)
+    if failure is not None:
+        return failure
 
     try:
         approvers = load_approvers(_repo_root() / APPROVERS_PATH)
         revisions, refused = request.revisions(approvers)
         applied = request.applied_revision_ids()
         pull_requests = request.pull_requests()
-    except (ApproverConfigError, StateCorrupt) as error:
+        recorder = request.state_store()
+    except (ApproverConfigError, StateCorrupt, RequestSchemaError) as error:
         return Outcome(Status.INVALID_SPEC, str(error))
     except (LockUnavailable, SchemaError) as error:
         return Outcome(Status.BLOCKED_GITHUB_ACCESS, str(error))
 
-    store = request.lock_store()
+    if revisions and recorder is None:
+        # Found here rather than at finalize, which is after the push: a run that carries out an
+        # approved revision with nowhere to record it will carry the same one out again tomorrow.
+        return Outcome(
+            Status.INVALID_SPEC,
+            f"{len(revisions)} approved revision instruction(s) are in play but the request "
+            "configures no durable state store, so nothing would remember they were applied",
+        )
+
+    store, failure = _store(request)
+    if failure is not None:
+        return failure
+    assert store is not None
+
     owner = str(request.raw.get("owner") or f"scheduled-runner-{secrets.token_hex(8)}")
 
     outcome = run_preflight(
@@ -277,6 +449,14 @@ def command_preflight(args: argparse.Namespace) -> Outcome:
             )
         return outcome
 
+    target, failure = _resolve_target(request)
+    if failure is not None:
+        # The lock was taken a few lines ago and this run is over; holding it would block the
+        # next one for a reason that has already ended.
+        store.release(request.work_id, owner)
+        return failure
+    assert target is not None
+
     issue = (request.queue().issues or ())[0]
     chosen = outcome.evidence.get("revision")
     bound = next((BoundRevision.of(r) for r in revisions if r.approval_record_id == chosen), None)
@@ -293,12 +473,19 @@ def command_preflight(args: argparse.Namespace) -> Outcome:
         pull_requests=tuple(f"{pr.number}:{pr.head_sha}" for pr in pull_requests),
         existing_branches=request.branches(),
         revision=bound,
+        target=target,
     )
     token.write(args.token)
     return Outcome(
         Status.READY_TO_IMPLEMENT,
         f"lock held for {request.work_id}; now re-read GitHub and run `confirm`",
-        {**outcome.evidence, "token": str(args.token), "phase": "1 of 2"},
+        {
+            **outcome.evidence,
+            "token": str(args.token),
+            "phase": "1 of 2",
+            "branch": target.branch,
+            "base": f"{target.base_branch}@{target.base_sha[:12]}",
+        },
     )
 
 
@@ -330,7 +517,7 @@ def _freshness_problem(token: LockToken, request: RunRequest) -> str | None:
 
 def command_confirm(args: argparse.Namespace) -> Outcome:
     """The real re-read: fresh responses, gathered after the lock, checked against phase one."""
-    request, failure = _load(args.request)
+    request, failure = _load(args)
     if failure is not None:
         return failure
     assert request is not None
@@ -340,7 +527,11 @@ def command_confirm(args: argparse.Namespace) -> Outcome:
         return failure
     assert token is not None
 
-    store = request.lock_store()
+    store, failure = _store(request)
+    if failure is not None:
+        return failure
+    assert store is not None
+
     lost = _still_ours(store, token)
     if lost is not None:
         # Not ours to release, and not ours to clean up either.
@@ -463,8 +654,39 @@ def _confirmed(
     return confirmation, None
 
 
+def _bound_target(
+    request: RunRequest, token: LockToken
+) -> tuple[BoundTarget | None, Outcome | None]:
+    """The target phase one froze, refusing a request that now describes a different one."""
+    target = token.target
+    if target is None:
+        return None, Outcome(
+            Status.INVALID_SPEC,
+            "this token carries no bound target; it was minted before the branch and base were "
+            "bound, and there is no way to tell what this run was measured against",
+        )
+    problem = target.problem()
+    if problem is not None:
+        return None, Outcome(Status.INVALID_SPEC, f"the bound target {problem}")
+    declared = request.declared_target()
+    for field_name, bound in (
+        ("remote", target.remote),
+        ("branch", target.branch),
+        ("base_branch", target.base_branch),
+        ("repository", target.repository),
+    ):
+        stated = declared.get(field_name)
+        if stated and stated != bound:
+            return None, Outcome(
+                Status.BLOCKED_SCOPE,
+                f"the request names {field_name} {stated!r}, but this run is bound to "
+                f"{bound or 'none'}; the target is decided at phase one",
+            )
+    return target, None
+
+
 def command_postflight(args: argparse.Namespace) -> Outcome:
-    request, failure = _load(args.request)
+    request, failure = _load(args)
     if failure is not None:
         return failure
     assert request is not None
@@ -474,7 +696,11 @@ def command_postflight(args: argparse.Namespace) -> Outcome:
         return failure
     assert token is not None
 
-    store = request.lock_store()
+    store, failure = _store(request)
+    if failure is not None:
+        return failure
+    assert store is not None
+
     lost = _still_ours(store, token)
     if lost is not None:
         return lost
@@ -483,6 +709,11 @@ def command_postflight(args: argparse.Namespace) -> Outcome:
     if failure is not None:
         return failure
     assert confirmation is not None
+
+    target, failure = _bound_target(request, token)
+    if failure is not None:
+        return _abandon(store, token, failure, args.token, args.confirmation)
+    assert target is not None
 
     queue = request.queue()
     if not queue.succeeded or not (queue.issues or ()):
@@ -510,21 +741,44 @@ def command_postflight(args: argparse.Namespace) -> Outcome:
             args.confirmation,
         )
 
+    workdir = Path(target.workdir)
+    if args.base:
+        # The flag survives only so that disagreeing with the token is an error rather than a
+        # silent narrowing. `--base HEAD~1` on a branch with four commits inspects one of them.
+        given = _rev(workdir, args.base)
+        if given != target.base_sha:
+            return _abandon(
+                store,
+                token,
+                Outcome(
+                    Status.BLOCKED_SCOPE,
+                    f"--base {args.base} resolves to {given or 'nothing'} but this run is bound "
+                    f"to {target.base_branch} at {target.base_sha[:12]}; the whole change is "
+                    "measured from there or not at all",
+                ),
+                args.token,
+                args.confirmation,
+            )
+
     outcome = run_postflight(
         PostflightInputs(
             work_id=token.work_id,
             issue_body=body,
-            base=args.base,
-            workdir=Path(args.workdir),
+            base=target.base_sha,
+            workdir=workdir,
             unchanged=tuple(args.unchanged),
         )
     )
     if not outcome.proceeds:
         return _abandon(store, token, outcome, args.token, args.confirmation)
 
-    head = _rev(Path(args.workdir), "HEAD")
+    head = _rev(workdir, "HEAD")
     Confirmation(**{**confirmation.__dict__, "verified_head": head or ""}).write(args.confirmation)
-    return outcome.with_evidence(verified_head=head or "unknown", next_step="push, then finalize")
+    return outcome.with_evidence(
+        verified_head=head or "unknown",
+        base=f"{target.base_branch}@{target.base_sha[:12]}",
+        next_step=f"push to {target.remote} {target.branch}, then finalize",
+    )
 
 
 def _rev(workdir: Path, ref: str) -> str | None:
@@ -533,8 +787,15 @@ def _rev(workdir: Path, ref: str) -> str | None:
 
 
 def command_finalize(args: argparse.Namespace) -> Outcome:
-    """After the push: prove the remote carries the verified commit, then record and release."""
-    request, failure = _load(args.request)
+    """After the push: ask the *remote* what the branch carries, then record and release.
+
+    The previous version compared `--pushed-sha` — a string the caller produced, in practice
+    from its own `git rev-parse HEAD` — against the verified head. That answers "does this
+    commit exist locally", which is equally true when the push failed, when it went to another
+    branch, and when it never ran. So the authority here is `git ls-remote`, and `--pushed-sha`
+    survives only as a claim the remote is allowed to contradict.
+    """
+    request, failure = _load(args)
     if failure is not None:
         return failure
     assert request is not None
@@ -544,7 +805,11 @@ def command_finalize(args: argparse.Namespace) -> Outcome:
         return failure
     assert token is not None
 
-    store = request.lock_store()
+    store, failure = _store(request)
+    if failure is not None:
+        return failure
+    assert store is not None
+
     lost = _still_ours(store, token)
     if lost is not None:
         return lost
@@ -554,16 +819,43 @@ def command_finalize(args: argparse.Namespace) -> Outcome:
         return failure
     assert confirmation is not None
 
+    target, failure = _bound_target(request, token)
+    if failure is not None:
+        return failure
+    assert target is not None
+
     if not confirmation.verified_head:
         return Outcome(
             Status.BLOCKED_SCOPE,
             "postflight has not verified a commit for this run; there is nothing to finalize",
         )
-    if args.pushed_sha != confirmation.verified_head:
+
+    try:
+        landed = remote_head(target.remote, target.branch, workdir=Path(target.workdir))
+    except LockUnavailable as error:
+        # Nothing is cleaned up: the run is unfinished, not finished badly.
+        return Outcome(Status.BLOCKED_GITHUB_ACCESS, f"cannot read the pushed branch: {error}")
+
+    if landed is None:
         return Outcome(
             Status.BLOCKED_SCOPE,
-            f"the branch carries {args.pushed_sha[:12]} but verification passed on "
-            f"{confirmation.verified_head[:12]}; the pushed commit was never checked",
+            f"{target.remote} has no branch {target.branch}: verification passed on "
+            f"{confirmation.verified_head[:12]} but nothing was pushed",
+            {"branch": target.branch, "verified_head": confirmation.verified_head},
+        )
+    if landed != confirmation.verified_head:
+        return Outcome(
+            Status.BLOCKED_SCOPE,
+            f"{target.branch} carries {landed[:12]} but verification passed on "
+            f"{confirmation.verified_head[:12]}; the commit on the remote was never checked",
+            {"remote_head": landed, "verified_head": confirmation.verified_head},
+        )
+    if args.pushed_sha and args.pushed_sha != landed:
+        return Outcome(
+            Status.BLOCKED_SCOPE,
+            f"the caller reports pushing {args.pushed_sha[:12]}, but {target.remote} "
+            f"{target.branch} carries {landed[:12]}",
+            {"remote_head": landed, "claimed": args.pushed_sha},
         )
 
     if token.revision is not None:
@@ -575,6 +867,7 @@ def command_finalize(args: argparse.Namespace) -> Outcome:
                 "durable store to record it in; the next run would apply it again",
             )
         try:
+            # Idempotent, which is what makes a second finalize after a failed release safe.
             recorder.record(token.revision.record_id)
         except (LockUnavailable, StateCorrupt) as error:
             return Outcome(
@@ -582,21 +875,44 @@ def command_finalize(args: argparse.Namespace) -> Outcome:
                 f"could not record revision {token.revision.record_id}: {error}",
             )
 
-    released = _release(store, token)
+    evidence = {
+        "recorded_revision": token.revision.record_id if token.revision else "none",
+        "remote_head": landed,
+        "branch": target.branch,
+    }
+    try:
+        released = _release(store, token)
+    except LockUnavailable as error:
+        released = False
+        why = str(error)
+    else:
+        why = "the remote refused the delete, or the lock is no longer ours"
+
+    if not released:
+        # Exit 0 here used to mean "finished" while the lock stayed held, so every later run
+        # reported ALREADY_RUNNING and the artifacts needed to release it had been deleted.
+        return Outcome(
+            Status.BLOCKED_GITHUB_ACCESS,
+            f"{landed[:12]} is on {target.branch} and the work is recorded, but the lock on "
+            f"{token.work_id} could not be released: {why}. The token and confirmation are "
+            f"kept so `release --token {args.token}` can retry; recover by hand with "
+            f"`git push --force-with-lease={token.lock_ref}:{token.lock_sha} {target.remote} "
+            f":{token.lock_ref}`",
+            {**evidence, "lock_released": "no", "token": str(args.token)},
+        )
+
     args.token.unlink(missing_ok=True)
     args.confirmation.unlink(missing_ok=True)
     return Outcome(
         Status.READY_TO_IMPLEMENT,
-        f"{args.pushed_sha[:12]} is on the remote, verified; work item {token.work_id} complete",
-        {
-            "recorded_revision": token.revision.record_id if token.revision else "none",
-            "lock_released": "yes" if released else "no",
-        },
+        f"{landed[:12]} is on {target.remote} {target.branch}, verified; work item "
+        f"{token.work_id} complete",
+        {**evidence, "lock_released": "yes"},
     )
 
 
 def command_release(args: argparse.Namespace) -> Outcome:
-    request, failure = _load(args.request)
+    request, failure = _load(args)
     if failure is not None:
         return failure
     assert request is not None
@@ -605,7 +921,11 @@ def command_release(args: argparse.Namespace) -> Outcome:
         return failure
     assert token is not None
 
-    store = request.lock_store()
+    store, failure = _store(request)
+    if failure is not None:
+        return failure
+    assert store is not None
+
     lost = _still_ours(store, token)
     if lost is not None:
         args.token.unlink(missing_ok=True)
@@ -637,17 +957,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         step.add_argument("--request", required=True, type=Path)
         step.add_argument("--token", required=True, type=Path)
         step.add_argument("--json", action="store_true")
+        step.add_argument(
+            "--development",
+            action="store_true",
+            help="tests only: permit file and memory lock stores, which one container can see",
+        )
         if name in {"confirm", "postflight", "finalize"}:
             step.add_argument("--confirmation", required=True, type=Path)
         if name == "confirm":
             step.add_argument("--proceed-marker", type=Path)
         if name == "postflight":
-            step.add_argument("--base", required=True)
-            step.add_argument("--workdir", default=".")
+            # Not required, and not authoritative: the base is the token's. Passing one that
+            # disagrees is refused rather than obeyed.
+            step.add_argument("--base", default="")
             step.add_argument("--unchanged", action="append", default=[])
         if name == "finalize":
-            step.add_argument("--branch", default="")
-            step.add_argument("--pushed-sha", required=True)
+            # A claim about what was pushed. `git ls-remote` decides; this only has to agree.
+            step.add_argument("--pushed-sha", default="")
 
     args = parser.parse_args(argv)
     handlers = {

@@ -1,12 +1,17 @@
-"""One run, end to end, and the ways the chain between its steps can be broken.
+"""One run, end to end against a real remote, and the ways the chain between its steps breaks.
 
 Each step passing on its own says nothing about whether the run is one run. The third review
-round was entirely about that gap: a valid token was enough to confirm even after another run
-had taken the lock; a refused confirm kept the lock forever; `postflight` accepted a token with
-no confirmation behind it; and the path policy came from a request file the agent could widen
-after phase one had validated a narrower one.
+round was about that gap; the fourth was about the two places where the chain still ended in a
+string the caller supplied rather than a fact the remote reported:
 
-So these tests break the chain in each of those places and assert the run stops.
+* `finalize` compared a `--pushed-sha` the caller computed with `git rev-parse HEAD`, which is
+  true whether or not the push happened, so a run whose push failed could still finish;
+* `postflight --base` let the step that judges the diff choose how much of the diff to look at,
+  and `HEAD~1` on a resumed branch hides every commit but the last.
+
+So the fixtures here are a bare repository and a clone of it. The push is a real push, the base
+is read off the real remote, and the failure paths — no push, a different commit, the right
+commit on the wrong branch — are driven rather than described.
 """
 
 from __future__ import annotations
@@ -19,29 +24,14 @@ from pathlib import Path
 import pytest
 from automation.outcomes import EXIT_CODES, Status
 from automation.runner import main
+from workspace import Workspace
 
 WORK_ID = "vcrp-ops-002"
+BRANCH = f"claude/{WORK_ID}-gate"
 SPEC = (Path(__file__).parent / "fixtures" / "complete_spec.md").read_text(encoding="utf-8")
-
-
-def _git(*args: str, cwd: Path) -> str:
-    done = subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True)
-    return done.stdout.strip()
-
-
-@pytest.fixture
-def repo(tmp_path: Path) -> Path:
-    work = tmp_path / "repo"
-    (work / "scripts" / "automation").mkdir(parents=True)
-    (work / "src" / "virtualcell").mkdir(parents=True)
-    _git("init", "--quiet", "-b", "main", cwd=work)
-    _git("config", "user.email", "t@t.invalid", cwd=work)
-    _git("config", "user.name", "t", cwd=work)
-    (work / "scripts" / "automation" / "gate.py").write_text("x = 1\n")
-    (work / "src" / "virtualcell" / "cli.py").write_text("z = 1\n")
-    _git("add", "-A", cwd=work)
-    _git("commit", "-qm", "base", cwd=work)
-    return work
+#: A head SHA for a pull request that only exists in a payload. Full 40 characters, because a
+#: prefix is not an identity and the approval parser refuses one.
+PR_HEAD = "1b716d75d6c0c60eac8930018d75ee184ad36a47"
 
 
 def _issue(body: str | None = None) -> dict:
@@ -54,44 +44,62 @@ def _issue(body: str | None = None) -> dict:
     }
 
 
-def _request(path: Path, lock_dir: Path, *, fresh: bool = False, **extra) -> Path:
-    payload: dict = {
-        "work_id": WORK_ID,
-        "queue_pages": [
-            {"issues": [_issue()], "pageInfo": {"hasNextPage": False}, "totalCount": 1}
-        ],
-        "lock": {"kind": "file", "directory": str(lock_dir)},
-    }
-    if fresh:
-        payload["captured_at"] = datetime.now(UTC).isoformat(timespec="seconds")
-    payload.update(extra)
-    path.write_text(json.dumps(payload), encoding="utf-8")
-    return path
-
-
 def _passes(workdir: Path, base: str, unchanged) -> tuple[int, str]:
     return 0, "All checks passed."
 
 
 class _Chain:
-    """The four files a run carries between its steps."""
+    """The four files a run carries between its steps, and the workspace it acts on."""
 
-    def __init__(self, tmp_path: Path) -> None:
+    def __init__(self, tmp_path: Path, workspace: Workspace) -> None:
+        self.ws = workspace
         self.locks = tmp_path / "locks"
         self.token = tmp_path / "lock.json"
         self.confirmation = tmp_path / "confirmation.json"
         self.marker = tmp_path / "proceeded.json"
         self.tmp = tmp_path
 
+    def request(self, name: str, *, fresh: bool = False, **extra) -> Path:
+        payload: dict = {
+            "work_id": WORK_ID,
+            "workdir": str(self.ws.root),
+            "target": {
+                "remote": str(self.ws.remote),
+                "branch": BRANCH,
+                "base_branch": "main",
+            },
+            "queue_pages": [
+                {"issues": [_issue()], "pageInfo": {"hasNextPage": False}, "totalCount": 1}
+            ],
+            "lock": {"kind": "file", "directory": str(self.locks)},
+        }
+        if fresh:
+            payload["captured_at"] = datetime.now(UTC).isoformat(timespec="seconds")
+        for key, value in extra.items():
+            if key == "target":
+                payload["target"] = {**payload["target"], **value}
+            else:
+                payload[key] = value
+        path = self.tmp / name
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path
+
     def phase1(self, **extra) -> Path:
-        return _request(self.tmp / "p1.json", self.locks, **extra)
+        return self.request("p1.json", **extra)
 
     def phase2(self, **extra) -> Path:
-        return _request(self.tmp / "p2.json", self.locks, fresh=True, **extra)
+        return self.request("p2.json", fresh=True, **extra)
 
     def preflight(self, request: Path | None = None) -> int:
         return main(
-            ["preflight", "--request", str(request or self.phase1()), "--token", str(self.token)]
+            [
+                "preflight",
+                "--request",
+                str(request or self.phase1()),
+                "--token",
+                str(self.token),
+                "--development",
+            ]
         )
 
     def confirm(self, request: Path | None = None) -> int:
@@ -106,55 +114,66 @@ class _Chain:
                 str(self.confirmation),
                 "--proceed-marker",
                 str(self.marker),
+                "--development",
             ]
         )
 
-    def postflight(self, repo: Path, request: Path | None = None, base: str = "HEAD~1") -> int:
-        return main(
-            [
-                "postflight",
-                "--request",
-                str(request or self.phase2()),
-                "--token",
-                str(self.token),
-                "--confirmation",
-                str(self.confirmation),
-                "--base",
-                base,
-                "--workdir",
-                str(repo),
-            ]
-        )
+    def postflight(self, request: Path | None = None, *, base: str = "") -> int:
+        argv = [
+            "postflight",
+            "--request",
+            str(request or self.phase2()),
+            "--token",
+            str(self.token),
+            "--confirmation",
+            str(self.confirmation),
+            "--development",
+        ]
+        if base:
+            argv += ["--base", base]
+        return main(argv)
 
-    def finalize(self, pushed: str, request: Path | None = None) -> int:
-        return main(
-            [
-                "finalize",
-                "--request",
-                str(request or self.phase1()),
-                "--token",
-                str(self.token),
-                "--confirmation",
-                str(self.confirmation),
-                "--pushed-sha",
-                pushed,
-            ]
-        )
+    def finalize(self, request: Path | None = None, *, pushed: str = "") -> int:
+        argv = [
+            "finalize",
+            "--request",
+            str(request or self.phase1()),
+            "--token",
+            str(self.token),
+            "--confirmation",
+            str(self.confirmation),
+            "--development",
+        ]
+        if pushed:
+            argv += ["--pushed-sha", pushed]
+        return main(argv)
+
+    # --- the work itself ----------------------------------------------------------------------
+
+    def work(self, value: str = "2") -> str:
+        self.ws.branch(BRANCH)
+        self.ws.write("scripts/automation/gate.py", f"x = {value}\n")
+        return self.ws.commit()
+
+    def out_of_scope(self, value: str = "9") -> str:
+        self.ws.branch(BRANCH)
+        self.ws.write("src/virtualcell/cli.py", f"z = {value}\n")
+        return self.ws.commit("out of scope")
+
+    def verified_head(self) -> str:
+        return json.loads(self.confirmation.read_text())["verified_head"]
 
 
-def _do_work(repo: Path, value: str = "2") -> str:
-    (repo / "scripts" / "automation" / "gate.py").write_text(f"x = {value}\n")
-    _git("add", "-A", cwd=repo)
-    _git("commit", "-qm", "work", cwd=repo)
-    return _git("rev-parse", "HEAD", cwd=repo)
-
-
-def test_the_whole_chain_runs_and_gives_the_lock_back(
-    repo: Path, tmp_path: Path, monkeypatch
-) -> None:
-    chain = _Chain(tmp_path)
+@pytest.fixture
+def chain(tmp_path: Path, workspace: Workspace, monkeypatch) -> _Chain:
     monkeypatch.setattr("automation.postflight.run_verify", _passes)
+    return _Chain(tmp_path, workspace)
 
+
+# --- the run that works -----------------------------------------------------------------------
+
+
+def test_the_whole_chain_runs_and_gives_the_lock_back(chain: _Chain) -> None:
     assert chain.preflight() == 0
     assert chain.token.exists()
     assert not chain.marker.exists()  # taking the lock is not permission to work
@@ -163,60 +182,298 @@ def test_the_whole_chain_runs_and_gives_the_lock_back(
     assert chain.marker.exists()
     assert chain.confirmation.exists()
 
-    head = _do_work(repo)
+    head = chain.work()
+    assert chain.postflight() == 0
+    assert chain.verified_head() == head
 
-    assert chain.postflight(repo) == 0
-    assert json.loads(chain.confirmation.read_text())["verified_head"] == head
+    chain.ws.push(BRANCH)
+    assert chain.finalize() == 0
+    assert chain.ws.remote_head(BRANCH) == head
+    assert not chain.token.exists()
+    assert not chain.confirmation.exists()
+    assert chain.preflight() == 0  # and the next run can start
 
-    # the push happens here; finalize proves the remote carries exactly what was verified
-    assert chain.finalize(head) == 0
+
+def test_the_base_comes_from_the_remote_and_is_pinned_as_a_full_sha(chain: _Chain) -> None:
+    assert chain.preflight() == 0
+
+    target = json.loads(chain.token.read_text())["target"]
+
+    assert target["base_sha"] == chain.ws.base_sha
+    assert len(target["base_sha"]) == 40
+    assert target["branch"] == BRANCH
+
+
+# --- the push, as the remote reports it -------------------------------------------------------
+
+
+def test_a_run_that_never_pushed_cannot_finalize(chain: _Chain) -> None:
+    """The failure the old `--pushed-sha` comparison could not see: local HEAD, no push."""
+    chain.preflight()
+    chain.confirm()
+    head = chain.work()
+    assert chain.postflight() == 0
+
+    code = chain.finalize(pushed=head)  # the caller's own rev-parse, and it is not enough
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert chain.ws.remote_head(BRANCH) == ""
+    assert chain.token.exists()  # the run is unfinished, so it keeps what it needs to retry
+    assert chain.confirmation.exists()
+
+
+def test_a_branch_carrying_a_different_commit_is_refused(chain: _Chain) -> None:
+    chain.preflight()
+    chain.confirm()
+    verified = chain.work()
+    chain.postflight()
+    chain.ws.write("scripts/automation/gate.py", "x = 99\n")
+    later = chain.ws.commit("something else")
+    chain.ws.push(BRANCH)
+
+    code = chain.finalize()
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert chain.ws.remote_head(BRANCH) == later != verified
+
+
+def test_the_verified_commit_on_some_other_branch_is_not_this_run_finishing(chain: _Chain) -> None:
+    chain.preflight()
+    chain.confirm()
+    head = chain.work()
+    chain.postflight()
+    chain.ws.push("claude/somewhere-else")
+
+    code = chain.finalize()
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert chain.ws.remote_head("claude/somewhere-else") == head
+    assert chain.ws.remote_head(BRANCH) == ""
+
+
+def test_a_pushed_sha_the_remote_contradicts_is_refused(chain: _Chain) -> None:
+    """`--pushed-sha` survives only as a claim, and the remote is allowed to disagree with it."""
+    chain.preflight()
+    chain.confirm()
+    chain.work()
+    chain.postflight()
+    chain.ws.push(BRANCH)
+
+    assert chain.finalize(pushed="0" * 40) == EXIT_CODES[Status.BLOCKED_SCOPE]
+
+
+# --- the base, as phase one froze it ----------------------------------------------------------
+
+
+def test_the_whole_branch_is_measured_not_just_its_last_commit(chain: _Chain, capsys) -> None:
+    """Two commits, the scope violation in the *first*. Measuring from HEAD~1 would miss it."""
+    chain.preflight()
+    chain.confirm()
+    chain.out_of_scope()
+    chain.work()
+    capsys.readouterr()
+
+    code = chain.postflight()
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert "src/virtualcell/cli.py" in capsys.readouterr().out
+
+
+def test_a_base_that_disagrees_with_the_token_is_refused(chain: _Chain) -> None:
+    chain.preflight()
+    chain.confirm()
+    chain.out_of_scope()
+    chain.work()
+
+    code = chain.postflight(base="HEAD~1")
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert chain.preflight() == 0  # and the lock came back
+
+
+def test_a_request_naming_a_different_branch_after_phase_one_is_refused(chain: _Chain) -> None:
+    chain.preflight()
+    chain.confirm()
+    chain.work()
+
+    code = chain.postflight(chain.phase2(target={"branch": f"claude/{WORK_ID}-elsewhere"}))
+
+    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+
+
+# --- the lock configuration, which has no default ---------------------------------------------
+
+
+def test_a_missing_lock_configuration_does_not_fall_back_to_memory(chain: _Chain) -> None:
+    """A memory lock is not a weaker lock. It is no lock, and it reports success either way."""
+    request = chain.phase1()
+    payload = json.loads(request.read_text())
+    payload.pop("lock")
+    request.write_text(json.dumps(payload), encoding="utf-8")
+
+    assert chain.preflight(request) == EXIT_CODES[Status.INVALID_SPEC]
+    assert not chain.token.exists()
+
+
+def test_a_misspelled_lock_kind_is_refused_rather_than_ignored(chain: _Chain) -> None:
+    request = chain.phase1(lock={"kind": "git_ref", "remote": str(chain.ws.remote)})
+
+    assert chain.preflight(request) == EXIT_CODES[Status.INVALID_SPEC]
+
+
+def test_a_local_lock_without_the_development_flag_is_refused(chain: _Chain, capsys) -> None:
+    code = main(["preflight", "--request", str(chain.phase1()), "--token", str(chain.token)])
+
+    assert code == EXIT_CODES[Status.INVALID_SPEC]
+    assert "visible to one container only" in capsys.readouterr().out
+    assert not chain.token.exists()
+
+
+def test_a_git_ref_lock_needs_no_flag(chain: _Chain) -> None:
+    request = chain.phase1(
+        lock={"kind": "git-ref", "remote": str(chain.ws.remote), "workdir": str(chain.ws.root)}
+    )
+
+    code = main(["preflight", "--request", str(request), "--token", str(chain.token)])
+
+    assert code == 0
+    assert main(["release", "--request", str(request), "--token", str(chain.token)]) == 0
+
+
+# --- releasing, and failing to ---------------------------------------------------------------
+
+
+def test_a_release_that_fails_is_not_a_finished_run(chain: _Chain, monkeypatch) -> None:
+    """Exit 0 with the lock still held strands every later run on ALREADY_RUNNING."""
+    chain.preflight()
+    chain.confirm()
+    chain.work()
+    chain.postflight()
+    chain.ws.push(BRANCH)
+    monkeypatch.setattr("automation.runner._release", lambda store, token: False)
+
+    code = chain.finalize()
+
+    assert code != 0
+    assert chain.token.exists()  # kept, so `release` can retry
+    assert chain.confirmation.exists()
+
+
+def test_finalize_can_be_retried_after_a_release_that_failed(chain: _Chain, monkeypatch) -> None:
+    chain.preflight()
+    chain.confirm()
+    chain.work()
+    chain.postflight()
+    chain.ws.push(BRANCH)
+    monkeypatch.setattr("automation.runner._release", lambda store, token: False)
+    assert chain.finalize() != 0
+    monkeypatch.undo()
+
+    assert chain.finalize() == 0
     assert not chain.token.exists()
     assert chain.preflight() == 0
 
 
-def test_finalize_refuses_a_commit_that_was_never_verified(
-    repo: Path, tmp_path: Path, monkeypatch
-) -> None:
-    """A push that landed something other than the verified head is not a completed run."""
-    chain = _Chain(tmp_path)
-    monkeypatch.setattr("automation.postflight.run_verify", _passes)
+# --- the revision, recorded only once the remote has the work --------------------------------
+
+
+def _revision_request(chain: _Chain, **extra) -> dict:
+    return {
+        "pull_requests": [
+            {
+                "number": 42,
+                "state": "open",
+                "title": "t",
+                "head": {"ref": BRANCH, "sha": PR_HEAD},
+            }
+        ],
+        "approvals": [
+            {
+                "id": "rev-1",
+                "user": {"login": "Dracloud-sys"},
+                "body": "please narrow the parser",
+                "commit_id": PR_HEAD,
+                "pull_request_number": 42,
+                "state": "APPROVED",
+            }
+        ],
+        "state": {
+            "kind": "git-ref",
+            "remote": str(chain.ws.remote),
+            "workdir": str(chain.ws.root),
+        },
+        **extra,
+    }
+
+
+def _applied(chain: _Chain) -> str:
+    """What the durable state ref points at on the remote, or "" when it does not exist."""
+    return chain.ws.git("ls-remote", str(chain.ws.remote), "refs/vcrp-state/applied-revisions")
+
+
+def _applied_ids(chain: _Chain) -> str:
+    chain.ws.git("fetch", "-q", str(chain.ws.remote), "refs/vcrp-state/applied-revisions")
+    return chain.ws.git("show", "FETCH_HEAD:applied.json")
+
+
+def test_the_revision_is_recorded_only_after_the_remote_carries_the_work(chain: _Chain) -> None:
+    extras = _revision_request(chain)
+    assert chain.preflight(chain.phase1(**extras)) == 0
+    assert chain.confirm(chain.phase2(**extras)) == 0
+    chain.work()
+    assert chain.postflight(chain.phase2(**extras)) == 0
+
+    before = _applied(chain)
+    chain.ws.push(BRANCH)
+    assert chain.finalize(chain.phase1(**extras)) == 0
+
+    assert before == ""
+    assert "rev-1" in _applied_ids(chain)
+
+
+def test_an_unpushed_revision_is_never_recorded(chain: _Chain) -> None:
+    extras = _revision_request(chain)
+    chain.preflight(chain.phase1(**extras))
+    chain.confirm(chain.phase2(**extras))
+    chain.work()
+    chain.postflight(chain.phase2(**extras))
+
+    assert chain.finalize(chain.phase1(**extras)) == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert _applied(chain) == ""
+
+
+def test_a_revision_with_nowhere_to_record_it_stops_before_the_lock(chain: _Chain) -> None:
+    """Found at phase one, not after the push, because the second time is a repeat of the work."""
+    extras = _revision_request(chain)
+    extras.pop("state")
+
+    code = chain.preflight(chain.phase1(**extras))
+
+    assert code == EXIT_CODES[Status.INVALID_SPEC]
+    assert not chain.token.exists()
+
+
+def test_a_request_may_not_declare_what_has_already_been_applied(chain: _Chain, capsys) -> None:
+    """Otherwise the agent decides whether the revision it is about to apply was already done."""
+    extras = _revision_request(chain)
+    extras.pop("state")
+    extras["applied_revision_ids"] = ["rev-1"]
+
+    request = chain.phase1(**extras)
+    code = main(["preflight", "--request", str(request), "--token", str(chain.token)])
+
+    assert code == EXIT_CODES[Status.INVALID_SPEC]
+    assert "which revisions have already been applied" in capsys.readouterr().out
+
+
+# --- the chain, broken in each of the places the third round named ---------------------------
+
+
+def test_widening_the_allowed_paths_after_phase_one_does_not_widen_the_diff(chain: _Chain) -> None:
+    """The policy comes from a body matching the confirmed hash, not from the request file."""
     chain.preflight()
     chain.confirm()
-    _do_work(repo)
-    chain.postflight(repo)
-
-    assert chain.finalize("0" * 40) == EXIT_CODES[Status.BLOCKED_SCOPE]
-
-
-def test_a_failed_push_leaves_the_revision_unrecorded(
-    repo: Path, tmp_path: Path, monkeypatch
-) -> None:
-    """postflight passing is not "applied": the fix only exists once the remote has it."""
-    chain = _Chain(tmp_path)
-    monkeypatch.setattr("automation.postflight.run_verify", _passes)
-    chain.preflight()
-    chain.confirm()
-    _do_work(repo)
-
-    assert chain.postflight(repo) == 0
-    # the push fails, so finalize is never reached and nothing is recorded
-    assert "recorded_revision" not in json.loads(chain.confirmation.read_text()).get("evidence", {})
-    assert chain.token.exists()  # and the run can be retried
-
-
-def test_widening_the_allowed_paths_after_phase_one_does_not_widen_the_diff(
-    repo: Path, tmp_path: Path, monkeypatch
-) -> None:
-    """The bypass: phase one validates a narrow contract, the request file is edited, postflight
-    reads the edited one. The policy now comes from a body matching the confirmed hash."""
-    chain = _Chain(tmp_path)
-    monkeypatch.setattr("automation.postflight.run_verify", _passes)
-    chain.preflight()
-    chain.confirm()
-
-    (repo / "src" / "virtualcell" / "cli.py").write_text("z = 2\n")
-    _git("add", "-A", cwd=repo)
-    _git("commit", "-qm", "out of scope", cwd=repo)
+    chain.out_of_scope()
 
     widened = SPEC.format(work_id=WORK_ID).replace(
         "scripts/automation/\ntests/automation/", "scripts/\ntests/\nsrc/"
@@ -227,58 +484,41 @@ def test_widening_the_allowed_paths_after_phase_one_does_not_widen_the_diff(
         ]
     )
 
-    code = chain.postflight(repo, tampered)
-
-    assert code == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert chain.postflight(tampered) == EXIT_CODES[Status.BLOCKED_SCOPE]
     assert chain.preflight() == 0  # and the lock came back
 
 
-def test_an_out_of_scope_change_stops_the_push_and_frees_the_lock(
-    repo: Path, tmp_path: Path, monkeypatch
-) -> None:
-    chain = _Chain(tmp_path)
-    monkeypatch.setattr("automation.postflight.run_verify", _passes)
+def test_an_out_of_scope_change_stops_the_push_and_frees_the_lock(chain: _Chain) -> None:
     chain.preflight()
     chain.confirm()
+    chain.out_of_scope()
 
-    (repo / "src" / "virtualcell" / "cli.py").write_text("z = 3\n")
-    _git("add", "-A", cwd=repo)
-    _git("commit", "-qm", "out of scope", cwd=repo)
-
-    assert chain.postflight(repo) == EXIT_CODES[Status.BLOCKED_SCOPE]
+    assert chain.postflight() == EXIT_CODES[Status.BLOCKED_SCOPE]
     assert chain.preflight() == 0
 
 
-def test_postflight_refuses_once_the_lock_has_changed_hands(
-    repo: Path, tmp_path: Path, monkeypatch
-) -> None:
-    chain = _Chain(tmp_path)
-    monkeypatch.setattr("automation.postflight.run_verify", _passes)
+def test_postflight_refuses_once_the_lock_has_changed_hands(chain: _Chain) -> None:
     chain.preflight()
     chain.confirm()
-    _do_work(repo)
+    chain.work()
     next(chain.locks.iterdir()).write_text("someone-else now nonce\n", encoding="utf-8")
 
-    assert chain.postflight(repo) == EXIT_CODES[Status.ALREADY_RUNNING]
+    assert chain.postflight() == EXIT_CODES[Status.ALREADY_RUNNING]
 
 
-def test_finalize_refuses_once_the_lock_has_changed_hands(
-    repo: Path, tmp_path: Path, monkeypatch
-) -> None:
-    chain = _Chain(tmp_path)
-    monkeypatch.setattr("automation.postflight.run_verify", _passes)
+def test_finalize_refuses_once_the_lock_has_changed_hands(chain: _Chain) -> None:
     chain.preflight()
     chain.confirm()
-    head = _do_work(repo)
-    chain.postflight(repo)
+    chain.work()
+    chain.postflight()
+    chain.ws.push(BRANCH)
     next(chain.locks.iterdir()).write_text("someone-else now nonce\n", encoding="utf-8")
 
-    assert chain.finalize(head) == EXIT_CODES[Status.ALREADY_RUNNING]
+    assert chain.finalize() == EXIT_CODES[Status.ALREADY_RUNNING]
 
 
-def test_a_branch_that_appeared_after_the_lock_stops_the_run(repo: Path, tmp_path: Path) -> None:
+def test_a_branch_that_appeared_after_the_lock_stops_the_run(chain: _Chain) -> None:
     """Another run may be part way through this work; a second branch would fork it."""
-    chain = _Chain(tmp_path)
     chain.preflight()
 
     code = chain.confirm(chain.phase2(existing_branches=[f"claude/{WORK_ID}-someone-else"]))
@@ -287,16 +527,13 @@ def test_a_branch_that_appeared_after_the_lock_stops_the_run(repo: Path, tmp_pat
     assert chain.preflight() == 0  # lock returned
 
 
-def test_confirming_without_first_locking_is_refused(repo: Path, tmp_path: Path) -> None:
-    chain = _Chain(tmp_path)
-
+def test_confirming_without_first_locking_is_refused(chain: _Chain) -> None:
     assert chain.confirm() == EXIT_CODES[Status.ALREADY_RUNNING]
     assert not chain.marker.exists()
 
 
-def test_a_restarted_process_can_still_release(repo: Path, tmp_path: Path) -> None:
+def test_a_restarted_process_can_still_release(chain: _Chain) -> None:
     """The token is on disk, so the process that releases need not be the one that took it."""
-    chain = _Chain(tmp_path)
     chain.preflight()
 
     finished = subprocess.run(
@@ -308,6 +545,7 @@ def test_a_restarted_process_can_still_release(repo: Path, tmp_path: Path) -> No
             str(chain.phase1()),
             "--token",
             str(chain.token),
+            "--development",
         ],
         capture_output=True,
         text=True,

@@ -25,14 +25,21 @@ python scripts/automation/cli.py confirm --request phase2.json --token .automati
 
 # before any push - judge the real diff and run the full gate
 python scripts/automation/cli.py postflight --request phase2.json --token .automation/lock.json \
-    --confirmation .automation/confirmation.json --base origin/main --unchanged src/virtualcell/
+    --confirmation .automation/confirmation.json --unchanged src/virtualcell/
 
-# ...the push happens here...
+# ...the push happens here: git push origin HEAD:<the branch phase one bound>...
 
-# after the push - prove the remote has the verified commit, record, release
+# after the push - ask the remote what the branch carries, then record and release
 python scripts/automation/cli.py finalize --request phase1.json --token .automation/lock.json \
-    --confirmation .automation/confirmation.json --pushed-sha "$(git rev-parse HEAD)"
+    --confirmation .automation/confirmation.json
 ```
+
+**Neither the base nor the branch is an argument any more.** `postflight` measures the diff from
+the SHA phase one read off the remote, and `finalize` asks `git ls-remote` what the bound branch
+carries. Both used to be strings the caller supplied, and both were the same hole: the step that
+judges the work also chose what to judge. `--base` still exists so that passing one that
+disagrees with the token is an error rather than a silent narrowing, and `--pushed-sha` still
+exists as a claim the remote is allowed to contradict.
 
 **What ties the five steps into one run is not the order.** An order is a suggestion, and the
 agent writes the files. Three things are checked at every step instead:
@@ -43,19 +50,37 @@ agent writes the files. Three things are checked at every step instead:
    somewhere else, stops the step.
 2. **The confirmation artifact.** `postflight` and `finalize` refuse without one bound to the
    same token, so `preflight → postflight` cannot skip the re-read.
-3. **The token's own copy of the decision.** The issue body hash, the pull requests and the
-   selected revision live in the token. `postflight` derives its path policy from a body whose
-   hash matches the confirmed one — widening *Allowed paths* in the request file after phase
-   one gets `BLOCKED_SCOPE`, not a wider diff.
+3. **The token's own copy of the decision.** The issue body hash, the pull requests, the
+   selected revision and the target — remote, branch, base SHA — live in the token. `postflight`
+   derives its path policy from a body whose hash matches the confirmed one, so widening
+   *Allowed paths* in the request file after phase one gets `BLOCKED_SCOPE` rather than a wider
+   diff; and a request that names a different branch or base than the token gets the same.
 
 **A refused `confirm` gives the lock back** and clears the token and marker. Otherwise a
 withdrawn label leaves every later run reporting `ALREADY_RUNNING` forever. If the release
 itself fails, the report carries both the original refusal and the release failure.
 
-**The revision is recorded by `finalize`, never earlier.** `finalize` checks that the SHA on
-the branch is the one `postflight` verified, and only then writes the applied id to durable
-state. Recording before the push means a failed push leaves "already applied" true while the
-fix exists nowhere.
+**The revision is recorded by `finalize`, never earlier.** `finalize` asks the remote what the
+bound branch carries and requires it to equal the commit `postflight` verified, and only then
+writes the applied id to durable state. Recording before the push means a failed push leaves
+"already applied" true while the fix exists nowhere. A branch that does not exist, one carrying
+a different commit, and the verified commit sitting on some *other* branch are all
+`BLOCKED_SCOPE`, and all leave the token in place so the run can be retried.
+
+**A `finalize` whose release fails is not a finished run.** It exits non-zero, keeps the token
+and confirmation so `release` can retry, and prints the `git push --force-with-lease` line that
+clears the ref by hand. Exit 0 with the lock still held would strand every later run on
+`ALREADY_RUNNING` after deleting the artifacts needed to free it. Re-running `finalize` is safe:
+recording an already-recorded revision is a no-op, and the remote check is unchanged.
+
+**There is no default lock.** A request whose `lock` field is missing, misspelled, or names
+`file`/`memory` is `INVALID_SPEC` — the store used to fall back to an in-process one, which for
+a scheduled run (one container each) is not a weaker lock but no lock at all, reported in every
+line of output as though it were real. `--development` permits the local stores for tests, and
+a scheduled run must never pass it. The same applies to `state`: if any approved revision is in
+play and no durable state store is configured, `preflight` refuses **before** taking the lock,
+because the alternative is discovering it after the push, when the work has already been done
+twice.
 
 **Exit 0 means the step succeeded and the next may begin, and nothing else does:**
 
@@ -82,6 +107,13 @@ not summarise them: parsing, filtering and refusing all happen in code that a te
   "pull_requests": [ "<raw list_pull_requests response>" ],
   "approvals": [ "<raw review / review-comment payloads>" ],
   "existing_branches": ["claude/vcrp-ops-002-thing"],
+  "workdir": ".",
+  "target": {
+    "remote": "origin",
+    "branch": "claude/vcrp-ops-002-thing",
+    "base_branch": "main",
+    "repository": "Dracloud-sys/Virtual-Cell-Reasoning-Platform"
+  },
   "lock":  {"kind": "git-ref", "remote": "origin", "workdir": "."},
   "state": {"kind": "git-ref", "remote": "origin", "workdir": "."}
 }
@@ -100,6 +132,14 @@ not summarise them: parsing, filtering and refusing all happen in code that a te
   **schema error**, not an ignored field — the agent writes the request, so a list it can point
   at is a list it can write. They come from [`run_approvers.json`](run_approvers.json), which
   changes only by a reviewed commit, and an empty list approves nobody.
+- **`target`** is read once, by `preflight`, and then frozen into the token. `base_branch` is
+  resolved on the remote — not from the container's `origin/main`, which may be days old — and
+  stored as a full 40-character SHA that must already be present locally, or the run is
+  `BLOCKED_ENVIRONMENT` with "fetch the base first". The branch must belong to this work item.
+  Later steps may repeat these fields, but not change them: a mismatch is `BLOCKED_SCOPE`.
+- **`applied_revision_ids`** may not be stated in the request outside `--development`. Which
+  revisions have been carried out is a fact the durable state store keeps, not one the agent
+  asserts.
 
 ### `captured_at` is an assertion, not evidence
 
@@ -143,14 +183,14 @@ that labels on creation makes queueing a side effect of opening a tab. A person 
 |---|---|---|
 | `NO_READY_WORK` | queue read fine, nothing approved | nothing. This is the normal quiet night |
 | `AMBIGUOUS_QUEUE` | two or more labelled issues | remove the label from all but one |
-| `INVALID_SPEC` | a section is missing, unfilled, placeholder-filled, or self-contradictory | fix the issue body; the report names every bad section |
+| `INVALID_SPEC` | a section is missing, unfilled, placeholder-filled, or self-contradictory; or the request configures no `git-ref` lock, no `target`, or no state store for a revision it would apply | fix the issue body, or the request — the report names what is missing. A missing lock is never downgraded to a local one |
 | `WORK_ID_MISMATCH` | the issue declares a different work id | fix whichever is wrong. The **issue** is authoritative |
 | `BLOCKED_GITHUB_ACCESS` | the query failed, or the lock store was unreachable | check repository access on the Routine first — this is never read as an empty queue |
 | `BLOCKED_ENVIRONMENT` | interpreter below 3.12, or dependencies missing | fix the environment's setup script; do not hand-install and re-run, or the next run breaks the same way |
 | `ALREADY_RUNNING` | another run holds the lock | wait, or follow *Recovery* below if nothing is actually running |
 | `AWAITING_REVIEW` | a pull request for this work is open | review it. A second branch for the same issue is a fork, not progress |
 | `AMBIGUOUS_PULL_REQUEST` | two open pull requests claim this work id | close or retarget one. The run will not pick |
-| `BLOCKED_SCOPE` | a needed change is outside the issue's allowed paths | widen the issue deliberately, or split the work. Never widen the diff |
+| `BLOCKED_SCOPE` | a needed change is outside the issue's allowed paths, a later step named a different base or branch than the token, or the remote does not carry the commit that was verified | widen the issue deliberately, or split the work — never the diff. From `finalize`, check whether the push actually landed on the bound branch |
 
 ## Revising a pull request that is under review
 
@@ -203,7 +243,14 @@ reports `ALREADY_RUNNING`.
 6. Re-run.
 
 The gate releases the lock itself on every refusal that happens after it was taken, so a blocked
-run does not need this. Only a killed process does.
+run does not need this. Only a killed process does — and one other case: a `finalize` whose
+work landed but whose release failed. That one exits non-zero, keeps the token on purpose, and
+prints the exact `--force-with-lease` line for step 4; retrying `finalize` or `release` is the
+first thing to try, because both are safe to repeat.
+
+`FileLockStore` is refused outside `--development`, so a scheduled run cannot end up holding a
+lock nobody else can see. If a run reports `INVALID_SPEC` naming the lock, the request is
+missing its `lock` block — that is the fix, not a flag.
 
 ## Concurrency
 

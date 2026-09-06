@@ -12,9 +12,9 @@ queue - a queue used as a test fixture is a queue that can dispatch real work by
 
 Entry point:
 
-    python -m automation preflight --request run-request.json
+    python scripts/automation/cli.py preflight --request run-request.json --token lock.json
 
-Exit code 0 means work may begin, and nothing else does.
+Exit code 0 means the step succeeded and the next may begin, and nothing else does.
 """
 
 from __future__ import annotations
@@ -22,7 +22,13 @@ from __future__ import annotations
 from .approvals import ApproverConfigError, load_approvers, parse_approvals
 from .environment import EnvironmentFacts, find_interpreter, probe_environment
 from .github_payloads import APPROVAL_LABEL, SchemaError, read_pull_requests, read_queue
-from .gitrefs import GitRefLockStore, GitRefStateStore, LockUnavailable, StateCorrupt
+from .gitrefs import (
+    GitRefLockStore,
+    GitRefStateStore,
+    LockUnavailable,
+    StateCorrupt,
+    remote_head,
+)
 from .locking import FileLockStore, InMemoryLockStore, LockStore, acquire
 from .outcomes import EXIT_CODES, Outcome, Status
 from .postflight import PostflightInputs, changed_paths, run_postflight
@@ -31,7 +37,14 @@ from .queue import QueueIssue, QueueRead
 from .revisions import RevisionInstruction, actionable, rejections
 from .scope import KERNEL_PATH, PathChange, PathPolicy, parse_path_policy, unsafe_reason
 from .spec_contract import REQUIRED_SECTIONS, SpecReport, extract_work_id, validate_spec
-from .tokens import BoundRevision, Confirmation, LockToken, fingerprint_of, sha256_of
+from .tokens import (
+    BoundRevision,
+    BoundTarget,
+    Confirmation,
+    LockToken,
+    fingerprint_of,
+    sha256_of,
+)
 
 __all__ = [
     "APPROVAL_LABEL",
@@ -40,6 +53,7 @@ __all__ = [
     "REQUIRED_SECTIONS",
     "ApproverConfigError",
     "BoundRevision",
+    "BoundTarget",
     "Confirmation",
     "EnvironmentFacts",
     "FileLockStore",
@@ -75,6 +89,7 @@ __all__ = [
     "sha256_of",
     "read_pull_requests",
     "read_queue",
+    "remote_head",
     "rejections",
     "run_postflight",
     "run_preflight",

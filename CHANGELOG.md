@@ -62,6 +62,39 @@ to [Semantic Versioning](https://semver.org/).
   **A request may not choose its approvers.** `approvers_file` is now a schema error rather than
   an override: the agent writes the request, so a list it can point at is a list it can write.
 
+  **What landed is what the remote says landed.** `finalize` used to compare a `--pushed-sha`
+  the caller supplied — in practice its own `git rev-parse HEAD`, which is equally true when
+  the push failed, went to another branch, or never ran. It now asks `git ls-remote` what the
+  bound branch carries and requires that to equal the commit verification passed on. A missing
+  branch, a different commit, and the verified commit sitting on some other branch are each
+  `BLOCKED_SCOPE`, and each keeps the token so the run can be retried.
+
+  **The base is resolved once, on the remote, and frozen.** `postflight --base` let the step
+  that judges the diff choose how much of the diff to look at: `HEAD~1` on a resumed branch
+  measures the last commit and calls every earlier one unchanged. `preflight` now reads
+  `base_branch` off the remote, stores the full 40-character SHA in the token alongside the
+  branch and remote, and `postflight` measures `base…HEAD` from there. The flag survives only so
+  that passing one that disagrees is an error rather than a silent narrowing, and `--branch` is
+  gone from `finalize` entirely.
+
+  **There is no default lock, and no default state store.** A request whose `lock` field was
+  missing or misspelled used to fall back to an in-process store — which, for runs that get one
+  container each, is not a weaker lock but no lock at all, reported as though it were real. Any
+  kind but `git-ref` is now `INVALID_SPEC` unless `--development` is passed, and a run carrying
+  an approved revision with no durable state store is refused at `preflight`, before the lock,
+  rather than after the push.
+
+  **A `finalize` whose release fails is not a finished run.** It used to delete the token and
+  confirmation and exit 0 with `lock_released: no` in the evidence, which strands the lock and
+  throws away what `release` needs to retry. It now exits non-zero, keeps both artifacts, and
+  prints the manual `--force-with-lease` recovery line. Re-running it is safe: recording an
+  already-recorded revision is a no-op.
+
+  **The failure paths are driven against a real remote.** `tests/automation/test_full_cycle.py`
+  builds a bare repository and a clone, and runs the whole chain through it: the success path
+  pushes and finalizes, and "postflight passed but nothing was pushed" is a real unpushed branch
+  rather than a test that declines to call `finalize`.
+
   **An entry point that runs where the Routine starts.** `python scripts/automation/cli.py
   preflight ...` works from the repository root with nothing set up. The command documented in
   the previous round needed `scripts/` on `PYTHONPATH` and failed exactly where it is used

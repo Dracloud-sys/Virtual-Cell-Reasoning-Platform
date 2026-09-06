@@ -19,13 +19,37 @@ import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import pytest
 from automation.outcomes import EXIT_CODES, Status
 from automation.runner import main
+from workspace import Workspace
 
 WORK_ID = "vcrp-ops-002"
+BRANCH = f"claude/{WORK_ID}-gate"
 HEAD = "1b716d75d6c0c60eac8930018d75ee184ad36a47"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 _TEMPLATE = (Path(__file__).parent / "fixtures" / "complete_spec.md").read_text(encoding="utf-8")
+
+
+@pytest.fixture(autouse=True)
+def _bind(shared_workspace: Workspace, monkeypatch) -> None:
+    """Every request in this file points at one real remote, so phase one can resolve its base.
+
+    Module-scoped on purpose: these tests read `main` off the remote and never write to it, and
+    a clone per test would pay for a fixture nothing here modifies.
+    """
+    monkeypatch.setattr(_Target, "workspace", shared_workspace, raising=False)
+
+
+class _Target:
+    """Where the shared workspace is parked, so the request builders can reach it."""
+
+    workspace: Workspace
+
+
+def _target() -> dict:
+    ws = _Target.workspace
+    return {"remote": str(ws.remote), "branch": BRANCH, "base_branch": "main"}
 
 
 def _issue(number: int = 21, work_id: str = WORK_ID, body: str | None = None) -> dict:
@@ -50,6 +74,8 @@ def _write(path: Path, payload: dict) -> Path:
 def _phase1(tmp_path: Path, **overrides) -> Path:
     payload = {
         "work_id": WORK_ID,
+        "workdir": str(_Target.workspace.root),
+        "target": _target(),
         "queue_pages": [_page([_issue()])],
         "lock": {"kind": "file", "directory": str(tmp_path / "locks")},
     }
@@ -60,6 +86,8 @@ def _phase1(tmp_path: Path, **overrides) -> Path:
 def _phase2(tmp_path: Path, *, captured_at: str | None = None, **overrides) -> Path:
     payload = {
         "work_id": WORK_ID,
+        "workdir": str(_Target.workspace.root),
+        "target": _target(),
         "captured_at": captured_at or datetime.now(UTC).isoformat(timespec="seconds"),
         "queue_pages": [_page([_issue()])],
         "lock": {"kind": "file", "directory": str(tmp_path / "locks")},
@@ -69,7 +97,8 @@ def _phase2(tmp_path: Path, *, captured_at: str | None = None, **overrides) -> P
 
 
 def _run(command: str, *args: str) -> int:
-    return main([command, *args])
+    """`--development` on every call: a file lock is refused without it, which is the point."""
+    return main([command, *args, "--development"])
 
 
 def _preflight(tmp_path: Path, request: Path | None = None) -> tuple[int, Path]:
@@ -112,6 +141,7 @@ def test_the_canonical_command_runs_from_the_repository_root(tmp_path: Path) -> 
             str(_phase1(tmp_path)),
             "--token",
             str(tmp_path / "lock.json"),
+            "--development",
         ],
         cwd=REPO_ROOT,
         capture_output=True,
@@ -432,8 +462,6 @@ def test_postflight_without_a_confirmation_is_refused(tmp_path: Path) -> None:
         str(token),
         "--confirmation",
         str(tmp_path / "never-confirmed.json"),
-        "--base",
-        "HEAD",
     )
 
     assert code == EXIT_CODES[Status.AWAITING_REVIEW]
@@ -454,8 +482,6 @@ def test_a_confirmation_from_another_run_is_refused(tmp_path: Path) -> None:
         str(token),
         "--confirmation",
         str(tmp_path / "confirmation.json"),
-        "--base",
-        "HEAD",
     )
 
     assert code == EXIT_CODES[Status.AWAITING_REVIEW]

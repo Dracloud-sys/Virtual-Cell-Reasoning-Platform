@@ -84,6 +84,25 @@ def _git(workdir: Path, *args: str, stdin: str | None = None) -> subprocess.Comp
     )
 
 
+def remote_head(remote: str, branch: str, *, workdir: Path) -> str | None:
+    """What the remote says ``refs/heads/<branch>`` points at, or None when it has no such ref.
+
+    This is the question `finalize` exists to ask. The alternative — believing a `--pushed-sha`
+    the caller computed from its own `git rev-parse HEAD` — answers "did the local commit
+    exist", which is true whether or not the push happened at all.
+
+    Raises :class:`LockUnavailable` when the remote could not be reached: an unreadable remote
+    is not an empty one.
+    """
+    listed = _git(workdir, "ls-remote", "--exit-code", remote, f"refs/heads/{branch}")
+    if listed.returncode == 0:
+        return listed.stdout.split()[0]
+    if listed.returncode == 2:
+        return None
+    problem = (listed.stderr or listed.stdout).strip()
+    raise LockUnavailable(f"cannot read {remote} {branch}: {problem}")
+
+
 @dataclass
 class GitRefLockStore:
     """A cross-container lock whose atomicity is the git remote's, not this process's."""
