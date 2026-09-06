@@ -7,7 +7,11 @@ picture of the queue that is missing the very thing that should have stopped it.
 
 from __future__ import annotations
 
-from automation.github_payloads import read_pull_requests, read_queue
+import json
+from pathlib import Path
+
+import pytest
+from automation.github_payloads import SchemaError, read_pull_requests, read_queue
 
 WORK_ID = "vcrp-ops-002"
 
@@ -137,3 +141,83 @@ def test_two_pull_requests_for_one_work_id_are_both_returned() -> None:
     ]
 
     assert len(read_pull_requests(payload, work_id=WORK_ID)) == 2
+
+
+# --- schema strictness, against captured response shapes ---------------------------------------
+
+_GITHUB = Path(__file__).parent / "fixtures" / "github"
+
+
+def _fixture(name: str) -> dict:
+    return json.loads((_GITHUB / f"{name}.json").read_text(encoding="utf-8"))
+
+
+def test_the_real_empty_listing_reads_as_an_empty_queue() -> None:
+    """Captured from the tool this repository's runs actually call."""
+    read = read_queue([_fixture("list_issues_empty")])
+
+    assert read.succeeded
+    assert read.issues == ()
+
+
+def test_the_real_single_issue_listing_reads_as_one_item() -> None:
+    read = read_queue([_fixture("list_issues_one")])
+
+    assert read.succeeded
+    assert [issue.number for issue in read.issues or ()] == [19]
+
+
+def test_a_rest_error_envelope_is_a_failed_read() -> None:
+    """Regression: this parsed as a healthy empty queue, because it has no `issues` key."""
+    read = read_queue([_fixture("rest_error_401")])
+
+    assert not read.succeeded
+    assert "Bad credentials" in (read.error or "")
+    assert "401" in (read.error or "")
+
+
+def test_a_graphql_errors_envelope_is_a_failed_read() -> None:
+    read = read_queue([_fixture("graphql_errors")])
+
+    assert not read.succeeded
+    assert "rate limit" in (read.error or "").lower()
+
+
+def test_a_response_without_the_issues_collection_is_a_failed_read() -> None:
+    read = read_queue([{"pageInfo": {"hasNextPage": False}, "totalCount": 0}])
+
+    assert not read.succeeded
+    assert "issues" in (read.error or "")
+
+
+def test_issues_of_the_wrong_type_fail_the_read() -> None:
+    assert not read_queue([{"issues": {"number": 1}}]).succeeded
+
+
+def test_an_issue_without_a_state_fails_the_read() -> None:
+    read = read_queue([_page([{"number": 1, "labels": ["claude-ready"], "title": "t"}])])
+
+    assert not read.succeeded
+    assert "state" in (read.error or "")
+
+
+def test_an_issue_without_labels_fails_the_read() -> None:
+    read = read_queue([_page([{"number": 1, "state": "OPEN", "title": "t"}])])
+
+    assert not read.succeeded
+    assert "labels" in (read.error or "")
+
+
+def test_a_boolean_masquerading_as_an_issue_number_fails_the_read() -> None:
+    read = read_queue([_page([_issue(21) | {"number": True}])])
+
+    assert not read.succeeded
+
+
+def test_a_page_that_is_not_an_object_fails_the_read() -> None:
+    assert not read_queue([["not", "a", "page"]]).succeeded
+
+
+def test_an_error_response_where_a_pull_request_list_belongs_raises() -> None:
+    with pytest.raises(SchemaError):
+        read_pull_requests(_fixture("rest_error_401"), work_id=WORK_ID)

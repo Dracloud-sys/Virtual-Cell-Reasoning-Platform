@@ -5,18 +5,52 @@ of them fires. The gate is `scripts/automation`; its questions are pinned in `te
 This file is the part that cannot be a test: the commands, and the procedures a person follows
 afterwards.
 
-## The command the Routine runs
+## The commands the Routine runs
 
-The gate is not advice the agent may take. It is a process, and its exit code decides whether
-anything else happens:
+The gate is not advice the agent may take. It is a sequence of processes, and each exit code
+decides whether the next step happens. **Run them from the repository root** — that is where a
+scheduled run starts, and the command has to work there with nothing set up:
 
 ```bash
-python -m automation preflight --request run-request.json --json \
-  --proceed-marker .automation/proceed.json
+# phase 1 - read the queue, validate the contract, take the lock
+python scripts/automation/cli.py preflight --request phase1.json --token .automation/lock.json
+
+# ...the agent now queries GitHub AGAIN, after the lock exists...
+
+# phase 2 - submit that re-read and receive permission
+python scripts/automation/cli.py confirm --request phase2.json --token .automation/lock.json \
+    --proceed-marker .automation/proceed.json
+
+# ...the implementation happens here...
+
+# after the work, before any push - judge the real diff and run the full gate
+python scripts/automation/cli.py postflight --request phase1.json --token .automation/lock.json \
+    --base origin/main --unchanged src/virtualcell/ --revision "$APPROVED_REVISION_ID"
+
+# give the lock back
+python scripts/automation/cli.py release --request phase1.json --token .automation/lock.json
 ```
 
-**Exit 0 means work may begin, and nothing else does.** Every refusal has its own code, so the
-Routine branches on a number rather than on its own reading of a sentence:
+**Four commands, not one, because the run has four moments where it can be wrong and one
+process cannot straddle them.**
+
+`preflight` takes the lock and *stops*. Taking the lock is not permission to work: it writes a
+lock token and exits. `confirm` is the only command that writes the proceed marker, and it does
+so only when the token matches, the evidence was captured **after** the lock was taken, and the
+issue and its pull requests still look the way phase one decided about. That separation is the
+whole point — an earlier version parsed both "before" and "after" snapshots out of one file
+written before the lock existed, which is not a re-read of anything.
+
+`postflight` runs after the implementation and before the push. It is where `BLOCKED_SCOPE`
+actually happens: real changed paths from `git diff --name-status -M base...HEAD`, judged
+against the issue's own allowed and forbidden paths, with renames checked at both ends and the
+kernel guarded unless the issue authorises it. Then `scripts/verify.py` in full, and only then
+is the applied revision id recorded. Nothing is pushed unless this exits 0.
+
+`release` uses the token from disk, so the process that gives the lock back does not have to be
+the one that took it.
+
+**Exit 0 means the step succeeded and the next may begin, and nothing else does:**
 
 | Code | Status | Code | Status |
 |---:|---|---:|---|
@@ -27,10 +61,7 @@ Routine branches on a number rather than on its own reading of a sentence:
 | 13 | `BLOCKED_GITHUB_ACCESS` | 19 | `AMBIGUOUS_PULL_REQUEST` |
 | 14 | `BLOCKED_ENVIRONMENT` | | |
 
-`--proceed-marker` is written **only** on exit 0. A caller that cannot read exit codes can test
-for that file; a run that refused leaves nothing behind to mistake for permission.
-
-### Building the request
+### Building the requests
 
 The agent calls its GitHub tools and writes the **raw responses** into the request file. It does
 not summarise them: parsing, filtering and refusing all happen in code that a test can drive.
@@ -38,28 +69,35 @@ not summarise them: parsing, filtering and refusing all happen in code that a te
 ```json
 {
   "work_id": "vcrp-ops-002",
-  "approvers": ["Dracloud-sys"],
-  "queue_pages": [ "<raw list_issues response>", "…every page…" ],
+  "captured_at": "2026-09-06T05:45:00+00:00",
+  "queue_pages": [ "<raw list_issues response>", "...every page..." ],
   "queue_error": null,
   "pull_requests": [ "<raw list_pull_requests response>" ],
+  "approvals": [ "<raw review / review-comment payloads>" ],
   "existing_branches": ["claude/vcrp-ops-002-thing"],
-  "revisions": [],
-  "recheck_queue_pages": [ "<the same query, re-run after the lock>" ],
-  "recheck_pull_requests": [ "<ditto>" ],
   "lock":  {"kind": "git-ref", "remote": "origin", "workdir": "."},
   "state": {"kind": "git-ref", "remote": "origin", "workdir": "."}
 }
 ```
 
-Three fields carry more weight than they look:
+Five fields carry more weight than they look:
 
 - **`queue_error`** is for the case where the query *failed*. Never pass an empty page list to
-  represent a failure — that is the confusion the whole package exists to prevent.
+  represent a failure — that is the confusion the whole package exists to prevent. A REST error
+  envelope (`{"message": "Bad credentials", "status": "401"}`) is also refused, because it
+  carries no `issues` collection at all.
 - **every page** goes in `queue_pages`. If the last page says `hasNextPage`, the read is
   refused: one issue plus "there is more" would dispatch work while a second approved issue sat
   unseen on page two.
-- **`recheck_*`** are the same queries run again *after* the lock is held. Everything else was
-  read before the lock existed.
+- **`captured_at`** is required on the phase-two request, and must postdate the lock. Without it
+  the confirmation cannot be shown to be a re-read.
+- **`approvals`** are the raw review payloads. The parser derives the record id, the author
+  login, the body, the pull request and the full commit id from GitHub's own fields — an
+  `approved_by` the agent writes alongside them is ignored.
+- **`approvers`** are *not* taken from the request. They come from
+  [`run_approvers.json`](run_approvers.json), which is committed, so changing who may approve a
+  revision is a reviewable commit rather than a line the agent can write for itself. An empty
+  list is a configuration error, never "no restriction".
 
 ## The one-item queue
 
@@ -99,13 +137,16 @@ that labels on creation makes queueing a side effect of opening a tab. A person 
 The default is that a run may not touch it. The exception needs all four of:
 
 1. an **approval record id** — the GitHub review or comment the instruction came from;
-2. an **approver on the list** passed as `approvers`; a name in a comment is a string, not an
-   approval;
+2. an **approver on the committed list** in `run_approvers.json`; a name the agent writes into
+   its own request is a string, not an approval, and an empty list approves nobody;
 3. the **full 40-character head SHA** the instruction was written against. Once the branch
    moves the instruction has expired: the same sentence is now a request about code its author
    has not read. Abbreviations are refused rather than prefix-matched;
 4. **not already applied.** Applied ids live in a git ref (`refs/vcrp-state/applied-revisions`),
-   so a restarted run reads what its predecessor did instead of doing it again.
+   so a restarted run reads what its predecessor did instead of doing it again. That store is
+   fail-closed: a ref that does not exist yet is an empty set, but a ref that could not be
+   *reached* blocks the run. Reading "nothing has been applied" out of a failed fetch is exactly
+   how an approved revision gets carried out twice.
 
 Anything that fails these is reported in the `AWAITING_REVIEW` detail — passed over, never
 silently ignored.
@@ -129,13 +170,17 @@ reports `ALREADY_RUNNING`.
 1. Confirm nothing is running: check the Routine's run list for an in-flight session.
 2. Inspect the lock: `git ls-remote origin 'refs/vcrp-locks/*'`. The commit message names the
    owner and when it was taken.
-3. Delete it: `git push origin :refs/vcrp-locks/<work-id>`. This is the one manual override,
-   and it is manual on purpose — `release()` refuses to drop a lock the caller does not hold,
+3. Prefer the token: if `.automation/lock.json` survived, `release` drops the lock with a
+   compare-and-swap and no override is needed. The token is on disk precisely so the process
+   that gives the lock back need not be the one that took it.
+4. Only if the token is gone, delete the ref by hand:
+   `git push origin :refs/vcrp-locks/<work-id>`. This is the one manual override, and it is
+   manual on purpose — `release()` refuses to drop a lock the caller cannot prove it holds,
    because a crashed run is exactly when another run would love to clear it and start.
-4. Check for a half-pushed branch: `git ls-remote --heads origin 'claude/*'`. A branch with no
+5. Check for a half-pushed branch: `git ls-remote --heads origin 'claude/*'`. A branch with no
    pull request is a crashed run's leftovers. The next run reports it as `resume_branch` and
    continues on it rather than opening a second one; delete it only if you want a fresh start.
-5. Re-run.
+6. Re-run.
 
 The gate releases the lock itself on every refusal that happens after it was taken, so a blocked
 run does not need this. Only a killed process does.
@@ -146,6 +191,14 @@ run does not need this. Only a killed process does.
 not fast-forward the existing ref is rejected by the server, and an orphan can never be an
 ancestor of anything, so while the ref exists every other run's push is rejected. Exactly one
 creation wins, and the remote decides — not either contender's belief about the other.
+
+That argument has a hole, and it was live: it assumes the two contenders build *different*
+commits. Git objects are content-addressed, so two runs with the same work id, the same owner
+and the same one-second timestamp built the **same commit**, the second push found the ref
+already pointing at that object, git said "Everything up-to-date" and exited 0, and both runs
+concluded they held the lock — `[True, True]`. Every lock commit now carries a 32-hex nonce from
+`secrets`, an up-to-date push counts as contention, and each run gets a unique owner. The
+uniqueness is the mutual exclusion; the compare-and-swap only enforces it.
 
 Three distinctions the store refuses to blur:
 

@@ -19,22 +19,26 @@ Exit code 0 means work may begin, and nothing else does.
 
 from __future__ import annotations
 
+from .approvals import ApproverConfigError, load_approvers, parse_approvals
 from .environment import EnvironmentFacts, find_interpreter, probe_environment
-from .github_payloads import APPROVAL_LABEL, read_pull_requests, read_queue
-from .gitrefs import GitRefLockStore, GitRefStateStore, LockUnavailable
+from .github_payloads import APPROVAL_LABEL, SchemaError, read_pull_requests, read_queue
+from .gitrefs import GitRefLockStore, GitRefStateStore, LockUnavailable, StateCorrupt
 from .locking import FileLockStore, InMemoryLockStore, LockStore, acquire
 from .outcomes import EXIT_CODES, Outcome, Status
-from .preflight import GateInputs, LinkedPullRequest, Recheck, run_preflight
+from .postflight import PostflightInputs, changed_paths, run_postflight
+from .preflight import GateInputs, LinkedPullRequest, run_preflight
 from .queue import QueueIssue, QueueRead
 from .revisions import RevisionInstruction, actionable, rejections
 from .scope import KERNEL_PATH, PathChange, PathPolicy, parse_path_policy, unsafe_reason
 from .spec_contract import REQUIRED_SECTIONS, SpecReport, extract_work_id, validate_spec
+from .tokens import LockToken, fingerprint_of
 
 __all__ = [
     "APPROVAL_LABEL",
     "EXIT_CODES",
     "KERNEL_PATH",
     "REQUIRED_SECTIONS",
+    "ApproverConfigError",
     "EnvironmentFacts",
     "FileLockStore",
     "GateInputs",
@@ -42,26 +46,34 @@ __all__ = [
     "GitRefStateStore",
     "InMemoryLockStore",
     "LinkedPullRequest",
+    "LockToken",
     "LockStore",
     "LockUnavailable",
     "Outcome",
     "PathChange",
     "PathPolicy",
+    "PostflightInputs",
     "QueueIssue",
     "QueueRead",
-    "Recheck",
     "RevisionInstruction",
+    "SchemaError",
     "SpecReport",
+    "StateCorrupt",
     "Status",
     "acquire",
     "actionable",
+    "changed_paths",
     "extract_work_id",
+    "fingerprint_of",
     "find_interpreter",
+    "load_approvers",
+    "parse_approvals",
     "parse_path_policy",
     "probe_environment",
     "read_pull_requests",
     "read_queue",
     "rejections",
+    "run_postflight",
     "run_preflight",
     "unsafe_reason",
     "validate_spec",

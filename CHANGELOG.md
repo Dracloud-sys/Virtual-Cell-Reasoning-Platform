@@ -21,6 +21,13 @@ to [Semantic Versioning](https://semver.org/).
   correct while doing nothing at all. `QueueRead` makes the confusion impossible to write: a
   failed read carries no list to iterate.
 
+  **The cross-container lock did not actually exclude.** Git objects are content-addressed, so
+  two runs with the same work id, the same owner and the same one-second timestamp built the
+  *same* commit; the second push found the ref already pointing at it, git reported "Everything
+  up-to-date" and exited 0, and both runs believed they held the lock — `[True, True]`. Every
+  lock commit now carries a `secrets` nonce, each run gets a unique owner, and an up-to-date
+  push counts as contention. The uniqueness is the mutual exclusion; the CAS only enforces it.
+
   Concurrency is held by `O_CREAT | O_EXCL`, not by an instruction in a prompt — a prompt that
   says "stop if another run is going" is a request delivered to the only party that cannot
   check whether the other party received it. The lock is atomic within one container and blind
@@ -30,27 +37,57 @@ to [Semantic Versioning](https://semver.org/).
   The issue template no longer applies `claude-ready`. Queueing work was a side effect of
   opening a tab; it is now an act — a person adds the label when they approve the contract.
 
-  **An entry point, so the checks are reachable.** `python -m automation preflight --request …`
-  is what the Routine invokes, and its exit code is the contract: 0 means work may begin and
-  nothing else does, with a distinct code per refusal. The agent writes the **raw** GitHub
-  responses into the request file rather than a summary, so the parsing, the pagination and the
-  filtering happen in code a test can drive. `--proceed-marker` is written only on 0, which is
-  how the integration tests assert that a refused run did not go on to do anything.
+  **An entry point that runs where the Routine starts.** `python scripts/automation/cli.py
+  preflight ...` works from the repository root with nothing set up. The command documented in
+  the previous round needed `scripts/` on `PYTHONPATH` and failed exactly where it is used
+  (`No module named automation`); its integration test passed by running with `cwd=scripts`,
+  arranging the one condition the real caller cannot provide.
+
+  **Permission is granted by a second process, against a second read.** `preflight` takes the
+  lock and stops; the agent re-queries GitHub; `confirm` submits that re-read with the lock
+  token and is the only command that writes the proceed marker. It refuses evidence captured
+  before the lock was taken, and refuses to proceed when the issue body or the open pull
+  requests have moved since. The previous round parsed both "before" and "after" out of one
+  file written before the lock existed, which is two snapshots wearing a costume.
+
+  **`postflight` is where scope enforcement actually happens.** `PathPolicy` had tests and no
+  caller, so `BLOCKED_SCOPE` was unreachable from the CLI: a run that started legally could
+  finish by pushing anything. It now judges the real diff — `git diff --name-status -M
+  base...HEAD`, renames checked at both ends — against the issue's own path rules and its
+  kernel authorisation, runs `scripts/verify.py` in full, records the applied revision id, and
+  releases the lock on failure so a bad night does not block the next one.
+
+  **The lock is released by whoever holds the token, not by whoever is still running.** It used
+  to live in a process attribute, so the first successful run would have stranded its own lock
+  and every later run would have reported `ALREADY_RUNNING` forever.
+
+  **Approvals are derived from GitHub's records.** The record id, author login, body, pull
+  request and full commit id all come from the raw review payload; an `approved_by` the agent
+  writes beside them is ignored, because the agent writes the request. Approvers come from a
+  committed `docs/operations/run_approvers.json`, and an empty list approves nobody rather than
+  everybody.
+
+  **A response that is not a listing is not an empty listing.** `{"message": "Bad credentials",
+  "status": "401"}` carries no `issues` collection, and used to read as a healthy empty queue.
+  So do GraphQL `errors` envelopes, a missing `state`, unreadable `labels`, and a `number` that
+  is not an integer — each fails the read against fixtures captured from the real tool.
+
+  Exit codes are the contract: 0 means the step succeeded and the next may begin, and every
+  refusal has its own code so a shell branches on a number rather than on prose.
 
   **A lock that reaches across containers.** `GitRefLockStore` pushes an orphan commit to
-  `refs/vcrp-locks/<work-id>`; a push that would not fast-forward is rejected by the server, and
-  an orphan is never an ancestor, so exactly one creation wins and the *remote* decides. Six
-  threads released from one barrier against one bare repository assert that. Rejected is not
-  failed — an unreachable remote raises rather than reporting a free lock — and `release` drops
-  only a lock this run took. Applied revision ids live in a ref too, so a restarted run does not
-  redo its predecessor's work.
+  `refs/vcrp-locks/<work-id>`; a push that would not fast-forward is rejected by the server, so
+  exactly one creation wins and the *remote* decides. Six threads released from one barrier
+  against one bare repository assert that, and a same-owner same-second pair pins the collision
+  above. Rejected is not failed — an unreachable remote raises rather than reporting a free
+  lock. The durable state store is fail-closed the same way: a ref that does not exist yet is an
+  empty set, but a ref that cannot be *reached* blocks the run, because reading "nothing has
+  been applied" out of a failed fetch is how an approved revision gets applied twice.
 
   **Identity and approval are verified, not assumed.** The work id the issue declares is
   authoritative and a mismatch stops the run; two open pull requests for one work id is a
   refusal rather than a coin toss; a revision instruction needs an approval record id, an
-  approver on the list, and the full 40-character head SHA it was written against. Everything
-  read before the lock is read again after it, because between those two moments a pull request
-  can open or a label can be pulled.
+  approver on the committed list, and the full 40-character head SHA it was written against.
 
   **Contract and path checks that catch the near-misses.** `TODO`, `TBD`, `<reason>` are refused
   as loudly as an empty section — they are evidence somebody opened it and did not finish.

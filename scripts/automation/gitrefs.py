@@ -5,29 +5,41 @@ them hold two empty lock directories and neither can see the other. The only sto
 can reach is the git remote, and git already offers exactly the primitive a lock needs.
 
 **Creating a ref is a compare-and-swap.** A push that would not fast-forward an existing ref is
-rejected by the server, and the commit this store pushes is an *orphan* - no parents, unique
-content per run - so it can never be an ancestor of whatever is already there. While the ref
-exists, every other run's push is rejected. Exactly one creation wins, decided by the remote,
-not by either contender's belief about the other.
+rejected by the server, so while the ref exists every other run's push is rejected. Exactly one
+creation wins, decided by the remote, not by either contender's belief about the other.
+
+That argument has one hole, and it was live in the first version of this file: it assumes the
+two contenders build *different* commits. Git objects are content-addressed, so two runs with
+the same work id, the same owner and the same one-second timestamp built **the same commit**,
+and the second push found the ref already pointing at that exact object. Git calls that
+"Everything up-to-date", exits 0, and both runs concluded they held the lock:
+
+    same-owner same-second lock results: [True, True]
+
+So every lock commit now carries a 32-hex-character nonce from :mod:`secrets`, which no other
+run will reproduce, and an up-to-date push is treated as contention rather than success. The
+uniqueness is the lock; the CAS only enforces it.
 
 Three distinctions this module refuses to blur:
 
 * **rejected is not failed.** A rejected push means somebody else holds the lock and this run
   should stop politely. A push that failed for any other reason - auth, network, an unreachable
-  remote - is an infrastructure problem, and treating it as "lock acquired" would be the worst
-  possible reading. It raises :class:`LockUnavailable`, which the gate reports as
-  ``BLOCKED_GITHUB_ACCESS``.
-* **holding is not owning.** ``release`` refuses to delete a lock this run did not take, and
-  does it with ``--force-with-lease`` so the delete itself is a compare-and-swap rather than a
-  read followed by a hopeful write.
-* **state is not session memory.** Applied revision ids live in a ref too, so a restarted run
-  reads what its predecessor did instead of doing it again.
+  remote - raises :class:`LockUnavailable`, which the gate reports as ``BLOCKED_GITHUB_ACCESS``.
+  Treating an unreachable remote as a free lock would be the worst available reading.
+* **holding is not owning.** ``release`` refuses to drop a lock this run did not take, and does
+  it with ``--force-with-lease`` so the delete is itself a compare-and-swap. The token survives
+  the process (:mod:`automation.tokens`), so a later invocation can still release it.
+* **absent is not unreadable.** A state ref that does not exist yet is an empty set. A state ref
+  that could not be *reached* is a blocked run — reading "no revisions have been applied" out of
+  a failed fetch is how an approved revision gets applied twice.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import re
+import secrets
 import subprocess
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -36,6 +48,9 @@ from pathlib import Path
 _UNSAFE = re.compile(r"[^A-Za-z0-9._-]")
 #: git's own words for "somebody got there first".
 _CONTENTION = ("non-fast-forward", "fetch first", "rejected", "cannot lock ref", "stale info")
+#: git's words for "your object is already what the ref points at" — which, for a lock, means
+#: the ref was not created by this push.
+_ALREADY_THERE = ("everything up-to-date", "up to date")
 
 _GIT_ENV = {
     "GIT_AUTHOR_NAME": "vcrp-automation",
@@ -47,11 +62,26 @@ _GIT_ENV = {
 
 
 class LockUnavailable(RuntimeError):
-    """The lock could not be reached. Never raised merely because someone else holds it."""
+    """The store could not be reached. Never raised merely because someone else holds it."""
+
+
+class StateCorrupt(RuntimeError):
+    """The durable state exists but cannot be trusted. Distinct from unreachable, and fatal."""
 
 
 def _safe(key: str) -> str:
     return _UNSAFE.sub("_", key)
+
+
+def _git(workdir: Path, *args: str, stdin: str | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=workdir,
+        capture_output=True,
+        text=True,
+        input=stdin,
+        env={**os.environ, **_GIT_ENV},
+    )
 
 
 @dataclass
@@ -61,31 +91,25 @@ class GitRefLockStore:
     remote: str
     workdir: Path
     namespace: str = "refs/vcrp-locks"
+    #: Unique to this store instance, and therefore to this run. This is what makes the lock
+    #: commit unforgeably distinct from every other contender's.
+    nonce: str = field(default_factory=lambda: secrets.token_hex(16))
     _held: dict[str, str] = field(default_factory=dict, repr=False)
 
-    def _git(self, *args: str, stdin: str | None = None) -> subprocess.CompletedProcess[str]:
-        import os
-
-        return subprocess.run(
-            ["git", *args],
-            cwd=self.workdir,
-            capture_output=True,
-            text=True,
-            input=stdin,
-            env={**os.environ, **_GIT_ENV},
-        )
-
-    def _ref(self, key: str) -> str:
+    def ref(self, key: str) -> str:
         return f"{self.namespace}/{_safe(key)}"
 
+    def token_for(self, key: str) -> str | None:
+        """The commit this run pushed, which is what proves ownership later."""
+        return self._held.get(key)
+
     def _mint(self, key: str, owner: str) -> str:
-        """An orphan commit unique to this run. Uniqueness is what makes the push a CAS."""
-        tree = self._git("mktree", stdin="")
+        tree = _git(self.workdir, "mktree", stdin="")
         if tree.returncode != 0:
             raise LockUnavailable(f"cannot build a lock object: {tree.stderr.strip()}")
         stamp = datetime.now(UTC).isoformat(timespec="seconds")
-        message = f"lock {key}\nowner: {owner}\ntaken: {stamp}\n"
-        commit = self._git("commit-tree", tree.stdout.strip(), stdin=message)
+        message = f"lock {key}\nowner: {owner}\ntaken: {stamp}\nnonce: {self.nonce}\n"
+        commit = _git(self.workdir, "commit-tree", tree.stdout.strip(), stdin=message)
         if commit.returncode != 0:
             raise LockUnavailable(f"cannot build a lock commit: {commit.stderr.strip()}")
         return commit.stdout.strip()
@@ -93,11 +117,14 @@ class GitRefLockStore:
     def create_exclusive(self, key: str, owner: str) -> bool:
         """True only for the run whose push created the ref. Contention returns False."""
         sha = self._mint(key, owner)
-        pushed = self._git("push", self.remote, f"{sha}:{self._ref(key)}")
+        pushed = _git(self.workdir, "push", self.remote, f"{sha}:{self.ref(key)}")
+        combined = (pushed.stderr + pushed.stdout).lower()
         if pushed.returncode == 0:
+            if any(word in combined for word in _ALREADY_THERE):
+                # The ref already pointed here. Nothing was created, so nothing was won.
+                return False
             self._held[key] = sha
             return True
-        combined = (pushed.stderr + pushed.stdout).lower()
         if any(word in combined for word in _CONTENTION):
             return False
         raise LockUnavailable(
@@ -105,20 +132,29 @@ class GitRefLockStore:
         )
 
     def holder(self, key: str) -> str:
-        fetched = self._git("fetch", self.remote, f"+{self._ref(key)}:refs/vcrp-peek")
+        fetched = _git(self.workdir, "fetch", self.remote, f"+{self.ref(key)}:refs/vcrp-peek")
         if fetched.returncode != 0:
             return ""
-        shown = self._git("log", "-1", "--format=%B", "refs/vcrp-peek")
-        self._git("update-ref", "-d", "refs/vcrp-peek")
+        shown = _git(self.workdir, "log", "-1", "--format=%B", "refs/vcrp-peek")
+        _git(self.workdir, "update-ref", "-d", "refs/vcrp-peek")
         return shown.stdout.strip() if shown.returncode == 0 else ""
 
-    def release(self, key: str, owner: str = "") -> bool:
-        """Delete the lock, but only the one this run took. Returns False when it is not ours."""
-        sha = self._held.get(key)
+    def release(self, key: str, owner: str = "", *, token: str | None = None) -> bool:
+        """Delete the lock, but only the one this run took.
+
+        ``token`` is the lock commit's SHA, which a later process reads from the durable token
+        file. Without it this only works inside the process that took the lock, which is how the
+        first version stranded its own locks.
+        """
+        sha = token or self._held.get(key)
         if sha is None:
             return False
-        deleted = self._git(
-            "push", f"--force-with-lease={self._ref(key)}:{sha}", self.remote, f":{self._ref(key)}"
+        deleted = _git(
+            self.workdir,
+            "push",
+            f"--force-with-lease={self.ref(key)}:{sha}",
+            self.remote,
+            f":{self.ref(key)}",
         )
         if deleted.returncode == 0:
             self._held.pop(key, None)
@@ -128,54 +164,74 @@ class GitRefLockStore:
 
 @dataclass
 class GitRefStateStore:
-    """Small durable facts - which revision instructions have been carried out - in a ref."""
+    """Small durable facts - which revision instructions have been carried out - in a ref.
+
+    Fail-closed, because the failure mode is duplicate work: reading an unreachable remote as
+    "nothing has been applied" is exactly how an approved revision gets carried out twice.
+    """
 
     remote: str
     workdir: Path
     ref: str = "refs/vcrp-state/applied-revisions"
+    retries: int = 3
 
-    def _git(self, *args: str, stdin: str | None = None) -> subprocess.CompletedProcess[str]:
-        import os
-
-        return subprocess.run(
-            ["git", *args],
-            cwd=self.workdir,
-            capture_output=True,
-            text=True,
-            input=stdin,
-            env={**os.environ, **_GIT_ENV},
+    def _remote_sha(self) -> str | None:
+        """The ref's current value, None when it genuinely does not exist. Raises when unsure."""
+        listed = _git(self.workdir, "ls-remote", "--exit-code", self.remote, self.ref)
+        if listed.returncode == 0:
+            return listed.stdout.split()[0]
+        if listed.returncode == 2:  # reached the remote; no such ref
+            return None
+        raise LockUnavailable(
+            f"cannot reach the state remote: {(listed.stderr or listed.stdout).strip()}"
         )
 
     def load(self) -> frozenset[str]:
-        fetched = self._git("fetch", self.remote, f"+{self.ref}:refs/vcrp-state-peek")
+        sha = self._remote_sha()
+        if sha is None:
+            return frozenset()
+        fetched = _git(self.workdir, "fetch", self.remote, f"+{self.ref}:refs/vcrp-state-peek")
         if fetched.returncode != 0:
-            return frozenset()
-        shown = self._git("show", "refs/vcrp-state-peek:applied.json")
-        self._git("update-ref", "-d", "refs/vcrp-state-peek")
+            raise LockUnavailable(f"cannot fetch durable state: {fetched.stderr.strip()}")
+        shown = _git(self.workdir, "show", "refs/vcrp-state-peek:applied.json")
+        _git(self.workdir, "update-ref", "-d", "refs/vcrp-state-peek")
         if shown.returncode != 0:
-            return frozenset()
+            raise StateCorrupt(f"{self.ref} exists but holds no applied.json")
         try:
-            return frozenset(json.loads(shown.stdout))
-        except json.JSONDecodeError:
-            return frozenset()
+            loaded = json.loads(shown.stdout)
+        except json.JSONDecodeError as error:
+            raise StateCorrupt(f"{self.ref} holds malformed JSON: {error}") from error
+        if not isinstance(loaded, list) or not all(isinstance(item, str) for item in loaded):
+            raise StateCorrupt(f"{self.ref} does not hold a list of identifiers")
+        return frozenset(loaded)
 
     def record(self, identifier: str) -> frozenset[str]:
-        """Add one id and publish it. Read-modify-write, so a lost race is retried by the caller."""
-        current = set(self.load())
-        current.add(identifier)
-        payload = json.dumps(sorted(current), indent=2) + "\n"
+        """Add one id and publish it, as a compare-and-swap that retries on a lost race."""
+        last: str = ""
+        for _ in range(self.retries):
+            before = self._remote_sha()
+            current = set(self.load())
+            if identifier in current:
+                return frozenset(current)
+            current.add(identifier)
+            commit = self._commit(json.dumps(sorted(current), indent=2) + "\n")
 
-        blob = self._git("hash-object", "-w", "--stdin", stdin=payload)
+            lease = f"--force-with-lease={self.ref}:{before}" if before else "--force-with-lease"
+            pushed = _git(self.workdir, "push", lease, self.remote, f"{commit}:{self.ref}")
+            if pushed.returncode == 0:
+                return frozenset(current)
+            last = (pushed.stderr or pushed.stdout).strip()
+        raise LockUnavailable(f"could not publish durable state after {self.retries} tries: {last}")
+
+    def _commit(self, payload: str) -> str:
+        blob = _git(self.workdir, "hash-object", "-w", "--stdin", stdin=payload)
         if blob.returncode != 0:
             raise LockUnavailable(f"cannot write state: {blob.stderr.strip()}")
-        tree = self._git("mktree", stdin=f"100644 blob {blob.stdout.strip()}\tapplied.json\n")
+        entry = f"100644 blob {blob.stdout.strip()}\tapplied.json\n"
+        tree = _git(self.workdir, "mktree", stdin=entry)
         if tree.returncode != 0:
             raise LockUnavailable(f"cannot build state tree: {tree.stderr.strip()}")
-        commit = self._git("commit-tree", tree.stdout.strip(), stdin="applied revisions\n")
+        commit = _git(self.workdir, "commit-tree", tree.stdout.strip(), stdin="applied revisions\n")
         if commit.returncode != 0:
             raise LockUnavailable(f"cannot build state commit: {commit.stderr.strip()}")
-
-        pushed = self._git("push", "--force", self.remote, f"{commit.stdout.strip()}:{self.ref}")
-        if pushed.returncode != 0:
-            raise LockUnavailable(f"cannot publish state: {pushed.stderr.strip()}")
-        return frozenset(current)
+        return commit.stdout.strip()

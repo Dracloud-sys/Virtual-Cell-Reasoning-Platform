@@ -21,9 +21,22 @@ from pathlib import Path
 from threading import Barrier
 
 import pytest
-from automation.gitrefs import GitRefLockStore, GitRefStateStore, LockUnavailable
+from automation.gitrefs import (
+    GitRefLockStore,
+    GitRefStateStore,
+    LockUnavailable,
+    StateCorrupt,
+)
 
 RUNNERS = 6
+
+_IDENTITY = {
+    "GIT_AUTHOR_NAME": "t",
+    "GIT_AUTHOR_EMAIL": "t@t.invalid",
+    "GIT_COMMITTER_NAME": "t",
+    "GIT_COMMITTER_EMAIL": "t@t.invalid",
+    "PATH": "/usr/bin:/bin",
+}
 
 
 def _git(*args: str, cwd: Path) -> None:
@@ -142,4 +155,132 @@ def test_state_accumulates_across_runs(remote: Path, workdir: Path) -> None:
 
 
 def test_missing_state_reads_as_empty_not_as_an_error(remote: Path, workdir: Path) -> None:
+    """A ref that does not exist yet genuinely is an empty set — that much is safe."""
     assert GitRefStateStore(remote=str(remote), workdir=workdir).load() == frozenset()
+
+
+# --- regressions from the second review round -------------------------------------------------
+
+
+def test_two_runs_with_the_same_owner_in_the_same_second_do_not_both_win(
+    remote: Path, tmp_path: Path, monkeypatch
+) -> None:
+    """The mutual exclusion was broken outright, and its own tests did not see it.
+
+    Git objects are content-addressed. Two runs with the same work id, the same owner
+    (`scheduled-runner`) and the same one-second timestamp built the *same* commit, so the
+    second push found the ref already pointing at that object, git said "Everything
+    up-to-date", exited 0, and both runs believed they held the lock:
+
+        same-owner same-second lock results: [True, True]
+
+    Pinning the clock and the owner is exactly that case.
+    """
+    monkeypatch.setenv("GIT_AUTHOR_DATE", "2026-09-06T00:00:00+0000")
+    monkeypatch.setenv("GIT_COMMITTER_DATE", "2026-09-06T00:00:00+0000")
+    stores = []
+    for name in ("a", "b"):
+        work = tmp_path / f"same-{name}"
+        work.mkdir()
+        _git("init", "--quiet", cwd=work)
+        stores.append(GitRefLockStore(remote=str(remote), workdir=work))
+
+    results = [store.create_exclusive("vcrp-ops-001", "scheduled-runner") for store in stores]
+
+    assert results == [True, False], results
+
+
+def test_each_store_mints_a_different_lock_commit(remote: Path, workdir: Path) -> None:
+    """The nonce is the mutual exclusion; the compare-and-swap only enforces it."""
+    first = GitRefLockStore(remote=str(remote), workdir=workdir)
+    second = GitRefLockStore(remote=str(remote), workdir=workdir)
+
+    assert first.nonce != second.nonce
+
+
+def test_a_later_process_can_release_with_the_token(remote: Path, workdir: Path) -> None:
+    """The lock used to live in an instance attribute, so the first run stranded it forever."""
+    taker = GitRefLockStore(remote=str(remote), workdir=workdir)
+    taker.create_exclusive("vcrp-ops-001", "runner-a")
+    token = taker.token_for("vcrp-ops-001")
+
+    fresh_process = GitRefLockStore(remote=str(remote), workdir=workdir)
+    assert fresh_process.release("vcrp-ops-001", "runner-a", token=token) is True
+    assert fresh_process.create_exclusive("vcrp-ops-001", "runner-b") is True
+
+
+def test_releasing_with_the_wrong_token_fails(remote: Path, workdir: Path) -> None:
+    taker = GitRefLockStore(remote=str(remote), workdir=workdir)
+    taker.create_exclusive("vcrp-ops-001", "runner-a")
+
+    other = GitRefLockStore(remote=str(remote), workdir=workdir)
+    assert other.release("vcrp-ops-001", "runner-b", token="0" * 40) is False
+    assert other.create_exclusive("vcrp-ops-001", "runner-b") is False
+
+
+def test_an_unreachable_state_remote_blocks_rather_than_reading_as_empty(
+    tmp_path: Path, workdir: Path
+) -> None:
+    """ "No revisions have been applied" out of a failed fetch applies an approved one twice."""
+    store = GitRefStateStore(remote=str(tmp_path / "absent.git"), workdir=workdir)
+
+    with pytest.raises(LockUnavailable):
+        store.load()
+
+
+def test_malformed_state_is_blocked_separately_from_unreachable(
+    remote: Path, workdir: Path
+) -> None:
+    store = GitRefStateStore(remote=str(remote), workdir=workdir)
+    blob = subprocess.run(
+        ["git", "hash-object", "-w", "--stdin"],
+        cwd=workdir,
+        input="{not json",
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    tree = subprocess.run(
+        ["git", "mktree"],
+        cwd=workdir,
+        input=f"100644 blob {blob}\tapplied.json\n",
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    commit = subprocess.run(
+        ["git", "commit-tree", tree],
+        cwd=workdir,
+        input="bad state",
+        capture_output=True,
+        text=True,
+        check=True,
+        env={
+            "GIT_AUTHOR_NAME": "t",
+            "GIT_AUTHOR_EMAIL": "t@t.invalid",
+            "GIT_COMMITTER_NAME": "t",
+            "GIT_COMMITTER_EMAIL": "t@t.invalid",
+            "PATH": "/usr/bin:/bin",
+        },
+    ).stdout.strip()
+    subprocess.run(
+        ["git", "push", str(remote), f"{commit}:{store.ref}"],
+        cwd=workdir,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    with pytest.raises(StateCorrupt):
+        store.load()
+
+
+def test_recording_state_uses_a_lease_rather_than_a_blind_force(
+    remote: Path, workdir: Path
+) -> None:
+    """A blind --force loses whatever another run recorded between the read and the write."""
+    store = GitRefStateStore(remote=str(remote), workdir=workdir)
+    store.record("comment-1")
+    store.record("comment-2")
+
+    assert store.load() == frozenset({"comment-1", "comment-2"})

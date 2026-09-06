@@ -13,24 +13,25 @@ The order is part of the contract, not a convenience:
 4. **an open pull request for this work**, because the reviewer's copy is the deliverable until
    they answer. Two open pull requests for one work id is a refusal, not a coin toss.
 5. **the lock**, taken only once there is real work to protect.
-6. **the world again.** Everything above was read before the lock existed, so between the read
-   and the lock another run could have opened the pull request, or a person could have pulled
-   the label. Re-reading after the lock is what makes the checks mean anything at the moment
-   work actually starts.
-7. **the environment**, last, because preparing an interpreter for work that does not exist is
+6. **the environment**, last, because preparing an interpreter for work that does not exist is
    how a quiet night turns into a `BLOCKED_ENVIRONMENT` report about nothing.
 
 Anything that stops the run after the lock was taken gives the lock back. A blocked run that
 keeps holding it turns one bad night into every subsequent night reporting `ALREADY_RUNNING`.
+
+**Re-reading the world after the lock is not done here**, and the first version's attempt to do
+it was the review's sharpest finding: it parsed a second set of responses out of the *same*
+request file, which is two snapshots taken before the lock existed wearing a before-and-after
+costume. A genuine re-read happens in a later process, after the lock is held, so it lives in
+:func:`automation.runner.confirm` — phase two, which is what actually issues permission.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable, Collection
+from collections.abc import Collection
 from dataclasses import dataclass, field
 
 from .environment import EnvironmentFacts
-from .gitrefs import LockUnavailable
 from .locking import LockStore, acquire
 from .outcomes import Outcome, Status
 from .queue import QueueRead
@@ -48,14 +49,6 @@ class LinkedPullRequest:
 
 
 @dataclass(frozen=True)
-class Recheck:
-    """What the world looks like after the lock was taken."""
-
-    queue: QueueRead
-    open_pull_requests: tuple[LinkedPullRequest, ...] = ()
-
-
-@dataclass(frozen=True)
 class GateInputs:
     """Everything the gate decides from. No I/O happens in here; callers supply the facts."""
 
@@ -70,8 +63,6 @@ class GateInputs:
     #: Branch names that already exist on the remote, so a crashed run's branch is reused
     #: rather than duplicated.
     existing_branches: tuple[str, ...] = ()
-    #: Called once the lock is held, to read the queue and pull requests again.
-    recheck: Callable[[], Recheck] | None = None
     owner: str = "scheduled-runner"
     evidence: dict[str, str] = field(default_factory=dict)
 
@@ -189,36 +180,6 @@ def _after_lock(
     revision: RevisionInstruction | None,
     kernel_authorized: bool,
 ) -> Outcome:
-    if inputs.recheck is not None:
-        try:
-            fresh = inputs.recheck()
-        except LockUnavailable as error:
-            return Outcome(Status.BLOCKED_GITHUB_ACCESS, f"re-read after locking failed: {error}")
-        refusal = _single_issue(fresh.queue)
-        if refusal is not None:
-            return Outcome(
-                refusal.status,
-                f"after taking the lock the queue changed: {refusal.detail}",
-                refusal.evidence,
-            )
-        fresh_issue = (fresh.queue.issues or ())[0]
-        if fresh_issue.number != issue_number:
-            return Outcome(
-                Status.NO_READY_WORK,
-                f"issue #{issue_number} is no longer the approved item (#{fresh_issue.number} "
-                "is); nothing was changed",
-            )
-        fresh_pr, refusal = _linked(fresh.open_pull_requests, inputs.work_id)
-        if refusal is not None:
-            return refusal
-        if fresh_pr is not None and pull_request is None:
-            return Outcome(
-                Status.AWAITING_REVIEW,
-                f"pull request #{fresh_pr.number} was opened for {inputs.work_id} while this run "
-                "was starting",
-                {"pull_request": str(fresh_pr.number)},
-            )
-
     if not inputs.environment.fit:
         return Outcome(
             Status.BLOCKED_ENVIRONMENT,

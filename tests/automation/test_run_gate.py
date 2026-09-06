@@ -32,7 +32,7 @@ from automation.environment import EnvironmentFacts
 from automation.gitrefs import LockUnavailable
 from automation.locking import InMemoryLockStore
 from automation.outcomes import Status
-from automation.preflight import GateInputs, LinkedPullRequest, Recheck, run_preflight
+from automation.preflight import GateInputs, LinkedPullRequest, run_preflight
 from automation.queue import QueueIssue, QueueRead
 from automation.revisions import RevisionInstruction
 
@@ -336,44 +336,5 @@ def test_identity_is_checked_before_the_lock_is_taken() -> None:
     assert store.holder(WORK_ID) == ""
 
 
-# freshness - everything read before the lock is read again after it
-
-
-def test_a_pull_request_opened_while_starting_is_caught_by_the_recheck() -> None:
-    late = LinkedPullRequest(number=99, work_id=WORK_ID, head_sha=HEAD)
-    outcome = run_preflight(
-        _inputs(
-            recheck=lambda: Recheck(queue=QueueRead.ok((_issue(),)), open_pull_requests=(late,))
-        )
-    )
-
-    assert outcome.status is Status.AWAITING_REVIEW
-    assert "99" in outcome.detail
-
-
-def test_a_label_pulled_while_starting_is_caught_by_the_recheck() -> None:
-    outcome = run_preflight(_inputs(recheck=lambda: Recheck(queue=QueueRead.ok(()))))
-
-    assert outcome.status is Status.NO_READY_WORK
-    assert "after taking the lock" in outcome.detail
-
-
-def test_a_recheck_that_finds_a_different_issue_stops_the_run() -> None:
-    outcome = run_preflight(_inputs(recheck=lambda: Recheck(queue=QueueRead.ok((_issue(77),)))))
-
-    assert outcome.status is Status.NO_READY_WORK
-    assert "77" in outcome.detail
-
-
-def test_a_stopped_recheck_gives_the_lock_back() -> None:
-    store = InMemoryLockStore()
-    run_preflight(_inputs(lock_store=store, recheck=lambda: Recheck(queue=QueueRead.ok(()))))
-
-    assert store.holder(WORK_ID) == ""
-
-
-def test_a_clean_recheck_lets_the_run_proceed() -> None:
-    outcome = run_preflight(_inputs(recheck=lambda: Recheck(queue=QueueRead.ok((_issue(),)))))
-
-    assert outcome.status is Status.READY_TO_IMPLEMENT
-    assert outcome.evidence["kernel_authorized"] == "no"
+# freshness lives at the entry point now: a real re-read happens in a later process, so it is
+# tested in test_runner_entrypoint.py against the two-phase protocol rather than faked here.
