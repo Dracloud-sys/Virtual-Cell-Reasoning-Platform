@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # scripts/verify.py compares the kernel against the base ref, which needs history
+          # rather than the default single-commit checkout.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -23,11 +27,11 @@ jobs:
       - name: Install project
         run: uv pip install --system -e ".[dev]"
 
-      - name: Lint (ruff)
-        run: ruff check .
+      - name: Fetch base ref
+        run: git fetch origin main --depth=0
 
-      - name: Format check (ruff)
-        run: ruff format --check .
-
-      - name: Test (pytest)
-        run: pytest -q
+      # One command, the same one a contributor runs. CI previously ran a hand-listed subset
+      # (pytest + ruff) while the gate also covers the benchmark re-run, every scorecard and
+      # the kernel diff, so a scorecard regression could pass CI and fail locally.
+      - name: Verify
+        run: python scripts/verify.py

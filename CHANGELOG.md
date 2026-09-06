@@ -7,6 +7,42 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **VCRP-OPS-001 — safeguards for an unattended run.** `scripts/automation/` decides whether a
+  scheduled run may start, and says precisely why when it may not: `NO_READY_WORK`,
+  `AMBIGUOUS_QUEUE`, `INVALID_SPEC`, `BLOCKED_GITHUB_ACCESS`, `BLOCKED_ENVIRONMENT`,
+  `BLOCKED_SCOPE`, `ALREADY_RUNNING`, `AWAITING_REVIEW`. The ten operational questions it must
+  answer were written before it existed and live in `tests/automation/`; every one is driven by
+  a fixture, because a queue used as a test fixture is a queue that can dispatch real work by
+  accident.
+
+  **The distinction the package exists for** is between "the queue was empty" and "the queue
+  could not be read". Both leave the repository untouched, so a single status makes a broken
+  token indistinguishable from a quiet night — which is how three consecutive runs looked
+  correct while doing nothing at all. `QueueRead` makes the confusion impossible to write: a
+  failed read carries no list to iterate.
+
+  Concurrency is held by `O_CREAT | O_EXCL`, not by an instruction in a prompt — a prompt that
+  says "stop if another run is going" is a request delivered to the only party that cannot
+  check whether the other party received it. The lock is atomic within one container and blind
+  across containers, which is where scheduled runs live; that gap is recorded in
+  `docs/operations/routine_runbook.md` and gates re-enabling the schedule.
+
+  The issue template no longer applies `claude-ready`. Queueing work was a side effect of
+  opening a tab; it is now an act — a person adds the label when they approve the contract.
+
+### Changed
+- **`scripts/verify.py` stops overstating itself.** `--fast` and `--no-kernel-diff` used to
+  drop checks and still print "All 9 checks passed"; skipped checks now appear as `SKIP` rows
+  and the summary names them instead. Comparing a commit with itself (`origin/main` on `main`)
+  reported a verified zero for the least interesting reason there is, and now reports "no
+  baseline". `--unchanged PATH` generalises the kernel assertion to any path, so a work item
+  that must not touch product code can prove it.
+- **CI runs the gate, not a subset.** The workflow ran `pytest` and `ruff` while the gate also
+  covers the standalone benchmark run, every scorecard and the kernel diff — so a scorecard
+  regression could pass CI and fail locally. It now runs `python scripts/verify.py`, with full
+  history checked out so the diff has a base ref.
+
+### Added
 - **MCP server.** `src/virtualcell/mcp/` exposes three tools — `list_domains`,
   `describe_domain` and `reason` — over the same `ReasoningService` the API and CLI use.
   No new request type, no MCP-specific reasoning path, no re-derivation: the adapter is a

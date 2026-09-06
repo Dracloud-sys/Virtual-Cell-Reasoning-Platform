@@ -14,7 +14,11 @@ python scripts/verify.py
 It runs the full suite, the benchmark suite separately, **every** scorecard (discovered by
 glob, not listed), `ruff check`, `ruff format --check`, and the kernel diff against
 `origin/main`. `--fast` skips the scorecard tables; `--no-kernel-diff` skips the git
-comparison when the base ref is not fetched.
+comparison when the base ref is not fetched. Both now report their omissions as `SKIP` rows
+and the summary refuses to say "all checks passed" when anything was skipped — a convenience
+that claims a clean run is worse than no run. `--unchanged PATH` adds a byte-identical
+assertion for any path, which is how a work item that must not touch product code proves it
+(`--unchanged src/virtualcell/`). CI runs this same command, not a hand-listed subset.
 
 Do not assemble this by hand. A gate composed from memory drifts, and a run that quietly
 skipped a scorecard looks exactly like a run that passed.
@@ -25,8 +29,23 @@ picked up by the next `ruff check .` as phantom lint errors and linger as untrac
 
 ## Environment
 
-- Python 3.12 lives at `C:\Users\dohf\AppData\Local\Programs\Python\Python312`. In Git Bash,
-  prefix commands with `PATH="/c/Users/dohf/AppData/Local/Programs/Python/Python312:$PATH"`.
+- **On the original Windows machine**, Python 3.12 lives at
+  `C:\Users\dohf\AppData\Local\Programs\Python\Python312`. In Git Bash, prefix commands with
+  `PATH="/c/Users/dohf/AppData/Local/Programs/Python/Python312:$PATH"`.
+- **That path is not a fact about anywhere else.** A cloud container's default `python` is
+  older than the project floor and the dependencies are not installed, so `verify.py` fails
+  eight of nine checks with `ModuleNotFoundError` — which reads like broken code and is not.
+  Build one first, then run the gate through it:
+
+  ```bash
+  uv venv --python "$(python3 -c 'import shutil;print(shutil.which("python3.12") or "")')" .venv-verify
+  uv pip install --python .venv-verify/bin/python -e ".[dev]"
+  .venv-verify/bin/python scripts/verify.py
+  ```
+
+  `uv` writes its own `.gitignore` inside the venv, so it stays out of `git status`. Never
+  hard-code an interpreter path; `scripts/automation/environment.py` discovers one and reports
+  `BLOCKED_ENVIRONMENT` rather than guessing.
 - Repository path contains non-ASCII characters. Prefer absolute paths and let tools resolve
   them; some Windows console encodings (cp949) cannot print em dashes, so avoid printing
   file contents with `print()` in throwaway scripts.
