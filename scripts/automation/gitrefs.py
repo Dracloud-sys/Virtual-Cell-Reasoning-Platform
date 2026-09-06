@@ -103,6 +103,22 @@ class GitRefLockStore:
         """The commit this run pushed, which is what proves ownership later."""
         return self._held.get(key)
 
+    def held_token(self, key: str) -> str | None:
+        """What the *remote* currently holds, or None when the ref is genuinely absent.
+
+        This is the question every later step has to ask. A token file on disk proves what this
+        run once took; it proves nothing about now. Another run can delete the ref and take it,
+        and the stale token would still look convincing.
+        """
+        listed = _git(self.workdir, "ls-remote", "--exit-code", self.remote, self.ref(key))
+        if listed.returncode == 0:
+            return listed.stdout.split()[0]
+        if listed.returncode == 2:
+            return None
+        raise LockUnavailable(
+            f"cannot read the lock ref: {(listed.stderr or listed.stdout).strip()}"
+        )
+
     def _mint(self, key: str, owner: str) -> str:
         tree = _git(self.workdir, "mktree", stdin="")
         if tree.returncode != 0:

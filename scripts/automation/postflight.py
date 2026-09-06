@@ -16,7 +16,10 @@ This runs after the implementation and before the push, and every check is on th
 * **`scripts/verify.py` in full**, exit code and all — including its refusal to compare a dirty
   tree, so "the diff was checked" and "the diff was checked against what will be pushed" are
   the same statement;
-* **the applied revision id**, recorded in durable state *after* everything else passes.
+What it deliberately does **not** do is record the applied revision. That happens in
+`finalize`, after the push is shown to have landed: recording here and then failing to push
+leaves the durable state saying "already applied" while the fix exists nowhere but a container
+that is about to be reclaimed.
 
 On any failure the run must not push, and the lock is released so the next run is not blocked
 by a failure that already ended.
@@ -69,10 +72,8 @@ class PostflightInputs:
     workdir: Path
     #: Extra byte-identical assertions this work item promised, e.g. src/virtualcell/.
     unchanged: tuple[str, ...] = ()
-    revision_id: str | None = None
     #: Injected so the tests can drive the failure paths without a 10-second suite run.
     verify: object | None = None
-    recorder: object | None = None
     evidence: dict[str, str] = field(default_factory=dict)
 
 
@@ -125,23 +126,6 @@ def run_postflight(inputs: PostflightInputs) -> Outcome:
         "kernel_authorized": "yes" if report.kernel_authorized else "no",
         "verify_exit": "0",
     }
-
-    if inputs.revision_id:
-        recorder = inputs.recorder
-        if recorder is None:
-            return Outcome(
-                Status.BLOCKED_GITHUB_ACCESS,
-                f"revision {inputs.revision_id} was applied but there is no durable store to "
-                "record it in; the next run would apply it again",
-            )
-        try:
-            recorder.record(inputs.revision_id)  # type: ignore[attr-defined]
-        except Exception as error:  # noqa: BLE001 - any failure here means "do not push"
-            return Outcome(
-                Status.BLOCKED_GITHUB_ACCESS,
-                f"could not record revision {inputs.revision_id}: {error}",
-            )
-        evidence["recorded_revision"] = inputs.revision_id
 
     return Outcome(
         Status.READY_TO_IMPLEMENT,

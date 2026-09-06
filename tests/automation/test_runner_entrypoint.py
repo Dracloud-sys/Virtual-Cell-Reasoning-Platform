@@ -86,6 +86,8 @@ def _confirm(tmp_path: Path, token: Path, request: Path | None = None) -> tuple[
         str(request or _phase2(tmp_path)),
         "--token",
         str(token),
+        "--confirmation",
+        str(tmp_path / "confirmation.json"),
         "--proceed-marker",
         str(marker),
     )
@@ -355,3 +357,125 @@ def test_an_unreadable_request_is_a_blocked_access_not_a_crash(tmp_path: Path) -
     code = _run("preflight", "--request", str(broken), "--token", str(tmp_path / "lock.json"))
 
     assert code == EXIT_CODES[Status.BLOCKED_GITHUB_ACCESS]
+
+
+# --- regressions from the third review round --------------------------------------------------
+
+
+def test_a_request_may_not_name_its_own_approvers(tmp_path: Path) -> None:
+    """The agent writes the request, so an approver list it can point at is one it can write."""
+    request = _phase1(tmp_path, approvers_file=str(tmp_path / "mine.json"))
+
+    code, token = _preflight(tmp_path, request)
+
+    assert code == EXIT_CODES[Status.INVALID_SPEC]
+    assert not token.exists()
+
+
+def test_an_inline_approver_list_is_refused_too(tmp_path: Path) -> None:
+    code, _ = _preflight(tmp_path, _phase1(tmp_path, approvers=["me"]))
+
+    assert code == EXIT_CODES[Status.INVALID_SPEC]
+
+
+def test_confirm_refuses_when_the_lock_was_taken_by_someone_else(tmp_path: Path) -> None:
+    """A token proves what this run took. It says nothing about who holds the lock now."""
+    _, token = _preflight(tmp_path)
+    lock = next((tmp_path / "locks").iterdir())
+    lock.write_text("another-run 2026-09-06T00:00:00+00:00 deadbeef\n", encoding="utf-8")
+
+    code, marker = _confirm(tmp_path, token)
+
+    assert code == EXIT_CODES[Status.ALREADY_RUNNING]
+    assert not marker.exists()
+
+
+def test_confirm_refuses_when_the_lock_is_gone(tmp_path: Path) -> None:
+    _, token = _preflight(tmp_path)
+    next((tmp_path / "locks").iterdir()).unlink()
+
+    code, marker = _confirm(tmp_path, token)
+
+    assert code == EXIT_CODES[Status.ALREADY_RUNNING]
+    assert not marker.exists()
+
+
+def test_a_refused_confirm_frees_the_lock_for_the_next_run(tmp_path: Path) -> None:
+    """Otherwise a withdrawn label leaves every later run reporting ALREADY_RUNNING."""
+    first, token = _preflight(tmp_path)
+    assert first == 0
+
+    refused, _ = _confirm(tmp_path, token, _phase2(tmp_path, queue_pages=[_page([])]))
+    again, _ = _preflight(tmp_path)
+
+    assert refused == EXIT_CODES[Status.NO_READY_WORK]
+    assert again == 0
+
+
+def test_a_refused_confirm_clears_the_token(tmp_path: Path) -> None:
+    _, token = _preflight(tmp_path)
+
+    _confirm(tmp_path, token, _phase2(tmp_path, queue_pages=[_page([])]))
+
+    assert not token.exists()
+
+
+def test_postflight_without_a_confirmation_is_refused(tmp_path: Path) -> None:
+    """preflight -> postflight would skip the re-read entirely."""
+    _, token = _preflight(tmp_path)
+
+    code = _run(
+        "postflight",
+        "--request",
+        str(_phase1(tmp_path)),
+        "--token",
+        str(token),
+        "--confirmation",
+        str(tmp_path / "never-confirmed.json"),
+        "--base",
+        "HEAD",
+    )
+
+    assert code == EXIT_CODES[Status.AWAITING_REVIEW]
+
+
+def test_a_confirmation_from_another_run_is_refused(tmp_path: Path) -> None:
+    _, token = _preflight(tmp_path)
+    _confirm(tmp_path, token)
+    stolen = json.loads((tmp_path / "confirmation.json").read_text())
+    stolen["token_identity"] = "0" * 64
+    (tmp_path / "confirmation.json").write_text(json.dumps(stolen), encoding="utf-8")
+
+    code = _run(
+        "postflight",
+        "--request",
+        str(_phase1(tmp_path)),
+        "--token",
+        str(token),
+        "--confirmation",
+        str(tmp_path / "confirmation.json"),
+        "--base",
+        "HEAD",
+    )
+
+    assert code == EXIT_CODES[Status.AWAITING_REVIEW]
+
+
+def test_a_phase_two_file_written_before_the_lock_is_refused(tmp_path: Path) -> None:
+    """`captured_at` is a string the agent writes; the file's own age is the weaker check."""
+    early = _phase2(tmp_path)
+    _, token = _preflight(tmp_path)
+    # keep the asserted timestamp fresh, but the file itself predates the lock
+    payload = json.loads(early.read_text())
+    payload["captured_at"] = datetime.now(UTC).isoformat(timespec="seconds")
+    early.write_text(json.dumps(payload), encoding="utf-8")
+    import os
+
+    stale = json.loads(token.read_text())["acquired_at"]
+    when = datetime.fromisoformat(stale).timestamp() - 60
+    os.utime(early, (when, when))
+
+    code, marker = _confirm(tmp_path, token, early)
+
+    assert code == EXIT_CODES[Status.BLOCKED_GITHUB_ACCESS]
+    assert not marker.exists()

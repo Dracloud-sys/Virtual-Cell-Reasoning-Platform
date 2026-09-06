@@ -9,46 +9,53 @@ afterwards.
 
 The gate is not advice the agent may take. It is a sequence of processes, and each exit code
 decides whether the next step happens. **Run them from the repository root** — that is where a
-scheduled run starts, and the command has to work there with nothing set up:
+scheduled run starts:
 
 ```bash
-# phase 1 - read the queue, validate the contract, take the lock
+# phase 1 - read the queue, validate the contract, take the lock. NOT permission to work.
 python scripts/automation/cli.py preflight --request phase1.json --token .automation/lock.json
 
 # ...the agent now queries GitHub AGAIN, after the lock exists...
 
-# phase 2 - submit that re-read and receive permission
+# phase 2 - submit that re-read; this is what grants permission
 python scripts/automation/cli.py confirm --request phase2.json --token .automation/lock.json \
-    --proceed-marker .automation/proceed.json
+    --confirmation .automation/confirmation.json --proceed-marker .automation/proceed.json
 
 # ...the implementation happens here...
 
-# after the work, before any push - judge the real diff and run the full gate
-python scripts/automation/cli.py postflight --request phase1.json --token .automation/lock.json \
-    --base origin/main --unchanged src/virtualcell/ --revision "$APPROVED_REVISION_ID"
+# before any push - judge the real diff and run the full gate
+python scripts/automation/cli.py postflight --request phase2.json --token .automation/lock.json \
+    --confirmation .automation/confirmation.json --base origin/main --unchanged src/virtualcell/
 
-# give the lock back
-python scripts/automation/cli.py release --request phase1.json --token .automation/lock.json
+# ...the push happens here...
+
+# after the push - prove the remote has the verified commit, record, release
+python scripts/automation/cli.py finalize --request phase1.json --token .automation/lock.json \
+    --confirmation .automation/confirmation.json --pushed-sha "$(git rev-parse HEAD)"
 ```
 
-**Four commands, not one, because the run has four moments where it can be wrong and one
-process cannot straddle them.**
+**What ties the five steps into one run is not the order.** An order is a suggestion, and the
+agent writes the files. Three things are checked at every step instead:
 
-`preflight` takes the lock and *stops*. Taking the lock is not permission to work: it writes a
-lock token and exits. `confirm` is the only command that writes the proceed marker, and it does
-so only when the token matches, the evidence was captured **after** the lock was taken, and the
-issue and its pull requests still look the way phase one decided about. That separation is the
-whole point — an earlier version parsed both "before" and "after" snapshots out of one file
-written before the lock existed, which is not a re-read of anything.
+1. **The remote lock.** Each step re-reads the lock ref and compares it against the token's
+   `lock_sha`. A token proves what this run once took; it says nothing about now, and another
+   run can delete the ref and take it while that file still looks convincing. Gone, or pointing
+   somewhere else, stops the step.
+2. **The confirmation artifact.** `postflight` and `finalize` refuse without one bound to the
+   same token, so `preflight → postflight` cannot skip the re-read.
+3. **The token's own copy of the decision.** The issue body hash, the pull requests and the
+   selected revision live in the token. `postflight` derives its path policy from a body whose
+   hash matches the confirmed one — widening *Allowed paths* in the request file after phase
+   one gets `BLOCKED_SCOPE`, not a wider diff.
 
-`postflight` runs after the implementation and before the push. It is where `BLOCKED_SCOPE`
-actually happens: real changed paths from `git diff --name-status -M base...HEAD`, judged
-against the issue's own allowed and forbidden paths, with renames checked at both ends and the
-kernel guarded unless the issue authorises it. Then `scripts/verify.py` in full, and only then
-is the applied revision id recorded. Nothing is pushed unless this exits 0.
+**A refused `confirm` gives the lock back** and clears the token and marker. Otherwise a
+withdrawn label leaves every later run reporting `ALREADY_RUNNING` forever. If the release
+itself fails, the report carries both the original refusal and the release failure.
 
-`release` uses the token from disk, so the process that gives the lock back does not have to be
-the one that took it.
+**The revision is recorded by `finalize`, never earlier.** `finalize` checks that the SHA on
+the branch is the one `postflight` verified, and only then writes the applied id to durable
+state. Recording before the push means a failed push leaves "already applied" true while the
+fix exists nowhere.
 
 **Exit 0 means the step succeeded and the next may begin, and nothing else does:**
 
@@ -80,24 +87,37 @@ not summarise them: parsing, filtering and refusing all happen in code that a te
 }
 ```
 
-Five fields carry more weight than they look:
-
 - **`queue_error`** is for the case where the query *failed*. Never pass an empty page list to
-  represent a failure — that is the confusion the whole package exists to prevent. A REST error
-  envelope (`{"message": "Bad credentials", "status": "401"}`) is also refused, because it
-  carries no `issues` collection at all.
-- **every page** goes in `queue_pages`. If the last page says `hasNextPage`, the read is
+  represent a failure. A REST error envelope (`{"message": "Bad credentials", "status": "401"}`)
+  is also refused, because it carries no `issues` collection at all.
+- **Every page** goes in `queue_pages`. If the last page says `hasNextPage`, the read is
   refused: one issue plus "there is more" would dispatch work while a second approved issue sat
   unseen on page two.
-- **`captured_at`** is required on the phase-two request, and must postdate the lock. Without it
-  the confirmation cannot be shown to be a re-read.
-- **`approvals`** are the raw review payloads. The parser derives the record id, the author
-  login, the body, the pull request and the full commit id from GitHub's own fields — an
-  `approved_by` the agent writes alongside them is ignored.
-- **`approvers`** are *not* taken from the request. They come from
-  [`run_approvers.json`](run_approvers.json), which is committed, so changing who may approve a
-  revision is a reviewable commit rather than a line the agent can write for itself. An empty
-  list is a configuration error, never "no restriction".
+- **`approvals`** are the raw review payloads. The parser derives the record id, author login,
+  body, pull request and full commit id from GitHub's own fields; an `approved_by` written
+  beside them is ignored.
+- **A request may not name its approvers.** `approvers` or `approvers_file` in the request is a
+  **schema error**, not an ignored field — the agent writes the request, so a list it can point
+  at is a list it can write. They come from [`run_approvers.json`](run_approvers.json), which
+  changes only by a reviewed commit, and an empty list approves nobody.
+
+### `captured_at` is an assertion, not evidence
+
+Say this plainly, because it would be easy to read the freshness check as stronger than it is.
+`captured_at` is **a string the calling agent writes**. It asserts that the responses were
+gathered after the lock was taken; it does not prove it, and nothing in this repository can make
+it prove it.
+
+What is actually checked is two weaker things:
+
+- the asserted timestamp postdates the lock — which catches an honest agent replaying an old
+  file, and catches nothing else;
+- the phase-two file's own mtime postdates the lock — which catches a file prepared in advance,
+  and is still only a local filesystem fact.
+
+Closing this properly needs a server-side timestamp from the GitHub response itself, or a tool
+call record the agent does not author. Until then, treat the two-phase protocol as protection
+against *mistakes and races*, not against a determined caller.
 
 ## The one-item queue
 

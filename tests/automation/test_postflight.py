@@ -134,45 +134,18 @@ def test_a_partial_verification_blocks_the_push(repo: Path) -> None:
     assert "exit 2" in outcome.detail
 
 
-def test_an_applied_revision_is_recorded_before_the_push_is_allowed(repo: Path) -> None:
+def test_postflight_does_not_record_the_revision(repo: Path) -> None:
+    """Recording here, then failing to push, leaves "already applied" true and the fix absent.
+
+    That is why recording moved to `finalize`, after the remote is shown to carry the commit.
+    """
     (repo / "scripts" / "automation" / "gate.py").write_text("x = 5\n")
     _commit(repo)
-    recorded: list[str] = []
 
-    class Recorder:
-        def record(self, identifier: str) -> None:
-            recorded.append(identifier)
-
-    outcome = run_postflight(_inputs(repo, revision_id="review-771", recorder=Recorder()))
+    outcome = run_postflight(_inputs(repo))
 
     assert outcome.proceeds
-    assert recorded == ["review-771"]
-    assert outcome.evidence["recorded_revision"] == "review-771"
-
-
-def test_an_applied_revision_with_nowhere_to_record_it_blocks(repo: Path) -> None:
-    """Otherwise the next run reads "not applied" and does the same work again."""
-    (repo / "scripts" / "automation" / "gate.py").write_text("x = 6\n")
-    _commit(repo)
-
-    outcome = run_postflight(_inputs(repo, revision_id="review-771", recorder=None))
-
-    assert outcome.status is Status.BLOCKED_GITHUB_ACCESS
-    assert "record" in outcome.detail
-
-
-def test_a_recorder_that_fails_blocks_the_push(repo: Path) -> None:
-    (repo / "scripts" / "automation" / "gate.py").write_text("x = 7\n")
-    _commit(repo)
-
-    class Broken:
-        def record(self, identifier: str) -> None:
-            raise RuntimeError("remote unreachable")
-
-    outcome = run_postflight(_inputs(repo, revision_id="review-771", recorder=Broken()))
-
-    assert not outcome.proceeds
-    assert "remote unreachable" in outcome.detail
+    assert "recorded_revision" not in outcome.evidence
 
 
 def test_an_issue_that_stopped_validating_mid_run_blocks(repo: Path) -> None:

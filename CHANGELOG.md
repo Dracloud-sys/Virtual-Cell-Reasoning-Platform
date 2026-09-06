@@ -37,6 +37,31 @@ to [Semantic Versioning](https://semver.org/).
   The issue template no longer applies `claude-ready`. Queueing work was a side effect of
   opening a tab; it is now an act — a person adds the label when they approve the contract.
 
+  **The five steps are one run, or they are nothing.** Each step passing on its own says
+  nothing about whether they belong to the same run, and every step now has to present a chain:
+  the *remote* lock ref must still equal the token's `lock_sha` (a token file proves what a run
+  once took, not what holds the lock now); `postflight` and `finalize` refuse without a
+  confirmation artifact bound to that same token, so `preflight → postflight` cannot skip the
+  re-read; and `postflight` derives its path policy from a body whose hash matches the confirmed
+  one, so widening *Allowed paths* in the request file after phase one yields `BLOCKED_SCOPE`
+  rather than a wider diff.
+
+  **A refused `confirm` gives the lock back.** A withdrawn label, a changed queue, a pull
+  request that appeared — any of them used to leave the lock held and every later run reporting
+  `ALREADY_RUNNING`. If the release itself fails, the report carries both the refusal and the
+  release failure rather than one hiding the other.
+
+  **The revision is recorded by `finalize`, after the push.** `finalize` checks that the SHA on
+  the branch is the one `postflight` verified before writing the applied id to durable state.
+  Recording at postflight time and then failing to push left "already applied" true while the
+  fix existed nowhere but a container about to be reclaimed. The selected revision is also bound
+  into the token — record id, pull request, head SHA and a hash of the instruction body — and
+  `confirm` re-parses the raw approvals to check it is still there unchanged, so no later step
+  can substitute a different one or drop it.
+
+  **A request may not choose its approvers.** `approvers_file` is now a schema error rather than
+  an override: the agent writes the request, so a list it can point at is a list it can write.
+
   **An entry point that runs where the Routine starts.** `python scripts/automation/cli.py
   preflight ...` works from the repository root with nothing set up. The command documented in
   the previous round needed `scripts/` on `PYTHONPATH` and failed exactly where it is used
@@ -54,8 +79,8 @@ to [Semantic Versioning](https://semver.org/).
   caller, so `BLOCKED_SCOPE` was unreachable from the CLI: a run that started legally could
   finish by pushing anything. It now judges the real diff — `git diff --name-status -M
   base...HEAD`, renames checked at both ends — against the issue's own path rules and its
-  kernel authorisation, runs `scripts/verify.py` in full, records the applied revision id, and
-  releases the lock on failure so a bad night does not block the next one.
+  kernel authorisation, runs `scripts/verify.py` in full, and releases the lock on failure so a
+  bad night does not block the next one.
 
   **The lock is released by whoever holds the token, not by whoever is still running.** It used
   to live in a process attribute, so the first successful run would have stranded its own lock

@@ -22,8 +22,10 @@ other run would love to clear it and start.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
+import secrets
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
@@ -47,6 +49,15 @@ class LockStore(Protocol):
     def holder(self, key: str) -> str:
         """Whoever holds the key, or an empty string."""
 
+    def held_token(self, key: str) -> str | None:
+        """What the store currently holds, or None when the lock is genuinely free.
+
+        Raises when the store cannot be reached — an unreadable lock is never a free one.
+        """
+
+    def token_for(self, key: str) -> str | None:
+        """What *this* caller pushed, if it won. Written into the durable token file."""
+
     def release(self, key: str, owner: str = "") -> bool:
         """Drop the key if this caller holds it. False when it belongs to someone else."""
 
@@ -56,21 +67,35 @@ class InMemoryLockStore:
 
     def __init__(self) -> None:
         self._held: dict[str, str] = {}
+        self._tokens: dict[str, str] = {}
+        self._mine: dict[str, str] = {}
 
     def create_exclusive(self, key: str, owner: str) -> bool:
         if key in self._held:
             return False
         self._held[key] = owner
+        self._tokens[key] = secrets.token_hex(16)
+        self._mine[key] = self._tokens[key]
         return True
 
     def holder(self, key: str) -> str:
         return self._held.get(key, "")
 
-    def release(self, key: str, owner: str = "") -> bool:
+    def held_token(self, key: str) -> str | None:
+        return self._tokens.get(key)
+
+    def token_for(self, key: str) -> str | None:
+        return self._mine.get(key)
+
+    def release(self, key: str, owner: str = "", *, token: str | None = None) -> bool:
         held = self._held.get(key)
         if held is None or (owner and held != owner):
             return False
+        if token is not None and self._tokens.get(key) != token:
+            return False
         del self._held[key]
+        self._tokens.pop(key, None)
+        self._mine.pop(key, None)
         return True
 
 
@@ -80,6 +105,7 @@ class FileLockStore:
     def __init__(self, directory: Path) -> None:
         self._dir = Path(directory)
         self._dir.mkdir(parents=True, exist_ok=True)
+        self._mine: dict[str, str] = {}
 
     def _path(self, key: str) -> Path:
         # A work id comes from an issue title, so it is untrusted enough to keep inside the
@@ -94,21 +120,36 @@ class FileLockStore:
             return False
         except OSError as error:  # a directory that vanished, a full disk - not a free lock
             raise LockUnavailable(f"cannot reach the lock directory: {error}") from error
+        nonce = secrets.token_hex(16)
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(f"{owner} {stamp}\n")
+            handle.write(f"{owner} {stamp} {nonce}\n")
+        self._mine[key] = self._digest(key)
         return True
+
+    def _digest(self, key: str) -> str:
+        path = self._path(key)
+        return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else ""
 
     def holder(self, key: str) -> str:
         path = self._path(key)
         return path.read_text(encoding="utf-8").strip() if path.exists() else ""
 
-    def release(self, key: str, owner: str = "") -> bool:
+    def held_token(self, key: str) -> str | None:
+        return self._digest(key) or None
+
+    def token_for(self, key: str) -> str | None:
+        return self._mine.get(key)
+
+    def release(self, key: str, owner: str = "", *, token: str | None = None) -> bool:
         path = self._path(key)
         if not path.exists():
             return False
         if owner and not path.read_text(encoding="utf-8").startswith(owner):
             return False
+        if token is not None and self._digest(key) != token:
+            return False
         path.unlink(missing_ok=True)
+        self._mine.pop(key, None)
         return True
 
 

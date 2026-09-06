@@ -31,7 +31,7 @@ from .queue import QueueIssue, QueueRead
 from .revisions import RevisionInstruction, actionable, rejections
 from .scope import KERNEL_PATH, PathChange, PathPolicy, parse_path_policy, unsafe_reason
 from .spec_contract import REQUIRED_SECTIONS, SpecReport, extract_work_id, validate_spec
-from .tokens import LockToken, fingerprint_of
+from .tokens import BoundRevision, Confirmation, LockToken, fingerprint_of, sha256_of
 
 __all__ = [
     "APPROVAL_LABEL",
@@ -39,6 +39,8 @@ __all__ = [
     "KERNEL_PATH",
     "REQUIRED_SECTIONS",
     "ApproverConfigError",
+    "BoundRevision",
+    "Confirmation",
     "EnvironmentFacts",
     "FileLockStore",
     "GateInputs",
@@ -70,6 +72,7 @@ __all__ = [
     "parse_approvals",
     "parse_path_policy",
     "probe_environment",
+    "sha256_of",
     "read_pull_requests",
     "read_queue",
     "rejections",
