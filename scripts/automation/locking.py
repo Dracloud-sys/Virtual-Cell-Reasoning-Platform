@@ -2,16 +2,22 @@
 
 A prompt that says "stop if another run is going" is not a lock. It is a request delivered to
 the only party that cannot check whether the other party received it, and two runs that both
-read the same instruction both conclude they are the only one. So the store exposes exactly one
+read the same instruction both conclude they are the only one. So a store exposes exactly one
 operation - create this key, and tell me whether **I** created it - and the answer comes from
 the filesystem or a remote, never from the caller's own memory.
 
-``FileLockStore`` is atomic through ``O_CREAT | O_EXCL``, which is a single syscall the kernel
-resolves for all contenders. It is also confined to one container: two scheduled runs get two
-containers and two empty lock directories, so it cannot see the other run. Closing that needs a
-store backed by something both runs share - a remote ref creation, which fails for the loser -
-and ``docs/operations/routine_runbook.md`` records that as the gap that gates re-enabling the
-schedule.
+Two implementations, with different reach, and the difference is not a detail:
+
+* :class:`FileLockStore` uses ``O_CREAT | O_EXCL``, one syscall the kernel resolves for all
+  contenders. It is atomic within **one filesystem**, which makes it right for two processes in
+  one container and blind to a run in another.
+* :class:`~automation.gitrefs.GitRefLockStore` pushes an orphan commit to a ref, and the remote
+  rejects every push but the first. That one reaches across containers, which is where
+  scheduled runs actually live.
+
+Releasing checks ownership in both. A run that did not take the lock cannot drop it, because
+the failure that makes a stuck lock dangerous - a crashed run - is also the one where some
+other run would love to clear it and start.
 """
 
 from __future__ import annotations
@@ -22,6 +28,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
+from .gitrefs import LockUnavailable
 from .outcomes import Outcome, Status
 
 _UNSAFE = re.compile(r"[^A-Za-z0-9._-]")
@@ -31,13 +38,17 @@ class LockStore(Protocol):
     """Somewhere a lock can be created atomically and seen by every contender."""
 
     def create_exclusive(self, key: str, owner: str) -> bool:
-        """True only for the caller that created the key. Never raises on contention."""
+        """True only for the caller that created the key. False on contention.
+
+        Raises :class:`~automation.gitrefs.LockUnavailable` when the store itself could not be
+        reached - which is never the same thing as the lock being free.
+        """
 
     def holder(self, key: str) -> str:
         """Whoever holds the key, or an empty string."""
 
-    def release(self, key: str) -> None:
-        """Drop the key. Releasing a key nobody holds is not an error."""
+    def release(self, key: str, owner: str = "") -> bool:
+        """Drop the key if this caller holds it. False when it belongs to someone else."""
 
 
 class InMemoryLockStore:
@@ -55,8 +66,12 @@ class InMemoryLockStore:
     def holder(self, key: str) -> str:
         return self._held.get(key, "")
 
-    def release(self, key: str) -> None:
-        self._held.pop(key, None)
+    def release(self, key: str, owner: str = "") -> bool:
+        held = self._held.get(key)
+        if held is None or (owner and held != owner):
+            return False
+        del self._held[key]
+        return True
 
 
 class FileLockStore:
@@ -77,6 +92,8 @@ class FileLockStore:
             fd = os.open(self._path(key), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
         except FileExistsError:
             return False
+        except OSError as error:  # a directory that vanished, a full disk - not a free lock
+            raise LockUnavailable(f"cannot reach the lock directory: {error}") from error
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             handle.write(f"{owner} {stamp}\n")
         return True
@@ -85,13 +102,23 @@ class FileLockStore:
         path = self._path(key)
         return path.read_text(encoding="utf-8").strip() if path.exists() else ""
 
-    def release(self, key: str) -> None:
-        self._path(key).unlink(missing_ok=True)
+    def release(self, key: str, owner: str = "") -> bool:
+        path = self._path(key)
+        if not path.exists():
+            return False
+        if owner and not path.read_text(encoding="utf-8").startswith(owner):
+            return False
+        path.unlink(missing_ok=True)
+        return True
 
 
 def acquire(store: LockStore, key: str, *, owner: str) -> Outcome:
-    """Take the lock, or report who already has it. Contention is an outcome, not an error."""
-    if store.create_exclusive(key, owner):
+    """Take the lock, or report who has it. Contention is an outcome; unreachable is a block."""
+    try:
+        taken = store.create_exclusive(key, owner)
+    except LockUnavailable as error:
+        return Outcome(Status.BLOCKED_GITHUB_ACCESS, str(error), {"lock": key})
+    if taken:
         return Outcome(Status.READY_TO_IMPLEMENT, f"holding the lock for {key}", {"lock": key})
     return Outcome(
         Status.ALREADY_RUNNING,

@@ -12,9 +12,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # scripts/verify.py compares the kernel against the base ref, which needs history
-          # rather than the default single-commit checkout.
+          # verify.py compares against a base ref, which needs history rather than the default
+          # single-commit checkout.
           fetch-depth: 0
+
+      # On a pull_request, checkout resolves refs/pull/N/merge — the head merged into the base,
+      # not the head itself. Recording both is the difference between "we tested this commit"
+      # and "we tested a merge of it", and only one of those is true.
+      - name: Record what is under test
+        run: |
+          echo "event: ${{ github.event_name }}"
+          echo "pr head sha:   ${{ github.event.pull_request.head.sha }}"
+          echo "pr base sha:   ${{ github.event.pull_request.base.sha }}"
+          echo "push before:   ${{ github.event.before }}"
+          echo "checkout sha:  $(git rev-parse HEAD)"
+          echo "checkout ref:  $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo detached)"
+          git log -1 --format='subject: %s'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,13 +40,36 @@ jobs:
       - name: Install project
         run: uv pip install --system -e ".[dev]"
 
-      # `fetch-depth: 0` above already has the history; this only guarantees the
-      # remote-tracking ref itself exists, which is what verify.py diffs against.
-      - name: Fetch base ref
-        run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+      # An explicit base per event. On a push to main the previous commit is the only honest
+      # baseline: comparing main with itself is empty for a reason that has nothing to do with
+      # the change, and verify.py now fails rather than reporting that as verified.
+      - name: Choose the comparison base
+        id: base
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+            echo "ref=origin/main" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.event.before }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # VCRP-OPS-001's own condition, not a standing rule: this work item may not touch product
+      # code, so its branch asks for one extra assertion. Ordinary product pull requests get
+      # nothing added, and the rule leaves with the branch.
+      - name: Extra assertions for this work item
+        id: extra
+        run: |
+          if [ "${{ github.head_ref }}" = "claude/vcrp-ops-001-run-gate" ]; then
+            echo "args=--unchanged src/virtualcell/" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=" >> "$GITHUB_OUTPUT"
+          fi
 
       # One command, the same one a contributor runs. CI previously ran a hand-listed subset
       # (pytest + ruff) while the gate also covers the benchmark re-run, every scorecard and
-      # the kernel diff, so a scorecard regression could pass CI and fail locally.
+      # the kernel diff, so a scorecard regression could pass CI and fail locally. Exit 2 means
+      # something was skipped, and `bash -e` fails the step on it — a partial gate is not a pass.
       - name: Verify
-        run: python scripts/verify.py
+        run: |
+          python scripts/verify.py --base "${{ steps.base.outputs.ref }}" \
+            ${{ steps.extra.outputs.args }}

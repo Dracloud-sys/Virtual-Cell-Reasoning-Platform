@@ -13,89 +13,62 @@ The questions, in the order the spec fixes them:
 3.  blank / placeholder / contradictory spec -> INVALID_SPEC   (test_spec_contract.py)
 4.  the GitHub query failed    -> BLOCKED_GITHUB_ACCESS, never read as an empty queue
 5.  interpreter or deps unfit  -> BLOCKED_ENVIRONMENT
-6.  the same work already runs -> at most one run starts
+6.  the same work already runs -> at most one run starts  (test_gitref_lock.py races it)
 7.  a linked PR awaits review  -> AWAITING_REVIEW, no second branch or PR
 8.  an approved revision       -> the same PR is revised and verification re-runs
 9.  a revision already applied -> not applied twice
 10. a change outside the allowed paths -> BLOCKED_SCOPE   (test_path_scope.py)
+
+Plus the identity and freshness rules the first review round added: the issue's own work id is
+authoritative, two pull requests for one work item is a refusal, and everything read before the
+lock is read again after it.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from automation.environment import EnvironmentFacts
+from automation.gitrefs import LockUnavailable
 from automation.locking import InMemoryLockStore
 from automation.outcomes import Status
-from automation.preflight import GateInputs, LinkedPullRequest, run_preflight
+from automation.preflight import GateInputs, LinkedPullRequest, Recheck, run_preflight
 from automation.queue import QueueIssue, QueueRead
 from automation.revisions import RevisionInstruction
 
 WORK_ID = "vcrp-ops-001"
+APPROVERS = ("Dracloud-sys",)
+HEAD = "1b716d75d6c0c60eac8930018d75ee184ad36a47"
+MOVED_ON = "c8214689efe9bc5ad4e743ac403f9c4ebb7f9a2d"
 
 FIT_ENVIRONMENT = EnvironmentFacts(python_version=(3, 12), missing_dependencies=())
 
 
+#: Read from a data file rather than duplicated as a literal, so the entry-point test and this
+#: one cannot drift into disagreeing about what a valid spec looks like.
+_TEMPLATE = (Path(__file__).parent / "fixtures" / "complete_spec.md").read_text(encoding="utf-8")
+
+
 def _spec_body(work_id: str = WORK_ID) -> str:
     """A spec that passes validation, so gate tests fail for gate reasons only."""
-    return f"""## Work ID
-
-`{work_id}`
-
-## Goal
-
-Prove the gate refuses correctly.
-
-## Work type
-
-- [x] Implementation
-- [ ] Investigation-first
-
-## Pre-implementation verification questions
-
-- The ten operational questions in tests/automation.
-
-## Allowed paths
-
-```
-scripts/automation/
-tests/automation/
-```
-
-## Forbidden paths
-
-```
-src/virtualcell/
-```
-
-## Kernel authorization
-
-- [x] Not authorized
-- [ ] Authorized
-
-## Non-goals
-
-No product behaviour changes.
-
-## Stop conditions
-
-Anything needing a scientific judgement.
-
-## Acceptance criteria
-
-- The ten questions pass.
-
-## Biological content change intent
-
-- [x] No biological content changes intended
-- [ ] Changes intended
-
-## Interface impact
-
-none - the gate is not reachable from the API, CLI or MCP surface.
-"""
+    return _TEMPLATE.format(work_id=work_id)
 
 
 def _issue(number: int = 21, work_id: str = WORK_ID) -> QueueIssue:
     return QueueIssue(number=number, title=f"[{work_id}] gate", body=_spec_body(work_id))
+
+
+def _revision(**overrides: object) -> RevisionInstruction:
+    base: dict[str, object] = {
+        "identifier": "comment-9001",
+        "approved_by": "Dracloud-sys",
+        "target_pull_request": 42,
+        "target_head_sha": HEAD,
+        "approval_record_id": "review-771",
+        "content": "rename the parser helper",
+    }
+    base.update(overrides)
+    return RevisionInstruction(**base)  # type: ignore[arg-type]
 
 
 def _inputs(**overrides: object) -> GateInputs:
@@ -104,6 +77,7 @@ def _inputs(**overrides: object) -> GateInputs:
         "queue": QueueRead.ok((_issue(),)),
         "environment": FIT_ENVIRONMENT,
         "lock_store": InMemoryLockStore(),
+        "approvers": APPROVERS,
     }
     base.update(overrides)
     return GateInputs(**base)  # type: ignore[arg-type]
@@ -117,6 +91,7 @@ def test_no_open_approved_issue_reports_no_ready_work() -> None:
 
     assert outcome.status is Status.NO_READY_WORK
     assert not outcome.proceeds
+    assert outcome.exit_code != 0
 
 
 # 2 - two ready issues is a refusal to choose, which is the point
@@ -126,7 +101,6 @@ def test_two_open_approved_issues_report_ambiguous_queue() -> None:
     outcome = run_preflight(_inputs(queue=QueueRead.ok((_issue(21), _issue(22)))))
 
     assert outcome.status is Status.AMBIGUOUS_QUEUE
-    assert not outcome.proceeds
     assert "21" in outcome.detail and "22" in outcome.detail
 
 
@@ -147,6 +121,17 @@ def test_queue_read_cannot_be_both_failed_and_empty() -> None:
 
     assert failed.issues is None
     assert not failed.succeeded
+
+
+def test_every_status_has_its_own_exit_code() -> None:
+    """A shell branches on the number; two statuses sharing one would erase the difference."""
+    from automation.outcomes import EXIT_CODES
+
+    assert len(set(EXIT_CODES.values())) == len(EXIT_CODES) == len(Status)
+    assert EXIT_CODES[Status.READY_TO_IMPLEMENT] == 0
+    assert all(
+        code != 0 for status, code in EXIT_CODES.items() if status is not Status.READY_TO_IMPLEMENT
+    )
 
 
 # 5 - environment problems are named, never silently worked around
@@ -175,6 +160,14 @@ def test_environment_is_checked_only_after_there_is_work() -> None:
     assert outcome.status is Status.NO_READY_WORK
 
 
+def test_a_blocked_environment_gives_the_lock_back() -> None:
+    """Otherwise one bad night makes every later night report ALREADY_RUNNING."""
+    store = InMemoryLockStore()
+    run_preflight(_inputs(lock_store=store, environment=EnvironmentFacts(python_version=(3, 11))))
+
+    assert store.holder(WORK_ID) == ""
+
+
 # 6 - concurrency, held by an atomic store rather than by an instruction in a prompt
 
 
@@ -186,16 +179,6 @@ def test_second_run_of_the_same_work_reports_already_running() -> None:
 
     assert first.status is Status.READY_TO_IMPLEMENT
     assert second.status is Status.ALREADY_RUNNING
-
-
-def test_only_one_of_many_concurrent_runs_starts() -> None:
-    store = InMemoryLockStore()
-
-    outcomes = [run_preflight(_inputs(lock_store=store)) for _ in range(5)]
-
-    started = [o for o in outcomes if o.proceeds]
-    assert len(started) == 1
-    assert all(o.status is Status.ALREADY_RUNNING for o in outcomes if not o.proceeds)
 
 
 def test_a_different_work_id_is_not_blocked_by_another_runs_lock() -> None:
@@ -213,94 +196,184 @@ def test_a_different_work_id_is_not_blocked_by_another_runs_lock() -> None:
     assert other.status is Status.READY_TO_IMPLEMENT
 
 
+def test_an_unreachable_lock_store_is_not_a_free_lock() -> None:
+    """The worst possible reading of "I could not check" is "nobody else is running"."""
+
+    class Unreachable(InMemoryLockStore):
+        def create_exclusive(self, key: str, owner: str) -> bool:
+            raise LockUnavailable("the lock remote could not be reached: 403")
+
+    outcome = run_preflight(_inputs(lock_store=Unreachable()))
+
+    assert outcome.status is Status.BLOCKED_GITHUB_ACCESS
+    assert not outcome.proceeds
+
+
 # 7 - a PR waiting on a reviewer is not an invitation to open a second one
 
 
 def test_linked_pull_request_awaiting_review_stops_the_run() -> None:
-    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha="abc1234")
+    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha=HEAD)
     outcome = run_preflight(_inputs(open_pull_requests=(pr,)))
 
     assert outcome.status is Status.AWAITING_REVIEW
-    assert not outcome.proceeds
     assert "42" in outcome.detail
 
 
 def test_a_pull_request_for_other_work_does_not_stop_this_run() -> None:
-    pr = LinkedPullRequest(number=7, work_id="vcrp-ops-999", head_sha="dead123")
+    pr = LinkedPullRequest(number=7, work_id="vcrp-ops-999", head_sha=HEAD)
     outcome = run_preflight(_inputs(open_pull_requests=(pr,)))
 
     assert outcome.status is Status.READY_TO_IMPLEMENT
+
+
+def test_two_pull_requests_for_one_work_item_are_refused_not_picked() -> None:
+    prs = (
+        LinkedPullRequest(number=42, work_id=WORK_ID, head_sha=HEAD),
+        LinkedPullRequest(number=43, work_id=WORK_ID, head_sha=MOVED_ON),
+    )
+    outcome = run_preflight(_inputs(open_pull_requests=prs))
+
+    assert outcome.status is Status.AMBIGUOUS_PULL_REQUEST
+    assert "#42" in outcome.detail and "#43" in outcome.detail
+
+
+def test_an_abandoned_branch_is_reused_rather_than_duplicated() -> None:
+    outcome = run_preflight(_inputs(existing_branches=("claude/vcrp-ops-001-run-gate", "main")))
+
+    assert outcome.proceeds
+    assert outcome.evidence["resume_branch"] == "claude/vcrp-ops-001-run-gate"
 
 
 # 8 - an approved revision reopens exactly the PR it names
 
 
 def test_approved_revision_revises_the_same_pull_request() -> None:
-    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha="abc1234")
-    revision = RevisionInstruction(
-        identifier="comment-9001",
-        approved_by="Dracloud-sys",
-        target_pull_request=42,
-        target_head_sha="abc1234",
-    )
-
-    outcome = run_preflight(_inputs(open_pull_requests=(pr,), revisions=(revision,)))
+    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha=HEAD)
+    outcome = run_preflight(_inputs(open_pull_requests=(pr,), revisions=(_revision(),)))
 
     assert outcome.status is Status.READY_TO_IMPLEMENT
     assert outcome.evidence["revise_pull_request"] == "42"
     assert outcome.evidence["revision"] == "comment-9001"
+    assert outcome.evidence["approval_record"] == "review-771"
     # Re-verification is not optional on a revision: the PR's evidence must be regenerated.
     assert outcome.evidence["reverify"] == "required"
 
 
 def test_revision_for_a_stale_head_does_not_reopen_the_pull_request() -> None:
     """The PR moved on since the instruction was written, so it is no longer that request."""
-    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha="newhead")
-    stale = RevisionInstruction(
-        identifier="comment-9001",
-        approved_by="Dracloud-sys",
-        target_pull_request=42,
-        target_head_sha="abc1234",
-    )
-
-    outcome = run_preflight(_inputs(open_pull_requests=(pr,), revisions=(stale,)))
+    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha=MOVED_ON)
+    outcome = run_preflight(_inputs(open_pull_requests=(pr,), revisions=(_revision(),)))
 
     assert outcome.status is Status.AWAITING_REVIEW
+    assert "head that has moved on" in outcome.detail
 
 
-def test_unapproved_revision_does_not_reopen_the_pull_request() -> None:
-    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha="abc1234")
-    unapproved = RevisionInstruction(
-        identifier="comment-9002",
-        approved_by="",
-        target_pull_request=42,
-        target_head_sha="abc1234",
+def test_an_unlisted_approver_cannot_authorise_a_revision() -> None:
+    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha=HEAD)
+    outcome = run_preflight(
+        _inputs(open_pull_requests=(pr,), revisions=(_revision(approved_by="drive-by"),))
     )
 
-    outcome = run_preflight(_inputs(open_pull_requests=(pr,), revisions=(unapproved,)))
+    assert outcome.status is Status.AWAITING_REVIEW
+    assert "not an accepted approver" in outcome.detail
+
+
+def test_a_revision_without_an_approval_record_is_not_an_approval() -> None:
+    """A name typed into a comment is a string; the record id is what can be audited."""
+    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha=HEAD)
+    outcome = run_preflight(
+        _inputs(open_pull_requests=(pr,), revisions=(_revision(approval_record_id=""),))
+    )
 
     assert outcome.status is Status.AWAITING_REVIEW
+    assert "approval record id" in outcome.detail
+
+
+def test_an_abbreviated_head_sha_is_refused_rather_than_prefix_matched() -> None:
+    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha=HEAD)
+    outcome = run_preflight(
+        _inputs(open_pull_requests=(pr,), revisions=(_revision(target_head_sha=HEAD[:7]),))
+    )
+
+    assert outcome.status is Status.AWAITING_REVIEW
+    assert "full 40-character head SHA" in outcome.detail
 
 
 # 9 - the same instruction, read again on the next run, must not be applied twice
 
 
 def test_already_applied_revision_is_not_applied_again() -> None:
-    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha="abc1234")
-    revision = RevisionInstruction(
-        identifier="comment-9001",
-        approved_by="Dracloud-sys",
-        target_pull_request=42,
-        target_head_sha="abc1234",
-    )
-
+    pr = LinkedPullRequest(number=42, work_id=WORK_ID, head_sha=HEAD)
     outcome = run_preflight(
         _inputs(
             open_pull_requests=(pr,),
-            revisions=(revision,),
+            revisions=(_revision(),),
             applied_revision_ids=frozenset({"comment-9001"}),
         )
     )
 
     assert outcome.status is Status.AWAITING_REVIEW
-    assert not outcome.proceeds
+    assert "already applied" in outcome.detail
+
+
+# identity - the issue's own work id is the authoritative one
+
+
+def test_a_work_id_the_issue_does_not_declare_is_refused() -> None:
+    """A wrong id would take the wrong lock and look for the wrong pull request."""
+    outcome = run_preflight(_inputs(work_id="vcrp-ops-002"))
+
+    assert outcome.status is Status.WORK_ID_MISMATCH
+    assert "vcrp-ops-001" in outcome.detail and "vcrp-ops-002" in outcome.detail
+
+
+def test_identity_is_checked_before_the_lock_is_taken() -> None:
+    store = InMemoryLockStore()
+    run_preflight(_inputs(work_id="vcrp-ops-002", lock_store=store))
+
+    assert store.holder("vcrp-ops-002") == ""
+    assert store.holder(WORK_ID) == ""
+
+
+# freshness - everything read before the lock is read again after it
+
+
+def test_a_pull_request_opened_while_starting_is_caught_by_the_recheck() -> None:
+    late = LinkedPullRequest(number=99, work_id=WORK_ID, head_sha=HEAD)
+    outcome = run_preflight(
+        _inputs(
+            recheck=lambda: Recheck(queue=QueueRead.ok((_issue(),)), open_pull_requests=(late,))
+        )
+    )
+
+    assert outcome.status is Status.AWAITING_REVIEW
+    assert "99" in outcome.detail
+
+
+def test_a_label_pulled_while_starting_is_caught_by_the_recheck() -> None:
+    outcome = run_preflight(_inputs(recheck=lambda: Recheck(queue=QueueRead.ok(()))))
+
+    assert outcome.status is Status.NO_READY_WORK
+    assert "after taking the lock" in outcome.detail
+
+
+def test_a_recheck_that_finds_a_different_issue_stops_the_run() -> None:
+    outcome = run_preflight(_inputs(recheck=lambda: Recheck(queue=QueueRead.ok((_issue(77),)))))
+
+    assert outcome.status is Status.NO_READY_WORK
+    assert "77" in outcome.detail
+
+
+def test_a_stopped_recheck_gives_the_lock_back() -> None:
+    store = InMemoryLockStore()
+    run_preflight(_inputs(lock_store=store, recheck=lambda: Recheck(queue=QueueRead.ok(()))))
+
+    assert store.holder(WORK_ID) == ""
+
+
+def test_a_clean_recheck_lets_the_run_proceed() -> None:
+    outcome = run_preflight(_inputs(recheck=lambda: Recheck(queue=QueueRead.ok((_issue(),)))))
+
+    assert outcome.status is Status.READY_TO_IMPLEMENT
+    assert outcome.evidence["kernel_authorized"] == "no"

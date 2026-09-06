@@ -11,7 +11,7 @@ disagree with in review.
 from __future__ import annotations
 
 import pytest
-from automation.spec_contract import REQUIRED_SECTIONS, validate_spec
+from automation.spec_contract import REQUIRED_SECTIONS, extract_work_id, validate_spec
 
 COMPLETE = """## Work ID
 
@@ -168,3 +168,86 @@ def test_problems_name_every_bad_section_not_only_the_first() -> None:
     report = validate_spec(body)
 
     assert len(report.problems) >= 2
+
+
+# --- hardening added after the first review round -------------------------------------------
+
+
+@pytest.mark.parametrize("marker", ["TODO", "TBD", "FIXME", "<reason>", "???"])
+def test_a_placeholder_is_worse_than_an_empty_section(marker: str) -> None:
+    """Evidence somebody opened the section and did not finish it, and it reads as content."""
+    report = validate_spec(_replace_body("Non-goals", f"{marker} decide later"))
+
+    assert not report.ok
+    assert any("Non-goals" in p and "placeholder" in p for p in report.problems)
+
+
+def test_a_placeholder_inside_an_instructional_comment_is_not_content() -> None:
+    body = _replace_body("Non-goals", "No product changes.\n<!-- TODO: reword this -->")
+
+    assert validate_spec(body).ok
+
+
+def test_authorising_the_kernel_without_naming_files_is_refused() -> None:
+    """A tick with nothing under it authorises everything and specifies nothing."""
+    body = _replace_body("Kernel authorization", "- [ ] Not authorized\n- [x] Authorized")
+    report = validate_spec(body)
+
+    assert not report.ok
+    assert any("Kernel authorization" in p and "naming the files" in p for p in report.problems)
+
+
+def test_authorising_the_kernel_with_files_and_a_reason_is_accepted() -> None:
+    body = _replace_body(
+        "Kernel authorization",
+        "- [ ] Not authorized\n- [x] Authorized\n\ndecide.py, because the third caller needs a "
+        "predicate the kernel cannot express today.",
+    )
+    report = validate_spec(body)
+
+    assert report.ok, report.problems
+    assert report.kernel_authorized
+
+
+def test_a_complete_spec_records_that_the_kernel_is_closed() -> None:
+    report = validate_spec(COMPLETE)
+
+    assert report.kernel_authorized is False
+
+
+def test_declaring_a_biological_change_without_specifying_it_is_refused() -> None:
+    body = _replace_body(
+        "Biological content change intent",
+        "- [ ] No biological content changes intended\n- [x] Changes intended",
+    )
+    report = validate_spec(body)
+
+    assert not report.ok
+    assert any("Biological" in p and "not specified" in p for p in report.problems)
+
+
+def test_declaring_a_biological_change_with_grounding_is_accepted() -> None:
+    body = _replace_body(
+        "Biological content change intent",
+        "- [ ] No biological content changes intended\n- [x] Changes intended\n\np16 confidence "
+        "moves to 0.8 on Sharpless 2015 (PMID 26105537).",
+    )
+    report = validate_spec(body)
+
+    assert report.ok, report.problems
+    assert report.biological_changes_intended
+
+
+def test_the_work_id_is_extracted_from_the_issue() -> None:
+    assert validate_spec(COMPLETE).work_id == "vcrp-ops-001"
+
+
+def test_a_work_id_that_is_not_a_slug_is_refused() -> None:
+    report = validate_spec(_replace_body("Work ID", "the operations one"))
+
+    assert not report.ok
+    assert any("Work ID" in p for p in report.problems)
+
+
+def test_a_missing_work_id_section_yields_no_work_id() -> None:
+    assert extract_work_id(_without("Work ID")) is None

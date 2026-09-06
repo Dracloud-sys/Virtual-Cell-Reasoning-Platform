@@ -102,8 +102,15 @@ src/virtualcell/reasoning/kernel/
 | validation loop | 6/6 |
 | genome editing | 10/10 |
 
-A changed per-question score needs an explanation in the pull request, not a shrug. The
-product-code and kernel diffs against the base ref must be empty unless authorized above.
+A changed per-question score needs an explanation in the pull request, not a shrug.
+
+**The kernel diff against the base ref must be empty** unless *Kernel authorization* above says
+otherwise — that is a standing invariant, separate from everything else on this form.
+
+Product code is different: what a work item may change under `src/virtualcell/` is decided by
+*Allowed paths*, and most product work belongs there. An issue that must not touch product code
+at all says so in its allowed and forbidden paths, and proves it with
+`scripts/verify.py --unchanged src/virtualcell/`.
 
 ## Open domain questions
 

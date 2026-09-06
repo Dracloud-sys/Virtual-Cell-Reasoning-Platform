@@ -38,10 +38,16 @@ picked up by the next `ruff check .` as phantom lint errors and linger as untrac
   Build one first, then run the gate through it:
 
   ```bash
-  uv venv --python "$(python3 -c 'import shutil;print(shutil.which("python3.12") or "")')" .venv-verify
+  PY312="$(command -v python3.12 || true)"
+  [ -n "$PY312" ] || { echo "no python3.12 on PATH; do not fall back to python3"; exit 1; }
+  uv venv --python "$PY312" .venv-verify
   uv pip install --python .venv-verify/bin/python -e ".[dev]"
   .venv-verify/bin/python scripts/verify.py
   ```
+
+  The guard is the point: an unset `$PY312` would become `uv venv --python "" `, which does not
+  fail loudly, and a fallback to whatever `python3` happens to be answers a different question
+  than the one asked.
 
   `uv` writes its own `.gitignore` inside the venv, so it stays out of `git status`. Never
   hard-code an interpreter path; `scripts/automation/environment.py` discovers one and reports

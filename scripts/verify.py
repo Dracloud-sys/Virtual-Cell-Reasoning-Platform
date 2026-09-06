@@ -102,13 +102,47 @@ def _rev(ref: str) -> str | None:
     return proc.stdout.strip() if proc.returncode == 0 else None
 
 
-def _unchanged(label: str, base: str, path: str) -> Result:
-    """Assert `path` is byte-identical to `base`, and refuse to do so vacuously.
+#: Untracked files that would change what the suite does. `AGENTS.md` is untracked on purpose
+#: (CLAUDE.md), and a stray note in the root changes nothing, so the filter is by location.
+_RELEVANT = ("src/", "tests/", "scripts/")
 
-    A branch compared against itself produces an empty diff for the least interesting reason
-    there is, and reporting that as "0 lines" is how a run on `main` gets to claim it verified
-    something it never looked at. When the base resolves to this very commit there is no
-    baseline, and the check says so instead of passing.
+
+def _worktree_state() -> tuple[str, tuple[str, ...]]:
+    """The commit under test, and every difference between it and what is on disk.
+
+    A diff check asks "is this path identical to the base", and answers it with
+    ``git diff base...HEAD`` — which reads *commits*. Run it with edits still in the working
+    tree and it answers honestly about the previous commit while the caller believes it
+    answered about their change. Twice during this work item that produced a green
+    "product code unchanged" for a tree that had not been committed yet.
+    """
+    proc = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=all"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    pending: list[str] = []
+    for line in proc.stdout.splitlines():
+        code, _, path = line[:2], line[2:3], line[3:].strip()
+        if code == "??" and not path.startswith(_RELEVANT):
+            continue
+        pending.append(f"{code.strip()} {path}")
+    return (_rev("HEAD") or "unknown", tuple(pending))
+
+
+def _unchanged(label: str, base: str, path: str, pending: tuple[str, ...]) -> Result:
+    """Assert `path` is byte-identical to `base`, and refuse to do so dishonestly.
+
+    Three ways this check can produce a meaningless pass, all of them failures here rather than
+    caveats in a report nobody reads:
+
+    * **an unresolvable base** - there is nothing to compare against;
+    * **a base that is this commit** - `origin/main...HEAD` on `main` is empty for the least
+      interesting reason there is, and reporting that as "0 lines" is how a run gets to claim
+      it verified something it never looked at. Pass a real base (on a push, the commit before);
+    * **a dirty working tree** - the diff reads commits, so uncommitted edits are invisible to
+      it and the result describes the previous commit.
     """
     started = time.monotonic()
     name = f"{label} unchanged"
@@ -118,10 +152,17 @@ def _unchanged(label: str, base: str, path: str) -> Result:
     if base_sha == head_sha:
         return Result(
             name,
-            True,
-            f"no baseline: {base} is this commit ({base_sha[:7]})",
+            False,
+            f"no baseline: {base} is this commit ({base_sha[:7]}) - pass a real --base",
             time.monotonic() - started,
-            skipped=True,
+        )
+    if pending:
+        shown = ", ".join(pending[:3]) + (f", +{len(pending) - 3} more" if len(pending) > 3 else "")
+        return Result(
+            name,
+            False,
+            f"working tree is not clean, so this compares the wrong tree: {shown}",
+            time.monotonic() - started,
         )
 
     proc = subprocess.run(
@@ -173,6 +214,12 @@ def main() -> int:
     args = parser.parse_args()
 
     py = sys.executable
+    start_sha, pending = _worktree_state()
+    print(f"verifying {start_sha} against base {args.base}")
+    print(f"working tree: {'clean' if not pending else f'{len(pending)} pending change(s)'}")
+    for entry in pending:
+        print(f"  {entry}")
+
     basetemp = Path(tempfile.mkdtemp(prefix="vcrp-pytest-"))
     results: list[Result] = []
     try:
@@ -206,9 +253,9 @@ def main() -> int:
                 Result("kernel unchanged", True, "skipped by --no-kernel-diff", 0.0, skipped=True)
             )
         else:
-            results.append(_unchanged("kernel", args.base, KERNEL))
+            results.append(_unchanged("kernel", args.base, KERNEL, pending))
         for path in args.unchanged:
-            results.append(_unchanged(path.rstrip("/"), args.base, path))
+            results.append(_unchanged(path.rstrip("/"), args.base, path, pending))
     finally:
         # Leaving these behind is the failure this script exists partly to prevent.
         shutil.rmtree(basetemp, ignore_errors=True)
@@ -220,20 +267,25 @@ def main() -> int:
         print(f"  {r.mark}  {r.name:<{width}}  {r.seconds:5.1f}s  {r.detail}")
     print("=" * (width + 58))
 
+    end_sha, end_pending = _worktree_state()
+    if end_sha != start_sha or end_pending != pending:
+        print(f"\nWARNING: the tree moved during the run ({start_sha[:7]} -> {end_sha[:7]}).")
+
     failed = [r.name for r in results if not r.ok and not r.skipped]
     if failed:
-        print(f"\nFAILED: {', '.join(failed)}")
+        print(f"\nFAILED at {end_sha}: {', '.join(failed)}")
         print("Re-run the failing step on its own for the full output.")
         return 1
 
     skipped = [r.name for r in results if r.skipped]
     ran = len(results) - len(skipped)
     if skipped:
-        # Deliberately not "all checks passed": a run that skipped something did not verify it,
-        # and a report that blurs the two is worth less than no report.
-        print(f"\n{ran} checks passed, {len(skipped)} not run: {', '.join(skipped)}.")
-    else:
-        print(f"\nAll {ran} checks passed.")
+        # Exit 2, not 0. A run that skipped something did not verify it, and a caller that only
+        # tests for zero would record this as a full pass — which is the whole failure mode.
+        print(f"\n{ran} checks passed at {end_sha}, {len(skipped)} NOT RUN: {', '.join(skipped)}.")
+        print("This is not a full verification; re-run without --fast/--no-kernel-diff.")
+        return 2
+    print(f"\nAll {ran} checks passed at {end_sha}.")
     return 0
 
 

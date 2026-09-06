@@ -30,17 +30,56 @@ to [Semantic Versioning](https://semver.org/).
   The issue template no longer applies `claude-ready`. Queueing work was a side effect of
   opening a tab; it is now an act — a person adds the label when they approve the contract.
 
+  **An entry point, so the checks are reachable.** `python -m automation preflight --request …`
+  is what the Routine invokes, and its exit code is the contract: 0 means work may begin and
+  nothing else does, with a distinct code per refusal. The agent writes the **raw** GitHub
+  responses into the request file rather than a summary, so the parsing, the pagination and the
+  filtering happen in code a test can drive. `--proceed-marker` is written only on 0, which is
+  how the integration tests assert that a refused run did not go on to do anything.
+
+  **A lock that reaches across containers.** `GitRefLockStore` pushes an orphan commit to
+  `refs/vcrp-locks/<work-id>`; a push that would not fast-forward is rejected by the server, and
+  an orphan is never an ancestor, so exactly one creation wins and the *remote* decides. Six
+  threads released from one barrier against one bare repository assert that. Rejected is not
+  failed — an unreachable remote raises rather than reporting a free lock — and `release` drops
+  only a lock this run took. Applied revision ids live in a ref too, so a restarted run does not
+  redo its predecessor's work.
+
+  **Identity and approval are verified, not assumed.** The work id the issue declares is
+  authoritative and a mismatch stops the run; two open pull requests for one work id is a
+  refusal rather than a coin toss; a revision instruction needs an approval record id, an
+  approver on the list, and the full 40-character head SHA it was written against. Everything
+  read before the lock is read again after it, because between those two moments a pull request
+  can open or a label can be pulled.
+
+  **Contract and path checks that catch the near-misses.** `TODO`, `TBD`, `<reason>` are refused
+  as loudly as an empty section — they are evidence somebody opened it and did not finish.
+  Authorising a kernel change requires naming the files and the reason; declaring a biological
+  change requires stating it and its grounding. The kernel stays forbidden even when a wide
+  allow rule and a forgetful forbidden list would let it through, paths must be
+  repository-relative (`../` and absolute paths are refused before they are matched), and a
+  rename is judged on both ends — moving a file out of the kernel is a kernel change.
+
 ### Changed
 - **`scripts/verify.py` stops overstating itself.** `--fast` and `--no-kernel-diff` used to
-  drop checks and still print "All 9 checks passed"; skipped checks now appear as `SKIP` rows
-  and the summary names them instead. Comparing a commit with itself (`origin/main` on `main`)
-  reported a verified zero for the least interesting reason there is, and now reports "no
-  baseline". `--unchanged PATH` generalises the kernel assertion to any path, so a work item
-  that must not touch product code can prove it.
+  drop checks and still print "All 9 checks passed"; skipped checks now appear as `SKIP` rows,
+  the summary names them, and **the process exits 2** — a caller that only tests for zero can no
+  longer record a partial gate as a full pass. `--unchanged PATH` generalises the kernel
+  assertion to any path, so a work item that must not touch product code can prove it.
+
+  Two comparisons it now refuses to make dishonestly. A base that resolves to *this* commit is
+  a failure, not a pass: `origin/main...HEAD` on `main` is empty for the least interesting
+  reason there is, and CI passes an explicit base per event instead. And a **dirty working tree
+  fails every diff check**, because `git diff base...HEAD` reads commits — run it with edits
+  still uncommitted and it answers honestly about the previous commit while the caller believes
+  it answered about their change. That produced a false green "product code unchanged" twice
+  during this work item before it was caught.
 - **CI runs the gate, not a subset.** The workflow ran `pytest` and `ruff` while the gate also
   covers the standalone benchmark run, every scorecard and the kernel diff — so a scorecard
-  regression could pass CI and fail locally. It now runs `python scripts/verify.py`, with full
-  history checked out so the diff has a base ref.
+  regression could pass CI and fail locally. It now runs `python scripts/verify.py` with an
+  explicit base, and records the PR head SHA, the base SHA and the **actual checkout SHA**
+  separately: on a `pull_request` event the checkout is `refs/pull/N/merge`, so "we tested the
+  head" and "we tested a merge of the head" are different claims and only one of them is true.
 
 ### Added
 - **MCP server.** `src/virtualcell/mcp/` exposes three tools — `list_domains`,
