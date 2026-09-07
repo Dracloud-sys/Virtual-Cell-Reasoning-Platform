@@ -75,7 +75,7 @@ from .gitrefs import (
 from .locking import FileLockStore, InMemoryLockStore, LockStore
 from .outcomes import Outcome, Status
 from .postflight import PostflightInputs, run_postflight
-from .preflight import GateInputs, run_preflight
+from .preflight import GateInputs, queue_verdict, run_preflight
 from .production import (
     CONFIG_PATH,
     ProductionTarget,
@@ -207,6 +207,16 @@ class RunRequest:
 
     def branches(self) -> tuple[str, ...]:
         return tuple(self.raw.get("existing_branches") or ())
+
+    def has_branch_snapshot(self) -> bool:
+        """Whether the request states a snapshot at all, as distinct from stating an empty one.
+
+        `existing_branches: []` is a real answer — nobody has a branch for this work item. An
+        absent key is not: it reads as the same empty tuple, so a phase-two file that simply
+        omits it skips the check for a branch that appeared while the lock was being taken. The
+        two are separated here for the same reason `queue_pages: []` is not an empty queue.
+        """
+        return isinstance(self.raw.get("existing_branches"), list)
 
     def lock_store(self) -> LockStore:
         """The lock, or a refusal. There is no default.
@@ -514,14 +524,38 @@ def _hand_back(store: LockStore, work_id: str, owner: str, refusal: Outcome) -> 
 
 
 def command_preflight(args: argparse.Namespace) -> Outcome:
+    """Phase one, and it asks the queue before it asks anything else.
+
+    The order is the contract. Everything below the queue gate — the target, the branch
+    snapshot, the approvers, the durable state store, the lock — is a question about *the work*,
+    and on a night when nothing is approved there is no work to ask it about. The previous
+    version checked the target first, so a run that honestly reported an empty queue in the only
+    file it could write (no issue, so no work id, so no branch to name after it) was answered
+    `INVALID_SPEC`: "you wrote a bad request" standing in for "there was nothing to do", and the
+    one status the whole package exists to keep distinct from a malfunction.
+
+    So the quiet night now costs nothing: no local `git remote get-url`, no approvers file, no
+    state ref read, no lock. It exits 10 and touches nothing.
+    """
     request, failure = _load(args)
     if failure is not None:
         return failure
     assert request is not None
 
+    verdict = queue_verdict(request.queue())
+    if verdict is not None:
+        return verdict
+
     failure = _target_shape(request)
     if failure is not None:
         return failure
+
+    if not request.has_branch_snapshot():
+        return Outcome(
+            Status.INVALID_SPEC,
+            "the request states no existing_branches snapshot; an absent one reads as 'no "
+            "branches' and would hide a crashed run's leftovers. State [] if there are none",
+        )
 
     try:
         approvers = load_approvers(_repo_root() / APPROVERS_PATH)
@@ -679,6 +713,13 @@ def command_confirm(args: argparse.Namespace) -> Outcome:
     stale = _freshness_problem(token, request)
     if stale:
         return refuse(Status.BLOCKED_GITHUB_ACCESS, f"the confirmation {stale}")
+
+    if not request.has_branch_snapshot():
+        return refuse(
+            Status.BLOCKED_GITHUB_ACCESS,
+            "the re-read states no existing_branches snapshot, so it cannot show whether a "
+            "branch for this work item appeared while the lock was being taken",
+        )
 
     fresh = request.queue()
     if not fresh.succeeded:
@@ -951,8 +992,19 @@ def _completion(
             verified_head=confirmation.verified_head,
             pull_requests=pulls,
             revision_pull_request=token.revision.pull_request if token.revision else None,
+            preexisting_pull_requests=_numbers_of(token.pull_requests),
         )
     )
+
+
+def _numbers_of(pull_requests: tuple[str, ...]) -> frozenset[int]:
+    """The pull request numbers phase one saw, from the token's `<number>:<head sha>` entries."""
+    numbers = set()
+    for entry in pull_requests:
+        number, _, _ = entry.partition(":")
+        if number.isdigit():
+            numbers.add(int(number))
+    return frozenset(numbers)
 
 
 def command_finalize(args: argparse.Namespace) -> Outcome:

@@ -148,6 +148,38 @@ and `completion.json`, written after the push and read only by `finalize`:
 - **Every page** goes in `queue_pages`. If the last page says `hasNextPage`, the read is
   refused: one issue plus "there is more" would dispatch work while a second approved issue sat
   unseen on page two.
+- **`totalCount` is checked against what was supplied.** Every page states how many issues the
+  *query* matched, and the same number on each page of one read. If the pages hand over fewer
+  issues than that number claims, the read is refused as incomplete rather than acted on. This
+  is what separates "the queue is empty" from "the listing came back empty" — the second is a
+  failed read wearing the first one's clothes, and the difference decides whether a night of
+  silence was a quiet night or a broken one. A genuinely empty queue is one page, `issues: []`,
+  `totalCount: 0`; that is the only shape that means nothing is approved.
+- **On a quiet night, the request is only the queue.** `preflight` asks the queue **before** it
+  asks anything else — before the target, the branch snapshot, the approvers, the state store
+  and the lock. All of those are questions about *the work*, and when nothing is approved there
+  is no work to ask them about: no issue means no work id, and no work id means no branch to
+  name after it. So a run whose queue read came back empty writes exactly this and nothing more:
+
+  ```json
+  {
+    "queue_pages": [ "<the raw list_issues response>" ],
+    "queue_error": null,
+    "workdir": "."
+  }
+  ```
+
+  and `preflight` exits **10 `NO_READY_WORK`**, having consulted no remote, read no approvers
+  file, touched no lock and written no token. Do **not** invent a work id or a branch name to
+  get past a schema check; a made-up identifier in a run record is worse than a missing one.
+  The bullets below apply from one approved issue onward.
+- **`existing_branches` must be stated, even when it is empty.** It is the branches that already
+  exist for this work item, and `[]` is a real answer — somebody looked and there were none. An
+  *absent* key is not: it reads as the same empty list, which would hide a crashed run's leftover
+  branch and let this run open a second branch, and then a second pull request, for one issue.
+  Phase one refuses `INVALID_SPEC` without it. Phase two refuses `BLOCKED_GITHUB_ACCESS` without
+  it, for a different reason: the whole point of the re-read is to show what appeared while the
+  lock was being taken, and a re-read that omits the snapshot cannot show that.
 - **`approvals`** are the raw review payloads. The parser derives the record id, author login,
   body, pull request and full commit id from GitHub's own fields; an `approved_by` written
   beside them is ignored.
@@ -201,6 +233,13 @@ A run works from **exactly one open issue carrying the `claude-ready` label**.
 Refusing to choose between two is deliberate. Picking which work matters next is strategy, and
 an implementer that picks for itself has quietly taken that decision.
 
+**The queue is asked first, and its answer is final for that run.** This ordering is the
+contract, not an optimisation. `NO_READY_WORK` is the status the whole package exists to keep
+distinct from a malfunction, and it is worthless if a correct quiet run can be answered
+`INVALID_SPEC` instead because it had no issue to take a work id from. The three answers below
+the table — a failed query, an incomplete read, a `queue_error` — are `BLOCKED_GITHUB_ACCESS`,
+and none of them is ever downgraded to "0 issues".
+
 **Filing an issue does not queue it.** The template does not apply the label, because a template
 that labels on creation makes queueing a side effect of opening a tab. A person adds
 `claude-ready` once the contract is complete and they approve it running unattended. The label
@@ -240,6 +279,19 @@ The default is that a run may not touch it. The exception needs all four of:
 
 Anything that fails these is reported in the `AWAITING_REVIEW` detail — passed over, never
 silently ignored.
+
+**Updating an already-open pull request is the revision path's privilege, and nothing else's.**
+`finalize` refuses `BLOCKED_SCOPE` when a run carrying no approved revision instruction finishes
+on a pull request that was already open when phase one decided — the token records the numbers
+it saw, so this is checked against phase one's reading rather than against the completion
+payload's account of itself. On a revision run the deliverable must be *exactly* the pull request
+the bound instruction was written on; recording the instruction as applied against any other one
+retires it falsely.
+
+This is a second gate, deliberately. `preflight` already refuses `AWAITING_REVIEW` when an open
+pull request for the work item has no actionable revision, so nothing should reach `finalize` in
+that shape. The two refusals answer to different evidence — the queue read, then the token — and
+the cost of the check being wrong is a reviewer's pull request rewritten under them.
 
 ## Re-running
 
@@ -380,6 +432,41 @@ against it. CI does not run on it either: `.github/workflows/ci.yml` triggers on
 `main` and `pull_request` targeting `main`, and pushing two probe refs under this namespace on
 the real origin produced **no workflow run** (run count unchanged, measured before and after).
 
+## The run record
+
+**Every run posts one, including a run that changed nothing.** Nothing outside the container can
+read the run's transcript, so a run that reports only into its own session leaves no evidence it
+happened — which is how three consecutive scheduled runs "succeeded" while doing nothing at all
+and stayed invisible for a day.
+
+The record goes on
+[issue #21](https://github.com/Dracloud-sys/Virtual-Cell-Reasoning-Platform/issues/21), as a
+comment, via `add_issue_comment`. That issue is open on purpose and is both the log and the v1
+cutover checklist. It replaces the earlier use of closed meta issue #18.
+
+```
+## Run record
+
+| | |
+|---|---|
+| finished (UTC) | <timestamp> |
+| status | <READY_FOR_GPT_REVIEW / BLOCKED / NO_READY_WORK / AMBIGUOUS_QUEUE> |
+| queue tool | <the exact tool name used for the claude-ready query> |
+| queue result | <the raw result, e.g. totalCount 0, issues []> |
+| gate steps | <each command run and its exit code> |
+| repo changes | <branch + PR, or "none"> |
+
+<one short paragraph: what you did, or why there was nothing to do>
+```
+
+Never add `claude-ready` to issue #21 and never close it. The label is the work queue: a
+non-work item in it makes the next run report `AMBIGUOUS_QUEUE`, and a closed issue is a poor
+place to keep sending a log.
+
+If `add_issue_comment` is unavailable, that is a **finding to report**, not an obstacle to route
+around. Do not improvise a substitute, and in particular do not create a branch or a file to
+carry the record — a log written where the log is not kept is worse than a missing one.
+
 ## Routine settings
 
 Changed only as far as this work item needed. **Model and cadence are unchanged.**
@@ -390,13 +477,75 @@ Changed only as far as this work item needed. **Model and cadence are unchanged.
 | Model | `claude-opus-5` | unchanged |
 | Enabled | `false` | `false` — re-enabling needs explicit approval |
 | Repositories | none attached | `Dracloud-sys/Virtual-Cell-Reasoning-Platform` |
-| Prompt | reported only into its own session | posts a run record comment; calls `python -m automation preflight` and obeys its exit code |
+| Prompt | reported only into its own session | the five-step contract: `preflight` → re-query → `confirm` → implement + `postflight` → push, draft pull request, re-query → `finalize`, then a run record comment |
 
 The repository attachment was the defect behind three empty runs: with no source attached the
 container cloned nothing, so the run could not read `CLAUDE.md`, could not query the queue, and
 could not have opened a pull request. It was diagnosed by the absence of a run record, which is
 why the record exists.
 
+### Where the run pushes — the policy
+
+The Routine has two push-related settings that the prompt cannot reach and the Routines API
+cannot set. They are **UI-only fields**, so the policy is fixed here and the settings are made to
+match it by hand.
+
+| Field | Required value | Why |
+|---|---|---|
+| Outcome branch | **empty** | The run pushes itself, to the branch phase one bound and the token records. A harness-chosen branch is a second, unbound destination for the same work; `finalize` would then find the deliverable somewhere the reviewer is not reading and refuse `BLOCKED_SCOPE`. |
+| `allowed_push_branches` | the work branch and the automation namespace — **in whichever form the field takes** | The two things a run legitimately writes: its work branch, and the lock and state refs. |
+| `allowed_push_branches` — never | `main` | Not "the run is told not to": the run must not be *able* to. The prompt already says never commit or push to `main`, and a prompt is not an enforcement mechanism. |
+
+**Current state, read from the Routines API on 2026-09-07:**
+
+- The outcome branch is set to `claude/fervent-clarke` — a harness-generated name from before
+  this contract existed. It is **stale and inert**: `git ls-remote --heads origin` shows no such
+  branch, so nothing was ever pushed to it, and the Routine has been disabled since. It should
+  still be cleared, because the next enabled run is exactly when an inert setting stops being
+  inert.
+- `allowed_push_branches` is `[]`. An empty list is not the policy above; it is the absence of
+  one.
+
+**To make the settings match (Routines UI, claude.ai):**
+
+1. Open the Routine *VCRP claude-ready queue run (01:00 KST)* and edit it.
+2. Clear the outcome branch field — leave it empty. Do not replace it with `claude/*`; the field
+   names one branch, and every branch it could name is the wrong one.
+3. Set the allowed push branches. **Which form to enter depends on what the field accepts, and
+   that has not been observed** — the API reports the stored list but not how the UI normalises
+   what is typed into it:
+
+   | If the field takes | Enter |
+   |---|---|
+   | branch patterns | `claude/*` and `vcrp-automation/*` |
+   | full refs | `refs/heads/claude/*` and `refs/heads/vcrp-automation/*` |
+
+   Enter one form, save, and read the stored value back (`list_triggers` shows
+   `allowed_push_branches`). If it comes back reshaped, the *stored* value is the truth and this
+   table is what needs correcting. Confirm `main` is not among them in either form.
+4. Leave the Routine **disabled**. These are the settings the schedule will run under; enabling
+   it is a separate decision, taken against the checklist in issue #21.
+5. With it still disabled, use **Run now** once against an empty queue as a smoke test, and
+   check three things: the gate exited **10**, nothing was created (no branch, no pull request,
+   no new ref — `git ls-remote origin` unchanged), and a run record appeared on issue #21.
+   A quiet night is the cheapest end-to-end proof of the scheduled path, and it is the run that
+   three "successful" empty runs looked exactly like.
+
+Do not delete and recreate the Routine to change these. That loses its run history — which is
+the only record of the three empty runs — and the run history is evidence.
+
 **Re-enabling the schedule is not part of this work item.** A run driven by hand proves the
-gate; it does not prove the scheduled path end to end. That verification comes after merge,
-against a real scheduled run.
+gate; it does not prove the scheduled path end to end. The conditions live on
+[issue #21](https://github.com/Dracloud-sys/Virtual-Cell-Reasoning-Platform/issues/21), in three
+groups, and the split matters:
+
+| Group | What it is | Relation to the switch |
+|---|---|---|
+| **Pre-enable gates** | everything provable while the Routine is off | all must pass **before** enabling |
+| **Post-enable probation** | the first real scheduled firings | observed **after** enabling; a failure means disable again, same day |
+| **Follow-up** | housekeeping and the two remaining observations | neither blocks nor follows the switch |
+
+A scheduled run cannot happen while the schedule is off, so "one scheduled run completes" was
+never a condition for turning it on — it is what turning it on is *for*. Treating it as a
+pre-condition made the checklist unsatisfiable, which is worse than a checklist that is merely
+long: it reads as caution while making the decision impossible to reach on its own terms.

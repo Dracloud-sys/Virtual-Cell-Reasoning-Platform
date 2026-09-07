@@ -31,8 +31,10 @@ def _issue(number: int, *, labels=("claude-ready",), state: str = "OPEN", body: 
     }
 
 
-def _page(issues, *, has_next: bool = False):
-    return {"issues": issues, "pageInfo": {"hasNextPage": has_next}, "totalCount": len(issues)}
+def _page(issues, *, has_next: bool = False, total: int | None = None):
+    """`totalCount` is the *query's* total, so every page of one query reports the same number."""
+    count = len(issues) if total is None else total
+    return {"issues": issues, "pageInfo": {"hasNextPage": has_next}, "totalCount": count}
 
 
 def test_a_normal_page_reads_as_its_issues() -> None:
@@ -73,7 +75,7 @@ def test_a_truncated_page_is_a_failed_read_not_a_queue_of_one() -> None:
 
 
 def test_a_followed_page_completes_the_read() -> None:
-    read = read_queue([_page([_issue(21)], has_next=True), _page([_issue(22)])])
+    read = read_queue([_page([_issue(21)], has_next=True, total=2), _page([_issue(22)], total=2)])
 
     assert read.succeeded
     assert [i.number for i in read.issues or ()] == [21, 22]
@@ -278,3 +280,49 @@ def test_an_error_envelope_where_the_deliverable_belongs_raises() -> None:
 def test_a_pull_request_with_an_unreadable_head_raises() -> None:
     with pytest.raises(SchemaError):
         read_open_pull_requests([_pull(head="claude/x")])
+
+
+# --- the empty queue has to be corroborated ---------------------------------------------------
+
+
+def test_a_genuinely_empty_listing_is_an_empty_queue() -> None:
+    """Zero declared and zero supplied. This is the only way to say "nothing to do"."""
+    read = read_queue([_page([])])
+
+    assert read.succeeded
+    assert read.issues == ()
+
+
+def test_a_listing_that_declares_issues_but_carries_none_is_not_an_empty_queue() -> None:
+    """The quiet failure this package exists to prevent: a lost page reported as a quiet night."""
+    read = read_queue([_page([], total=3)])
+
+    assert not read.succeeded
+    assert "incomplete read, not an empty queue" in (read.error or "")
+
+
+def test_pages_that_disagree_about_the_total_are_a_failed_read() -> None:
+    read = read_queue([_page([_issue(21)], has_next=True, total=2), _page([_issue(22)], total=9)])
+
+    assert not read.succeeded
+    assert "totalCount" in (read.error or "")
+
+
+@pytest.mark.parametrize("total", [None, "3", 3.0, True, -1], ids=str)
+def test_a_page_without_a_usable_total_is_a_failed_read(total) -> None:
+    """`totalCount` is the corroboration; a missing or mistyped one corroborates nothing."""
+    page = _page([])
+    if total is None:
+        page.pop("totalCount")
+    else:
+        page["totalCount"] = total
+
+    assert not read_queue([page]).succeeded
+
+
+def test_the_captured_empty_fixture_still_reads_as_an_empty_queue() -> None:
+    """The real tool's own empty response, captured from a live run."""
+    read = read_queue([_fixture("list_issues_empty")])
+
+    assert read.succeeded
+    assert read.issues == ()

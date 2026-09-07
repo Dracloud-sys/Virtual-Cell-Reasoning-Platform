@@ -86,6 +86,7 @@ class _Chain:
             "queue_pages": [
                 {"issues": [_issue()], "pageInfo": {"hasNextPage": False}, "totalCount": 1}
             ],
+            "existing_branches": [],
             "lock": {"kind": "file", "directory": str(self.locks)},
         }
         if fresh:

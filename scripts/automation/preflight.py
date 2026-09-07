@@ -67,7 +67,19 @@ class GateInputs:
     evidence: dict[str, str] = field(default_factory=dict)
 
 
-def _single_issue(queue: QueueRead) -> Outcome | None:
+def queue_verdict(queue: QueueRead) -> Outcome | None:
+    """The queue's own answer, before anything else about the run is looked at.
+
+    Public because the CLI asks it **first**, ahead of the target, the branch snapshot, the
+    approvers and the lock. On a night when nothing is approved there is no issue to take a work
+    id from and no work item to name a branch after, so a request that omits both is correct
+    rather than malformed — and it used to be answered `INVALID_SPEC`, which reads as "the
+    caller wrote a bad file" when the truth is "there was nothing to do".
+
+    One function, two callers, on purpose: a second copy of this ladder in the CLI would be free
+    to drift from the one :func:`run_preflight` uses, and the two disagreeing is exactly the
+    confusion the exit codes exist to prevent.
+    """
     if not queue.succeeded:
         return Outcome(
             Status.BLOCKED_GITHUB_ACCESS,
@@ -103,7 +115,7 @@ def _linked(
 
 def run_preflight(inputs: GateInputs) -> Outcome:
     """Decide whether this run may start, and say precisely why when it may not."""
-    refusal = _single_issue(inputs.queue)
+    refusal = queue_verdict(inputs.queue)
     if refusal is not None:
         return refusal
     issue = (inputs.queue.issues or ())[0]

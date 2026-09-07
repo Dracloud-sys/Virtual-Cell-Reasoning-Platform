@@ -16,6 +16,12 @@ Four of them are handled explicitly.
 * **A page is not the queue.** If the response says another page exists and no further page was
   supplied, the read is *incomplete* — and an incomplete read that happens to show one issue
   would send a run off to implement it while a second approved issue sat on page two.
+* **An empty queue has to be corroborated.** `totalCount` is the listing's own count, so an
+  empty queue is believable only when the listing says zero and supplies zero. A payload
+  claiming three matching issues while carrying none is not "nothing to do" — it is a read that
+  lost something, and reporting `NO_READY_WORK` from it is the quiet failure this whole package
+  exists to prevent. There is deliberately no request field for "the queue was empty": the raw
+  response is the only way to say it.
 * **A closed issue carrying the label is not queued.** The filter is applied here rather than
   trusted from the caller's query arguments, because a caller that forgot `state=OPEN` would
   otherwise dispatch work from a closed issue.
@@ -111,6 +117,10 @@ def read_queue(
         return QueueRead.failed("no response was captured from the approved-work query")
 
     issues: list[QueueIssue] = []
+    #: The listing's own count, and how many entries actually arrived. An empty queue is only
+    #: believable when the two agree at zero.
+    declared: int | None = None
+    supplied = 0
     try:
         for index, page in enumerate(pages):
             if not isinstance(page, Mapping):
@@ -128,7 +138,21 @@ def read_queue(
                     "no further page was supplied, so the queue depth is unknown"
                 )
 
-            for raw in _issues_of(page, index):
+            count = page.get("totalCount")
+            if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+                raise SchemaError(
+                    f"page {index} carries no usable totalCount: {page.get('totalCount')!r}"
+                )
+            if declared is None:
+                declared = count
+            elif declared != count:
+                raise SchemaError(
+                    f"page {index} says totalCount {count} where an earlier page said {declared}"
+                )
+
+            entries = _issues_of(page, index)
+            supplied += len(entries)
+            for raw in entries:
                 if not isinstance(raw, Mapping):
                     raise SchemaError(f"page {index} holds a non-object issue: {raw!r}")
                 if not _is_open(raw) or approval_label not in _labels(raw):
@@ -146,6 +170,11 @@ def read_queue(
     except SchemaError as problem:
         return QueueRead.failed(f"the approved-work response did not parse: {problem}")
 
+    if declared != supplied:
+        return QueueRead.failed(
+            f"the approved-work query says {declared} issue(s) match but {supplied} were "
+            "supplied; that is an incomplete read, not an empty queue"
+        )
     return QueueRead.ok(issues)
 
 
