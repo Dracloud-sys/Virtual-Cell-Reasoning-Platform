@@ -77,6 +77,7 @@ def _phase1(tmp_path: Path, **overrides) -> Path:
         "workdir": str(_Target.workspace.root),
         "target": _target(),
         "queue_pages": [_page([_issue()])],
+        "existing_branches": [],
         "lock": {"kind": "file", "directory": str(tmp_path / "locks")},
     }
     payload.update(overrides)
@@ -90,6 +91,7 @@ def _phase2(tmp_path: Path, *, captured_at: str | None = None, **overrides) -> P
         "target": _target(),
         "captured_at": captured_at or datetime.now(UTC).isoformat(timespec="seconds"),
         "queue_pages": [_page([_issue()])],
+        "existing_branches": [],
         "lock": {"kind": "file", "directory": str(tmp_path / "locks")},
     }
     payload.update(overrides)
@@ -253,6 +255,32 @@ def test_an_open_pull_request_refuses_and_opens_no_second_one(tmp_path: Path) ->
     assert not token.exists()
 
 
+def test_a_phase_one_without_a_branch_snapshot_is_refused(tmp_path: Path) -> None:
+    """An absent `existing_branches` reads as "no branches", which is the one wrong default.
+
+    A crashed run's leftover branch is what the resume path exists for; a request that simply
+    omits the key looks identical to one that looked and found none, and the second branch for
+    one issue is how a duplicate pull request gets opened.
+    """
+    request = _phase1(tmp_path)
+    payload = json.loads(request.read_text(encoding="utf-8"))
+    payload.pop("existing_branches")
+    _write(request, payload)
+
+    code, token = _preflight(tmp_path, request)
+
+    assert code == EXIT_CODES[Status.INVALID_SPEC]
+    assert not token.exists()
+
+
+def test_an_empty_branch_snapshot_is_a_real_answer(tmp_path: Path) -> None:
+    """`[]` is what a run that looked and found nothing states. It is not the absent case."""
+    code, token = _preflight(tmp_path, _phase1(tmp_path, existing_branches=[]))
+
+    assert code == 0
+    assert token.exists()
+
+
 def test_a_second_run_while_the_first_holds_the_lock_refuses(tmp_path: Path) -> None:
     first, _ = _preflight(tmp_path)
     second = _run(
@@ -336,6 +364,21 @@ def test_a_pull_request_opened_between_the_phases_is_caught(tmp_path: Path) -> N
 
     assert code == EXIT_CODES[Status.AWAITING_REVIEW]
     assert not marker.exists()
+
+
+def test_a_phase_two_without_a_branch_snapshot_is_refused(tmp_path: Path) -> None:
+    """The re-read's whole job is to show what changed while the lock was being taken."""
+    _, token = _preflight(tmp_path)
+    request = _phase2(tmp_path)
+    payload = json.loads(request.read_text(encoding="utf-8"))
+    payload.pop("existing_branches")
+    _write(request, payload)
+
+    code, marker = _confirm(tmp_path, token, request)
+
+    assert code == EXIT_CODES[Status.BLOCKED_GITHUB_ACCESS]
+    assert not marker.exists()
+    assert not token.exists()  # refused before the work: the lock goes back
 
 
 def test_the_issue_body_changing_between_the_phases_is_caught(tmp_path: Path) -> None:

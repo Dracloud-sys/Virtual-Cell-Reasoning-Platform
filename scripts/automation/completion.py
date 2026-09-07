@@ -15,7 +15,10 @@ answered against the token rather than against the payload's own claims about it
 * its head branch is the branch phase one bound, not another branch for the same work;
 * its head SHA is the commit `postflight` verified, not merely a commit;
 * its base is the configured base branch;
-* on a revision run, it is the pull request the token's `BoundRevision` names.
+* on a revision run, it is the pull request the token's `BoundRevision` names — and on a run
+  that is *not* a revision, it is **not** one that was already open at phase one. Updating a
+  pull request somebody is already reading is the revision path's privilege, and the revision
+  path is the one that required an approval to take.
 
 The head-SHA check is also what makes this evidence rather than assertion: a payload cannot name
 a commit that did not exist when it was captured.
@@ -55,6 +58,9 @@ class CompletionInputs:
     pull_requests: Sequence[OpenPullRequest]
     #: Set only on a revision run: the pull request the approved instruction was written on.
     revision_pull_request: int | None = None
+    #: The pull requests that were already open when phase one decided, from the token. A run
+    #: with no approved revision may not finish on one of these.
+    preexisting_pull_requests: frozenset[int] = frozenset()
 
 
 def _belongs(pull: OpenPullRequest, work_id: str) -> bool:
@@ -90,6 +96,14 @@ def check_completion(inputs: CompletionInputs) -> Outcome:
             f"the approved revision was written on #{inputs.revision_pull_request} but the open "
             f"pull request for {inputs.work_id} is #{pull.number}; recording the instruction as "
             "applied would retire it against a pull request it was not written for",
+            evidence,
+        )
+    if inputs.revision_pull_request is None and pull.number in inputs.preexisting_pull_requests:
+        return Outcome(
+            Status.BLOCKED_SCOPE,
+            f"pull request #{pull.number} was already open when this run started, and this run "
+            "carries no approved revision instruction; touching a pull request a reviewer is "
+            "already holding is the revision path's privilege, not a new run's",
             evidence,
         )
     if pull.head_ref != inputs.branch:

@@ -45,6 +45,7 @@ def _request(tmp_path: Path, workspace: Workspace, **blocks) -> Path:
         "workdir": str(workspace.root),
         "target": {"branch": BRANCH},
         "captured_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "existing_branches": [],
         "queue_pages": [
             {
                 "issues": [

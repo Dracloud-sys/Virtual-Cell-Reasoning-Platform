@@ -7,6 +7,45 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **VCRP-OPS-002 — the run contract, tightened where a silence could pass for an answer.**
+  Follow-up to VCRP-OPS-001, and every item is the same shape: a missing thing that read as a
+  benign thing.
+
+  **An empty listing is not an empty queue.** `read_queue` now checks each page's `totalCount`
+  against the issues actually supplied, and requires every page of one read to declare the same
+  total. A listing that hands over fewer issues than it claims match is refused as an incomplete
+  read rather than acted on. `NO_READY_WORK` is a real finding — it means nobody approved
+  anything — and it should not also be what a truncated response looks like.
+
+  **A branch snapshot must be stated, even when it is empty.** `existing_branches: []` says
+  somebody looked and found none; an absent key said the same thing while nobody had looked, and
+  would have hidden a crashed run's leftover branch — the case the resume path exists for, and
+  the way one issue acquires two branches and then two pull requests. Phase one refuses
+  `INVALID_SPEC` without it; phase two refuses `BLOCKED_GITHUB_ACCESS` without it, because a
+  re-read whose whole purpose is to show what changed while the lock was being taken cannot show
+  it without the snapshot.
+
+  **Updating an open pull request is the revision path's privilege.** `finalize` refuses
+  `BLOCKED_SCOPE` when a run carrying no approved revision instruction completes on a pull
+  request that was already open when phase one decided — checked against the numbers the token
+  recorded, not against the completion payload's account of itself. `preflight` already refuses
+  `AWAITING_REVIEW` in that shape; the second gate answers to different evidence, and the cost of
+  it being wrong is a reviewer's pull request rewritten under them.
+
+  **The Routine's push settings are a written policy, not a leftover.** The outcome branch is
+  empty (the run pushes itself, to the branch phase one bound; a harness-chosen branch is an
+  unbound second destination that `finalize` would refuse) and `allowed_push_branches` is
+  `claude/*` and `refs/heads/vcrp-automation/*`, never `main` — not "the run is told not to", but
+  cannot. Both are UI-only fields the Routines API cannot set, so the runbook fixes the policy
+  and gives the procedure. The Routine's outcome branch was still `claude/fervent-clarke`, a
+  harness-generated name from before this contract; `git ls-remote` shows no such branch on
+  origin, so it is stale and inert — and the next enabled run is exactly when an inert setting
+  stops being inert.
+
+  The run record now goes to open issue #21, which is both the log and the v1 cutover checklist,
+  replacing the reuse of closed meta issue #18. The runbook carries the format, and states that
+  a missing `add_issue_comment` is a finding to report rather than an obstacle to route around.
+
 - **VCRP-OPS-001 — safeguards for an unattended run.** `scripts/automation/` decides whether a
   scheduled run may start, and says precisely why when it may not: `NO_READY_WORK`,
   `AMBIGUOUS_QUEUE`, `INVALID_SPEC`, `BLOCKED_GITHUB_ACCESS`, `BLOCKED_ENVIRONMENT`,
