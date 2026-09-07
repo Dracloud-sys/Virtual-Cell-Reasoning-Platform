@@ -535,6 +535,17 @@ Do not delete and recreate the Routine to change these. That loses its run histo
 the only record of the three empty runs — and the run history is evidence.
 
 **Re-enabling the schedule is not part of this work item.** A run driven by hand proves the
-gate; it does not prove the scheduled path end to end. That verification comes after merge,
-against a real scheduled run, and the remaining conditions are the "Still open" boxes on
-[issue #21](https://github.com/Dracloud-sys/Virtual-Cell-Reasoning-Platform/issues/21).
+gate; it does not prove the scheduled path end to end. The conditions live on
+[issue #21](https://github.com/Dracloud-sys/Virtual-Cell-Reasoning-Platform/issues/21), in three
+groups, and the split matters:
+
+| Group | What it is | Relation to the switch |
+|---|---|---|
+| **Pre-enable gates** | everything provable while the Routine is off | all must pass **before** enabling |
+| **Post-enable probation** | the first real scheduled firings | observed **after** enabling; a failure means disable again, same day |
+| **Follow-up** | housekeeping and the two remaining observations | neither blocks nor follows the switch |
+
+A scheduled run cannot happen while the schedule is off, so "one scheduled run completes" was
+never a condition for turning it on — it is what turning it on is *for*. Treating it as a
+pre-condition made the checklist unsatisfiable, which is worse than a checklist that is merely
+long: it reads as caution while making the decision impossible to reach on its own terms.
