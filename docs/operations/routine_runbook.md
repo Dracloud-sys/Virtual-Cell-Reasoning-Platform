@@ -484,55 +484,87 @@ container cloned nothing, so the run could not read `CLAUDE.md`, could not query
 could not have opened a pull request. It was diagnosed by the absence of a run record, which is
 why the record exists.
 
-### Where the run pushes — the policy
+### Where the run pushes — and what actually stops it
 
-The Routine has two push-related settings that the prompt cannot reach and the Routines API
-cannot set. They are **UI-only fields**, so the policy is fixed here and the settings are made to
-match it by hand.
+An earlier version of this section told the reader to open two fields in the Routines UI and
+change them. **Those fields do not exist.** The Routines edit form covers the name, prompt,
+repositories, environment, connectors and triggers — nothing else. `outcome_branch` and
+`allowed_push_branches` are session configuration the backend fills in; they appear in the
+Routines API's *read* of a trigger and are settable by neither the API nor the UI. A procedure
+for changing them was a procedure nobody could follow, and it sat here reading like a control we
+had.
 
-| Field | Required value | Why |
+**What the platform actually enforces** (Claude Code Routines, *Repositories and branch
+permissions*): a branch prefixed `claude/` is always accepted. A push to any other branch is
+checked first and refused when **any** of these holds:
+
+1. the branch is protected on GitHub;
+2. someone else has an open pull request from that branch;
+3. the branch carries commits authored by someone other than the account the Routine runs as.
+
+Read against this repository:
+
+| Destination | Rule that applies | Result |
 |---|---|---|
-| Outcome branch | **empty** | The run pushes itself, to the branch phase one bound and the token records. A harness-chosen branch is a second, unbound destination for the same work; `finalize` would then find the deliverable somewhere the reviewer is not reading and refuse `BLOCKED_SCOPE`. |
-| `allowed_push_branches` | the work branch and the automation namespace — **in whichever form the field takes** | The two things a run legitimately writes: its work branch, and the lock and state refs. |
-| `allowed_push_branches` — never | `main` | Not "the run is told not to": the run must not be *able* to. The prompt already says never commit or push to `main`, and a prompt is not an enforcement mechanism. |
+| `claude/<work-id>-<name>` | `claude/` prefix | always accepted — this is the deliverable's branch |
+| `vcrp-automation/locks/*`, `vcrp-automation/state/*` | the three checks | accepted: unprotected, no foreign pull request, our own commits. Matches the real probe |
+| **`main`** | the three checks | **the gap.** Unprotected until it was protected, no pull request from it, and its commits are authored by the same account the Routine runs as — so all three passed and nothing refused the push |
 
-**Current state, read from the Routines API on 2026-09-07:**
+**So the guard is GitHub branch protection on `main`, and nothing else is.** That is a stronger
+control than the setting we thought we were configuring, because it binds every actor rather
+than one Routine, and it is the *first* condition the platform's own check consults. It is set
+on GitHub — **Settings → Rules → Rulesets** (or classic branch protection) — not on claude.ai.
 
-- The outcome branch is set to `claude/fervent-clarke` — a harness-generated name from before
-  this contract existed. It is **stale and inert**: `git ls-remote --heads origin` shows no such
-  branch, so nothing was ever pushed to it, and the Routine has been disabled since. It should
-  still be cleared, because the next enabled run is exactly when an inert setting stops being
-  inert.
-- `allowed_push_branches` is `[]`. An empty list is not the policy above; it is the absence of
-  one.
+Two properties matter and they are not the same:
 
-**To make the settings match (Routines UI, claude.ai):**
+- **A rule exists.** Verifiable from here: `list_branches` reports `"protected": true` for `main`.
+- **The rule has no bypass.** *Not* verifiable from here. No available tool reads repository
+  rulesets, the REST rulesets endpoint refuses an unauthenticated read (403), and the only
+  conclusive test — pushing to `main` to see it refused — is the exact act the rule exists to
+  prevent. A ruleset whose bypass list names the account the Routine runs as enforces nothing
+  against that Routine while still reporting `protected: true`.
 
-1. Open the Routine *VCRP claude-ready queue run (01:00 KST)* and edit it.
-2. Clear the outcome branch field — leave it empty. Do not replace it with `claude/*`; the field
-   names one branch, and every branch it could name is the wrong one.
-3. Set the allowed push branches. **Which form to enter depends on what the field accepts, and
-   that has not been observed** — the API reports the stored list but not how the UI normalises
-   what is typed into it:
+  So this one is **attested by a person**, from the ruleset's own page: *Require a pull request
+  before merging* is on, and the **Bypass list is empty**. Recorded that way on issue #21 —
+  attested, not measured — because a check that cannot fail is not a check.
 
-   | If the field takes | Enter |
-   |---|---|
-   | branch patterns | `claude/*` and `vcrp-automation/*` |
-   | full refs | `refs/heads/claude/*` and `refs/heads/vcrp-automation/*` |
+### The outcome branch: unmodifiable backend metadata
 
-   Enter one form, save, and read the stored value back (`list_triggers` shows
-   `allowed_push_branches`). If it comes back reshaped, the *stored* value is the truth and this
-   table is what needs correcting. Confirm `main` is not among them in either form.
-4. Leave the Routine **disabled**. These are the settings the schedule will run under; enabling
-   it is a separate decision, taken against the checklist in issue #21.
-5. With it still disabled, use **Run now** once against an empty queue as a smoke test, and
-   check three things: the gate exited **10**, nothing was created (no branch, no pull request,
-   no new ref — `git ls-remote origin` unchanged), and a run record appeared on issue #21.
-   A quiet night is the cheapest end-to-end proof of the scheduled path, and it is the run that
-   three "successful" empty runs looked exactly like.
+The Routine's stored configuration carries
+`outcomes[].git_repository.git_info.branches: ["claude/fervent-clarke"]`, a harness-generated
+name from before this contract existed. **There is no way to clear it.** It is not in the edit
+form, `update_trigger` cannot write it, and `create_trigger` has no such parameter — so even
+deleting and recreating the Routine, which would destroy its run history, could not set it.
 
-Do not delete and recreate the Routine to change these. That loses its run history — which is
-the only record of the three empty runs — and the run history is evidence.
+Record it as **backend metadata, not a setting**: it is a fact about the Routine to be aware of,
+not an item anyone can action. What can be said about its risk is bounded and checkable:
+
+- it is `claude/`-prefixed, so it names a branch inside the always-accepted namespace and cannot
+  reach `main` or anything protected;
+- no such branch exists on origin, so nothing has ever been pushed to it;
+- whether a firing *creates* it is a question with an answer, and the empty-queue smoke test is
+  where that answer is taken: after **Run now** on an empty queue, `git ls-remote --heads origin`
+  must still show no `claude/fervent-clarke`. If it appears, the harness pushes to the outcome
+  branch on its own and that is a finding — a second destination for a run's work that the token
+  never bound and `finalize` never checks.
+
+### The smoke test, with the Routine still disabled
+
+**Run now** fires without enabling the schedule, which is what makes this provable beforehand
+rather than something to watch afterwards. Run it once against an empty queue and check:
+
+1. the gate exited **10**;
+2. `git ls-remote origin` is unchanged — no new branch, no new ref;
+3. **no `claude/fervent-clarke`** (the outcome-branch question above);
+4. no pull request was opened;
+5. a run record appeared on issue #21.
+
+A quiet night is the cheapest end-to-end proof of the scheduled path, and it is exactly what the
+three "successful" empty runs looked like from the outside. The difference is the record.
+
+Do not delete and recreate the Routine to change any of this. That loses its run history — the
+only record of the three empty runs — and buys nothing: the two fields are unsettable at
+creation time as well.
 
 **Re-enabling the schedule is not part of this work item.** A run driven by hand proves the
 gate; it does not prove the scheduled path end to end. The conditions live on

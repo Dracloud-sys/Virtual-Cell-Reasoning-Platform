@@ -6,6 +6,41 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **The runbook prescribed a procedure nobody could follow.** VCRP-OPS-002 fixed the Routine's
+  push policy in `docs/operations/routine_runbook.md` as two UI fields to change by hand —
+  clearing the outcome branch, and restricting `allowed_push_branches` to `claude/*` and the
+  automation namespace. **Neither field exists in the Routines edit form**, which covers the
+  name, prompt, repositories, environment, connectors and triggers and nothing else. They are
+  session configuration the backend fills in: readable in the Routines API's view of a trigger,
+  settable by neither the API nor the UI, and not settable at creation time either — so even
+  destroying the Routine's run history by recreating it would not have set them. The document
+  read like a control we had.
+
+  **What the platform actually enforces** is the rule in the Routines documentation: a `claude/`
+  branch is always accepted, and a push anywhere else is refused when the branch is protected on
+  GitHub, or someone else has an open pull request from it, or it carries commits by another
+  author. Against this repository the work branch and `vcrp-automation/*` are fine — and **`main`
+  passed all three**, because it was unprotected, had no pull request from it, and carries
+  commits by the same account the Routine runs as. Nothing refused that push.
+
+  So the guard is **GitHub branch protection on `main`**, which is a stronger control than the
+  setting we thought we were configuring: it binds every actor rather than one Routine, and it is
+  the first condition the platform's own check consults. `main` now reports `"protected": true`.
+
+  The two properties are kept apart on purpose. *A rule exists* is measured here —
+  `list_branches` reports it. *The rule has no bypass* is **attested by a person**, because no
+  available tool reads repository rulesets, the REST endpoint refuses an unauthenticated read
+  (403), and the only conclusive test is the push the rule exists to prevent. A ruleset whose
+  bypass list names the Routine's own account still reports `protected: true` while enforcing
+  nothing.
+
+  The stale outcome branch `claude/fervent-clarke` is recorded as **backend metadata rather than
+  a setting** — a fact to know, not an item to action. Its risk is bounded (`claude/`-prefixed,
+  so inside the always-accepted namespace; no such branch on origin) and the one open question
+  about it — whether a firing creates it — is now a check in the empty-queue smoke test rather
+  than an assumption.
+
 ### Added
 - **VCRP-OPS-002 — the run contract, tightened where a silence could pass for an answer.**
   Follow-up to VCRP-OPS-001, and every item is the same shape: a missing thing that read as a
