@@ -155,6 +155,24 @@ and `completion.json`, written after the push and read only by `finalize`:
   failed read wearing the first one's clothes, and the difference decides whether a night of
   silence was a quiet night or a broken one. A genuinely empty queue is one page, `issues: []`,
   `totalCount: 0`; that is the only shape that means nothing is approved.
+- **On a quiet night, the request is only the queue.** `preflight` asks the queue **before** it
+  asks anything else — before the target, the branch snapshot, the approvers, the state store
+  and the lock. All of those are questions about *the work*, and when nothing is approved there
+  is no work to ask them about: no issue means no work id, and no work id means no branch to
+  name after it. So a run whose queue read came back empty writes exactly this and nothing more:
+
+  ```json
+  {
+    "queue_pages": [ "<the raw list_issues response>" ],
+    "queue_error": null,
+    "workdir": "."
+  }
+  ```
+
+  and `preflight` exits **10 `NO_READY_WORK`**, having consulted no remote, read no approvers
+  file, touched no lock and written no token. Do **not** invent a work id or a branch name to
+  get past a schema check; a made-up identifier in a run record is worse than a missing one.
+  The bullets below apply from one approved issue onward.
 - **`existing_branches` must be stated, even when it is empty.** It is the branches that already
   exist for this work item, and `[]` is a real answer — somebody looked and there were none. An
   *absent* key is not: it reads as the same empty list, which would hide a crashed run's leftover
@@ -214,6 +232,13 @@ A run works from **exactly one open issue carrying the `claude-ready` label**.
 
 Refusing to choose between two is deliberate. Picking which work matters next is strategy, and
 an implementer that picks for itself has quietly taken that decision.
+
+**The queue is asked first, and its answer is final for that run.** This ordering is the
+contract, not an optimisation. `NO_READY_WORK` is the status the whole package exists to keep
+distinct from a malfunction, and it is worthless if a correct quiet run can be answered
+`INVALID_SPEC` instead because it had no issue to take a work id from. The three answers below
+the table — a failed query, an incomplete read, a `queue_error` — are `BLOCKED_GITHUB_ACCESS`,
+and none of them is ever downgraded to "0 issues".
 
 **Filing an issue does not queue it.** The template does not apply the label, because a template
 that labels on creation makes queueing a side effect of opening a tab. A person adds
@@ -468,7 +493,7 @@ match it by hand.
 | Field | Required value | Why |
 |---|---|---|
 | Outcome branch | **empty** | The run pushes itself, to the branch phase one bound and the token records. A harness-chosen branch is a second, unbound destination for the same work; `finalize` would then find the deliverable somewhere the reviewer is not reading and refuse `BLOCKED_SCOPE`. |
-| `allowed_push_branches` | `claude/*` and `refs/heads/vcrp-automation/*` | The two things a run legitimately writes: its work branch, and the lock and state refs. |
+| `allowed_push_branches` | the work branch and the automation namespace — **in whichever form the field takes** | The two things a run legitimately writes: its work branch, and the lock and state refs. |
 | `allowed_push_branches` — never | `main` | Not "the run is told not to": the run must not be *able* to. The prompt already says never commit or push to `main`, and a prompt is not an enforcement mechanism. |
 
 **Current state, read from the Routines API on 2026-09-07:**
@@ -486,10 +511,25 @@ match it by hand.
 1. Open the Routine *VCRP claude-ready queue run (01:00 KST)* and edit it.
 2. Clear the outcome branch field — leave it empty. Do not replace it with `claude/*`; the field
    names one branch, and every branch it could name is the wrong one.
-3. Set the allowed push branches to `claude/*` and `refs/heads/vcrp-automation/*`. Confirm `main`
-   is not among them.
+3. Set the allowed push branches. **Which form to enter depends on what the field accepts, and
+   that has not been observed** — the API reports the stored list but not how the UI normalises
+   what is typed into it:
+
+   | If the field takes | Enter |
+   |---|---|
+   | branch patterns | `claude/*` and `vcrp-automation/*` |
+   | full refs | `refs/heads/claude/*` and `refs/heads/vcrp-automation/*` |
+
+   Enter one form, save, and read the stored value back (`list_triggers` shows
+   `allowed_push_branches`). If it comes back reshaped, the *stored* value is the truth and this
+   table is what needs correcting. Confirm `main` is not among them in either form.
 4. Leave the Routine **disabled**. These are the settings the schedule will run under; enabling
    it is a separate decision, taken against the checklist in issue #21.
+5. With it still disabled, use **Run now** once against an empty queue as a smoke test, and
+   check three things: the gate exited **10**, nothing was created (no branch, no pull request,
+   no new ref — `git ls-remote origin` unchanged), and a run record appeared on issue #21.
+   A quiet night is the cheapest end-to-end proof of the scheduled path, and it is the run that
+   three "successful" empty runs looked exactly like.
 
 Do not delete and recreate the Routine to change these. That loses its run history — which is
 the only record of the three empty runs — and the run history is evidence.

@@ -17,6 +17,17 @@ to [Semantic Versioning](https://semver.org/).
   read rather than acted on. `NO_READY_WORK` is a real finding — it means nobody approved
   anything — and it should not also be what a truncated response looks like.
 
+  **`preflight` asks the queue before it asks anything else.** The order was target, branch
+  snapshot, approvers, state store, lock, and only then the queue — so a correct quiet run,
+  writing the only file it honestly could (no issue, therefore no work id, therefore no branch
+  to name after it), was answered `INVALID_SPEC`: "you wrote a bad request" standing in for
+  "there was nothing to do", and the one status this package exists to keep distinct from a
+  malfunction. The queue gate now runs first and is the *same function* `run_preflight` uses, so
+  the two cannot drift. A quiet night costs nothing: no `git remote get-url`, no approvers file,
+  no state ref read, no lock, no token — exit 10, and `tests/automation/test_quiet_night.py`
+  proves the negative by trapping `subprocess.run` and by diffing `ls-remote` on a real bare
+  repository before and after.
+
   **A branch snapshot must be stated, even when it is empty.** `existing_branches: []` says
   somebody looked and found none; an absent key said the same thing while nobody had looked, and
   would have hidden a crashed run's leftover branch — the case the resume path exists for, and

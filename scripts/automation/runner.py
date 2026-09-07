@@ -75,7 +75,7 @@ from .gitrefs import (
 from .locking import FileLockStore, InMemoryLockStore, LockStore
 from .outcomes import Outcome, Status
 from .postflight import PostflightInputs, run_postflight
-from .preflight import GateInputs, run_preflight
+from .preflight import GateInputs, queue_verdict, run_preflight
 from .production import (
     CONFIG_PATH,
     ProductionTarget,
@@ -524,10 +524,27 @@ def _hand_back(store: LockStore, work_id: str, owner: str, refusal: Outcome) -> 
 
 
 def command_preflight(args: argparse.Namespace) -> Outcome:
+    """Phase one, and it asks the queue before it asks anything else.
+
+    The order is the contract. Everything below the queue gate — the target, the branch
+    snapshot, the approvers, the durable state store, the lock — is a question about *the work*,
+    and on a night when nothing is approved there is no work to ask it about. The previous
+    version checked the target first, so a run that honestly reported an empty queue in the only
+    file it could write (no issue, so no work id, so no branch to name after it) was answered
+    `INVALID_SPEC`: "you wrote a bad request" standing in for "there was nothing to do", and the
+    one status the whole package exists to keep distinct from a malfunction.
+
+    So the quiet night now costs nothing: no local `git remote get-url`, no approvers file, no
+    state ref read, no lock. It exits 10 and touches nothing.
+    """
     request, failure = _load(args)
     if failure is not None:
         return failure
     assert request is not None
+
+    verdict = queue_verdict(request.queue())
+    if verdict is not None:
+        return verdict
 
     failure = _target_shape(request)
     if failure is not None:
