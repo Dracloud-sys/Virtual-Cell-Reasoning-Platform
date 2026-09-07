@@ -1,0 +1,12 @@
+{
+  "acquired_at": "2026-09-07T00:57:49+00:00",
+  "generation": 1,
+  "nonce": "b74734bdd1c9ff0ee35a1a6d5be50346",
+  "owner": "probe-owner-1",
+  "previous": "",
+  "release_nonce": "",
+  "released_at": "",
+  "schema": "vcrp-lock/1",
+  "state": "active",
+  "work_id": "__probe__"
+}
