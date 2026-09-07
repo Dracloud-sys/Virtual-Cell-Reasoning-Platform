@@ -120,6 +120,32 @@ to [Semantic Versioning](https://semver.org/).
   refusal was printed and the lock stayed on the remote with nothing saying so, which is how one
   bad run becomes every later run reporting `ALREADY_RUNNING`.
 
+  **The lock is a state machine, because the environment refuses ref deletion.** Probing the
+  real `origin` answered two questions the tests could not. Creating `refs/vcrp-locks/*` or
+  `refs/vcrp-state/*` is refused outright — HTTP 403 on `git-receive-pack`, while creating and
+  updating a branch succeeds — so the automation state moved to
+  `refs/heads/vcrp-automation/{locks,state}`. And **deleting** a ref is refused the same way, so
+  releasing a lock cannot mean deleting it: the ref is created once and then alternates between
+  an `active` and a `tombstone` record, carrying schema, work id, state, owner, nonce, monotonic
+  generation, timestamps, the previous lock SHA and a per-release nonce as JSON that is parsed
+  rather than grepped. Acquiring from a tombstone is a compare-and-swap on that tombstone's SHA,
+  so six contenders reading the same one still produce exactly one winner; a token from an
+  earlier generation cannot retire a later holder's lock; and a record that does not parse
+  raises `LockCorrupt` rather than reading as a free lock.
+
+  **A push's exit code is not evidence.** The refused delete printed `Everything up-to-date` and
+  exited **0** with the ref untouched, which the old `release()` would have reported as success —
+  a lock released in the report and held on the remote. Every write now re-reads the remote and
+  counts only when `ls-remote` shows the commit this process built; a release additionally
+  re-reads the object and requires it to parse as a tombstone, and `record()` requires the
+  identifier to actually appear in the remote's `applied.json`. A push that reports success
+  without landing raises rather than returning quietly. That exact 403-shaped liar — 403 in
+  stderr, "Everything up-to-date" on stdout, exit 0 — is reproduced as a regression test.
+
+  Recovery in `docs/operations/routine_runbook.md` is the same transition, done by hand from the
+  exact active SHA under a lease. There is no delete step anywhere, and no procedure for
+  overwriting a lock with an arbitrary SHA.
+
   **An entry point that runs where the Routine starts.** `python scripts/automation/cli.py
   preflight ...` works from the repository root with nothing set up. The command documented in
   the previous round needed `scripts/` on `PYTHONPATH` and failed exactly where it is used

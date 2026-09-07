@@ -4,34 +4,37 @@
 them hold two empty lock directories and neither can see the other. The only store both runs
 can reach is the git remote, and git already offers exactly the primitive a lock needs.
 
-**Creating a ref is a compare-and-swap.** A push that would not fast-forward an existing ref is
-rejected by the server, so while the ref exists every other run's push is rejected. Exactly one
-creation wins, decided by the remote, not by either contender's belief about the other.
+**Updating a ref is a compare-and-swap.** A push that would not fast-forward, or whose lease on
+the ref's current value is stale, is rejected by the server. Exactly one contender wins, decided
+by the remote rather than by either contender's belief about the other.
 
-That argument has one hole, and it was live in the first version of this file: it assumes the
-two contenders build *different* commits. Git objects are content-addressed, so two runs with
-the same work id, the same owner and the same one-second timestamp built **the same commit**,
-and the second push found the ref already pointing at that exact object. Git calls that
-"Everything up-to-date", exits 0, and both runs concluded they held the lock:
+Two findings shaped what is here, and both were found by running it against the real remote.
 
-    same-owner same-second lock results: [True, True]
+**Deletion is not available.** Releasing used to mean deleting the ref. In the execution
+environment this repository's runs actually get, `git push --delete` — with or without a lease —
+is refused with HTTP 403, while creating and updating a branch succeeds. A lock that cannot be
+released is not a lock: the first run would hold it forever. So a release is now a **state
+transition**, not a removal. The ref survives its whole life, moving between `active` and
+`tombstone` records, and nothing in the normal or the recovery path ever deletes a ref.
 
-So every lock commit now carries a 32-hex-character nonce from :mod:`secrets`, which no other
-run will reproduce, and an up-to-date push is treated as contention rather than success. The
-uniqueness is the lock; the CAS only enforces it.
+**A push's exit code is not evidence.** That same refused delete printed `Everything
+up-to-date` and exited **0**. Reading `returncode == 0` as success would have reported a
+released lock that was still held. Every write here is therefore followed by a re-read of the
+remote: a write counts only when `ls-remote` shows the SHA this process built, and for a release
+only when the object at that SHA parses as a tombstone.
 
 Three distinctions this module refuses to blur:
 
-* **rejected is not failed.** A rejected push means somebody else holds the lock and this run
+* **rejected is not failed.** A rejected push means somebody else got there first and this run
   should stop politely. A push that failed for any other reason - auth, network, an unreachable
   remote - raises :class:`LockUnavailable`, which the gate reports as ``BLOCKED_GITHUB_ACCESS``.
   Treating an unreachable remote as a free lock would be the worst available reading.
-* **holding is not owning.** ``release`` refuses to drop a lock this run did not take, and does
-  it with ``--force-with-lease`` so the delete is itself a compare-and-swap. The token survives
-  the process (:mod:`automation.tokens`), so a later invocation can still release it.
+* **holding is not owning.** A release moves only the exact `active` commit this run took, under
+  a lease on that SHA, so an expired generation cannot retire a newer holder's lock.
 * **absent is not unreadable.** A state ref that does not exist yet is an empty set. A state ref
   that could not be *reached* is a blocked run — reading "no revisions have been applied" out of
-  a failed fetch is how an approved revision gets applied twice.
+  a failed fetch is how an approved revision gets applied twice. A lock record that does not
+  parse is :class:`LockCorrupt`, which is also not a free lock.
 """
 
 from __future__ import annotations
@@ -48,9 +51,13 @@ from pathlib import Path
 _UNSAFE = re.compile(r"[^A-Za-z0-9._-]")
 #: git's own words for "somebody got there first".
 _CONTENTION = ("non-fast-forward", "fetch first", "rejected", "cannot lock ref", "stale info")
-#: git's words for "your object is already what the ref points at" — which, for a lock, means
-#: the ref was not created by this push.
-_ALREADY_THERE = ("everything up-to-date", "up to date")
+
+#: The lock record's format. A reader that does not know this string refuses rather than guesses.
+LOCK_SCHEMA = "vcrp-lock/1"
+STATE_ACTIVE = "active"
+STATE_TOMBSTONE = "tombstone"
+#: The file inside the lock commit's tree. Structured, so nothing is decided by substring match.
+LOCK_FILE = "lock.json"
 
 _GIT_ENV = {
     "GIT_AUTHOR_NAME": "vcrp-automation",
@@ -63,6 +70,10 @@ _GIT_ENV = {
 
 class LockUnavailable(RuntimeError):
     """The store could not be reached. Never raised merely because someone else holds it."""
+
+
+class LockCorrupt(RuntimeError):
+    """The lock ref exists but does not parse. Fail-closed: not a free lock, not a held one."""
 
 
 class StateCorrupt(RuntimeError):
@@ -84,6 +95,10 @@ def _git(workdir: Path, *args: str, stdin: str | None = None) -> subprocess.Comp
     )
 
 
+def _now() -> str:
+    return datetime.now(UTC).isoformat(timespec="seconds")
+
+
 def remote_head(remote: str, branch: str, *, workdir: Path) -> str | None:
     """What the remote says ``refs/heads/<branch>`` points at, or None when it has no such ref.
 
@@ -94,22 +109,129 @@ def remote_head(remote: str, branch: str, *, workdir: Path) -> str | None:
     Raises :class:`LockUnavailable` when the remote could not be reached: an unreadable remote
     is not an empty one.
     """
-    listed = _git(workdir, "ls-remote", "--exit-code", remote, f"refs/heads/{branch}")
+    return _remote_sha(remote, f"refs/heads/{branch}", workdir=workdir)
+
+
+def _remote_sha(remote: str, ref: str, *, workdir: Path) -> str | None:
+    """The ref's current value on the remote, None when it genuinely does not exist."""
+    listed = _git(workdir, "ls-remote", "--exit-code", remote, ref)
     if listed.returncode == 0:
         return listed.stdout.split()[0]
-    if listed.returncode == 2:
+    if listed.returncode == 2:  # reached the remote; no such ref
         return None
     problem = (listed.stderr or listed.stdout).strip()
-    raise LockUnavailable(f"cannot read {remote} {branch}: {problem}")
+    raise LockUnavailable(f"cannot read {ref} on {remote}: {problem}")
+
+
+@dataclass(frozen=True)
+class LockRecord:
+    """One state of one work item's lock, as stored in the ref's `lock.json`.
+
+    Everything a later step needs to judge the lock is in here, and it is read by parsing rather
+    than by looking for words in a commit message. `generation` is the monotonic identifier: a
+    token minted in generation 3 cannot release the lock that generation 4 is holding.
+    """
+
+    schema: str
+    work_id: str
+    state: str
+    owner: str
+    nonce: str
+    generation: int
+    acquired_at: str
+    released_at: str = ""
+    #: The lock commit this record replaced, or "" for the first acquisition.
+    previous: str = ""
+    #: Set on a tombstone: whose release it was. Without it two processes releasing the same
+    #: lock in the same second build byte-identical commits — git is content-addressed, so both
+    #: would see "their" commit on the remote and both would report a transition they did not
+    #: make. The same collision produced `[True, True]` in an earlier round's acquire path.
+    release_nonce: str = ""
+
+    @property
+    def active(self) -> bool:
+        return self.state == STATE_ACTIVE
+
+    def as_json(self) -> str:
+        return (
+            json.dumps(
+                {
+                    "schema": self.schema,
+                    "work_id": self.work_id,
+                    "state": self.state,
+                    "owner": self.owner,
+                    "nonce": self.nonce,
+                    "generation": self.generation,
+                    "acquired_at": self.acquired_at,
+                    "released_at": self.released_at,
+                    "previous": self.previous,
+                    "release_nonce": self.release_nonce,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
+
+    @classmethod
+    def parse(cls, text: str, *, where: str) -> LockRecord:
+        """Read a record, or refuse. An unreadable lock is never treated as an absent one."""
+        try:
+            raw = json.loads(text)
+        except json.JSONDecodeError as error:
+            raise LockCorrupt(f"{where} does not hold JSON: {error}") from error
+        if not isinstance(raw, dict):
+            raise LockCorrupt(f"{where} does not hold an object")
+        if raw.get("schema") != LOCK_SCHEMA:
+            raise LockCorrupt(f"{where} has schema {raw.get('schema')!r}, not {LOCK_SCHEMA!r}")
+        if raw.get("state") not in {STATE_ACTIVE, STATE_TOMBSTONE}:
+            raise LockCorrupt(f"{where} has state {raw.get('state')!r}, which is neither")
+        generation = raw.get("generation")
+        if not isinstance(generation, int) or isinstance(generation, bool) or generation < 1:
+            raise LockCorrupt(f"{where} has generation {raw.get('generation')!r}")
+        for name in ("work_id", "owner", "nonce", "acquired_at"):
+            if not isinstance(raw.get(name), str) or not raw[name]:
+                raise LockCorrupt(f"{where} has no usable {name}")
+        return cls(
+            schema=str(raw["schema"]),
+            work_id=str(raw["work_id"]),
+            state=str(raw["state"]),
+            owner=str(raw["owner"]),
+            nonce=str(raw["nonce"]),
+            generation=generation,
+            acquired_at=str(raw["acquired_at"]),
+            released_at=str(raw.get("released_at") or ""),
+            previous=str(raw.get("previous") or ""),
+            release_nonce=str(raw.get("release_nonce") or ""),
+        )
+
+    def describe(self) -> str:
+        when = self.released_at if self.state == STATE_TOMBSTONE else self.acquired_at
+        return f"{self.owner} ({self.state}, generation {self.generation}, {when})"
+
+
+@dataclass(frozen=True)
+class _PushAttempt:
+    """What git said. Kept apart from what the remote holds, which is what actually decides."""
+
+    exited_zero: bool
+    contention: bool
+    problem: str
 
 
 @dataclass
 class GitRefLockStore:
-    """A cross-container lock whose atomicity is the git remote's, not this process's."""
+    """A cross-container lock whose atomicity is the git remote's, not this process's.
+
+    The ref is created once and then lives forever, alternating between an `active` record and a
+    `tombstone` record. Nothing here deletes it — the environment these runs execute in refuses
+    ref deletion outright, and a lock whose release depends on an operation the environment
+    refuses is not a lock.
+    """
 
     remote: str
     workdir: Path
-    namespace: str = "refs/vcrp-locks"
+    namespace: str = "refs/heads/vcrp-automation/locks"
     #: Unique to this store instance, and therefore to this run. This is what makes the lock
     #: commit unforgeably distinct from every other contender's.
     nonce: str = field(default_factory=lambda: secrets.token_hex(16))
@@ -118,83 +240,187 @@ class GitRefLockStore:
     def ref(self, key: str) -> str:
         return f"{self.namespace}/{_safe(key)}"
 
+    # --- reading ------------------------------------------------------------------------------
+
+    def _sha(self, key: str) -> str | None:
+        return _remote_sha(self.remote, self.ref(key), workdir=self.workdir)
+
+    def _record(self, key: str, sha: str) -> LockRecord:
+        """Fetch the commit and parse its `lock.json`. Anything unreadable is LockCorrupt."""
+        peek = f"refs/vcrp-lock-peek/{_safe(key)}"
+        fetched = _git(self.workdir, "fetch", "--quiet", self.remote, f"+{self.ref(key)}:{peek}")
+        if fetched.returncode != 0:
+            raise LockUnavailable(f"cannot fetch the lock ref: {fetched.stderr.strip()}")
+        shown = _git(self.workdir, "show", f"{sha}:{LOCK_FILE}")
+        _git(self.workdir, "update-ref", "-d", peek)
+        if shown.returncode != 0:
+            if self._sha(key) != sha:
+                # It moved between the read and the fetch. A race is not corruption, and the
+                # caller may try again; saying "corrupt" here would strand a healthy lock.
+                raise LockUnavailable(f"{self.ref(key)} moved while it was being read")
+            raise LockCorrupt(f"{self.ref(key)} at {sha[:12]} carries no {LOCK_FILE}")
+        return LockRecord.parse(shown.stdout, where=f"{self.ref(key)} at {sha[:12]}")
+
+    def state_of(self, key: str) -> tuple[str | None, LockRecord | None]:
+        """The remote's current SHA and record, or (None, None) when the ref does not exist."""
+        sha = self._sha(key)
+        if sha is None:
+            return None, None
+        return sha, self._record(key, sha)
+
+    def held_token(self, key: str) -> str | None:
+        """The SHA of the *active* lock on the remote, or None when nothing holds it.
+
+        A tombstone is not a held lock, which is why this returns None for one: the ref outlives
+        every run, so "the ref exists" stopped being the same question as "somebody holds it".
+        """
+        sha, record = self.state_of(key)
+        if sha is None or record is None:
+            return None
+        return sha if record.active else None
+
     def token_for(self, key: str) -> str | None:
         """The commit this run pushed, which is what proves ownership later."""
         return self._held.get(key)
 
-    def held_token(self, key: str) -> str | None:
-        """What the *remote* currently holds, or None when the ref is genuinely absent.
+    def holder(self, key: str) -> str:
+        try:
+            _, record = self.state_of(key)
+        except (LockUnavailable, LockCorrupt) as error:
+            return f"unreadable ({error})"
+        return record.describe() if record else ""
 
-        This is the question every later step has to ask. A token file on disk proves what this
-        run once took; it proves nothing about now. Another run can delete the ref and take it,
-        and the stale token would still look convincing.
-        """
-        listed = _git(self.workdir, "ls-remote", "--exit-code", self.remote, self.ref(key))
-        if listed.returncode == 0:
-            return listed.stdout.split()[0]
-        if listed.returncode == 2:
-            return None
-        raise LockUnavailable(
-            f"cannot read the lock ref: {(listed.stderr or listed.stdout).strip()}"
-        )
+    # --- writing ------------------------------------------------------------------------------
 
-    def _mint(self, key: str, owner: str) -> str:
-        tree = _git(self.workdir, "mktree", stdin="")
+    def _commit(self, record: LockRecord, *, parent: str | None) -> str:
+        blob = _git(self.workdir, "hash-object", "-w", "--stdin", stdin=record.as_json())
+        if blob.returncode != 0:
+            raise LockUnavailable(f"cannot write the lock record: {blob.stderr.strip()}")
+        entry = f"100644 blob {blob.stdout.strip()}\t{LOCK_FILE}\n"
+        tree = _git(self.workdir, "mktree", stdin=entry)
         if tree.returncode != 0:
-            raise LockUnavailable(f"cannot build a lock object: {tree.stderr.strip()}")
-        stamp = datetime.now(UTC).isoformat(timespec="seconds")
-        message = f"lock {key}\nowner: {owner}\ntaken: {stamp}\nnonce: {self.nonce}\n"
-        commit = _git(self.workdir, "commit-tree", tree.stdout.strip(), stdin=message)
+            raise LockUnavailable(f"cannot build a lock tree: {tree.stderr.strip()}")
+        args = ["commit-tree", tree.stdout.strip()]
+        if parent:
+            args += ["-p", parent]
+        message = f"{record.state} {record.work_id} generation {record.generation}\n"
+        commit = _git(self.workdir, *args, stdin=message)
         if commit.returncode != 0:
             raise LockUnavailable(f"cannot build a lock commit: {commit.stderr.strip()}")
         return commit.stdout.strip()
 
-    def create_exclusive(self, key: str, owner: str) -> bool:
-        """True only for the run whose push created the ref. Contention returns False."""
-        sha = self._mint(key, owner)
-        pushed = _git(self.workdir, "push", self.remote, f"{sha}:{self.ref(key)}")
+    def _push(self, key: str, sha: str, *, lease: str | None) -> _PushAttempt:
+        """Attempt the write. Whether it *worked* is decided by re-reading, never by this."""
+        args = ["push"]
+        if lease is not None:
+            args.append(f"--force-with-lease={self.ref(key)}:{lease}")
+        args += [self.remote, f"{sha}:{self.ref(key)}"]
+        pushed = _git(self.workdir, *args)
         combined = (pushed.stderr + pushed.stdout).lower()
-        if pushed.returncode == 0:
-            if any(word in combined for word in _ALREADY_THERE):
-                # The ref already pointed here. Nothing was created, so nothing was won.
-                return False
-            self._held[key] = sha
-            return True
-        if any(word in combined for word in _CONTENTION):
-            return False
-        raise LockUnavailable(
-            f"the lock remote could not be reached: {(pushed.stderr or pushed.stdout).strip()}"
+        return _PushAttempt(
+            exited_zero=pushed.returncode == 0,
+            contention=any(word in combined for word in _CONTENTION),
+            problem=(pushed.stderr or pushed.stdout).strip(),
         )
 
-    def holder(self, key: str) -> str:
-        fetched = _git(self.workdir, "fetch", self.remote, f"+{self.ref(key)}:refs/vcrp-peek")
-        if fetched.returncode != 0:
-            return ""
-        shown = _git(self.workdir, "log", "-1", "--format=%B", "refs/vcrp-peek")
-        _git(self.workdir, "update-ref", "-d", "refs/vcrp-peek")
-        return shown.stdout.strip() if shown.returncode == 0 else ""
+    def _landed(self, key: str, commit: str, attempt: _PushAttempt, what: str) -> bool:
+        """Did the write actually take? Contention says no; a lie about it says so out loud."""
+        if self._sha(key) == commit:
+            return True
+        if attempt.contention:
+            return False  # somebody got there first, which is an outcome, not a failure
+        if attempt.exited_zero:
+            # The environment's refused delete did exactly this: HTTP 403 in stderr, the words
+            # "Everything up-to-date", and exit 0. Believing the exit code reports a lock as
+            # released while it is still held.
+            raise LockUnavailable(
+                f"the {what} of {self.ref(key)} reported success but the remote does not carry "
+                f"{commit[:12]}: {attempt.problem or 'no diagnostic'}"
+            )
+        raise LockUnavailable(f"cannot {what} {self.ref(key)}: {attempt.problem}")
+
+    def create_exclusive(self, key: str, owner: str) -> bool:
+        """Take the lock, or report that somebody else has it. True only for the winner."""
+        sha, record = self.state_of(key)
+        if record is not None and record.active:
+            return False
+
+        generation = (record.generation + 1) if record is not None else 1
+        wanted = LockRecord(
+            schema=LOCK_SCHEMA,
+            work_id=key,
+            state=STATE_ACTIVE,
+            owner=owner,
+            nonce=self.nonce,
+            generation=generation,
+            acquired_at=_now(),
+            previous=sha or "",
+        )
+        # Parented on the tombstone it replaces, so a contender that read the same tombstone
+        # cannot fast-forward over the winner even without the lease.
+        commit = self._commit(wanted, parent=sha)
+        attempt = self._push(key, commit, lease=sha)
+        if not self._landed(key, commit, attempt, "acquisition"):
+            return False
+        self._held[key] = commit
+        return True
 
     def release(self, key: str, owner: str = "", *, token: str | None = None) -> bool:
-        """Delete the lock, but only the one this run took.
+        """Retire this run's lock by replacing it with a tombstone. Never by deleting the ref.
 
-        ``token`` is the lock commit's SHA, which a later process reads from the durable token
-        file. Without it this only works inside the process that took the lock, which is how the
-        first version stranded its own locks.
+        ``token`` is the active lock commit's SHA, which a later process reads from the durable
+        token file, so the process that releases need not be the one that took it.
         """
-        sha = token or self._held.get(key)
-        if sha is None:
+        active = token or self._held.get(key)
+        if active is None:
             return False
-        deleted = _git(
-            self.workdir,
-            "push",
-            f"--force-with-lease={self.ref(key)}:{sha}",
-            self.remote,
-            f":{self.ref(key)}",
+
+        current = self._sha(key)
+        if current is None or current != active:
+            # Either the ref went missing, or a later generation holds it. Not ours to retire.
+            return False
+        record = self._record(key, current)
+        if not record.active:
+            return False
+
+        tombstone = LockRecord(
+            schema=LOCK_SCHEMA,
+            work_id=record.work_id,
+            state=STATE_TOMBSTONE,
+            owner=record.owner,
+            nonce=record.nonce,
+            generation=record.generation,
+            acquired_at=record.acquired_at,
+            released_at=_now(),
+            previous=current,
+            release_nonce=self.nonce,
         )
-        if deleted.returncode == 0:
-            self._held.pop(key, None)
-            return True
-        return False
+        commit = self._commit(tombstone, parent=current)
+        attempt = self._push(key, commit, lease=current)
+
+        # The exit code is not the answer. A refused delete once printed "Everything up-to-date"
+        # and exited 0, so success is: the remote points at the commit this process built, and
+        # the object there parses as a tombstone.
+        if not self._landed(key, commit, attempt, "release"):
+            return self._already_retired(key, active)
+        if self._record(key, commit).state != STATE_TOMBSTONE:
+            raise LockCorrupt(f"{self.ref(key)} accepted a release that is not a tombstone")
+        self._held.pop(key, None)
+        return True
+
+    def _already_retired(self, key: str, active: str) -> bool:
+        """Lost the release race — but to whom?
+
+        Only a process holding the same token can race a release, so the honest question is not
+        "did my commit land" but "is the lock I held still active". A tombstone descending from
+        exactly this run's active commit means it is not: somebody made the transition, and the
+        postcondition this call exists to establish holds. Anything else is a failure.
+        """
+        sha, record = self.state_of(key)
+        if sha is None or record is None or record.active or record.previous != active:
+            return False
+        self._held.pop(key, None)
+        return True
 
 
 @dataclass
@@ -202,24 +428,18 @@ class GitRefStateStore:
     """Small durable facts - which revision instructions have been carried out - in a ref.
 
     Fail-closed, because the failure mode is duplicate work: reading an unreachable remote as
-    "nothing has been applied" is exactly how an approved revision gets carried out twice.
+    "nothing has been applied" is exactly how an approved revision gets carried out twice. And
+    append-only, so unlike the lock it never needs a ref to go away.
     """
 
     remote: str
     workdir: Path
-    ref: str = "refs/vcrp-state/applied-revisions"
+    ref: str = "refs/heads/vcrp-automation/state/applied-revisions"
     retries: int = 3
 
     def _remote_sha(self) -> str | None:
         """The ref's current value, None when it genuinely does not exist. Raises when unsure."""
-        listed = _git(self.workdir, "ls-remote", "--exit-code", self.remote, self.ref)
-        if listed.returncode == 0:
-            return listed.stdout.split()[0]
-        if listed.returncode == 2:  # reached the remote; no such ref
-            return None
-        raise LockUnavailable(
-            f"cannot reach the state remote: {(listed.stderr or listed.stdout).strip()}"
-        )
+        return _remote_sha(self.remote, self.ref, workdir=self.workdir)
 
     def load(self) -> frozenset[str]:
         sha = self._remote_sha()
@@ -241,7 +461,12 @@ class GitRefStateStore:
         return frozenset(loaded)
 
     def record(self, identifier: str) -> frozenset[str]:
-        """Add one id and publish it, as a compare-and-swap that retries on a lost race."""
+        """Add one id and publish it, as a compare-and-swap that retries on a lost race.
+
+        Success is what the **remote** holds afterwards, not what the push returned: the same
+        403 that printed `Everything up-to-date` and exited 0 for a delete would otherwise be
+        read here as "recorded", and a revision believed applied is a revision never applied.
+        """
         last: str = ""
         for _ in range(self.retries):
             before = self._remote_sha()
@@ -253,10 +478,15 @@ class GitRefStateStore:
 
             lease = f"--force-with-lease={self.ref}:{before}" if before else "--force-with-lease"
             pushed = _git(self.workdir, "push", lease, self.remote, f"{commit}:{self.ref}")
-            if pushed.returncode == 0:
-                return frozenset(current)
             last = (pushed.stderr or pushed.stdout).strip()
-        raise LockUnavailable(f"could not publish durable state after {self.retries} tries: {last}")
+
+            landed = self._remote_sha()
+            if landed == commit and identifier in self.load():
+                return frozenset(current)
+        raise LockUnavailable(
+            f"could not publish durable state after {self.retries} tries; the remote does not "
+            f"carry {identifier}: {last}"
+        )
 
     def _commit(self, payload: str) -> str:
         blob = _git(self.workdir, "hash-object", "-w", "--stdin", stdin=payload)

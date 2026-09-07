@@ -30,12 +30,17 @@ from .github_payloads import (
     read_queue,
 )
 from .gitrefs import (
+    LOCK_SCHEMA,
+    STATE_ACTIVE,
+    STATE_TOMBSTONE,
     GitRefLockStore,
     GitRefStateStore,
+    LockCorrupt,
+    LockRecord,
     LockUnavailable,
-    StateCorrupt,
     remote_head,
 )
+from .gitrefs import StateCorrupt as StateCorrupt
 from .locking import FileLockStore, InMemoryLockStore, LockStore, acquire
 from .outcomes import EXIT_CODES, Outcome, Status
 from .postflight import PostflightInputs, changed_paths, run_postflight
@@ -79,6 +84,11 @@ __all__ = [
     "GitRefStateStore",
     "InMemoryLockStore",
     "LinkedPullRequest",
+    "LOCK_SCHEMA",
+    "STATE_ACTIVE",
+    "STATE_TOMBSTONE",
+    "LockCorrupt",
+    "LockRecord",
     "LockToken",
     "LockStore",
     "LockUnavailable",

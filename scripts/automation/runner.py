@@ -67,6 +67,7 @@ from .github_payloads import (
 from .gitrefs import (
     GitRefLockStore,
     GitRefStateStore,
+    LockCorrupt,
     LockUnavailable,
     StateCorrupt,
     remote_head,
@@ -228,7 +229,7 @@ class RunRequest:
                 return GitRefLockStore(
                     remote=str(spec["remote"]),
                     workdir=Path(str(spec.get("workdir") or self.workdir)),
-                    namespace=str(spec.get("namespace") or "refs/vcrp-locks"),
+                    namespace=str(spec.get("namespace") or GitRefLockStore.namespace),
                 )
             except KeyError as error:
                 raise RequestSchemaError(f"the git-ref lock names no {error}") from error
@@ -489,7 +490,12 @@ def _hand_back(store: LockStore, work_id: str, owner: str, refusal: Outcome) -> 
     """
     ref = store.ref(work_id) if hasattr(store, "ref") else work_id
     sha = store.token_for(work_id) or ""
-    recovery = f"recover with `git push --force-with-lease={ref}:{sha} <remote> :{ref}`"
+    # Never a delete: this environment refuses those, and a recovery step that cannot run is
+    # worse than none. The runbook's tombstone procedure is the one way back.
+    recovery = (
+        f"recover with the tombstone procedure in docs/operations/routine_runbook.md for "
+        f"{ref} at {sha[:12] or 'its current SHA'}"
+    )
     try:
         released = store.release(work_id, owner)
     except LockUnavailable as error:
@@ -1065,9 +1071,9 @@ def command_finalize(args: argparse.Namespace) -> Outcome:
             Status.BLOCKED_GITHUB_ACCESS,
             f"{landed[:12]} is on {target.branch} and the work is recorded, but the lock on "
             f"{token.work_id} could not be released: {why}. The token and confirmation are "
-            f"kept so `release --token {args.token}` can retry; recover by hand with "
-            f"`git push --force-with-lease={token.lock_ref}:{token.lock_sha} {target.remote} "
-            f":{token.lock_ref}`",
+            f"kept so `release --token {args.token}` can retry; if it keeps failing, follow the "
+            f"tombstone procedure in docs/operations/routine_runbook.md for {token.lock_ref} at "
+            f"{token.lock_sha[:12]} — never a ref delete, which this environment refuses",
             {**evidence, "lock_released": "no", "token": str(args.token)},
         )
 
@@ -1159,6 +1165,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         outcome = Outcome(Status.BLOCKED_GITHUB_ACCESS, str(error))
     except StateCorrupt as error:
         outcome = Outcome(Status.INVALID_SPEC, f"durable state is unusable: {error}")
+    except LockCorrupt as error:
+        # Fail-closed, and deliberately not ALREADY_RUNNING: a lock nobody can parse is not a
+        # lock somebody holds, and it is not a free one either.
+        outcome = Outcome(Status.INVALID_SPEC, f"the lock ref is unusable: {error}")
 
     print(report(outcome, as_json=args.json))
     return outcome.exit_code

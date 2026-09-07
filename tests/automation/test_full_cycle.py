@@ -22,6 +22,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
+from automation.gitrefs import GitRefLockStore
 from automation.outcomes import EXIT_CODES, Status
 from automation.runner import main
 from workspace import Workspace
@@ -491,28 +492,28 @@ def test_the_whole_test_request_is_refused_without_the_development_flag(
     assert not chain.token.exists()
 
 
-def test_a_git_ref_lock_is_taken_and_given_back(chain: _Chain) -> None:
-    """The production kind, exercised against the bare remote the development flag allows."""
+def test_a_git_ref_lock_is_taken_and_tombstoned(chain: _Chain) -> None:
+    """The production kind, exercised against the bare remote the development flag allows.
+
+    The ref survives the release: this environment refuses ref deletion, so a lock is retired by
+    transition, and "gone" is not what a released lock looks like any more.
+    """
     request = chain.phase1(
         lock={"kind": "git-ref", "remote": str(chain.ws.remote), "workdir": str(chain.ws.root)}
     )
+    store = GitRefLockStore(remote=str(chain.ws.remote), workdir=chain.ws.root)
 
     assert chain.preflight(request) == 0
-    assert chain.ws.git("ls-remote", str(chain.ws.remote), f"refs/vcrp-locks/{WORK_ID}") != ""
-    assert (
-        main(
-            [
-                "release",
-                "--request",
-                str(request),
-                "--token",
-                str(chain.token),
-                "--development",
-            ]
-        )
-        == 0
+    assert store.held_token(WORK_ID) is not None
+
+    released = main(
+        ["release", "--request", str(request), "--token", str(chain.token), "--development"]
     )
-    assert chain.ws.git("ls-remote", str(chain.ws.remote), f"refs/vcrp-locks/{WORK_ID}") == ""
+
+    assert released == 0
+    assert store.held_token(WORK_ID) is None  # released
+    sha, record = store.state_of(WORK_ID)
+    assert sha is not None and record is not None and record.state == "tombstone"
 
 
 # --- releasing, and failing to ---------------------------------------------------------------
@@ -537,7 +538,10 @@ def test_a_release_that_fails_on_the_way_out_of_preflight_is_reported(
     assert code == EXIT_CODES[Status.BLOCKED_GITHUB_ACCESS]
     assert "no-such-branch" in printed
     assert "the lock may be stuck" in printed
-    assert "force-with-lease" in printed
+    # The recovery it points at is the tombstone procedure. Never a delete: this environment
+    # refuses those, so a recovery line built on one is a line that cannot be run.
+    assert "tombstone procedure" in printed
+    assert "--delete" not in printed
 
 
 def test_a_release_that_fails_is_not_a_finished_run(chain: _Chain, monkeypatch) -> None:
@@ -603,13 +607,17 @@ def _revision_request(chain: _Chain, **extra) -> dict:
     }
 
 
+#: The committed production state ref. The tests drive the same path the Routine would.
+STATE_REF = "refs/heads/vcrp-automation/state/applied-revisions"
+
+
 def _applied(chain: _Chain) -> str:
     """What the durable state ref points at on the remote, or "" when it does not exist."""
-    return chain.ws.git("ls-remote", str(chain.ws.remote), "refs/vcrp-state/applied-revisions")
+    return chain.ws.git("ls-remote", str(chain.ws.remote), STATE_REF)
 
 
 def _applied_ids(chain: _Chain) -> str:
-    chain.ws.git("fetch", "-q", str(chain.ws.remote), "refs/vcrp-state/applied-revisions")
+    chain.ws.git("fetch", "-q", str(chain.ws.remote), STATE_REF)
     return chain.ws.git("show", "FETCH_HEAD:applied.json")
 
 

@@ -6,12 +6,15 @@
     "the base off 'the remote' is only a guarantee if something other than the caller",
     "decides which remote that is.",
     "A request may repeat these values; it may not differ from them. Changing this file is",
-    "a reviewed commit."
+    "a reviewed commit.",
+    "The lock and state refs live under refs/heads/ because this execution environment refuses",
+    "to create refs outside it (HTTP 403 on git-receive-pack, proven on the real origin). They",
+    "are automation state, not work branches: nothing is ever merged from them."
   ],
   "repository": "Dracloud-sys/Virtual-Cell-Reasoning-Platform",
   "remote": "origin",
   "base_branch": "main",
   "branch_prefix": "claude/",
-  "lock_namespace": "refs/vcrp-locks",
-  "state_ref": "refs/vcrp-state/applied-revisions"
+  "lock_namespace": "refs/heads/vcrp-automation/locks",
+  "state_ref": "refs/heads/vcrp-automation/state/applied-revisions"
 }

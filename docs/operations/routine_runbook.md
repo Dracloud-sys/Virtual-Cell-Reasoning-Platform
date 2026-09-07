@@ -90,8 +90,7 @@ That last clause is not a nicety. On the revision path, pushing the changes to a
 pull request its author is reading stayed exactly as it was.
 
 **A `finalize` whose release fails is not a finished run.** It exits non-zero, keeps the token
-and confirmation so `release` can retry, and prints the `git push --force-with-lease` line that
-clears the ref by hand. Exit 0 with the lock still held would strand every later run on
+and confirmation so `release` can retry, and points at the runbook's tombstone procedure. Exit 0 with the lock still held would strand every later run on
 `ALREADY_RUNNING` after deleting the artifacts needed to free it. Re-running `finalize` is safe:
 recording an already-recorded revision is a no-op, and the remote check is unchanged.
 
@@ -232,7 +231,8 @@ The default is that a run may not touch it. The exception needs all four of:
 3. the **full 40-character head SHA** the instruction was written against. Once the branch
    moves the instruction has expired: the same sentence is now a request about code its author
    has not read. Abbreviations are refused rather than prefix-matched;
-4. **not already applied.** Applied ids live in a git ref (`refs/vcrp-state/applied-revisions`),
+4. **not already applied.** Applied ids live in a git ref
+   (`refs/heads/vcrp-automation/state/applied-revisions`),
    so a restarted run reads what its predecessor did instead of doing it again. That store is
    fail-closed: a ref that does not exist yet is an empty set, but a ref that could not be
    *reached* blocks the run. Reading "nothing has been applied" out of a failed fetch is exactly
@@ -254,65 +254,131 @@ place unless the cause is gone.
 
 ## Recovery after a crash
 
-A run that dies between taking the lock and finishing leaves the lock held, and every later run
-reports `ALREADY_RUNNING`.
+A run that dies between taking the lock and finishing leaves the lock `active`, and every later
+run reports `ALREADY_RUNNING`.
+
+**There is no delete step, and there must not be one.** This execution environment refuses ref
+deletion outright — `git push --delete`, with or without a lease, comes back HTTP 403 — so a
+recovery procedure built on deleting the lock is a procedure that cannot be run when it is
+needed. Recovery is the same transition a normal release makes: `active` → `tombstone`.
 
 1. Confirm nothing is running: check the Routine's run list for an in-flight session.
-2. Inspect the lock: `git ls-remote origin 'refs/vcrp-locks/*'`. The commit message names the
-   owner and when it was taken.
-3. Prefer the token: if `.automation/lock.json` survived, `release` drops the lock with a
-   compare-and-swap and no override is needed. The token is on disk precisely so the process
-   that gives the lock back need not be the one that took it.
-4. Only if the token is gone, delete the ref by hand:
-   `git push origin :refs/vcrp-locks/<work-id>`. This is the one manual override, and it is
-   manual on purpose — `release()` refuses to drop a lock the caller cannot prove it holds,
-   because a crashed run is exactly when another run would love to clear it and start.
-5. Check for a half-pushed branch: `git ls-remote --heads origin 'claude/*'`. A branch with no
-   pull request is a crashed run's leftovers. The next run reports it as `resume_branch` and
-   continues on it rather than opening a second one; delete it only if you want a fresh start.
-6. Re-run.
+2. Read the lock:
 
-The gate releases the lock itself on every refusal that happens after it was taken, so a blocked
-run does not need this. Only a killed process does — and one other case: a `finalize` whose
-work landed but whose release failed. That one exits non-zero, keeps the token on purpose, and
-prints the exact `--force-with-lease` line for step 4; retrying `finalize` or `release` is the
-first thing to try, because both are safe to repeat.
+   ```bash
+   git ls-remote origin 'refs/heads/vcrp-automation/locks/*'
+   git fetch origin '+refs/heads/vcrp-automation/locks/<work-id>:refs/vcrp-peek'
+   git show refs/vcrp-peek:lock.json     # owner, generation, acquired_at, nonce
+   ```
+
+3. **Prefer the token.** If `.automation/lock.json` survived, `release` makes the transition
+   with a compare-and-swap and no override is needed. The token is on disk precisely so the
+   process that gives the lock back need not be the one that took it.
+4. If the token is gone, write the tombstone by hand from the **exact** active SHA:
+
+   ```bash
+   REF=refs/heads/vcrp-automation/locks/<work-id>
+   ACTIVE=$(git ls-remote origin "$REF" | cut -f1)
+   # take lock.json from the active commit, set state/released_at/previous, keep the rest
+   git show "$ACTIVE:lock.json" | python3 -c 'import json,sys,datetime;\
+     r=json.load(sys.stdin); r["state"]="tombstone"; r["previous"]=sys.argv[1];\
+     r["released_at"]=datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds");\
+     r["release_nonce"]="manual-recovery";\
+     print(json.dumps(r, indent=2, sort_keys=True))' "$ACTIVE" > /tmp/lock.json
+   BLOB=$(git hash-object -w /tmp/lock.json)
+   TREE=$(printf '100644 blob %s\tlock.json\n' "$BLOB" | git mktree)
+   TOMB=$(git commit-tree "$TREE" -p "$ACTIVE" -m "tombstone <work-id> (manual recovery)")
+   git push --force-with-lease="$REF:$ACTIVE" origin "$TOMB:$REF"
+   git ls-remote origin "$REF"           # must now be $TOMB
+   git fetch origin "+$REF:refs/vcrp-peek" && git show refs/vcrp-peek:lock.json | grep tombstone
+   ```
+
+   The lease on `$ACTIVE` is what makes this safe: if a live run took the lock in the meantime,
+   the push is rejected rather than stealing it. **Never overwrite the lock with an arbitrary
+   SHA, and never force without a lease** — those are the two ways to retire a lock a running
+   process still believes it holds.
+5. Clear the stale token and confirmation files from the dead run's workspace, if any survived.
+6. Check for a half-pushed branch: `git ls-remote --heads origin 'claude/*'`. A branch with no
+   pull request is a crashed run's leftovers. The next run reports it as `resume_branch` and
+   continues on it rather than opening a second one.
+7. Re-run.
+
+The gate makes this transition itself on every refusal that happens after the lock was taken, so
+a blocked run does not need any of the above. Only a killed process does — and one other case: a
+`finalize` whose work landed but whose release failed. That one exits non-zero and keeps the
+token on purpose; retrying `finalize` or `release` is the first thing to try, because both are
+safe to repeat.
 
 `FileLockStore` is refused outside `--development`, so a scheduled run cannot end up holding a
-lock nobody else can see. If a run reports `INVALID_SPEC` naming the lock, the request is
-missing its `lock` block — that is the fix, not a flag.
+lock nobody else can see.
 
 ## Concurrency
 
-`GitRefLockStore` pushes an **orphan commit** to `refs/vcrp-locks/<work-id>`. A push that would
-not fast-forward the existing ref is rejected by the server, and an orphan can never be an
-ancestor of anything, so while the ref exists every other run's push is rejected. Exactly one
-creation wins, and the remote decides — not either contender's belief about the other.
+The lock is a **state machine in a ref**, not a ref's existence. `refs/heads/vcrp-automation/
+locks/<work-id>` is created once and then lives forever, alternating between two records stored
+as `lock.json` inside the commit:
 
-That argument has a hole, and it was live: it assumes the two contenders build *different*
-commits. Git objects are content-addressed, so two runs with the same work id, the same owner
-and the same one-second timestamp built the **same commit**, the second push found the ref
-already pointing at that object, git said "Everything up-to-date" and exited 0, and both runs
-concluded they held the lock — `[True, True]`. Every lock commit now carries a 32-hex nonce from
-`secrets`, an up-to-date push counts as contention, and each run gets a unique owner. The
-uniqueness is the mutual exclusion; the compare-and-swap only enforces it.
+| field | why it is there |
+|---|---|
+| `schema` | `vcrp-lock/1`. A reader that does not know it refuses rather than guesses |
+| `state` | `active` or `tombstone`. Nothing is decided by matching words in a commit message |
+| `work_id`, `owner`, `nonce` | who holds it, and what makes this commit unlike any other |
+| `generation` | monotonic. A token from generation 3 cannot retire generation 4's lock |
+| `acquired_at`, `released_at` | when |
+| `previous`, `release_nonce` | which record this one replaced, and whose release it was |
+
+**Acquire.** The ref absent → build an `active` record and push it; the ref holding a tombstone →
+build an `active` record parented on that tombstone and push under a lease on its SHA; the ref
+holding an `active` record → somebody else is running, `ALREADY_RUNNING`. In both writing cases
+a contender that read the same starting point loses the compare-and-swap, and exactly one wins.
+
+**Release.** Read the remote, require it to still be this run's exact `active` commit, build a
+tombstone parented on it, push under a lease on that SHA.
+
+Two findings from the real remote shaped this, and both are recorded here because both were
+first believed to be working:
+
+- **`refs/vcrp-locks/*` and `refs/vcrp-state/*` cannot be written at all.** Creating either is
+  refused with HTTP 403 on `git-receive-pack` in this execution environment, while creating and
+  updating a branch succeeds. That is why the automation state lives under `refs/heads/` — and
+  why `run_target.json` names it, so moving it again is a one-line reviewed commit.
+- **Ref deletion is refused too**, which is why release is a transition. The refused delete
+  returned `Everything up-to-date` on stdout **and exit code 0**, so no write in the store is
+  believed on its exit code: every one is followed by re-reading the remote with `ls-remote`,
+  and a release additionally re-reads the object and requires it to parse as a tombstone. The
+  same rule applies to the state store: a recording counts only when the remote's `applied.json`
+  actually contains the identifier.
+
+An older hole, kept because its shape recurs: git objects are content-addressed, so two runs
+with the same work id, owner and one-second timestamp once built the **same commit** and both
+concluded they held the lock — `[True, True]`. Every `active` record carries a per-run nonce and
+every tombstone a per-release nonce, which is what makes two contenders' commits distinct.
 
 Three distinctions the store refuses to blur:
 
-- **rejected is not failed.** A rejected push means somebody else holds the lock. A push that
+- **rejected is not failed.** A rejected push means somebody else got there first. A push that
   failed for any other reason raises `LockUnavailable`, which the gate reports as
   `BLOCKED_GITHUB_ACCESS`. Treating an unreachable remote as a free lock would be the worst
   available reading.
-- **holding is not owning.** `release` drops only a lock this run took, with
-  `--force-with-lease` so the delete is itself a compare-and-swap.
-- **state is not session memory.** Applied revision ids are in a ref, not in a variable.
+- **unparseable is not free.** A `lock.json` that does not parse, carries an unknown schema, or
+  names a state that is neither, raises `LockCorrupt` — never "nobody holds it".
+- **holding is not owning.** A release moves only the exact `active` commit this run took.
 
 `tests/automation/test_gitref_lock.py` races six threads through one barrier against one bare
-repository and asserts that exactly one comes back holding it. The earlier version of this test
-called the store twice in sequence, which demonstrated bookkeeping and nothing about a race.
+repository — from an absent ref *and* from a shared tombstone — and asserts exactly one comes
+back holding it. It also reproduces the 403-shaped liar (HTTP 403 in stderr, "Everything
+up-to-date" on stdout, exit 0) and requires the release to fail.
 
 `FileLockStore` remains for a single container (two processes, one filesystem). It cannot see a
 run in another container and must not be used for the scheduled path.
+
+### These refs are not work branches
+
+`refs/heads/vcrp-automation/*` holds automation state that happens to live under `refs/heads/`
+because nothing else is writable. Nothing is ever merged from it, and no pull request is opened
+against it. CI does not run on it either: `.github/workflows/ci.yml` triggers on `push` to
+`main` and `pull_request` targeting `main`, and pushing two probe refs under this namespace on
+the real origin produced **no workflow run** (run count unchanged, measured before and after).
 
 ## Routine settings
 
