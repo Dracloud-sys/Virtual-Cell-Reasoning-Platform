@@ -1,12 +1,12 @@
 {
-  "acquired_at": "2026-09-07T00:57:49+00:00",
-  "generation": 1,
-  "nonce": "b74734bdd1c9ff0ee35a1a6d5be50346",
-  "owner": "probe-owner-1",
-  "previous": "f4c6bc8cfa4d9d6dc27b4ffd5a97b21cfeac157b",
-  "release_nonce": "b74734bdd1c9ff0ee35a1a6d5be50346",
-  "released_at": "2026-09-07T00:57:55+00:00",
+  "acquired_at": "2026-09-07T00:58:00+00:00",
+  "generation": 2,
+  "nonce": "325b17889d04eeeb82dcd25c669acd9c",
+  "owner": "probe-owner-2",
+  "previous": "95ac69d795ef8b3743a9b82c51a7a1e0d77cab0c",
+  "release_nonce": "",
+  "released_at": "",
   "schema": "vcrp-lock/1",
-  "state": "tombstone",
+  "state": "active",
   "work_id": "__probe__"
 }
