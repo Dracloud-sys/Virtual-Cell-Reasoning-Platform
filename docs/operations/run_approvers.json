@@ -1,0 +1,12 @@
+{
+  "_comment": [
+    "GitHub logins allowed to approve a revision instruction on an open pull request.",
+    "Committed on purpose: the run request is written by the agent, so an allow-list that",
+    "lived there would be an allow-list the agent could edit. Changing this file is a",
+    "reviewable commit.",
+    "An empty list is a configuration error, not 'no restriction' - the loader refuses it."
+  ],
+  "approvers": [
+    "Dracloud-sys"
+  ]
+}

@@ -7,6 +7,238 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **VCRP-OPS-001 — safeguards for an unattended run.** `scripts/automation/` decides whether a
+  scheduled run may start, and says precisely why when it may not: `NO_READY_WORK`,
+  `AMBIGUOUS_QUEUE`, `INVALID_SPEC`, `BLOCKED_GITHUB_ACCESS`, `BLOCKED_ENVIRONMENT`,
+  `BLOCKED_SCOPE`, `ALREADY_RUNNING`, `AWAITING_REVIEW`. The ten operational questions it must
+  answer were written before it existed and live in `tests/automation/`; every one is driven by
+  a fixture, because a queue used as a test fixture is a queue that can dispatch real work by
+  accident.
+
+  **The distinction the package exists for** is between "the queue was empty" and "the queue
+  could not be read". Both leave the repository untouched, so a single status makes a broken
+  token indistinguishable from a quiet night — which is how three consecutive runs looked
+  correct while doing nothing at all. `QueueRead` makes the confusion impossible to write: a
+  failed read carries no list to iterate.
+
+  **The cross-container lock did not actually exclude.** Git objects are content-addressed, so
+  two runs with the same work id, the same owner and the same one-second timestamp built the
+  *same* commit; the second push found the ref already pointing at it, git reported "Everything
+  up-to-date" and exited 0, and both runs believed they held the lock — `[True, True]`. Every
+  lock commit now carries a `secrets` nonce, each run gets a unique owner, and an up-to-date
+  push counts as contention. The uniqueness is the mutual exclusion; the CAS only enforces it.
+
+  Concurrency is held by `O_CREAT | O_EXCL`, not by an instruction in a prompt — a prompt that
+  says "stop if another run is going" is a request delivered to the only party that cannot
+  check whether the other party received it. The lock is atomic within one container and blind
+  across containers, which is where scheduled runs live; that gap is recorded in
+  `docs/operations/routine_runbook.md` and gates re-enabling the schedule.
+
+  The issue template no longer applies `claude-ready`. Queueing work was a side effect of
+  opening a tab; it is now an act — a person adds the label when they approve the contract.
+
+  **The five steps are one run, or they are nothing.** Each step passing on its own says
+  nothing about whether they belong to the same run, and every step now has to present a chain:
+  the *remote* lock ref must still equal the token's `lock_sha` (a token file proves what a run
+  once took, not what holds the lock now); `postflight` and `finalize` refuse without a
+  confirmation artifact bound to that same token, so `preflight → postflight` cannot skip the
+  re-read; and `postflight` derives its path policy from a body whose hash matches the confirmed
+  one, so widening *Allowed paths* in the request file after phase one yields `BLOCKED_SCOPE`
+  rather than a wider diff.
+
+  **A refused `confirm` gives the lock back.** A withdrawn label, a changed queue, a pull
+  request that appeared — any of them used to leave the lock held and every later run reporting
+  `ALREADY_RUNNING`. If the release itself fails, the report carries both the refusal and the
+  release failure rather than one hiding the other.
+
+  **The revision is recorded by `finalize`, after the push.** `finalize` checks that the SHA on
+  the branch is the one `postflight` verified before writing the applied id to durable state.
+  Recording at postflight time and then failing to push left "already applied" true while the
+  fix existed nowhere but a container about to be reclaimed. The selected revision is also bound
+  into the token — record id, pull request, head SHA and a hash of the instruction body — and
+  `confirm` re-parses the raw approvals to check it is still there unchanged, so no later step
+  can substitute a different one or drop it.
+
+  **A request may not choose its approvers.** `approvers_file` is now a schema error rather than
+  an override: the agent writes the request, so a list it can point at is a list it can write.
+
+  **What landed is what the remote says landed.** `finalize` used to compare a `--pushed-sha`
+  the caller supplied — in practice its own `git rev-parse HEAD`, which is equally true when
+  the push failed, went to another branch, or never ran. It now asks `git ls-remote` what the
+  bound branch carries and requires that to equal the commit verification passed on. A missing
+  branch, a different commit, and the verified commit sitting on some other branch are each
+  `BLOCKED_SCOPE`, and each keeps the token so the run can be retried.
+
+  **The base is resolved once, on the remote, and frozen.** `postflight --base` let the step
+  that judges the diff choose how much of the diff to look at: `HEAD~1` on a resumed branch
+  measures the last commit and calls every earlier one unchanged. `preflight` now reads
+  `base_branch` off the remote, stores the full 40-character SHA in the token alongside the
+  branch and remote, and `postflight` measures `base…HEAD` from there. The flag survives only so
+  that passing one that disagrees is an error rather than a silent narrowing, and `--branch` is
+  gone from `finalize` entirely.
+
+  **There is no default lock, and no default state store.** A request whose `lock` field was
+  missing or misspelled used to fall back to an in-process store — which, for runs that get one
+  container each, is not a weaker lock but no lock at all, reported as though it were real. Any
+  kind but `git-ref` is now `INVALID_SPEC` unless `--development` is passed, and a run carrying
+  an approved revision with no durable state store is refused at `preflight`, before the lock,
+  rather than after the push.
+
+  **A `finalize` whose release fails is not a finished run.** It used to delete the token and
+  confirmation and exit 0 with `lock_released: no` in the evidence, which strands the lock and
+  throws away what `release` needs to retry. It now exits non-zero, keeps both artifacts, and
+  prints the manual `--force-with-lease` recovery line. Re-running it is safe: recording an
+  already-recorded revision is a no-op.
+
+  **The failure paths are driven against a real remote.** `tests/automation/test_full_cycle.py`
+  builds a bare repository and a clone, and runs the whole chain through it: the success path
+  pushes and finalizes, and "postflight passed but nothing was pushed" is a real unpushed branch
+  rather than a test that declines to call `finalize`.
+
+  **Which repository a run acts on is committed, not requested.** Reading the base off "the
+  remote" proves nothing while the caller picks the remote, and `target.remote`,
+  `target.base_branch`, `lock.remote` and `state.remote` all came out of the request file — so
+  pointing phase one at another reachable repository bound that as production and every later
+  check verified the wrong thing carefully. `docs/operations/run_target.json` now names the
+  repository, remote, base branch, branch prefix, lock namespace and state ref; a request may
+  repeat those values but a request that differs from them is a schema error; and `preflight`
+  checks, before taking the lock, that `git remote get-url origin` in this checkout normalises
+  to the configured repository. A request may never state `applied_revision_ids` at all.
+
+  **A pushed branch is not the deliverable.** `finalize` said `work item complete` once the
+  remote carried the verified commit, but the Routine's output is a **draft pull request
+  targeting `main`**, and a branch with no pull request is work done where nobody was asked to
+  look at it. `finalize` now takes `--completion`: a pull request listing queried after the
+  push, which must show exactly one open pull request for the work item, `draft: true`, from the
+  bound branch, at the verified commit, targeting the configured base — and on a revision run,
+  the pull request the approved instruction was written on. Anything else refuses without
+  recording or releasing anything, because on the revision path pushing to a second
+  `claude/<work-id>-*` branch and recording the instruction as applied would retire it while the
+  pull request its author is reading stayed exactly as it was.
+
+  **A release that fails on the way out of `preflight` is reported.** It used to be dropped: the
+  refusal was printed and the lock stayed on the remote with nothing saying so, which is how one
+  bad run becomes every later run reporting `ALREADY_RUNNING`.
+
+  **The lock is a state machine, because the environment refuses ref deletion.** Probing the
+  real `origin` answered two questions the tests could not. Creating `refs/vcrp-locks/*` or
+  `refs/vcrp-state/*` is refused outright — HTTP 403 on `git-receive-pack`, while creating and
+  updating a branch succeeds — so the automation state moved to
+  `refs/heads/vcrp-automation/{locks,state}`. And **deleting** a ref is refused the same way, so
+  releasing a lock cannot mean deleting it: the ref is created once and then alternates between
+  an `active` and a `tombstone` record, carrying schema, work id, state, owner, nonce, monotonic
+  generation, timestamps, the previous lock SHA and a per-release nonce as JSON that is parsed
+  rather than grepped. Acquiring from a tombstone is a compare-and-swap on that tombstone's SHA,
+  so six contenders reading the same one still produce exactly one winner; a token from an
+  earlier generation cannot retire a later holder's lock; and a record that does not parse
+  raises `LockCorrupt` rather than reading as a free lock.
+
+  **A push's exit code is not evidence.** The refused delete printed `Everything up-to-date` and
+  exited **0** with the ref untouched, which the old `release()` would have reported as success —
+  a lock released in the report and held on the remote. Every write now re-reads the remote and
+  counts only when `ls-remote` shows the commit this process built; a release additionally
+  re-reads the object and requires it to parse as a tombstone, and `record()` requires the
+  identifier to actually appear in the remote's `applied.json`. A push that reports success
+  without landing raises rather than returning quietly. That exact 403-shaped liar — 403 in
+  stderr, "Everything up-to-date" on stdout, exit 0 — is reproduced as a regression test.
+
+  Recovery in `docs/operations/routine_runbook.md` is the same transition, done by hand from the
+  exact active SHA under a lease. There is no delete step anywhere, and no procedure for
+  overwriting a lock with an arbitrary SHA.
+
+  **A tombstone has to carry the marks of a release.** The first parser accepted one with no
+  `released_at`, no `previous` and no `release_nonce` — a record asserting that a release
+  happened while carrying nothing a release produces — and ran every field through `str(...)`
+  and `or ""`, so `{"previous": 12345}` and `{"released_at": null}` became plausible records.
+  Types are now checked as they arrive, `generation` must be a non-boolean integer ≥ 1, and each
+  state has invariants: an `active` record may not carry release marks, generation 1 may not
+  name a predecessor, and every `previous` that exists must be a full 40-character SHA. Two
+  further bindings come from outside the JSON: the record's `work_id` must match the ref it was
+  read from, and its `previous` must equal the commit's actual single parent — the JSON and the
+  commit are written together, so a disagreement means one of them was edited afterwards.
+
+  **An entry point that runs where the Routine starts.** `python scripts/automation/cli.py
+  preflight ...` works from the repository root with nothing set up. The command documented in
+  the previous round needed `scripts/` on `PYTHONPATH` and failed exactly where it is used
+  (`No module named automation`); its integration test passed by running with `cwd=scripts`,
+  arranging the one condition the real caller cannot provide.
+
+  **Permission is granted by a second process, against a second read.** `preflight` takes the
+  lock and stops; the agent re-queries GitHub; `confirm` submits that re-read with the lock
+  token and is the only command that writes the proceed marker. It refuses evidence captured
+  before the lock was taken, and refuses to proceed when the issue body or the open pull
+  requests have moved since. The previous round parsed both "before" and "after" out of one
+  file written before the lock existed, which is two snapshots wearing a costume.
+
+  **`postflight` is where scope enforcement actually happens.** `PathPolicy` had tests and no
+  caller, so `BLOCKED_SCOPE` was unreachable from the CLI: a run that started legally could
+  finish by pushing anything. It now judges the real diff — `git diff --name-status -M
+  base...HEAD`, renames checked at both ends — against the issue's own path rules and its
+  kernel authorisation, runs `scripts/verify.py` in full, and releases the lock on failure so a
+  bad night does not block the next one.
+
+  **The lock is released by whoever holds the token, not by whoever is still running.** It used
+  to live in a process attribute, so the first successful run would have stranded its own lock
+  and every later run would have reported `ALREADY_RUNNING` forever.
+
+  **Approvals are derived from GitHub's records.** The record id, author login, body, pull
+  request and full commit id all come from the raw review payload; an `approved_by` the agent
+  writes beside them is ignored, because the agent writes the request. Approvers come from a
+  committed `docs/operations/run_approvers.json`, and an empty list approves nobody rather than
+  everybody.
+
+  **A response that is not a listing is not an empty listing.** `{"message": "Bad credentials",
+  "status": "401"}` carries no `issues` collection, and used to read as a healthy empty queue.
+  So do GraphQL `errors` envelopes, a missing `state`, unreadable `labels`, and a `number` that
+  is not an integer — each fails the read against fixtures captured from the real tool.
+
+  Exit codes are the contract: 0 means the step succeeded and the next may begin, and every
+  refusal has its own code so a shell branches on a number rather than on prose.
+
+  **A lock that reaches across containers.** `GitRefLockStore` pushes an orphan commit to
+  `refs/vcrp-locks/<work-id>`; a push that would not fast-forward is rejected by the server, so
+  exactly one creation wins and the *remote* decides. Six threads released from one barrier
+  against one bare repository assert that, and a same-owner same-second pair pins the collision
+  above. Rejected is not failed — an unreachable remote raises rather than reporting a free
+  lock. The durable state store is fail-closed the same way: a ref that does not exist yet is an
+  empty set, but a ref that cannot be *reached* blocks the run, because reading "nothing has
+  been applied" out of a failed fetch is how an approved revision gets applied twice.
+
+  **Identity and approval are verified, not assumed.** The work id the issue declares is
+  authoritative and a mismatch stops the run; two open pull requests for one work id is a
+  refusal rather than a coin toss; a revision instruction needs an approval record id, an
+  approver on the committed list, and the full 40-character head SHA it was written against.
+
+  **Contract and path checks that catch the near-misses.** `TODO`, `TBD`, `<reason>` are refused
+  as loudly as an empty section — they are evidence somebody opened it and did not finish.
+  Authorising a kernel change requires naming the files and the reason; declaring a biological
+  change requires stating it and its grounding. The kernel stays forbidden even when a wide
+  allow rule and a forgetful forbidden list would let it through, paths must be
+  repository-relative (`../` and absolute paths are refused before they are matched), and a
+  rename is judged on both ends — moving a file out of the kernel is a kernel change.
+
+### Changed
+- **`scripts/verify.py` stops overstating itself.** `--fast` and `--no-kernel-diff` used to
+  drop checks and still print "All 9 checks passed"; skipped checks now appear as `SKIP` rows,
+  the summary names them, and **the process exits 2** — a caller that only tests for zero can no
+  longer record a partial gate as a full pass. `--unchanged PATH` generalises the kernel
+  assertion to any path, so a work item that must not touch product code can prove it.
+
+  Two comparisons it now refuses to make dishonestly. A base that resolves to *this* commit is
+  a failure, not a pass: `origin/main...HEAD` on `main` is empty for the least interesting
+  reason there is, and CI passes an explicit base per event instead. And a **dirty working tree
+  fails every diff check**, because `git diff base...HEAD` reads commits — run it with edits
+  still uncommitted and it answers honestly about the previous commit while the caller believes
+  it answered about their change. That produced a false green "product code unchanged" twice
+  during this work item before it was caught.
+- **CI runs the gate, not a subset.** The workflow ran `pytest` and `ruff` while the gate also
+  covers the standalone benchmark run, every scorecard and the kernel diff — so a scorecard
+  regression could pass CI and fail locally. It now runs `python scripts/verify.py` with an
+  explicit base, and records the PR head SHA, the base SHA and the **actual checkout SHA**
+  separately: on a `pull_request` event the checkout is `refs/pull/N/merge`, so "we tested the
+  head" and "we tested a merge of the head" are different claims and only one of them is true.
+
+### Added
 - **MCP server.** `src/virtualcell/mcp/` exposes three tools — `list_domains`,
   `describe_domain` and `reason` — over the same `ReasoningService` the API and CLI use.
   No new request type, no MCP-specific reasoning path, no re-derivation: the adapter is a

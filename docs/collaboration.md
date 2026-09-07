@@ -48,6 +48,50 @@ Recommended default (a hybrid of "all-git" and "all-manual"):
 - If **GPT cannot browse**: the human must also paste the current file/diff to GPT
   (higher divergence risk — keep snippets tied to a commit hash).
 
+## The work queue (`claude-ready`)
+
+Step 2 of the loop — "the human lands the spec and points Claude at it" — has a concrete
+form: **one open GitHub issue labeled `claude-ready`**, filed from the *Claude-ready task*
+template (`.github/ISSUE_TEMPLATE/claude_ready_task.md`).
+
+The label is a queue of depth one, and the routine treats depth as a hard gate:
+
+| Open `claude-ready` issues | Routine behavior |
+|---:|---|
+| 0 | reports `NO_READY_WORK`, changes nothing |
+| 1 | branches `claude/<work-id>-<short-name>` off latest `origin/main` and works it |
+| >1 | reports `AMBIGUOUS_QUEUE`, changes nothing |
+
+Refusing to pick between two ready issues is deliberate. Choosing which work matters next is
+a strategy call, and strategy is GPT's and the human's layer — an implementer that picks for
+itself has quietly taken the decision.
+
+**Filing an issue does not queue it.** The template does not apply the label; a person adds
+`claude-ready` once the contract is complete and they approve it running unattended. A
+template that labelled on creation would make queueing a side effect of opening a tab, and
+the label is meant to be the approval, not the paperwork that follows one.
+
+The template's sections are the contract, not prose: allowed paths, forbidden paths,
+non-goals and stop conditions bound the diff, and the kernel stays at zero changes unless the
+issue authorizes them in writing. The benchmark questions go in the issue, before the
+implementation exists — questions written afterwards only describe whatever got built.
+`scripts/automation` checks those sections before anything is branched, and a section left
+empty, left as its instructional comment, or holding two contradictory ticks stops the run
+with `INVALID_SPEC` rather than being interpreted.
+
+Two refusals are worth separating by name. `NO_READY_WORK` means the queue was read and held
+nothing; `BLOCKED_GITHUB_ACCESS` means it could not be read at all. Both leave the repository
+untouched, so without distinct statuses a broken token is indistinguishable from a quiet
+night — which is exactly how three consecutive runs looked correct while doing nothing.
+
+The issue is closed by the merged PR, not by the routine. Claude never merges its own PR;
+it pushes a Draft PR and reports `READY_FOR_GPT_REVIEW`, which hands step 5 back to GPT. If a
+PR for the work is already open, the next run reports `AWAITING_REVIEW` and opens nothing: the
+reviewer's copy is the deliverable until they answer.
+
+Operational procedure — re-running, recovery, and what each refusal asks of a person — is in
+[`operations/routine_runbook.md`](operations/routine_runbook.md).
+
 ## Guardrails
 
 1. **Single writer to git.** Only Claude commits, to avoid two-writer races.
