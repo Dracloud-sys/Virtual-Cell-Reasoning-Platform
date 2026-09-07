@@ -146,6 +146,17 @@ to [Semantic Versioning](https://semver.org/).
   exact active SHA under a lease. There is no delete step anywhere, and no procedure for
   overwriting a lock with an arbitrary SHA.
 
+  **A tombstone has to carry the marks of a release.** The first parser accepted one with no
+  `released_at`, no `previous` and no `release_nonce` — a record asserting that a release
+  happened while carrying nothing a release produces — and ran every field through `str(...)`
+  and `or ""`, so `{"previous": 12345}` and `{"released_at": null}` became plausible records.
+  Types are now checked as they arrive, `generation` must be a non-boolean integer ≥ 1, and each
+  state has invariants: an `active` record may not carry release marks, generation 1 may not
+  name a predecessor, and every `previous` that exists must be a full 40-character SHA. Two
+  further bindings come from outside the JSON: the record's `work_id` must match the ref it was
+  read from, and its `previous` must equal the commit's actual single parent — the JSON and the
+  commit are written together, so a disagreement means one of them was edited afterwards.
+
   **An entry point that runs where the Routine starts.** `python scripts/automation/cli.py
   preflight ...` works from the repository root with nothing set up. The command documented in
   the previous round needed `scripts/` on `PYTHONPATH` and failed exactly where it is used

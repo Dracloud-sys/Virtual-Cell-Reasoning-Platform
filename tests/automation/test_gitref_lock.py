@@ -318,7 +318,16 @@ def test_an_unreachable_remote_raises_rather_than_reporting_a_free_lock(
         store.create_exclusive(KEY, "runner-a")
 
 
-def _push_lock_blob(remote: Path, workdir: Path, payload: str, ref: str) -> None:
+def _push_lock_blob(
+    remote: Path,
+    workdir: Path,
+    payload: str,
+    ref: str,
+    *,
+    parent: str | None = None,
+    force: bool = False,
+) -> str:
+    """Plant a lock commit by hand, so a corrupt state can be built deliberately."""
     blob = subprocess.run(
         ["git", "hash-object", "-w", "--stdin"],
         cwd=workdir,
@@ -336,7 +345,7 @@ def _push_lock_blob(remote: Path, workdir: Path, payload: str, ref: str) -> None
         check=True,
     ).stdout.strip()
     commit = subprocess.run(
-        ["git", "commit-tree", tree],
+        ["git", "commit-tree", tree, *(["-p", parent] if parent else [])],
         cwd=workdir,
         input="hand-written",
         capture_output=True,
@@ -344,7 +353,8 @@ def _push_lock_blob(remote: Path, workdir: Path, payload: str, ref: str) -> None
         check=True,
         env=_IDENTITY,
     ).stdout.strip()
-    _git("push", str(remote), f"{commit}:{ref}", cwd=workdir)
+    _git("push", *(["--force"] if force else []), str(remote), f"{commit}:{ref}", cwd=workdir)
+    return commit
 
 
 @pytest.mark.parametrize(
@@ -387,6 +397,199 @@ def test_a_lock_commit_without_a_record_is_not_a_free_lock(remote: Path, workdir
 
     with pytest.raises(LockCorrupt):
         store.create_exclusive(KEY, "runner-a")
+
+
+# --- the record has to hold together, and has to be about this ref ----------------------------
+
+SHA_A = "a" * 40
+SHA_B = "b" * 40
+
+
+def _valid(state: str = STATE_ACTIVE, **overrides) -> dict:
+    """A record that parses, so each test below changes exactly one thing about it."""
+    record = {
+        "schema": LOCK_SCHEMA,
+        "work_id": KEY,
+        "state": state,
+        "owner": "runner-a",
+        "nonce": "0" * 32,
+        "generation": 1,
+        "acquired_at": "2026-09-07T00:00:00+00:00",
+        "released_at": "",
+        "previous": "",
+        "release_nonce": "",
+    }
+    if state == STATE_TOMBSTONE:
+        record |= {
+            "released_at": "2026-09-07T00:01:00+00:00",
+            "previous": SHA_A,
+            "release_nonce": "1" * 32,
+        }
+    record.update(overrides)
+    return {name: value for name, value in record.items() if value is not _ABSENT}
+
+
+class _Absent:
+    def __repr__(self) -> str:  # pragma: no cover - only for test ids
+        return "absent"
+
+
+#: Sentinel for "this key is not in the JSON at all", as distinct from "it is empty".
+_ABSENT = _Absent()
+
+
+def test_the_baseline_records_this_section_mutates_are_themselves_valid() -> None:
+    """Otherwise every case below would pass for the wrong reason."""
+    active = LockRecord.parse(json.dumps(_valid()), where="t")
+    tombstone = LockRecord.parse(json.dumps(_valid(STATE_TOMBSTONE)), where="t")
+
+    assert active.state == STATE_ACTIVE
+    assert tombstone.state == STATE_TOMBSTONE and tombstone.previous == SHA_A
+
+
+@pytest.mark.parametrize(
+    "record",
+    [
+        _valid(STATE_TOMBSTONE, released_at=_ABSENT),
+        _valid(STATE_TOMBSTONE, released_at=""),
+        _valid(STATE_TOMBSTONE, released_at=1757203200),
+        _valid(STATE_TOMBSTONE, previous=_ABSENT),
+        _valid(STATE_TOMBSTONE, previous=""),
+        _valid(STATE_TOMBSTONE, previous=12345),
+        _valid(STATE_TOMBSTONE, previous="a" * 12),
+        _valid(STATE_TOMBSTONE, release_nonce=_ABSENT),
+        _valid(STATE_TOMBSTONE, release_nonce=""),
+        _valid(STATE_TOMBSTONE, release_nonce=["someone"]),
+        _valid(released_at="2026-09-07T00:01:00+00:00"),
+        _valid(release_nonce="1" * 32),
+        _valid(previous=SHA_A),
+        _valid(generation=2, previous=""),
+        _valid(generation=2, previous="not-a-sha"),
+        _valid(generation=0),
+        _valid(generation=True),
+        _valid(generation="1"),
+        _valid(owner=None),
+        _valid(nonce=42),
+        _valid(work_id=["vcrp-ops-001"]),
+    ],
+    ids=[
+        "tombstone-without-released_at",
+        "tombstone-with-empty-released_at",
+        "tombstone-with-numeric-released_at",
+        "tombstone-without-previous",
+        "tombstone-with-empty-previous",
+        "tombstone-with-numeric-previous",
+        "tombstone-with-abbreviated-previous",
+        "tombstone-without-release_nonce",
+        "tombstone-with-empty-release_nonce",
+        "tombstone-with-list-release_nonce",
+        "active-carrying-released_at",
+        "active-carrying-release_nonce",
+        "first-generation-active-naming-a-previous",
+        "later-generation-active-without-previous",
+        "later-generation-active-with-bad-previous",
+        "generation-zero",
+        "generation-true",
+        "generation-as-string",
+        "owner-null",
+        "nonce-numeric",
+        "work_id-list",
+    ],
+)
+def test_a_self_contradictory_record_is_refused_by_the_parser(record: dict) -> None:
+    """Isolated from the store, so every case is shown to fail *in the parser* rather than by
+    incidentally tripping the parent check that runs after it."""
+    with pytest.raises(LockCorrupt):
+        LockRecord.parse(json.dumps(record), where="t")
+
+
+@pytest.mark.parametrize(
+    "record",
+    [
+        _valid(STATE_TOMBSTONE, released_at=_ABSENT),
+        _valid(STATE_TOMBSTONE, previous=12345),
+        _valid(STATE_TOMBSTONE, release_nonce=""),
+        _valid(released_at="2026-09-07T00:01:00+00:00"),
+        _valid(previous=SHA_A),
+        _valid(generation=2, previous="not-a-sha"),
+    ],
+    ids=[
+        "tombstone-without-released_at",
+        "tombstone-with-numeric-previous",
+        "tombstone-with-empty-release_nonce",
+        "active-carrying-released_at",
+        "first-generation-active-naming-a-previous",
+        "later-generation-active-with-bad-previous",
+    ],
+)
+def test_a_self_contradictory_record_is_not_a_free_lock(
+    remote: Path, workdir: Path, record: dict
+) -> None:
+    """And through the store: fail-closed in both the read and the acquire."""
+    store = _store(remote, workdir)
+    _push_lock_blob(remote, workdir, json.dumps(record), store.ref(KEY))
+
+    with pytest.raises(LockCorrupt):
+        store.held_token(KEY)
+    with pytest.raises(LockCorrupt):
+        store.create_exclusive(KEY, "runner-b")
+
+
+def test_a_record_about_another_work_item_is_not_this_lock(remote: Path, workdir: Path) -> None:
+    """A lock.json naming another work item is a mistake or a copy. Neither is evidence."""
+    store = _store(remote, workdir)
+    _push_lock_blob(remote, workdir, json.dumps(_valid(work_id="vcrp-ops-999")), store.ref(KEY))
+
+    with pytest.raises(LockCorrupt) as raised:
+        store.held_token(KEY)
+    with pytest.raises(LockCorrupt):
+        store.create_exclusive(KEY, "runner-b")
+    assert "work id" in str(raised.value)
+
+
+def test_a_tombstone_whose_parent_contradicts_its_previous_is_not_a_free_lock(
+    remote: Path, workdir: Path
+) -> None:
+    """The JSON and the commit are written together, so a disagreement means one was edited."""
+    store = _store(remote, workdir)
+    unrelated = _push_lock_blob(remote, workdir, json.dumps(_valid()), store.ref("decoy"))
+    planted = _push_lock_blob(
+        remote,
+        workdir,
+        json.dumps(_valid(STATE_TOMBSTONE, previous=SHA_B)),
+        store.ref(KEY),
+        parent=unrelated,
+    )
+
+    with pytest.raises(LockCorrupt) as raised:
+        store.held_token(KEY)
+    with pytest.raises(LockCorrupt):
+        store.create_exclusive(KEY, "runner-b")
+    assert planted and "parents" in str(raised.value)
+
+
+def test_a_tombstone_with_no_parent_at_all_is_not_a_free_lock(remote: Path, workdir: Path) -> None:
+    store = _store(remote, workdir)
+    _push_lock_blob(remote, workdir, json.dumps(_valid(STATE_TOMBSTONE)), store.ref(KEY))
+
+    with pytest.raises(LockCorrupt):
+        store.held_token(KEY)
+
+
+def test_a_genuine_tombstone_still_reads_back(remote: Path, workdir: Path) -> None:
+    """The hardening must not refuse the records the store itself writes."""
+    store = _store(remote, workdir)
+    store.create_exclusive(KEY, "runner-a")
+    active = store.token_for(KEY)
+    store.release(KEY, "runner-a")
+
+    sha, record = _store(remote, workdir).state_of(KEY)
+
+    assert sha is not None and record is not None
+    assert record.state == STATE_TOMBSTONE
+    assert record.previous == active
+    assert record.released_at and record.release_nonce
+    assert _store(remote, workdir).held_token(KEY) is None
 
 
 # --- the regression that made this redesign necessary -----------------------------------------

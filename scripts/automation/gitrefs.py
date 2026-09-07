@@ -59,6 +59,12 @@ STATE_TOMBSTONE = "tombstone"
 #: The file inside the lock commit's tree. Structured, so nothing is decided by substring match.
 LOCK_FILE = "lock.json"
 
+_FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
+#: Fields that must be present, a string, and non-empty in every record.
+_REQUIRED_STRINGS = ("schema", "work_id", "state", "owner", "nonce", "acquired_at")
+#: Fields whose presence depends on the state, but whose *type* never does.
+_OPTIONAL_STRINGS = ("released_at", "previous", "release_nonce")
+
 _GIT_ENV = {
     "GIT_AUTHOR_NAME": "vcrp-automation",
     "GIT_AUTHOR_EMAIL": "automation@vcrp.invalid",
@@ -175,35 +181,82 @@ class LockRecord:
 
     @classmethod
     def parse(cls, text: str, *, where: str) -> LockRecord:
-        """Read a record, or refuse. An unreadable lock is never treated as an absent one."""
+        """Read a record, or refuse. An unreadable lock is never treated as an absent one.
+
+        Nothing here coerces. An earlier version ran every field through `str(...)` and
+        `or ""`, which turned `{"previous": 12345}` and `{"released_at": null}` into
+        plausible-looking records — a tombstone with no evidence of a release, accepted as one.
+        A value of the wrong type is not a value.
+        """
         try:
             raw = json.loads(text)
         except json.JSONDecodeError as error:
             raise LockCorrupt(f"{where} does not hold JSON: {error}") from error
         if not isinstance(raw, dict):
             raise LockCorrupt(f"{where} does not hold an object")
-        if raw.get("schema") != LOCK_SCHEMA:
-            raise LockCorrupt(f"{where} has schema {raw.get('schema')!r}, not {LOCK_SCHEMA!r}")
-        if raw.get("state") not in {STATE_ACTIVE, STATE_TOMBSTONE}:
-            raise LockCorrupt(f"{where} has state {raw.get('state')!r}, which is neither")
+
+        for name in (*_REQUIRED_STRINGS, *_OPTIONAL_STRINGS):
+            if name in raw and not isinstance(raw[name], str):
+                kind = type(raw[name]).__name__
+                raise LockCorrupt(f"{where} has {name} of type {kind}, which is not a string")
+        for name in _REQUIRED_STRINGS:
+            if not raw.get(name):
+                raise LockCorrupt(f"{where} has no usable {name}")
+        if raw["schema"] != LOCK_SCHEMA:
+            raise LockCorrupt(f"{where} has schema {raw['schema']!r}, not {LOCK_SCHEMA!r}")
+        if raw["state"] not in {STATE_ACTIVE, STATE_TOMBSTONE}:
+            raise LockCorrupt(f"{where} has state {raw['state']!r}, which is neither")
         generation = raw.get("generation")
         if not isinstance(generation, int) or isinstance(generation, bool) or generation < 1:
             raise LockCorrupt(f"{where} has generation {raw.get('generation')!r}")
-        for name in ("work_id", "owner", "nonce", "acquired_at"):
-            if not isinstance(raw.get(name), str) or not raw[name]:
-                raise LockCorrupt(f"{where} has no usable {name}")
-        return cls(
-            schema=str(raw["schema"]),
-            work_id=str(raw["work_id"]),
-            state=str(raw["state"]),
-            owner=str(raw["owner"]),
-            nonce=str(raw["nonce"]),
+
+        record = cls(
+            schema=raw["schema"],
+            work_id=raw["work_id"],
+            state=raw["state"],
+            owner=raw["owner"],
+            nonce=raw["nonce"],
             generation=generation,
-            acquired_at=str(raw["acquired_at"]),
-            released_at=str(raw.get("released_at") or ""),
-            previous=str(raw.get("previous") or ""),
-            release_nonce=str(raw.get("release_nonce") or ""),
+            acquired_at=raw["acquired_at"],
+            released_at=raw.get("released_at", ""),
+            previous=raw.get("previous", ""),
+            release_nonce=raw.get("release_nonce", ""),
         )
+        problem = record._inconsistency()
+        if problem is not None:
+            raise LockCorrupt(f"{where} {problem}")
+        return record
+
+    def _inconsistency(self) -> str | None:
+        """Why this record contradicts itself, or None when it holds together.
+
+        A tombstone is the *evidence* that a release happened, so a tombstone missing the marks
+        of one — when, by whom, and what it replaced — is not weak evidence. It is a record that
+        says a release occurred while carrying nothing that a release produces.
+        """
+        if self.active:
+            if self.released_at:
+                return f"is active but carries released_at {self.released_at!r}"
+            if self.release_nonce:
+                return "is active but carries a release_nonce"
+            if self.generation == 1 and self.previous:
+                return "is the first generation but names a previous lock commit"
+            if self.generation > 1 and not _FULL_SHA.match(self.previous):
+                return (
+                    f"is generation {self.generation} but its previous {self.previous!r} is not "
+                    "a full 40-character commit SHA"
+                )
+            return None
+        if not self.released_at:
+            return "is a tombstone that does not say when it was released"
+        if not self.release_nonce:
+            return "is a tombstone that does not say whose release it was"
+        if not _FULL_SHA.match(self.previous):
+            return (
+                f"is a tombstone whose previous {self.previous!r} is not a full 40-character "
+                "commit SHA, so it names no lock to have retired"
+            )
+        return None
 
     def describe(self) -> str:
         when = self.released_at if self.state == STATE_TOMBSTONE else self.acquired_at
@@ -259,7 +312,33 @@ class GitRefLockStore:
                 # caller may try again; saying "corrupt" here would strand a healthy lock.
                 raise LockUnavailable(f"{self.ref(key)} moved while it was being read")
             raise LockCorrupt(f"{self.ref(key)} at {sha[:12]} carries no {LOCK_FILE}")
-        return LockRecord.parse(shown.stdout, where=f"{self.ref(key)} at {sha[:12]}")
+
+        where = f"{self.ref(key)} at {sha[:12]}"
+        record = LockRecord.parse(shown.stdout, where=where)
+        # The record has to be about *this* ref. A lock.json naming another work item is either
+        # a mistake or a copy, and either way it is not evidence about this work item's lock.
+        if record.work_id != key:
+            raise LockCorrupt(f"{where} carries work id {record.work_id!r}, not {key!r}")
+        # And its claim about what it replaced has to match what git actually recorded. The JSON
+        # is written by the same process that builds the commit, so a disagreement between them
+        # means one of the two was edited afterwards.
+        if record.previous:
+            parents = self._parents(sha)
+            if parents != (record.previous,):
+                found = ", ".join(p[:12] for p in parents) or "(none)"
+                raise LockCorrupt(
+                    f"{where} names previous {record.previous[:12]} but its commit's parents "
+                    f"are {found}"
+                )
+        return record
+
+    def _parents(self, sha: str) -> tuple[str, ...]:
+        """The commit's parents, as git records them. Unreadable is blocked, never assumed."""
+        listed = _git(self.workdir, "rev-list", "--parents", "-n", "1", sha)
+        if listed.returncode != 0:
+            problem = (listed.stderr or listed.stdout).strip()
+            raise LockUnavailable(f"cannot read the parents of {sha[:12]}: {problem}")
+        return tuple(listed.stdout.split()[1:])
 
     def state_of(self, key: str) -> tuple[str | None, LockRecord | None]:
         """The remote's current SHA and record, or (None, None) when the ref does not exist."""
