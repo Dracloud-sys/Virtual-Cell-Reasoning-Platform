@@ -6,6 +6,46 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **The runbook prescribed a procedure nobody could follow.** VCRP-OPS-002 fixed the Routine's
+  push policy in `docs/operations/routine_runbook.md` as two UI fields to change by hand —
+  clearing the outcome branch, and restricting `allowed_push_branches` to `claude/*` and the
+  automation namespace. **Neither field exists in the Routines edit form**, which covers the
+  name, prompt, repositories, environment, connectors and triggers and nothing else. They are
+  session configuration the backend fills in: readable in the Routines API's view of a trigger,
+  settable by neither the API nor the UI, and not settable at creation time either — so even
+  destroying the Routine's run history by recreating it would not have set them. The document
+  read like a control we had.
+
+  **What the platform actually enforces** is the rule in the Routines documentation: a `claude/`
+  branch is always accepted, and a push anywhere else is refused when the branch is protected on
+  GitHub, or someone else has an open pull request from it, or it carries commits by another
+  author. Against this repository the work branch and `vcrp-automation/*` are fine — and **`main`
+  passed all three**, because it was unprotected, had no pull request from it, and carries
+  commits by the same account the Routine runs as. Nothing refused that push.
+
+  So the guard is **GitHub branch protection on `main`**, which is a stronger control than the
+  setting we thought we were configuring: it binds every actor rather than one Routine, and it is
+  the first condition the platform's own check consults.
+
+  Ruleset `22420277` (`protect-main`) is `active` on `~DEFAULT_BRANCH` with **no bypass actors**
+  and the current user marked `never` able to bypass. Its rules: **pull request required**
+  (required approvals `0`), **required status check `test`**, deletion restriction and
+  non-fast-forward restriction; no lock or read-only rule. `main` reports `"protected": true`.
+
+  The distinction that matters is inside the ruleset, not on the branch flag. `protected: true`
+  would also be reported by a ruleset carrying only the creation defaults — deletion and
+  non-fast-forward restrictions — under which an ordinary fast-forward push to `main` still
+  succeeds. **Pull request required** is the rule that refuses the push, and **bypass actors:
+  none** is what makes it bind the account the Routine runs as. The runbook records the ruleset's
+  id so a later reader re-reads the object rather than trusting a table.
+
+  The stale outcome branch `claude/fervent-clarke` is recorded as **backend metadata rather than
+  a setting** — a fact to know, not an item to action. Its risk is bounded (`claude/`-prefixed,
+  so inside the always-accepted namespace; no such branch on origin) and the one open question
+  about it — whether a firing creates it — is now a check in the empty-queue smoke test rather
+  than an assumption.
+
 ### Added
 - **VCRP-OPS-002 — the run contract, tightened where a silence could pass for an answer.**
   Follow-up to VCRP-OPS-001, and every item is the same shape: a missing thing that read as a
