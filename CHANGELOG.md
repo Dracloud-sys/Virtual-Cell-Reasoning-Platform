@@ -26,14 +26,19 @@ to [Semantic Versioning](https://semver.org/).
 
   So the guard is **GitHub branch protection on `main`**, which is a stronger control than the
   setting we thought we were configuring: it binds every actor rather than one Routine, and it is
-  the first condition the platform's own check consults. `main` now reports `"protected": true`.
+  the first condition the platform's own check consults.
 
-  The two properties are kept apart on purpose. *A rule exists* is measured here —
-  `list_branches` reports it. *The rule has no bypass* is **attested by a person**, because no
-  available tool reads repository rulesets, the REST endpoint refuses an unauthenticated read
-  (403), and the only conclusive test is the push the rule exists to prevent. A ruleset whose
-  bypass list names the Routine's own account still reports `protected: true` while enforcing
-  nothing.
+  Ruleset `22420277` (`protect-main`) is `active` on `~DEFAULT_BRANCH` with **no bypass actors**
+  and the current user marked `never` able to bypass. Its rules: **pull request required**
+  (required approvals `0`), **required status check `test`**, deletion restriction and
+  non-fast-forward restriction; no lock or read-only rule. `main` reports `"protected": true`.
+
+  The distinction that matters is inside the ruleset, not on the branch flag. `protected: true`
+  would also be reported by a ruleset carrying only the creation defaults — deletion and
+  non-fast-forward restrictions — under which an ordinary fast-forward push to `main` still
+  succeeds. **Pull request required** is the rule that refuses the push, and **bypass actors:
+  none** is what makes it bind the account the Routine runs as. The runbook records the ruleset's
+  id so a later reader re-reads the object rather than trusting a table.
 
   The stale outcome branch `claude/fervent-clarke` is recorded as **backend metadata rather than
   a setting** — a fact to know, not an item to action. Its risk is bounded (`claude/`-prefixed,

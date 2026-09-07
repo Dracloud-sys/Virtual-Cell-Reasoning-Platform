@@ -513,20 +513,38 @@ Read against this repository:
 **So the guard is GitHub branch protection on `main`, and nothing else is.** That is a stronger
 control than the setting we thought we were configuring, because it binds every actor rather
 than one Routine, and it is the *first* condition the platform's own check consults. It is set
-on GitHub — **Settings → Rules → Rulesets** (or classic branch protection) — not on claude.ai.
+on GitHub — **Settings → Rules → Rulesets** — not on claude.ai.
 
-Two properties matter and they are not the same:
+### The ruleset, as it stands
 
-- **A rule exists.** Verifiable from here: `list_branches` reports `"protected": true` for `main`.
-- **The rule has no bypass.** *Not* verifiable from here. No available tool reads repository
-  rulesets, the REST rulesets endpoint refuses an unauthenticated read (403), and the only
-  conclusive test — pushing to `main` to see it refused — is the exact act the rule exists to
-  prevent. A ruleset whose bypass list names the account the Routine runs as enforces nothing
-  against that Routine while still reporting `protected: true`.
+| | |
+|---|---|
+| id | `22420277` |
+| name | `protect-main` |
+| enforcement | `active` |
+| target | `~DEFAULT_BRANCH` |
+| bypass actors | **none** |
+| current user can bypass | **never** |
 
-  So this one is **attested by a person**, from the ruleset's own page: *Require a pull request
-  before merging* is on, and the **Bypass list is empty**. Recorded that way on issue #21 —
-  attested, not measured — because a check that cannot fail is not a check.
+Rules on it:
+
+| Rule | Why it matters here |
+|---|---|
+| pull request required | **the one that closes the gap.** It refuses the direct push itself |
+| required approvals `0` | the direct push is refused at any value; `0` keeps ordinary review-and-merge working |
+| required status check `test` | the gate must be green before anything reaches `main` |
+| deletion restriction | `main` cannot be deleted |
+| non-fast-forward restriction | `main` cannot be rewritten |
+
+No lock or read-only rule is set, so the branch is normal in every other respect.
+
+**`protected: true` is not by itself the guard.** A ruleset carrying only the creation defaults —
+deletion and non-fast-forward restrictions — reports `protected: true` while an ordinary
+fast-forward push to `main` still succeeds. *Pull request required* is the rule that refuses the
+push, and *bypass actors: none* is what makes it apply to the account the Routine runs as. Both
+are read from the ruleset itself rather than inferred from the branch's `protected` flag, which
+is why the id is recorded above: a later reader can re-read the same object rather than trust
+this table.
 
 ### The outcome branch: unmodifiable backend metadata
 
