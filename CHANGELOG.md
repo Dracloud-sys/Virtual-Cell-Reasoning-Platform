@@ -7,6 +7,19 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **VCRP-OPS-004 — the outcome-branch check was written as an exact-name test, and the harness
+  does not use the exact name.** `docs/operations/routine_runbook.md` told a reader to confirm
+  that `git ls-remote --heads origin` shows "no `claude/fervent-clarke`", and listed the same
+  bare name as check 3 of the empty-queue smoke test. The harness appends a session suffix to the
+  stored outcome branch — the observed form is `claude/fervent-clarke-m6e8z8` — so a reader
+  following the words literally could search for a name that will never appear, find it absent,
+  and record a pass while a derived branch sat on origin. The check is now stated as a prefix
+  test, with the exact command that performs it
+  (`git ls-remote --heads origin 'refs/heads/claude/fervent-clarke*'`) and the output that counts
+  as passing it (nothing at all), and one sentence records why the pushed name can differ from
+  the stored one at all. Wording only: the smoke test still lists the same five checks in the
+  same order, and both completed smoke observations were taken with a prefix-covering grep, so
+  what they concluded stands unchanged.
 - **The runbook prescribed a procedure nobody could follow.** VCRP-OPS-002 fixed the Routine's
   push policy in `docs/operations/routine_runbook.md` as two UI fields to change by hand —
   clearing the outcome branch, and restricting `allowed_push_branches` to `claude/*` and the

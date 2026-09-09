@@ -559,12 +559,19 @@ not an item anyone can action. What can be said about its risk is bounded and ch
 
 - it is `claude/`-prefixed, so it names a branch inside the always-accepted namespace and cannot
   reach `main` or anything protected;
-- no such branch exists on origin, so nothing has ever been pushed to it;
-- whether a firing *creates* it is a question with an answer, and the empty-queue smoke test is
-  where that answer is taken: after **Run now** on an empty queue, `git ls-remote --heads origin`
-  must still show no `claude/fervent-clarke`. If it appears, the harness pushes to the outcome
-  branch on its own and that is a finding — a second destination for a run's work that the token
-  never bound and `finalize` never checks.
+- no branch beginning `claude/fervent-clarke` exists on origin, so nothing has ever been pushed
+  to that name or to any name derived from it;
+- **what is checked is a prefix, not a name.** The harness does not use the stored value
+  verbatim: it derives a per-session branch by appending a session suffix to it, and the observed
+  form is `claude/fervent-clarke-m6e8z8`. An exact-name search would therefore report "absent"
+  while the harness had in fact created a branch, which is why every check below is a prefix one;
+- whether a firing *creates* such a branch is a question with an answer, and the empty-queue
+  smoke test is where that answer is taken. After **Run now** on an empty queue, run
+  `git ls-remote --heads origin 'refs/heads/claude/fervent-clarke*'`: **printing nothing at all
+  is what passes**, and it is the only thing that does — the glob covers the bare name and every
+  suffixed derivative of it. Any line of output means the harness pushes to the outcome branch on
+  its own, and that is a finding — a second destination for a run's work that the token never
+  bound and `finalize` never checks.
 
 ### The smoke test, with the Routine still disabled
 
@@ -573,7 +580,9 @@ rather than something to watch afterwards. Run it once against an empty queue an
 
 1. the gate exited **10**;
 2. `git ls-remote origin` is unchanged — no new branch, no new ref;
-3. **no `claude/fervent-clarke`** (the outcome-branch question above);
+3. **no branch beginning `claude/fervent-clarke`** —
+   `git ls-remote --heads origin 'refs/heads/claude/fervent-clarke*'` prints nothing, suffixed
+   names included (the outcome-branch question above);
 4. no pull request was opened;
 5. a run record appeared on issue #21.
 
