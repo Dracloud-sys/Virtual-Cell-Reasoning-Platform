@@ -7,6 +7,15 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **VCRP-OPS-005 — an unattended run left its own scratch files in `git status`.** The gate writes
+  `phase1.json`, `phase2.json` and the `.automation/` token directory into the repository root, and
+  nothing ignored them, so every routine execution ended with three untracked entries that a later
+  `git add -A` could have committed as repository content. `.gitignore` now carries root-anchored
+  rules for exactly those three paths. Anchoring is the whole of the change: `/phase1.json` hides
+  the run's request file and leaves a `tmp/phase1.json` visible, which an unanchored `phase1.json`
+  would not. The transient artifacts are outputs, never inputs — the durable run state is
+  `refs/heads/vcrp-automation/*` and the run record is a comment on issue #21 — so ignoring them
+  removes noise without hiding anything the repository keeps.
 - **VCRP-OPS-004 — the outcome-branch check was written as an exact-name test, and the harness
   does not use the exact name.** `docs/operations/routine_runbook.md` told a reader to confirm
   that `git ls-remote --heads origin` shows "no `claude/fervent-clarke`", and listed the same
