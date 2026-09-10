@@ -3,10 +3,10 @@
   "generation": 1,
   "nonce": "c4fd5e2fb466f696c6936c1f8e618893",
   "owner": "scheduled-runner-3f5457d30310f664",
-  "previous": "",
-  "release_nonce": "",
-  "released_at": "",
+  "previous": "ea36bfffc02806b2ac614b3e8afe8c11257862f0",
+  "release_nonce": "d0dfe3dd9774470d04166c93158cbf93",
+  "released_at": "2026-09-10T16:09:40+00:00",
   "schema": "vcrp-lock/1",
-  "state": "active",
+  "state": "tombstone",
   "work_id": "vcrp-ops-005"
 }
