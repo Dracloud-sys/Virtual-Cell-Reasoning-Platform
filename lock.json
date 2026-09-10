@@ -1,0 +1,12 @@
+{
+  "acquired_at": "2026-09-10T16:04:13+00:00",
+  "generation": 1,
+  "nonce": "c4fd5e2fb466f696c6936c1f8e618893",
+  "owner": "scheduled-runner-3f5457d30310f664",
+  "previous": "",
+  "release_nonce": "",
+  "released_at": "",
+  "schema": "vcrp-lock/1",
+  "state": "active",
+  "work_id": "vcrp-ops-005"
+}
