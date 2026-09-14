@@ -289,6 +289,29 @@ disagree — adipogenesis counts inhibition and viability as status axes, while
 immortalization treats every flag-raising axis as guidance — and that disagreement
 is domain science, not inconsistency.
 
+### The envelope is checked against the declaration
+
+`DecisionSupport.status` and `flags` carry the domain's own vocabulary, and
+`describe_domain` publishes that vocabulary to a calling agent as the authoritative
+list of what it may see. `ReasoningService.query` therefore refuses a status or flag
+the pack's own `DomainDescription` does not declare, raising `UndeclaredOutcomeError`.
+
+The check lives in the service rather than in each pack, so a pack cannot skip its own
+check and a fourth domain inherits it without writing a line. It merges no vocabularies
+— the comparison is always against the description that came from the same pack — and it
+ranks and interprets nothing. `status=None` is always allowed: that is how a pack says it
+reached no verdict.
+
+It is deliberately **not** a `DomainError`. That family is the caller's mistake and is
+reported to them as one (HTTP 422, the MCP `invalid_experiment` refusal); an undeclared
+status is the pack's defect, and the honest answer is that the server is broken rather
+than the request. The mirror of that rule holds too: a vertical's *unanswerable-request*
+refusals are converted into `QueryValidationError` so they reach the caller as a caller
+error, while its *safety* errors are not, because a fired guard means the vertical
+produced something it must not ship.
+
+See [`decision_status_contract.md`](decision_status_contract.md).
+
 ### `missing_inputs` — what to measure, under a name you can send back
 
 `missing_information` is prose for a person and may spell an axis `SA-b-Gal`.

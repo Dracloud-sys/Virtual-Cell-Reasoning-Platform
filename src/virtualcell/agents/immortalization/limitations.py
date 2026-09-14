@@ -137,6 +137,17 @@ _RULES = {
 }
 
 
+def supported_constructs() -> tuple[str, ...]:
+    """The constructs the curated catalog actually covers.
+
+    Public because the *vocabulary* of the ``construct`` axis is wider than this: it
+    includes the unmeasured value, which is a legitimate thing to say about a sample and
+    not something the mechanism catalog can explain. A caller refused here needs the
+    shorter list, and reading it from the catalog keeps the two from drifting.
+    """
+    return tuple(construct.value for construct in _RULES)
+
+
 def get_mechanism_rule(data: ImmortalizationAssessmentInput) -> MechanismRule:
     """Return the curated mechanism rule for a mechanism-explanation input."""
     if data.intent != AssessmentIntent.MECHANISM_EXPLANATION:

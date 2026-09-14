@@ -29,6 +29,7 @@ from virtualcell.platform.domains import (
     DomainPack,
     DomainRegistry,
     QueryValidationError,
+    UndeclaredOutcomeError,
     UnknownDomainError,
     UnsupportedTaskError,
 )
@@ -48,6 +49,7 @@ __all__ = [
     "MeasurementConsumption",
     "QueryProvenance",
     "QueryValidationError",
+    "UndeclaredOutcomeError",
     "ReasoningQuery",
     "ReasoningResponse",
     "ReasoningService",
