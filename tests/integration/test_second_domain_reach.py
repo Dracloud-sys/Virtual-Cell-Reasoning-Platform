@@ -256,6 +256,10 @@ class _FakePack:
             summary="A fictional domain that exists only inside this test.",
             tasks=(TaskDescription(name="assess_state", purpose="does nothing"),),
             axes=(),
+            # `execute` below returns this status, so the description has to say so. The
+            # stub originally declared nothing and returned "fusing" anyway - the exact
+            # drift `validate_declared_outcome` now refuses, found by turning the check on.
+            status_vocabulary=("fusing",),
         )
 
     def validate_experiment(self, task, experiment) -> None:

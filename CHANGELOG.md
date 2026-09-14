@@ -6,6 +6,53 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **The generic envelope now checks a verdict against the pack's own declaration.**
+  `validate_declared_outcome` runs in `ReasoningService.query` - the one path every surface
+  shares - and refuses a `DecisionSupport.status` or flag the domain's `DomainDescription`
+  does not declare, raising `UndeclaredOutcomeError`.
+
+  This is the output-side twin of PR18. Since PR18 each pack declares a `status_vocabulary`
+  and a `flags` list; since the MCP server, `describe_domain` hands both to a calling agent
+  as the authoritative list of what it may see, which is the whole point of publishing a
+  vocabulary. Nothing checked that what a pack *emitted* was in what it *declared*.
+
+  No drift exists today, and that is not the reassurance it sounds like: sweeping every
+  categorical axis of all three domains reaches only 7 of 12 statuses and 5 of 16 flags, so
+  a mismatch on any other path would be invisible to every test in the tree.
+
+  It merges no vocabularies - the comparison is always against the description from the same
+  pack - ranks and interprets nothing, treats an empty declaration as a promise rather than
+  an exemption, and always allows `status=None`, which is how a pack says it reached no
+  verdict. `UndeclaredOutcomeError` is deliberately **not** a `DomainError`: that family is
+  the caller's mistake and is reported as one, and this is the pack's defect.
+
+  See [`docs/decision_status_contract.md`](docs/decision_status_contract.md), which also
+  records the decision to **keep** `DecisionReport.candidate_status` where it is and
+  redefines the migration trigger that the third domain had spent.
+
+### Fixed
+- **A caller's mistake was reported as a server crash.** `immortalization/explain_mechanism`
+  with an empty payload passed `validate_experiment`, then raised the vertical's own
+  `UnsupportedMechanismError` - a plain `ValueError` the platform does not classify - so the
+  caller got **HTTP 500** and, through MCP, the bare string `Error executing tool reason`:
+  no detail, nothing to act on.
+
+  It was reachable by following the description exactly. `describe_domain` listed no required
+  axes for that task, so an agent sent nothing and crashed the server; sending the axis's own
+  declared unmeasured value crashed it too.
+
+  The vertical's unanswerable-request refusals now become `QueryValidationError`, so the
+  failure reaches the caller as 422 and as the MCP `invalid_experiment` refusal, carrying the
+  constructs that do work. `explain_mechanism` also declares `construct` in `required_axes`,
+  so an agent reading the description never reaches the refusal.
+
+  The safety errors are deliberately excluded from that conversion: `HypothesisSafetyError`
+  and `ImmortalizationSafetyError` fire when the vertical produced something it must not
+  ship, and reporting one as a 422 would tell the caller to fix a payload while the real
+  defect went quiet. They stay loud.
+
+
 ### Fixed
 - **VCRP-OPS-004 — the outcome-branch check was written as an exact-name test, and the harness
   does not use the exact name.** `docs/operations/routine_runbook.md` told a reader to confirm

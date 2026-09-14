@@ -585,31 +585,49 @@ reference domain pack. The remaining platform layers, in order:
 
   The adapter names no vertical and contains no per-domain branch; a test registers a domain
   this repository does not ship and drives all three tools against it.
+- ✅ **Decision-status contract.** The residue PR14b recorded and PR18 confirmed, answered by
+  reading the code rather than by following the trigger: `DecisionReport.candidate_status`
+  carries immortalization's vocabulary, but it blocks nobody. Both newer verticals set it to
+  `None` and route their verdict through `DecisionSupport.status`, which is what every surface
+  reads — so the platform already had one domain-neutral status source, and migrating would buy
+  tidiness in a contract no caller reads, paid for in churn against four scorecards. **Kept**,
+  with the spent trigger replaced by one that would represent real damage.
+
+  The exposure was elsewhere, and looking is what found it. Each pack declares a
+  `status_vocabulary` and `flags`; `describe_domain` hands both to an agent as the
+  authoritative list of what it may see. **Nothing checked that a pack emitted what it
+  declared** — the output-side twin of the input contract PR18 fixed. No drift exists today,
+  which is not reassuring: a sweep of every categorical axis reaches only 7 of 12 statuses and
+  5 of 16 flags, so a mismatch anywhere else would be invisible. `validate_declared_outcome`
+  now refuses one, on the single path every surface shares, merging no vocabularies and
+  interpreting nothing.
+
+  The same sweep found the boundary failing in the other direction:
+  `immortalization/explain_mechanism` answered an ordinary payload with HTTP 500 and an empty
+  MCP crash string, reachable by following the description exactly. Unanswerable requests are
+  now typed refusals that name the values which work; the *safety* errors are deliberately not
+  converted, because a fired guard means the vertical produced something it must not ship.
+  See [`decision_status_contract.md`](decision_status_contract.md).
+
 ### What comes next, in order
 
 Nothing below is implemented. Each is an independent PR, and none starts before the
 previous one is merged with main CI green.
 
-1. **Neutral decision status** — decide what to do about the residue PR14b recorded and
-   PR18 confirmed: the shared `DecisionReport.candidate_status` owns *immortalization's*
-   vocabulary, and the two newer verticals route around it via `DecisionSupport.status`.
-   The third domain was the stated trigger and it has arrived. An investigation-first
-   item: writing an ADR that explains why the current structure stays is an acceptable
-   outcome if the migration costs more churn than it returns.
-2. **Canonical `ExperimentRun` query integration** — connect the ingestion path to the
+1. **Canonical `ExperimentRun` query integration** — connect the ingestion path to the
    reasoning path. Today raw data reaches `ExperimentRun` and a domain adapter, and the
    handoff into `ReasoningService` is manual. Until this lands, `quality_excluded` is not
    reachable from the query surface at all.
-3. **First assay-specific reader** — compare candidates before writing one (see
+2. **First assay-specific reader** — compare candidates before writing one (see
    [Assay-specific readers](#platform-sequence-after-pr11) above); the winner must connect
    to a real decision axis in a shipped vertical.
-4. **Explanation layer** — make `explanation_level` actually change the explanation, so a
+3. **Explanation layer** — make `explanation_level` actually change the explanation, so a
    non-expert can learn the concepts, interpret raw data, and follow the basis of a
    research judgment. Until then the level is carried as provenance only. The deterministic
    report is generated first and the narrative is presentation-only: status, evidence tier,
    citations and confidence never move, and limitations and overinterpretation risks are
    never omitted.
-5. **Evidence provenance** — per-edge `evidence_tier` and source provenance, so a single
+4. **Evidence provenance** — per-edge `evidence_tier` and source provenance, so a single
    paper's `PROMOTES` is not treated as strongly as a textbook edge (see the deferral note
    below, which this supersedes when it starts).
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today

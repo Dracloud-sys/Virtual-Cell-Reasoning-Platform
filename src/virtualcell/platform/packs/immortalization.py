@@ -21,7 +21,15 @@ from typing import Any
 from pydantic import ValidationError
 
 from virtualcell.agents.immortalization.adapters import input_from_scenario
-from virtualcell.agents.immortalization.agent import ImmortalizationAssessmentAgent
+from virtualcell.agents.immortalization.agent import (
+    AssessmentInputError,
+    ImmortalizationAssessmentAgent,
+)
+from virtualcell.agents.immortalization.hypotheses import UnsupportedHypothesisError
+from virtualcell.agents.immortalization.limitations import (
+    UnsupportedMechanismError,
+    supported_constructs,
+)
 from virtualcell.agents.immortalization.models import (
     ConstructType,
     GenomicStabilityValue,
@@ -29,6 +37,7 @@ from virtualcell.agents.immortalization.models import (
     MarkerValue,
     RetentionValue,
 )
+from virtualcell.agents.immortalization.rules import UnsupportedIntentError
 from virtualcell.core.consumption import ConsumptionReport
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.platform.contracts import (
@@ -50,6 +59,20 @@ from virtualcell.platform.description import (
 )
 from virtualcell.platform.domains import QueryValidationError
 from virtualcell.reasoning.decision import AssessmentFlag, CandidateStatus, DecisionReport
+
+# Refusals that mean "this request cannot be answered as asked". They are the caller's
+# business and are reported to them as such, on every surface.
+#
+# The safety errors are deliberately absent. `HypothesisSafetyError` and
+# `ImmortalizationSafetyError` fire when the vertical produced something it must not ship;
+# turning one into a 422 would tell the caller to fix a payload while the real defect went
+# quiet, which is the failure this platform exists to prevent. Those stay loud.
+_UNANSWERABLE = (
+    AssessmentInputError,
+    UnsupportedHypothesisError,
+    UnsupportedIntentError,
+    UnsupportedMechanismError,
+)
 
 DOMAIN = "immortalization"
 PACK_ID = "immortalization.reference.v1"
@@ -221,6 +244,10 @@ DESCRIPTION = DomainDescription(
         TaskDescription(
             name=TASK_MECHANISM,
             purpose="explains what a construct does, from the curated mechanism catalog",
+            # Required, not optional. The catalog is keyed by construct, so the task has
+            # nothing to explain without one - and a description that called it optional
+            # sent a caller straight into a refusal it had been told would not happen.
+            required_axes=("construct",),
             reads_axes=("construct",),
             example={"construct": "TERT_plus_CDK4"},
         ),
@@ -260,11 +287,31 @@ class ImmortalizationDomainPack:
 
     def execute(self, query: ReasoningQuery, store: KnowledgeStore) -> ReasoningResponse:
         data = self._to_assessment_input(query)
-        report = ImmortalizationAssessmentAgent(store=store).assess(data)
+        try:
+            report = ImmortalizationAssessmentAgent(store=store).assess(data)
+        except _UNANSWERABLE as exc:
+            raise QueryValidationError(self._unanswerable(query, exc)) from exc
         response = self._to_response(query, report, data)
         response.measurement_consumption = self._consumption(query, data)
         response.missing_inputs = self._missing_inputs(query, report)
         return response
+
+    @staticmethod
+    def _unanswerable(query: ReasoningQuery, exc: Exception) -> str:
+        """Say what cannot be answered, and what to send instead.
+
+        The message a caller receives has to close the loop the way `missing_inputs`
+        does, because the surfaces that show it - HTTP 422, the MCP `invalid_experiment`
+        refusal - are read by something that will otherwise guess.
+        """
+        remedy = ""
+        if isinstance(exc, UnsupportedMechanismError):
+            remedy = (
+                f" Send 'construct' as one of {list(supported_constructs())}; the axis "
+                "also accepts an unmeasured value, but this task explains a named "
+                "construct and cannot explain one nobody identified."
+            )
+        return f"task {query.task!r} cannot be answered as asked: {exc}.{remedy}"
 
     def _missing_inputs(self, query: ReasoningQuery, report) -> list[MissingInput]:
         """Resolve the native report's missing axes into keys a caller can send.

@@ -32,7 +32,7 @@ from virtualcell.platform.contracts import (
     ReasoningQuery,
     ReasoningResponse,
 )
-from virtualcell.platform.domains import DomainRegistry
+from virtualcell.platform.domains import DomainRegistry, validate_declared_outcome
 from virtualcell.reasoning.llm import LLMBackend
 
 # Provider failures worth distinguishing from a generic error. TimeoutError is stdlib;
@@ -72,9 +72,13 @@ class ReasoningService:
         self.backend = backend
 
     async def query(self, request: ReasoningQuery) -> ReasoningResponse:
-        """Resolve the domain, run its pack, then attach any literature outcome."""
+        """Resolve the domain, run its pack, check its verdict, attach any literature."""
         pack = self.registry.resolve(request.domain, request.task)
         response = pack.execute(request, self.store)
+        # Here rather than in each pack: a pack cannot skip its own check, and a fourth
+        # domain inherits this without writing a line. The description comes from the same
+        # pack that produced the response, so no vocabulary is merged or centralised.
+        validate_declared_outcome(pack.describe(), response.decision_support)
         response.literature = await self._literature(request)
         return response
 

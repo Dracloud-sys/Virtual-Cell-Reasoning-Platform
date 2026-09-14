@@ -21,7 +21,7 @@ from collections.abc import Mapping
 from typing import Any, Protocol, runtime_checkable
 
 from virtualcell.knowledge.store import KnowledgeStore
-from virtualcell.platform.contracts import ReasoningQuery, ReasoningResponse
+from virtualcell.platform.contracts import DecisionSupport, ReasoningQuery, ReasoningResponse
 from virtualcell.platform.description import DomainDescription, probe_value
 
 
@@ -39,6 +39,17 @@ class UnsupportedTaskError(DomainError):
 
 class QueryValidationError(DomainError):
     """Raised when a query is well-formed but invalid for its domain/task."""
+
+
+class UndeclaredOutcomeError(RuntimeError):
+    """A pack reported a status or flag its own description never declared.
+
+    Deliberately **not** a :class:`DomainError`. Every member of that family is the
+    caller's mistake and is reported to them as one — HTTP 422, the MCP
+    ``invalid_experiment`` refusal — which would tell them to fix a payload that was
+    never the problem, and invite them to send a different one. This is a defect in the
+    pack, and the honest answer is that the server is broken, not the request.
+    """
 
 
 @runtime_checkable
@@ -120,6 +131,46 @@ def _reject_inconsistent_description(pack: DomainPack) -> None:
             f"domain pack {pack.domain!r} describes tasks {sorted(described)} but supports "
             f"{sorted(pack.supported_tasks)}; a caller would be offered a task the registry "
             "will refuse, or never told about one it would accept"
+        )
+
+
+def validate_declared_outcome(description: DomainDescription, support: DecisionSupport) -> None:
+    """Refuse a verdict the domain's own description never promised.
+
+    The output-side twin of the input validation PR18 added. A description that
+    advertises a `status_vocabulary` while the pack may emit anything is a contract that
+    lies, and it lies loudest to the reader most likely to believe it: `describe_domain`
+    hands an agent that vocabulary as the authoritative list of what it may see, which is
+    the whole point of publishing one.
+
+    Three things this deliberately does **not** do:
+
+    * It merges no vocabularies. Each domain keeps its own, and the comparison is always
+      against the description that came from the same pack.
+    * It ranks and interprets nothing. The generic layer carries the value; what the
+      value *means* stays with the pack.
+    * It does not treat an empty declaration as "unconstrained". Declaring nothing is a
+      promise that the pack returns no status, because that is what an agent reading the
+      description would conclude from it.
+
+    ``status`` of ``None`` is always allowed: that is how a pack says it reached no
+    verdict, which is a position, not a violation.
+    """
+    declared_status = set(description.status_vocabulary)
+    if support.status is not None and support.status not in declared_status:
+        raise UndeclaredOutcomeError(
+            f"domain pack {description.domain!r} reported status {support.status!r}, "
+            f"which its description does not declare "
+            f"(declared: {sorted(declared_status) or 'nothing'})"
+        )
+
+    declared_flags = set(description.flags)
+    undeclared = [flag for flag in support.flags if flag not in declared_flags]
+    if undeclared:
+        raise UndeclaredOutcomeError(
+            f"domain pack {description.domain!r} reported flags {undeclared}, "
+            f"which its description does not declare "
+            f"(declared: {sorted(declared_flags) or 'nothing'})"
         )
 
 
