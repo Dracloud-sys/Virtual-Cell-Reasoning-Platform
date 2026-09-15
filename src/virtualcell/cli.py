@@ -364,7 +364,12 @@ def _measurement_consumption(response) -> None:
     print()
     print("measurements:")
     if report.unsupported:
-        print(f"  ! not recognised (ignored): {', '.join(report.unsupported)}")
+        print(f"  ! not recognised (ignored): {', '.join(_counted(report.unsupported))}")
+
+    # Counted rather than listed. A canonical run reports one entry per measurement *per
+    # observation* - which is right, because a quality exclusion has to be traceable to
+    # the passage it came from - but a 50-passage import would otherwise print the same
+    # two names a hundred times and bury every other line in this block.
     groups: dict[str, list[str]] = {}
     for entry in report.entries:
         if entry.status.value == "unsupported":
@@ -378,7 +383,15 @@ def _measurement_consumption(response) -> None:
     }
     for status, label in labels.items():
         if groups.get(status):
-            print(f"  {label}: {', '.join(groups[status])}")
+            print(f"  {label}: {', '.join(_counted(groups[status]))}")
+
+
+def _counted(names) -> list[str]:
+    """Unique names in first-seen order, with a count when one repeats."""
+    counts: dict[str, int] = {}
+    for name in names:
+        counts[name] = counts.get(name, 0) + 1
+    return [name if n == 1 else f"{name} (x{n})" for name, n in counts.items()]
 
 
 def _cmd_literature_discover(args: argparse.Namespace) -> int:

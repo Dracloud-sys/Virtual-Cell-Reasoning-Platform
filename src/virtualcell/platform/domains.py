@@ -20,8 +20,14 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Protocol, runtime_checkable
 
+from virtualcell.core.experiment import ExperimentRun, SchemaVersionError
 from virtualcell.knowledge.store import KnowledgeStore
-from virtualcell.platform.contracts import DecisionSupport, ReasoningQuery, ReasoningResponse
+from virtualcell.platform.contracts import (
+    CanonicalIntake,
+    DecisionSupport,
+    ReasoningQuery,
+    ReasoningResponse,
+)
 from virtualcell.platform.description import DomainDescription, probe_value
 
 
@@ -39,6 +45,12 @@ class UnsupportedTaskError(DomainError):
 
 class QueryValidationError(DomainError):
     """Raised when a query is well-formed but invalid for its domain/task."""
+
+
+# The run-identity namespace the literature pipeline mints under. Duplicated as a literal
+# rather than imported: `virtualcell.literature` reaches the platform contracts, so an
+# import here would close a cycle. A test pins the two together so they cannot drift.
+_LITERATURE_NAMESPACE = "literature"
 
 
 class UndeclaredOutcomeError(RuntimeError):
@@ -103,6 +115,36 @@ class DomainPack(Protocol):
         ...
 
 
+@runtime_checkable
+class CanonicalRunPack(Protocol):
+    """A pack that can also read a canonical :class:`ExperimentRun`. **Optional.**
+
+    Deliberately separate from :class:`DomainPack` rather than an optional member of it.
+    A ``runtime_checkable`` protocol means "these members are present"; an optional member
+    inside one makes the check say something it does not mean, and the two shipped domains
+    that read only categorical snapshots would have to grow a stub to keep it true.
+
+    A domain whose evidence is a set of marker calls has nothing a time-series run can
+    carry. Refusing such a run explicitly, and naming the entry that does work, is a better
+    answer than an empty payload that reasons over nothing.
+    """
+
+    def experiment_from_run(self, task: str, run: ExperimentRun) -> CanonicalIntake:
+        """Turn a canonical run into this domain's own axis payload.
+
+        The mapping is the pack's because it is biology: only this domain knows that a
+        measurement named ``cumulative_PDL`` is the series its trajectory engine reads.
+        The platform never infers one.
+
+        Both halves of the returned :class:`CanonicalIntake` matter. A name this domain
+        does not recognise must be reported on the ledger rather than dropped, and a
+        reading QC did not call valid must be reported as excluded rather than read — the
+        two are different failures and collapsing them hides a data problem inside a
+        schema problem.
+        """
+        ...
+
+
 def _reject_inconsistent_description(pack: DomainPack) -> None:
     """Structural checks cheap enough to run at registration.
 
@@ -132,6 +174,86 @@ def _reject_inconsistent_description(pack: DomainPack) -> None:
             f"{sorted(pack.supported_tasks)}; a caller would be offered a task the registry "
             "will refuse, or never told about one it would accept"
         )
+
+
+class CanonicalIntakeUnsupported(QueryValidationError):
+    """The domain cannot read canonical runs, so the caller must send an experiment dict.
+
+    A :class:`QueryValidationError` rather than a bare :class:`DomainError`, because it is
+    exactly that: a well-formed query that is invalid for the domain it names. Sitting in
+    that family gives it the reporting every other caller mistake already has - HTTP 422,
+    the MCP `invalid_experiment` refusal - instead of a second shape every surface would
+    have to learn.
+    """
+
+
+def accepts_runs(pack: DomainPack) -> bool:
+    """Does this pack implement the optional canonical-run hook?"""
+    return isinstance(pack, CanonicalRunPack)
+
+
+def check_run_admissible(run: ExperimentRun) -> None:
+    """Refuse a run this boundary must not read, before any pack sees it.
+
+    Two refusals, and the second is the one that matters.
+
+    The schema check is the obvious one: this reads field meanings — passage numbers,
+    doubling times — out of a structure it did not build, and a run written against a
+    different major version could yield a plausible-looking and wrong trajectory.
+
+    The literature check is not obvious, which is exactly why it is here. A literature
+    run declares ``OriginKind.EXPERIMENT`` like any other, because a paper does report a
+    real experiment — so nothing in its *shape* stops a number extracted from a PDF
+    driving a candidate status at the same weight as a reading someone took. Every
+    safeguard the literature layer built (weak `ASSOCIATED_WITH` edges, `pending_review`,
+    the never-established downgrade) would be bypassed through a different door, silently.
+    What separates the two is the run-identity namespace PR12 introduced, so that is what
+    is checked.
+    """
+    try:
+        run.require_compatible_schema()
+    except SchemaVersionError as exc:
+        raise QueryValidationError(
+            f"canonical run {run.run_id!r} declares schema version "
+            f"{run.schema_version!r}, which this platform cannot read: {exc}"
+        ) from exc
+
+    if run.run_namespace == _LITERATURE_NAMESPACE:
+        raise QueryValidationError(
+            f"canonical run {run.run_id!r} was produced by the literature pipeline, and a "
+            "literature reading is not a measurement the caller took. It would otherwise "
+            "reach a verdict at the same weight as a bench reading, which is what the "
+            "weak, pending-review evidence policy exists to prevent. Set "
+            "allow_literature=true instead: literature evidence is reported separately, "
+            "labelled, and never merged into the domain's own evidence."
+        )
+
+
+def resolve_canonical_intake(
+    pack: DomainPack, query: ReasoningQuery, run: ExperimentRun
+) -> CanonicalIntake:
+    """Ask the pack what the run means, and refuse a collision with the caller's dict.
+
+    Where the run and the dict disagree about the same axis, neither answer can be given
+    without discarding the other, and nothing in the response could say which was dropped.
+    Refusing is the only outcome that cannot quietly lose a measurement.
+    """
+    if not accepts_runs(pack):
+        raise CanonicalIntakeUnsupported(
+            f"domain {pack.domain!r} does not read canonical experiment runs; send the "
+            "measurements in the 'experiment' payload instead (call describe_domain, or "
+            "GET /reasoning/domains, for the axes it accepts)"
+        )
+
+    intake = pack.experiment_from_run(query.task, run)
+    collisions = sorted(set(intake.experiment) & set(query.experiment))
+    if collisions:
+        raise QueryValidationError(
+            f"canonical run {run.run_id!r} and the 'experiment' payload both supply "
+            f"{collisions}; two sources for one value cannot be merged without discarding "
+            "one silently. Remove the key from 'experiment', or send the run alone."
+        )
+    return intake
 
 
 def validate_declared_outcome(description: DomainDescription, support: DecisionSupport) -> None:

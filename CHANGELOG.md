@@ -7,6 +7,50 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Canonical experiment runs reach reasoning through the query boundary.**
+  `ReasoningQuery.experiment_run` accepts an `ExperimentRun` - the thing ingestion, QC and
+  normalization already produce - so the chain raw CSV/XLSX -> QC -> canonical run ->
+  `ReasoningService.query` -> `ReasoningResponse` runs end to end. Before this, canonical data
+  reached reasoning only if a human wrote the glue, which left the domain-neutral entry point,
+  the consumption ledger, the missing-input round trip and the MCP server on one side of the
+  chain and the ingestion layer on the other.
+
+  **`quality_excluded` is now reachable.** It has been in the consumption vocabulary since PR17
+  and no query could produce one, because QC verdicts live on canonical measurements and
+  canonical measurements could not be submitted. An unreadable cell is now reported under the
+  name the measurement actually has, pointing at the observation it came from.
+
+  **A run and an `experiment` dict may be sent together, and may not overlap.** That is the real
+  workflow: a passage export carries the series while the senescence markers come from stains
+  that were never in that file. Where the two supply the same axis the query is refused, because
+  neither answer can be given without discarding the other and nothing in the response could say
+  which. The gaps a run leaves therefore close the way the report says they do - the missing
+  inputs come back as axis names and are supplied beside the run.
+
+  **The mapping is the pack's; the refusals are the platform's.** A pack opts in by implementing
+  `CanonicalRunPack.experiment_from_run`, kept as a protocol of its own rather than an optional
+  member of `DomainPack`, because a `runtime_checkable` protocol means "these members are
+  present". Immortalization implements it over the PR8a/PR13b adapters that already existed;
+  adipogenesis and genome editing read categorical snapshots and are refused explicitly, naming
+  the entry that does work.
+
+  **Literature runs are refused at this boundary.** A literature-derived run declares
+  `OriginKind.EXPERIMENT` exactly like a bench measurement - a paper does report a real
+  experiment - so nothing in its shape would stop a number extracted from a PDF driving a
+  candidate status at full weight, bypassing every safeguard the literature layer was built on.
+  The check reads the run-identity namespace PR12 introduced, and the refusal points at
+  `allow_literature`, where literature evidence does enter: separately, labelled, and never
+  merged into the domain's own evidence.
+
+  The schema version is checked before any field meaning is read. Integrity needs no new check:
+  `ExperimentRun` refuses to validate a run whose declared checksum does not match its content,
+  so an edited run cannot reach a surface at all. `QueryProvenance.experiment_run` records the
+  run id, its schema version, its observation count and whether it was sealed - repeating the
+  producer's claim rather than making one.
+
+  `POST /reasoning/query` and `virtualcell query` gained the entry with no change of their own,
+  since both take a `ReasoningQuery` as their payload.
+
 - **The generic envelope now checks a verdict against the pack's own declaration.**
   `validate_declared_outcome` runs in `ReasoningService.query` - the one path every surface
   shares - and refuses a `DecisionSupport.status` or flag the domain's `DomainDescription`
@@ -32,6 +76,14 @@ to [Semantic Versioning](https://semver.org/).
   redefines the migration trigger that the third domain had spent.
 
 ### Fixed
+- **The CLI listed a repeated reading once per observation.** A canonical run reports one
+  consumption entry per measurement *per* observation - which is right, because a quality
+  exclusion has to be traceable to the passage it came from - but the text renderer joined the
+  names, so a five-passage import printed `cumulative_PDL, DT_hours` five times and a
+  fifty-passage one would have buried every other line in the block. Names are now unique and
+  counted (`cumulative_PDL (x5)`); `--format json` is unchanged and still carries every entry
+  with its own provenance.
+
 - **A caller's mistake was reported as a server crash.** `immortalization/explain_mechanism`
   with an empty payload passed `validate_experiment`, then raised the vertical's own
   `UnsupportedMechanismError` - a plain `ValueError` the platform does not classify - so the
