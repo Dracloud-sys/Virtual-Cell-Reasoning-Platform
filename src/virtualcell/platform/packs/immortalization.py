@@ -20,7 +20,12 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from virtualcell.agents.immortalization.adapters import input_from_scenario
+from virtualcell.agents.immortalization.adapters import (
+    CanonicalAdapterError,
+    input_from_scenario,
+    run_consumption,
+    run_to_passage_series,
+)
 from virtualcell.agents.immortalization.agent import (
     AssessmentInputError,
     ImmortalizationAssessmentAgent,
@@ -39,8 +44,10 @@ from virtualcell.agents.immortalization.models import (
 )
 from virtualcell.agents.immortalization.rules import UnsupportedIntentError
 from virtualcell.core.consumption import ConsumptionReport
+from virtualcell.core.experiment import ExperimentRun
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.platform.contracts import (
+    CanonicalIntake,
     DecisionSupport,
     ExplanationLevel,
     QueryProvenance,
@@ -283,6 +290,41 @@ class ImmortalizationDomainPack:
         """
         self._to_assessment_input(
             ReasoningQuery(domain=self.domain, task=task, experiment=dict(experiment))
+        )
+
+    def experiment_from_run(self, task: str, run: ExperimentRun) -> CanonicalIntake:
+        """Read a canonical run as this domain's passage series.
+
+        Both halves come from the adapters that already existed for PR8a/PR13b, not from
+        a second reading of the run: `run_to_passage_series` performs the conversion and
+        `run_consumption` reports what the same two rules did to each measurement. They
+        share the rules rather than restating them, so the ledger cannot describe a
+        conversion that did not happen.
+
+        `strict=False` is deliberate and is the reason the ledger is not optional. A
+        measurement this vertical cannot place must not abort the query - an export
+        routinely carries columns for other purposes - but it must not vanish either. It
+        is reported as `unsupported`, which is a different fact from a reading QC flagged,
+        and keeping the two apart is the point.
+        """
+        del task  # every task that reads measurements reads the same series
+        try:
+            series = run_to_passage_series(run, strict=False)
+        except CanonicalAdapterError as exc:
+            raise QueryValidationError(
+                f"canonical run {run.run_id!r} cannot be read as a passage series: {exc}"
+            ) from exc
+
+        if not series:
+            return CanonicalIntake(experiment={}, consumption=run_consumption(run))
+
+        # `observations` is this domain's declared axis for a raw per-passage series, so
+        # the run enters through the same axis a hand-written payload would use and every
+        # path below - trajectory extraction, conflict reporting, the blocked-override
+        # rules - is the one that already ships.
+        return CanonicalIntake(
+            experiment={"observations": [o.model_dump(mode="json") for o in series]},
+            consumption=run_consumption(run),
         )
 
     def execute(self, query: ReasoningQuery, store: KnowledgeStore) -> ReasoningResponse:

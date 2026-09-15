@@ -30,6 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from virtualcell.core.consumption import ConsumptionReport
 from virtualcell.core.evidence import Claim
+from virtualcell.core.experiment import ExperimentRun
 from virtualcell.platform.description import MissingInput
 from virtualcell.reasoning.explain import MechanisticLink
 
@@ -84,6 +85,15 @@ class ReasoningQuery(BaseModel):
     # The normalised, domain-specific input an existing agent already understands.
     # Preserved without reinterpretation so no semantic content is lost at this boundary.
     experiment: dict[str, Any] = Field(default_factory=dict)
+    # The canonical alternative: a run that came out of ingestion, QC and normalization,
+    # carrying its own schema version, integrity checksum and per-measurement QC verdicts.
+    # Additive - the dict above is unchanged and remains the only thing most callers send.
+    #
+    # Both may be supplied: a passage export carries the series while the markers come
+    # from other assays. What they may not do is overlap, and that check lives in the
+    # service rather than here, because which axes a run contributes is the domain pack's
+    # answer and this contract does not know one domain from another.
+    experiment_run: ExperimentRun | None = None
     explanation_level: ExplanationLevel = ExplanationLevel.PRACTITIONER
     allow_literature: bool = False
     target_measurements: list[str] = Field(default_factory=list)
@@ -159,6 +169,23 @@ class LiteratureOutcome(BaseModel):
         return self
 
 
+class RunProvenance(BaseModel):
+    """Which canonical run answered a query, and what it claimed about itself.
+
+    ``sealed`` repeats a claim rather than making one. A run that carries a checksum has
+    already had it verified — :class:`ExperimentRun` refuses to validate otherwise — so
+    ``True`` means "declared and intact". ``False`` means the producer made no integrity
+    claim, which is a missing claim rather than a failed one and is reported as such.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    run_id: str
+    schema_version: str
+    observations: int
+    sealed: bool
+
+
 class QueryProvenance(BaseModel):
     """How the answer was produced — auditable, and never evidence in itself."""
 
@@ -169,6 +196,26 @@ class QueryProvenance(BaseModel):
     explanation_level: ExplanationLevel
     literature_requested: bool = False
     deterministic: bool = True
+    # Present only when the answer was derived from a canonical run. Otherwise a verdict
+    # and the export that produced it could only be reconnected by whoever ran the query.
+    experiment_run: RunProvenance | None = None
+
+
+class CanonicalIntake(BaseModel):
+    """What a domain pack makes of a canonical run.
+
+    Two things, because the platform must not derive either. ``experiment`` is the pack's
+    own axis payload — the biology mapping from canonical measurement names to the axes
+    this domain reasons over, which only the pack knows. ``consumption`` reports what
+    became of every measurement on the run, under the **canonical** name the caller
+    actually submitted, so the ledger describes their submission rather than the dict the
+    platform assembled from it.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    experiment: dict[str, Any] = Field(default_factory=dict)
+    consumption: ConsumptionReport = Field(default_factory=ConsumptionReport)
 
 
 class ReasoningResponse(BaseModel):

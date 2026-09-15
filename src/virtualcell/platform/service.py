@@ -22,17 +22,26 @@ Literature policy is enforced here, once, for all domains:
 
 from __future__ import annotations
 
+from virtualcell.core.consumption import ConsumptionReport
 from virtualcell.core.evidence import Claim
+from virtualcell.core.experiment import ExperimentRun
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.literature.contracts import DiscoveryRunStatus
 from virtualcell.literature.providers.base import ProviderError, ProviderTimeoutError
 from virtualcell.platform.contracts import (
+    CanonicalIntake,
     LiteratureOutcome,
     LiteratureStatus,
     ReasoningQuery,
     ReasoningResponse,
+    RunProvenance,
 )
-from virtualcell.platform.domains import DomainRegistry, validate_declared_outcome
+from virtualcell.platform.domains import (
+    DomainRegistry,
+    check_run_admissible,
+    resolve_canonical_intake,
+    validate_declared_outcome,
+)
 from virtualcell.reasoning.llm import LLMBackend
 
 # Provider failures worth distinguishing from a generic error. TimeoutError is stdlib;
@@ -74,13 +83,70 @@ class ReasoningService:
     async def query(self, request: ReasoningQuery) -> ReasoningResponse:
         """Resolve the domain, run its pack, check its verdict, attach any literature."""
         pack = self.registry.resolve(request.domain, request.task)
+
+        # A canonical run is converted *before* dispatch, so the pack's own `execute` sees
+        # an ordinary experiment payload and everything below it - validation, the
+        # consumption ledger, missing inputs - works unchanged. The conversion is the
+        # pack's, because it is biology; the refusals are the platform's.
+        run = request.experiment_run
+        intake: CanonicalIntake | None = None
+        if run is not None:
+            check_run_admissible(run)
+            intake = resolve_canonical_intake(pack, request, run)
+            request = request.model_copy(
+                update={"experiment": {**request.experiment, **intake.experiment}}
+            )
+
         response = pack.execute(request, self.store)
         # Here rather than in each pack: a pack cannot skip its own check, and a fourth
         # domain inherits this without writing a line. The description comes from the same
         # pack that produced the response, so no vocabulary is merged or centralised.
         validate_declared_outcome(pack.describe(), response.decision_support)
+        if intake is not None and run is not None:
+            self._account_for_run(response, intake, run)
         response.literature = await self._literature(request)
         return response
+
+    @staticmethod
+    def _account_for_run(
+        response: ReasoningResponse, intake: CanonicalIntake, run: ExperimentRun
+    ) -> None:
+        """Make the answer describe the submission that was actually made.
+
+        The pack's ledger reports on the experiment dict it was handed, and part of that
+        dict was synthesised here from the run - so left alone the answer would account
+        for keys the caller never sent, while saying nothing about the measurements they
+        did. Entries for the synthesised keys are replaced by the intake's own, which name
+        canonical measurements and point at the observation each came from. Anything the
+        caller put in `experiment` themselves is kept exactly as the pack reported it.
+
+        The run's identity is recorded too, because otherwise a verdict and the export
+        that produced it could only be reconnected by whoever happened to run the query.
+        """
+        synthesised = set(intake.experiment)
+        response.measurement_consumption = ConsumptionReport(
+            entries=[
+                *intake.consumption.entries,
+                *(
+                    entry
+                    for entry in response.measurement_consumption.entries
+                    if entry.submitted_as not in synthesised
+                ),
+            ]
+        )
+        response.provenance = response.provenance.model_copy(
+            update={
+                "experiment_run": RunProvenance(
+                    run_id=run.run_id,
+                    schema_version=run.schema_version,
+                    observations=len(run.observations),
+                    # Repeating a claim, not making one: a declared checksum has already
+                    # been verified by the contract, and an absent one is a missing claim
+                    # rather than a failed check.
+                    sealed=run.checksum is not None,
+                )
+            }
+        )
 
     async def _literature(self, request: ReasoningQuery) -> LiteratureOutcome:
         if not request.allow_literature:

@@ -289,6 +289,39 @@ disagree — adipogenesis counts inhibition and viability as status axes, while
 immortalization treats every flag-raising axis as guidance — and that disagreement
 is domain science, not inconsistency.
 
+### Two ways in, and they compose
+
+`ReasoningQuery` accepts either an `experiment` dict or a canonical `ExperimentRun`, and
+usually both. They are different kinds of evidence rather than two spellings of one: a
+passage export carries a time series that ingestion has already QC'd and normalized, while
+the senescence markers come from stains that were never in that file.
+
+```
+CSV / TSV / XLSX -> DatasetSpec -> QC -> ExperimentRun --.
+                                                          >-- ReasoningService.query -> DomainPack
+                      experiment dict (axes, as declared) -'
+```
+
+Four rules, and each exists because the alternative is a wrong answer:
+
+- **Overlap is refused, not merged.** Where both supply the same axis, neither can be used
+  without discarding the other and nothing in the response could say which.
+- **The conversion is the pack's.** `CanonicalRunPack.experiment_from_run` maps canonical
+  measurement names onto this domain's axes, because only the domain knows that
+  `cumulative_PDL` is the series its trajectory engine reads. The platform never infers
+  one, and a pack that cannot read runs is refused explicitly rather than handed an empty
+  payload.
+- **The ledger names what the caller sent.** Entries for the run report *canonical*
+  measurement names, one per observation, each pointing at the observation it came from -
+  so a quality exclusion is traceable to its passage. This is what makes
+  `quality_excluded` reachable at all.
+- **Literature runs do not enter here.** One declares `OriginKind.EXPERIMENT` like any
+  other, because a paper does report a real experiment; only the PR12 run-identity
+  namespace separates it from a reading someone took. Without the check, a number
+  extracted from a PDF would reach a verdict at full weight and every safeguard in the
+  literature layer would be bypassed through a different door. `allow_literature` is where
+  that evidence enters, labelled and never merged.
+
 ### The envelope is checked against the declaration
 
 `DecisionSupport.status` and `flags` carry the domain's own vocabulary, and

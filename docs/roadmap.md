@@ -609,25 +609,42 @@ reference domain pack. The remaining platform layers, in order:
   converted, because a fired guard means the vertical produced something it must not ship.
   See [`decision_status_contract.md`](decision_status_contract.md).
 
+- ✅ **Canonical `ExperimentRun` query integration.** The last arrow of the ingestion chain.
+  PR13b proved raw CSV -> QC -> canonical run -> `run_to_passage_series` -> the agent, but the
+  final step was a manual call, so canonical data reached reasoning only when a human wrote
+  the glue — leaving the domain-neutral entry point, the consumption ledger, the missing-input
+  round trip and the MCP server on one side of the chain and the ingestion layer on the other.
+  `ReasoningQuery.experiment_run` closes it, and `POST /reasoning/query` and `virtualcell query`
+  gained the entry without a change of their own.
+
+  **It makes `quality_excluded` reachable** — a state PR17 defined and no query could produce,
+  because QC verdicts live on canonical measurements and canonical measurements could not be
+  submitted.
+
+  A run and an `experiment` dict may be sent together and may not overlap: a passage export
+  carries the series while the senescence markers come from stains that were never in that
+  file, so the gaps a run leaves close exactly the way the report says. The conversion belongs
+  to the pack (`CanonicalRunPack`, a protocol of its own rather than an optional member of
+  `DomainPack`); the refusals belong to the platform. **Literature runs are refused here**:
+  one declares `OriginKind.EXPERIMENT` like any other, so only the PR12 run-identity namespace
+  separates a paper's number from a reading someone took, and without the check the
+  weak-evidence policy would be bypassed through a different door. Kernel changes: zero.
+
 ### What comes next, in order
 
 Nothing below is implemented. Each is an independent PR, and none starts before the
 previous one is merged with main CI green.
 
-1. **Canonical `ExperimentRun` query integration** — connect the ingestion path to the
-   reasoning path. Today raw data reaches `ExperimentRun` and a domain adapter, and the
-   handoff into `ReasoningService` is manual. Until this lands, `quality_excluded` is not
-   reachable from the query surface at all.
-2. **First assay-specific reader** — compare candidates before writing one (see
+1. **First assay-specific reader** — compare candidates before writing one (see
    [Assay-specific readers](#platform-sequence-after-pr11) above); the winner must connect
    to a real decision axis in a shipped vertical.
-3. **Explanation layer** — make `explanation_level` actually change the explanation, so a
+2. **Explanation layer** — make `explanation_level` actually change the explanation, so a
    non-expert can learn the concepts, interpret raw data, and follow the basis of a
    research judgment. Until then the level is carried as provenance only. The deterministic
    report is generated first and the narrative is presentation-only: status, evidence tier,
    citations and confidence never move, and limitations and overinterpretation risks are
    never omitted.
-4. **Evidence provenance** — per-edge `evidence_tier` and source provenance, so a single
+3. **Evidence provenance** — per-edge `evidence_tier` and source provenance, so a single
    paper's `PROMOTES` is not treated as strongly as a textbook edge (see the deferral note
    below, which this supersedes when it starts).
 - ▶ **PR7+ / later** — remaining marker axes used only for *presentation* today
