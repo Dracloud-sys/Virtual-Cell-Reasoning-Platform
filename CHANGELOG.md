@@ -6,6 +6,47 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **Corroboration now requires independence, and the answer says how much it rests on.**
+  `explain` boosted a target's confidence with a noisy-OR over *every* path that reached it.
+  That aggregation is only meaningful for independent evidence - `combine_confidences` says so
+  in its own docstring - and nothing enforced it, so a detour that re-entered an
+  already-counted edge read as a second opinion.
+
+  Reproduced on a four-edge graph: `A->B(1.0)`, `B->T(0.5)`, `A->C(1.0)`, `C->B(1.0)`. At
+  `max_hops=2` the answer is **0.50**; at `max_hops=3` the route `A->C->B->T` is admitted and
+  the answer becomes **0.75** - both paths ending on the very same `B->T` edge. Whatever
+  supports that edge is one fact, and reaching B a second way does not make it two. Searching
+  further returned a *more confident* answer about an unchanged graph.
+
+  The wrong number was the smaller half. A `MechanisticLink` reports one path - the shortest -
+  so a caller saw the inflated confidence with no way to discover where the boost came from.
+  On a platform whose identity is auditable, evidence-graded reasoning, a number that cannot be
+  traced to its support is the defect; the arithmetic is downstream of that.
+
+  Paths now carry the edges they took, keyed by `(source, relation, target)` rather than by the
+  rendered chain, since two entities may share a name. A target's confidence combines a greedy
+  **edge-disjoint** subset, strongest route first: take the best, then each next-best that
+  shares no edge with one already taken. A maximum independent set would need a flow
+  computation and could only ever admit *more* paths, so the greedy answer is a **floor** on
+  corroboration - the direction that cannot overstate evidence. Ties break on path length then
+  sorted edge keys, so the result does not depend on traversal discovery order.
+
+  `MechanisticLink.independent_paths` reports how many routes the confidence rests on, and is
+  what makes the number checkable: 0.5 from one reading and 0.5 from two overlapping ones are
+  the same value.
+
+  Genuine corroboration is untouched - two edge-disjoint 2-hop routes at 0.25 still combine to
+  0.4375. All four scorecards hold with **byte-identical per-question scores**, verified by
+  running the immortalization benchmark against the pre-change code and diffing the output; it
+  exercises this path through Q5/Q6/Q9.
+
+  Two limits stated rather than hidden. The greedy selection is a floor, not a maximum, so a
+  graph exists where it under-reports corroboration. And **edge-disjointness is a proxy for
+  independence**: two distinct edges drawn from the same paper are still not independent, and
+  cannot be detected today because the traversal `Edge` does not carry `Interaction.evidence`.
+  That is the next work item, and its scope is now a requirement rather than a guess.
+
 ### Added
 - **Canonical experiment runs reach reasoning through the query boundary.**
   `ReasoningQuery.experiment_run` accepts an `ExperimentRun` - the thing ingestion, QC and
