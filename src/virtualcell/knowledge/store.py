@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from virtualcell.knowledge.schema import BioEntity, Interaction
 
@@ -21,12 +21,21 @@ class Edge(BaseModel):
     traversal. ``forward`` is ``True`` when traversing the edge follows its
     biological arrow (or the relation is symmetric); a reverse edge of a directed
     relation has ``forward=False`` and should not be treated as a causal step.
+
+    ``evidence`` and ``study_id`` are carried over verbatim from the
+    :class:`~virtualcell.knowledge.schema.Interaction` the edge was built from. They used
+    to stop here: provenance was stored and then dropped at exactly the boundary where
+    reasoning needs it, so a traversal could not tell two findings from one paper read
+    twice. Nothing is derived or defaulted on the way through — an edge with no recorded
+    study reports none.
     """
 
     relation: str
     target_id: str
     confidence: float = 1.0
     forward: bool = True
+    evidence: list[str] = Field(default_factory=list)
+    study_id: str | None = None
 
 
 @runtime_checkable

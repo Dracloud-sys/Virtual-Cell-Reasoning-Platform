@@ -123,4 +123,14 @@ class Interaction(BaseModel):
     target_id: str
     relation: RelationType
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    #: Free-form provenance text for a reader. Deliberately untyped, and therefore a
+    #: mixture of kinds: database names (``reactome:IEA``, ``intact``), curation tags
+    #: (``curated:immortalization_seed``), review state, and prose rationales. Because two
+    #: edges from one connector share these strings, they cannot decide whether two edges
+    #: are two findings — that is what ``study_id`` is for.
     evidence: list[str] = Field(default_factory=list)
+    #: The single study this edge was read from, when one exists — an article key, a
+    #: document id. ``None`` means no single study backs it, which is the honest answer
+    #: for a curated table distilled from many sources, and imposes no constraint on
+    #: reasoning downstream. Two edges sharing a ``study_id`` are one reading, not two.
+    study_id: str | None = None

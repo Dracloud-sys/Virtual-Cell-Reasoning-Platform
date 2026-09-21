@@ -196,6 +196,11 @@ def _add_association(
             relation=LITERATURE_RELATION,
             confidence=LITERATURE_EVIDENCE_CONFIDENCE,
             evidence=_evidence(run, meta),
+            # The one place in the platform that genuinely knows which single document a
+            # fact was read from. Two edges from one article are one reading, and
+            # `explain` refuses to let them corroborate each other. `_evidence` renders
+            # the same key for a human; this is the machine-readable half.
+            study_id=_opt(meta.get("article_key")) or None,
         )
     )
     return True
