@@ -6,6 +6,71 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **An external evaluation: nine published cases the platform did not author.**
+  The four in-house scorecards read 10/10 · 10/10 · 6/6 · 10/10. Every one of those questions,
+  its rubric and the seed graph it runs against were written here. Benchmark-first was followed
+  - the questions preceded the implementation - but the author did not change, so what those
+  scores establish is internal consistency and regression safety, not that the platform reasons
+  correctly about biology.
+
+  `tests/benchmarks/external_immortalization_v1.{md,yaml}` and
+  `eval_external_immortalization_v1.py` score the product path against what real cells did in
+  real laboratories: five peer-reviewed papers, nine arms, retrieved via PubMed and cited by
+  DOI. Admissibility is restrictive on purpose - primary research only, a stated outcome, and
+  **transcription only**: every field traces to a quoted sentence, and an axis a paper does not
+  report is `unknown` even where a guess would flatter the platform.
+
+  **Two numbers, never one.** *Fidelity* asks whether representable arms come out right.
+  *Coverage* asks how much of what the papers reported the input vocabulary could carry at all.
+  Fidelity alone lets a narrow platform score well by only ever being asked what it can already
+  say - the exact failure an external set exists to detect.
+
+  First result: **fidelity 11/26 axis checks, 0/9 arms clean; coverage 9 reported facts dropped
+  across 7/9 arms.** Three findings, in `docs/external_evaluation_findings.md`:
+
+  1. **The positive branch is unreachable from published characterization data.**
+     `baseline.py` gates `possible_candidate` on a three-way conjunction that requires
+     `gammaH2AX == "low"`, and **not one of the five papers reports γH2AX**. All seven arms
+     whose paper reports a successful immortalization return `insufficient_evidence`. Measured,
+     not inferred: EXT-3a flips only when both γH2AX and DT_trend are added, neither of which
+     the paper reports. SA-β-gal - the stain these papers actually run - satisfies the separate
+     "one measured senescence axis" requirement but cannot substitute inside
+     `proliferation_signal`. This is not the platform being wrong; it is a required panel
+     specified without reference to what real reports contain, which no in-house question could
+     reveal because 6 of the 10 supply `gammaH2AX` themselves.
+  2. **A scoring criterion no question could ever score.** `immortalization_v0.md` §0 lists
+     species appropriateness as a criterion; the pack declares `species` as `AxisKind.CONTEXT`,
+     read by no rule; and 9 of the 10 in-house questions are `species: bovine` while the tenth
+     names none. An axis every question holds constant cannot be scored by any of them. All
+     eight non-bovine arms score 0 by construction, and the axis is kept at 0 rather than
+     dropped.
+  3. **Coverage.** `ConstructType` cannot express oncogene-based immortalization (HPV16 E6/E7),
+     a combined oncogene+telomerase construct, a Tet-on construct in its off state, or whose
+     TERT - flattening EXT-3's own hTERT-vs-sTERT comparison to one encoding. The retention
+     axis is hard-coded to the adipogenic lineage, so the flagship bovine cultured-meat paper's
+     *myogenic* retention cannot be entered.
+
+  What held up: `overcall_controlled` scored **9/9**, and both negative arms were correct -
+  including the same sheep line with its inducible construct switched off, reached from a PDL
+  plateau with no senescence marker available.
+
+  **Nothing was fixed to make an arm pass.** Which markers gate a positive call is a biological
+  and editorial judgement, and relaxing a gate until an external case passes is the first repair
+  the protocol prohibits. EXT-2a's expected status is recorded as *disputed* rather than settled,
+  as the one open domain question the set raises.
+
+  `scripts/verify.py` runs external evaluations on **every** invocation, `--fast` included, and
+  reports them as `INFO`: never gating, never counted, and never omitted. They are excluded from
+  the scorecard glob so a gate pass cannot quietly come to mean less, and named in the summary
+  so an `INFO` row cannot be mistaken for a `PASS`. A crash still fails - "informational" covers
+  the score, not the harness.
+
+  The held-out boundary is stated rather than implied: EXT-1's mechanism (CDK4 bypassing p16) is
+  already in the seed graph, so what is held out there is the case outcome and its marker panel,
+  not the biology. And every encoding is abstract-derived; the five full texts should be checked
+  before Finding 1 is acted on.
+
 ### Fixed
 - **Provenance now reaches the traversal boundary, and independence uses it.**
   The previous entry closed the double-count from re-entered edges and recorded its own limit:

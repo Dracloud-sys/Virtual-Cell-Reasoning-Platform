@@ -63,18 +63,26 @@ class Result:
     #: A check that did not run, or that ran with nothing to compare against. Never counted
     #: as a pass: "all checks passed" has to mean the checks happened.
     skipped: bool = False
+    #: Reported, never gating. An external evaluation scores the platform against published
+    #: results this project did not author, so it is expected to fail arms and a failing arm
+    #: is a finding rather than a broken build. It is shown on every run precisely because a
+    #: number nobody sees would drift back to being nobody's problem. A crash still FAILs:
+    #: "informational" covers the score, not the harness.
+    informational: bool = False
 
     @property
     def mark(self) -> str:
         if self.skipped:
             return "SKIP"
+        if self.informational:
+            return "INFO" if self.ok else "FAIL"
         return "PASS" if self.ok else "FAIL"
 
 
 # A scorecard prints a table and then nothing; its headline is in the middle, not at the end.
 # Matching on it keeps the summary line ("passed 10/10") in the report rather than whichever
 # question happened to sort last.
-_HEADLINE = ("| passed ", "passed ", "handled ")
+_HEADLINE = ("| passed ", "passed ", "handled ", "Fidelity ")
 
 
 def _run(name: str, argv: list[str], *, headline: bool = False) -> Result:
@@ -93,8 +101,21 @@ def _run(name: str, argv: list[str], *, headline: bool = False) -> Result:
 
 
 def _scorecards() -> list[Path]:
-    """Every benchmark evaluator, found rather than listed."""
-    return sorted(BENCHMARKS.glob("eval_*_v0.py"))
+    """Every in-house benchmark evaluator, found rather than listed.
+
+    External evaluations are deliberately excluded here and run separately: they are scored
+    against published results rather than against this project's own rubrics, so folding
+    them into the gate would either block merges on other people's biology or, worse,
+    silently lower what a gate pass means.
+    """
+    return sorted(
+        p for p in BENCHMARKS.glob("eval_*_v0.py") if not p.stem.startswith("eval_external_")
+    )
+
+
+def _external() -> list[Path]:
+    """Every external evaluation, found rather than listed (same rule as the scorecards)."""
+    return sorted(BENCHMARKS.glob("eval_external_*.py"))
 
 
 def _rev(ref: str) -> str | None:
@@ -246,6 +267,16 @@ def main() -> int:
                 module = f"tests.benchmarks.{evaluator.stem}"
                 name = evaluator.stem.removeprefix("eval_").removesuffix("_v0")
                 results.append(_run(f"scorecard: {name}", [py, "-m", module], headline=True))
+        # External evaluations run on every invocation, --fast included. They are cheap, they
+        # do not gate, and the one thing that would make them useless is letting them go
+        # unlooked-at.
+        for evaluator in _external():
+            module = f"tests.benchmarks.{evaluator.stem}"
+            name = evaluator.stem.removeprefix("eval_external_")
+            result = _run(f"external: {name}", [py, "-m", module], headline=True)
+            results.append(
+                Result(result.name, result.ok, result.detail, result.seconds, informational=True)
+            )
         results.append(_run("ruff check", [py, "-m", "ruff", "check", "."]))
         results.append(_run("ruff format", [py, "-m", "ruff", "format", "--check", "."]))
         if args.no_kernel_diff:
@@ -276,6 +307,20 @@ def main() -> int:
         print(f"\nFAILED at {end_sha}: {', '.join(failed)}")
         print("Re-run the failing step on its own for the full output.")
         return 1
+
+    # Informational rows are reported and then excluded from every count below. An external
+    # evaluation that ran is not a check that passed, and saying "all N checks passed" with it
+    # folded in would quietly inflate N with a row that cannot fail.
+    informational = [r for r in results if r.informational]
+    results = [r for r in results if not r.informational]
+    if informational:
+        print(
+            f"\nNot part of the gate ({len(informational)} external evaluation"
+            f"{'s' if len(informational) > 1 else ''}): "
+            + ", ".join(r.name for r in informational)
+            + "\nScored against published results, so a failing arm is a finding to record, "
+            "not a build to fix."
+        )
 
     skipped = [r.name for r in results if r.skipped]
     ran = len(results) - len(skipped)
