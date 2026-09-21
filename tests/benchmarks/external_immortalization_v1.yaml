@@ -1,0 +1,280 @@
+# External immortalization evaluation v1 — machine-readable case set.
+#
+# Ground truth is what the cited papers report their cells did. Prose protocol, admissibility
+# rules and scoring live in external_immortalization_v1.md; read that first.
+#
+# TRANSCRIPTION RULE: every non-unknown field below traces to `source_quote` on the same arm.
+# An axis the paper does not report is `unknown`, even where a competent reader could guess.
+# Nothing here was adjusted after seeing a score.
+#
+# Retrieved via PubMed. Marker vocabulary: high | low | increasing | plateau | stable |
+# worsening | improved | normal | unknown.
+
+version: 1
+domain: immortalization
+kind: external            # never merge this with the in-house scorecards
+intended_species: bovine  # arms that differ from this require a species caveat to pass
+
+papers:
+  stout2023:
+    citation: "Stout AJ et al. Immortalized Bovine Satellite Cells for Cultured Meat Applications. ACS Synth Biol. 2023;12(5):1567-1573."
+    doi: "10.1021/acssynbio.3c00216"
+    pmid: "37146268"
+  akimov2005:
+    citation: "Akimov SS et al. Bypass of senescence, immortalization, and transformation of human hematopoietic progenitor cells. Stem Cells. 2005;23(9):1423-33."
+    doi: "10.1634/stemcells.2005-0390"
+    pmid: "16144874"
+  liu2025:
+    citation: "Liu B et al. Study on immortalization of Mongolian sheep fibroblast cells. Anim Biotechnol. 2025;36(1):2459915."
+    doi: "10.1080/10495398.2025.2459915"
+    pmid: "39918276"
+  zhang2016:
+    citation: "Zhang N et al. Reversible immortalization of sheep fetal fibroblast cells by tetracycline-inducible expression of human telomerase reverse transcriptase. Biotechnol Lett. 2016;38(8):1261-8."
+    doi: "10.1007/s10529-016-2103-6"
+    pmid: "27071938"
+  he2015:
+    citation: "He S et al. Immortalization of pig fibroblast cells by transposon-mediated ectopic expression of porcine telomerase reverse transcriptase. Cytotechnology. 2015;68(4):1435-45."
+    doi: "10.1007/s10616-015-9903-8"
+    pmid: "26341227"
+
+arms:
+  - id: EXT-1
+    paper: stout2023
+    intent: immortalization_assessment
+    source_quote: >-
+      "Here, we develop genetically immortalized bovine satellite cells (iBSCs) via
+      constitutive expression of bovine Telomerase reverse transcriptase (TERT) and
+      Cyclin-dependent kinase 4 (CDK4). These cells achieve over 120 doublings at the time
+      of publication and maintain their capacity for myogenic differentiation."
+    reported:
+      species: bovine
+      cell_type: satellite cell
+      construct: TERT_plus_CDK4
+      PDL_trend: increasing
+    reported_outcome: immortalized
+    expected_status: possible_candidate
+    expected_status_basis: >-
+      Over 120 doublings is far past the replicative limit of primary cells, so the cells
+      sustained proliferation. `possible_candidate` is the ceiling this vocabulary offers;
+      there is deliberately no "confirmed immortal", which is the right shape here since the
+      paper reports no karyotype.
+    unrepresentable:
+      - field: adipogenic_retention
+        reported: "maintain their capacity for myogenic differentiation"
+        why: >-
+          The retention axis is hard-coded to the adipogenic lineage. Myogenic retention is
+          the functionality axis that matters for a muscle-cell product and cannot be
+          entered, so the paper's differentiation finding is dropped rather than mislabelled.
+      - field: genomic_stability
+        reported: "(not measured)"
+        why: "No karyotype reported. Left unknown, which is what the paper supports."
+
+  - id: EXT-2a
+    paper: akimov2005
+    intent: immortalization_assessment
+    source_quote: >-
+      "We found that hTERT was incapable of prolonging the replicative capacity of CB cells
+      maintained under serum-free conditions in the presence of stem cell factor, Flt3
+      ligand, thrombopoietin, and interleukin-3 beyond 4 months (n=3)."
+    reported:
+      species: human
+      cell_type: CD34+ cord blood hematopoietic progenitor
+      construct: TERT_only
+      PDL_trend: plateau
+    reported_outcome: not_immortalized
+    expected_status: senescence_or_stress_prone
+    expected_status_basis: >-
+      DISPUTED, and recorded as such rather than settled quietly. The paper reports a clear
+      negative — expansion ceased — but measured no senescence marker, so "growth arrest,
+      cause unmeasured" has no distinct status in a three-way vocabulary. Scored against
+      the non-candidate branch because the paper's finding is a negative, not an absence of
+      data. A reader who would score this `insufficient_evidence` is making a defensible
+      different call; see the open question in the protocol.
+    unrepresentable:
+      - field: candidate_status
+        reported: "expansion ceased; no senescence or stress marker measured"
+        why: >-
+          The vocabulary's only non-candidate branch asserts senescence or stress. Nothing
+          expresses a failed expansion whose cause was not measured.
+
+  - id: EXT-2b
+    paper: akimov2005
+    intent: immortalization_assessment
+    source_quote: >-
+      "transduced CB cells ... constitutively expressing HPV16 E6/E7 alone (n=2) ...
+      continued to proliferate, giving rise to permanent (>2 years) cell lines ... Notably,
+      CB cell cultures expressing only HPV16 E6/E7 went through a crisis period, and the
+      resulting oligoclonal cell lines were highly aneuploid."
+    reported:
+      species: human
+      cell_type: CD34+ cord blood hematopoietic progenitor
+      construct: unknown
+      PDL_trend: increasing
+      genomic_stability: abnormal
+    reported_outcome: immortalized_genomically_unstable
+    expected_status: possible_candidate
+    expected_status_basis: >-
+      The cells did sustain proliferation for over two years, so the proliferation axis reads
+      as a candidate. Aneuploidy is an orthogonal risk, not a demotion — which is exactly
+      this vertical's stated position that immortalization is not safety. The report must
+      carry the instability, and `status_match` alone would not check that; the
+      `overcall_controlled` axis does.
+    unrepresentable:
+      - field: construct
+        reported: "HPV16 E6/E7"
+        why: >-
+          ConstructType offers only TERT_only, TERT_plus_CDK4 and unknown. Oncogene-based
+          immortalization — the route this arm and EXT-2c took — cannot be named, so the
+          mechanism catalog cannot reason about it.
+
+  - id: EXT-2c
+    paper: akimov2005
+    intent: immortalization_assessment
+    source_quote: >-
+      "the CB cell lines obtained by coexpression of HPV16 E6/E7 plus hTERT exhibited
+      near-diploid karyotypes with minimal chromosomal aberrations, concomitant with
+      stabilization of telomere length"
+    reported:
+      species: human
+      cell_type: CD34+ cord blood hematopoietic progenitor
+      construct: unknown
+      PDL_trend: increasing
+      genomic_stability: stable
+    reported_outcome: immortalized
+    expected_status: possible_candidate
+    expected_status_basis: >-
+      Sustained proliferation over two years with a near-diploid karyotype. The contrast with
+      EXT-2b is the point: same lab, same cells, same readout, one stable and one not.
+    unrepresentable:
+      - field: construct
+        reported: "HPV16 E6/E7 plus hTERT"
+        why: "As EXT-2b. A combined oncogene + telomerase construct has no vocabulary entry."
+
+  - id: EXT-3a
+    paper: liu2025
+    intent: immortalization_assessment
+    source_quote: >-
+      "Human (hTERT) and sheep (sTERT) telomerase reverse transcriptase vectors were
+      separately introduced into SSF, with cells passaged up to 36 generations ... Karyotype
+      and soft agar colony formation assays indicated that hTERT and sTERT-transfected cells
+      maintained normal characteristics without malignant transformation. β-galactosidase
+      staining indicated that TERT transfection significantly reduced cellular senescence."
+    reported:
+      species: sheep
+      cell_type: fibroblast
+      construct: TERT_only
+      PDL_trend: increasing
+      SA_b_gal: low
+      genomic_stability: stable
+    reported_outcome: immortalized
+    expected_status: possible_candidate
+    expected_status_basis: >-
+      Sustained passage, reduced SA-β-gal, normal karyotype and no anchorage-independent
+      growth. The best-measured positive arm in the set, and the one where a wrong answer
+      would be hardest to excuse.
+
+  - id: EXT-3b
+    paper: liu2025
+    intent: immortalization_assessment
+    source_quote: >-
+      "sTERT-transfected cells exhibited higher TERT expression, enhanced viability,
+      proliferation, and anti-senescence effects compared to hTERT-transfected cells
+      (<0.05)."
+    reported:
+      species: sheep
+      cell_type: fibroblast
+      construct: TERT_only
+      PDL_trend: increasing
+      SA_b_gal: low
+      genomic_stability: stable
+    reported_outcome: immortalized
+    expected_status: possible_candidate
+    expected_status_basis: >-
+      Same readouts as EXT-3a with a species-matched transgene. Included because the
+      species-matched-vs-human-transgene contrast is the paper's own finding, even though the
+      input vocabulary flattens the two arms to the same encoding.
+    unrepresentable:
+      - field: construct
+        reported: "sheep TERT (sTERT) vs human TERT (hTERT)"
+        why: >-
+          `TERT_only` cannot say whose TERT. The paper's central comparison — a
+          species-matched transgene outperforming the human one — is invisible to the
+          platform, and EXT-3a and EXT-3b therefore encode identically.
+
+  - id: EXT-4a
+    paper: zhang2016
+    intent: immortalization_assessment
+    source_quote: >-
+      "four putative immortalized cell clones were obtained via induction of hTERT expression
+      by doxycycline. These immortalized cells maintained a normal karyotype and showed no
+      transformed phenotype after 250 days continuous culture."
+    reported:
+      species: sheep
+      cell_type: fetal fibroblast
+      construct: TERT_only
+      PDL_trend: increasing
+      genomic_stability: stable
+    reported_outcome: immortalized
+    expected_status: possible_candidate
+    expected_status_basis: >-
+      250 days of continuous culture with a normal karyotype and no transformed phenotype.
+
+  - id: EXT-4b
+    paper: zhang2016
+    intent: immortalization_assessment
+    source_quote: >-
+      "When hTERT expression was switched off by withdrawal of doxycycline, the immortalized
+      cells reverted to a normal proliferative state and eventually senesced after limited
+      divisions."
+    reported:
+      species: sheep
+      cell_type: fetal fibroblast
+      construct: unknown
+      PDL_trend: plateau
+    reported_outcome: senesced
+    expected_status: senescence_or_stress_prone
+    expected_status_basis: >-
+      The strongest arm in the set. Same cells as EXT-4a with the construct switched off, and
+      they senesced — a negative control internal to one cell line, which no in-house
+      question can fabricate honestly. The paper states senescence as its outcome, so the
+      non-candidate branch is not a judgement call here as it is for EXT-2a.
+    unrepresentable:
+      - field: SA_b_gal
+        reported: "eventually senesced after limited divisions"
+        why: >-
+          Senescence is the paper's stated outcome but no marker value is given for it, so
+          no senescence marker can be entered. The platform is asked to reach the right
+          answer from a PDL plateau alone.
+      - field: construct
+        reported: "hTERT expression switched off (Tet-on, doxycycline withdrawn)"
+        why: >-
+          A conditional construct in its off state is neither `TERT_only` nor absent. There
+          is no way to say "this line carries an inducible construct that is not currently
+          expressed".
+
+  - id: EXT-5
+    paper: he2015
+    intent: immortalization_assessment
+    source_quote: >-
+      "After passage for more than 40 generations, the cell line retained stable expression
+      of ectopic pTERT and continuous growth potential. Further characterization showed that
+      the cell line kept the fibroblast morphology, growth curve, population doubling time,
+      cloning efficiency, marker gene expression pattern, cell cycle distribution and
+      anchorage-dependent growth property of the primary cells."
+    reported:
+      species: pig
+      cell_type: fibroblast
+      construct: TERT_only
+      PDL_trend: increasing
+      DT_trend: stable
+    reported_outcome: immortalized
+    expected_status: possible_candidate
+    expected_status_basis: >-
+      Over 40 generations with continuous growth potential and an unchanged doubling time.
+    unrepresentable:
+      - field: genomic_stability
+        reported: "anchorage-dependent growth property ... retained"
+        why: >-
+          Anchorage dependence is evidence against transformation but is not a karyotype, and
+          `genomic_stability` is defined as the conclusion a karyotype supports. Recording it
+          as `stable` would promote a different assay's result; left unknown.

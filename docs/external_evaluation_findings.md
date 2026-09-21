@@ -1,0 +1,149 @@
+# What nine published cases said that ten in-house questions could not
+
+The four in-house scorecards read 10/10 · 10/10 · 6/6 · 10/10. The first external
+evaluation — nine arms from five peer-reviewed papers, ground truth being what the cells
+actually did — reads **2/9 on status, 9/9 on overcall control, 0/8 on species**, with **9
+reported facts dropped** across 7 of 9 arms because the input vocabulary could not carry
+them.
+
+Both numbers are true at once, and the gap between them is the point. The in-house set
+measures internal consistency and regression safety, which is what it was built for and what
+it is good at. It cannot measure whether the platform reasons usefully about biology it did
+not help write, because nothing in it comes from outside.
+
+The protocol, admissibility rules and scoring were fixed in
+`tests/benchmarks/external_immortalization_v1.md` **before** any score existed. Nothing below
+was adjusted after seeing a result.
+
+## First, a limit on these findings
+
+Every encoding is **abstract-derived**. Each field traces to a quoted sentence of the paper's
+abstract, and full texts were not read. A paper that does not mention a marker in its abstract
+may well report it in a figure.
+
+That matters most for Finding 1, whose whole force is "no paper reports γH2AX". Before anyone
+acts on it, the five full texts should be checked. If γH2AX turns up in a methods section, the
+finding weakens to "not reported prominently" — still something, but much less.
+
+Stating this first because a finding whose limits arrive after the headline has already done
+its damage.
+
+## Finding 1 — the positive branch is unreachable from published characterization data
+
+`agents/immortalization/baseline.py` gates `possible_candidate` on a three-way conjunction:
+
+```python
+proliferation_signal = (
+    markers.get("PDL_trend") == "increasing"
+    and markers.get("gammaH2AX") == "low"
+    and markers.get("DT_trend") in ("stable", "improved")
+)
+```
+
+**Not one of the five papers reports γH2AX.** Every arm whose paper reports a successfully
+immortalized line therefore returns `insufficient_evidence` — seven of nine.
+
+Measured rather than inferred, on EXT-3a (Liu 2025, sheep fibroblast + TERT):
+
+| input | status |
+|---|---|
+| as the paper reports it (PDL increasing, SA-β-gal low, karyotype normal) | `insufficient_evidence` |
+| + γH2AX low *(not reported)* | `insufficient_evidence` |
+| + DT_trend stable *(not reported)* | `insufficient_evidence` |
+| + both | `possible_candidate` |
+
+EXT-5 (He 2015, pig fibroblast) already reports a stable doubling time, and is one marker
+away: adding γH2AX alone flips it.
+
+The asymmetry is what makes this sharp. SA-β-gal — the canonical senescence stain, and the one
+these papers actually run — appears in `_SENESCENCE_AXES` and satisfies the *separate* "at
+least one measured senescence axis" requirement. It **cannot substitute for γH2AX inside
+`proliferation_signal`**. So a paper that ran the standard senescence assay, got a negative,
+karyotyped the line, showed no anchorage-independent growth and passaged it 36 times still
+cannot produce a positive call.
+
+**This is not the platform being wrong about biology.** Refusing to call a candidate without a
+DNA-damage reading is defensible caution, and the two arms the platform got right are both
+negatives — it does not overcall. The finding is narrower and more useful: the required panel
+was specified without reference to what published characterizations contain, and **no in-house
+question could reveal that, because the in-house questions were written to supply exactly that
+panel** (6 of 10 set `gammaH2AX` explicitly).
+
+**Not fixed here.** Which markers should gate a positive call is a biological and editorial
+judgement about what this platform is willing to call a candidate. `CLAUDE.md` makes such a
+judgement a stop condition for an unattended change, and relaxing a gate until an external
+case passes is the first repair `external_immortalization_v1.md` prohibits.
+
+## Finding 2 — a scoring criterion no question could ever score
+
+Three things that should agree, and do not:
+
+- `tests/benchmarks/immortalization_v0.md` §0 lists *"species/cell-type 적합성을 반영한다
+  (bovine primary ≠ 3T3-L1/human)"* as a criterion of the benchmark's scoring philosophy;
+- `platform/packs/immortalization.py:212` declares `species` as `AxisKind.CONTEXT` —
+  *"Recorded for provenance; no deterministic builder reads it"*;
+- the scorecard reads 10/10, and **9 of its 10 questions are `species: bovine`**; the tenth
+  names no species at all.
+
+An axis every question holds constant cannot be scored by any of them. The platform's
+declaration is honest and always was — this is not a hidden defect — but the benchmark claims
+to score something the platform says it does not do, and the arrangement was structurally
+incapable of surfacing the contradiction.
+
+All eight non-bovine arms score 0 here, by construction rather than by accident. The axis is
+kept and scored at 0 rather than dropped: a rule rewritten after seeing its result is not a
+rule.
+
+## Finding 3 — coverage: what the vocabulary could not carry
+
+Nine reported facts dropped across seven arms. Grouped by cause:
+
+**`ConstructType` covers two constructs and nothing else** (`TERT_only`, `TERT_plus_CDK4`,
+`unknown`). It cannot express:
+
+- HPV16 E6/E7 — oncogene-based immortalization (EXT-2b), or E6/E7 **plus** hTERT (EXT-2c);
+- a Tet-on construct in its **off** state (EXT-4b), which is neither present nor absent;
+- *whose* TERT. EXT-3's central finding is that sheep TERT outperforms human TERT in sheep
+  cells; `TERT_only` flattens both arms to an identical encoding, so the paper's own
+  comparison is invisible.
+
+**The retention axis is hard-coded to one lineage.** EXT-1 is the flagship bovine cultured-meat
+paper, and its functionality result is *myogenic* differentiation retained. The only field is
+`adipogenic_retention`. For a muscle-cell product, the functionality axis that matters cannot
+be entered at all, so the finding was dropped rather than mislabelled.
+
+**`genomic_stability` is defined as the conclusion a karyotype supports.** EXT-5 reports
+retained anchorage-dependent growth — real evidence against transformation, but not a
+karyotype. Recording it as `stable` would promote a different assay's result, so it is
+`unknown`.
+
+Coverage is not the platform being wrong; it is the platform being narrow. It is invisible to
+every in-house scorecard, because an in-house question is written against the vocabulary that
+exists and a real paper is not.
+
+## What held up
+
+`overcall_controlled` scored **9/9**. Across every arm — including the two where the platform
+had a wrong status — it never presented a possibility as a verdict, and it raised a limitation
+or overinterpretation risk wherever a paper had left a safety axis unmeasured.
+
+Both negative arms were correct, including **EXT-4b**, the strongest case in the set: the same
+sheep line as EXT-4a with the inducible construct switched off, senescing after limited
+divisions. The platform reached `senescence_or_stress_prone` from a PDL plateau alone, with no
+senescence marker available to it.
+
+A platform that is cautious, refuses to overcall, and errs toward `insufficient_evidence` is a
+defensible thing to be. The question Finding 1 raises is whether the threshold for leaving that
+state was set against real data or against the questions it was going to be asked.
+
+## One open domain question
+
+**EXT-2a's expected status is disputed, and is recorded as disputed rather than settled.**
+Akimov 2005 reports a clear negative — hTERT alone did not prolong replicative capacity — but
+measured no senescence marker. "Growth arrest, cause unmeasured" has no distinct value in a
+three-way vocabulary. It is scored against `senescence_or_stress_prone` because the paper's
+finding is a negative result rather than an absence of data; a reader who would score it
+`insufficient_evidence` is making a defensible different call.
+
+This one is a person's to settle, not an unattended run's. It is the only expected answer in
+the set that is not read directly off the paper.
