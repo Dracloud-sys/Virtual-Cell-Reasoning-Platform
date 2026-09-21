@@ -11,8 +11,17 @@ reports which entities are mechanistically reachable, each with:
   at ``hypothesis`` no matter how few hops. Relation type stays independent of
   tier; a multi-hop or weak inference is never presented as an established fact,
 * a **confidence** that decays with path length (product of edge confidences) and
-  is boosted when several independent paths corroborate the same target
-  (:func:`~virtualcell.core.confidence.combine_confidences`).
+  is boosted when several **edge-disjoint** paths corroborate the same target
+  (:func:`~virtualcell.core.confidence.combine_confidences`), together with
+  ``independent_paths`` — how many routes that boost actually rests on.
+
+  Independence is enforced rather than assumed. The noisy-OR aggregation is only
+  meaningful for independent evidence, and every path used to be fed to it, so a
+  detour that re-entered an already-counted edge read as a second opinion: two
+  routes ending on one ``B -> T`` edge lifted 0.50 to 0.75. Paths are now admitted
+  strongest-first and only while they share no edge with an admitted one, which can
+  never count one fact twice. It is a *lower bound* on corroboration — a greedy
+  choice, not a maximum edge-disjoint set — and under-counting is the safe direction.
 
 This is the platform's core primitive: turning a static graph into ranked,
 auditable mechanistic hypotheses.
@@ -67,6 +76,11 @@ class MechanisticLink(BaseModel):
     tier: EvidenceTier
     confidence: float = Field(ge=0.0, le=1.0)
     path: list[str] = Field(default_factory=list)
+    #: How many edge-disjoint routes the confidence rests on. ``1`` means no
+    #: corroboration: the value is one path's own product, not an aggregate. Reported
+    #: because ``path`` shows only the shortest route, so the number is otherwise
+    #: unauditable — 0.5 from one reading and 0.5 from two overlapping ones look alike.
+    independent_paths: int = Field(default=1, ge=1)
 
 
 class Explanation(BaseModel):
@@ -78,23 +92,68 @@ class Explanation(BaseModel):
     links: list[MechanisticLink] = Field(default_factory=list)
 
 
+#: One traversed edge, identified by endpoints and relation rather than by the readable
+#: chain. Two steps between the same pair under the same relation are the same fact; the
+#: rendered string would also collide for two entities that happen to share a name.
+_EdgeKey = tuple[str, str, str]
+
+#: One frontier entry: where we are, the running confidence, the readable chain, the ids
+#: already visited on this path, the tier ceiling so far, and the edges taken. The chain is
+#: for the reader; the edge set is what decides whether two paths are independent evidence.
+_Entry = tuple[str, float, list[str], frozenset[str], EvidenceTier, frozenset[_EdgeKey]]
+
+
 @dataclass
 class _Reach:
-    """Accumulator for one reached target across all discovered paths."""
+    """Accumulator for one reached target across all discovered paths.
 
-    confidences: list[float] = field(default_factory=list)
+    Keeps each path's confidence *with the edges it used*, because whether two paths
+    corroborate is a question about their edges, not about their scores.
+    """
+
+    #: ``(confidence, edges)`` per discovered path, in discovery order.
+    paths: list[tuple[float, frozenset[_EdgeKey]]] = field(default_factory=list)
     best_hops: int = 10**9
     best_conf: float = -1.0
     best_path: list[str] = field(default_factory=list)
     best_ceiling: EvidenceTier = EvidenceTier.ESTABLISHED
 
-    def record(self, hops: int, conf: float, path: list[str], ceiling: EvidenceTier) -> None:
-        self.confidences.append(conf)
+    def record(
+        self,
+        hops: int,
+        conf: float,
+        path: list[str],
+        ceiling: EvidenceTier,
+        edges: frozenset[_EdgeKey],
+    ) -> None:
+        self.paths.append((conf, edges))
         if hops < self.best_hops or (hops == self.best_hops and conf > self.best_conf):
             self.best_hops = hops
             self.best_conf = conf
             self.best_path = path
             self.best_ceiling = ceiling
+
+    def independent(self) -> list[float]:
+        """The confidences of a mutually edge-disjoint subset, strongest first.
+
+        Greedy: take the strongest path, then every next-strongest path that shares no
+        edge with one already taken. A maximum independent set would need a flow
+        computation and could only ever admit *more* paths, so the greedy answer is a
+        floor on corroboration — the direction that cannot overstate the evidence.
+
+        Ties are broken by path length and then by the sorted edge keys so the result
+        does not depend on the order the traversal happened to discover paths in.
+        """
+        chosen: list[float] = []
+        used: set[_EdgeKey] = set()
+        for conf, edges in sorted(
+            self.paths, key=lambda entry: (-entry[0], len(entry[1]), sorted(entry[1]))
+        ):
+            if edges & used:
+                continue
+            chosen.append(conf)
+            used |= edges
+        return chosen
 
 
 def explain(
@@ -123,15 +182,12 @@ def explain(
         return names[entity_id]
 
     reached: dict[str, _Reach] = {}
-    # Frontier entries: (current_id, path_confidence, readable_chain, visited_ids, ceiling)
     established = EvidenceTier.ESTABLISHED
-    frontier: list[tuple[str, float, list[str], frozenset[str], EvidenceTier]] = [
-        (seed_id, 1.0, [], frozenset({seed_id}), established)
-    ]
+    frontier: list[_Entry] = [(seed_id, 1.0, [], frozenset({seed_id}), established, frozenset())]
 
     for hop in range(1, max_hops + 1):
-        next_frontier: list[tuple[str, float, list[str], frozenset[str], EvidenceTier]] = []
-        for current, conf, chain, visited, ceiling in frontier:
+        next_frontier: list[_Entry] = []
+        for current, conf, chain, visited, ceiling, taken in frontier:
             for edge in store.edges(current, direction=direction):
                 target = edge.target_id
                 if target in visited:  # no cycles within a single path
@@ -142,23 +198,31 @@ def explain(
                 )
                 step = f"{name_of(current)} -{edge.relation}-> {name_of(target)}"
                 new_chain = [*chain, step]
-                reached.setdefault(target, _Reach()).record(hop, new_conf, new_chain, new_ceiling)
-                next_frontier.append((target, new_conf, new_chain, visited | {target}, new_ceiling))
+                new_taken = taken | {(current, edge.relation, target)}
+                reached.setdefault(target, _Reach()).record(
+                    hop, new_conf, new_chain, new_ceiling, new_taken
+                )
+                next_frontier.append(
+                    (target, new_conf, new_chain, visited | {target}, new_ceiling, new_taken)
+                )
         # Bound growth: keep only the most-confident frontier entries for the next hop.
         next_frontier.sort(key=lambda entry: entry[1], reverse=True)
         frontier = next_frontier[:_MAX_FRONTIER]
 
-    links = [
-        MechanisticLink(
-            target_id=target_id,
-            target_name=name_of(target_id),
-            hops=reach.best_hops,
-            tier=_weaker_of(_tier_for_hops(reach.best_hops), reach.best_ceiling),
-            confidence=combine_confidences(reach.confidences),
-            path=reach.best_path,
+    links = []
+    for target_id, reach in reached.items():
+        independent = reach.independent()
+        links.append(
+            MechanisticLink(
+                target_id=target_id,
+                target_name=name_of(target_id),
+                hops=reach.best_hops,
+                tier=_weaker_of(_tier_for_hops(reach.best_hops), reach.best_ceiling),
+                confidence=combine_confidences(independent),
+                path=reach.best_path,
+                independent_paths=len(independent),
+            )
         )
-        for target_id, reach in reached.items()
-    ]
     # Rank by confidence, then closeness, then id for stable ordering.
     links.sort(key=lambda link: (-link.confidence, link.hops, link.target_id))
 
