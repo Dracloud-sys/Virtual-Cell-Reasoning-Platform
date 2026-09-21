@@ -7,6 +7,54 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **Provenance now reaches the traversal boundary, and independence uses it.**
+  The previous entry closed the double-count from re-entered edges and recorded its own limit:
+  edge-disjointness is a *proxy* for independence, and two distinct edges read out of one paper
+  are still one reading. `Interaction` carried `evidence`, the traversal `Edge` carried
+  `relation`/`target_id`/`confidence`/`forward`, and provenance was stored and then dropped at
+  exactly the layer that needed it.
+
+  The obvious fix - pass `evidence` through and call two paths dependent when they share a
+  string - would have been a regression wearing a fix's clothes. Surveying every producer shows
+  the field holds two different kinds of thing under one type: **source-level** tokens
+  (`reactome:IEA`, `intact`, `uniprot`, `curated:immortalization_seed`,
+  `review_status:pending_review`), which every edge from a connector shares, and **study-level**
+  ones (`article:<key>`, `run:<id>`, `source_hash:<..>`), which name one document. Under a
+  shared-string rule the whole curated graph collapses into a single fact and corroboration
+  disappears from every scorecard at once. A source is not a study. The mirror-image fix - a
+  downstream parser that knows which prefixes are study-level - fails more quietly: a connector
+  added later invents a prefix the parser has never seen and silently opts out.
+
+  So provenance is **typed where it is created**, not classified downstream.
+  `Interaction.study_id` names the single study an edge was read from, and is `None` when no
+  single study backs it - the honest answer for a curated table distilled from many sources.
+  `Edge` carries `evidence` and `study_id` through verbatim, deriving and defaulting nothing.
+  `explain` admits a path only while it shares neither an **edge** nor a **study** with an
+  already-admitted one; `None` imposes no constraint, so unattributed and curated graphs behave
+  exactly as they did.
+
+  `literature/ingestion.py` is the only site that sets a study id, because it is the only site
+  that knows one. Giving a seed table a synthetic id would assert its rows are one reading,
+  which is false.
+
+  `MechanisticLink.provenance` reports the distinct provenance strings behind the route the
+  link reports, sorted and de-duplicated, empty rather than a placeholder when nothing was
+  recorded. `independent_paths` said *how many* routes a confidence rests on; this says *what*
+  they rest on.
+
+  All four scorecards are **byte-identical, per-question**, verified by running each against the
+  pre-change code and diffing - which is what `study_id=None` on every curated edge means in
+  practice. `src/virtualcell/reasoning/kernel/` is unchanged.
+
+  Two things are left open on purpose rather than guessed, in
+  `docs/evidence_provenance_findings.md`. **Tier still ignores provenance**: a curated edge and
+  a weak literature association at the same distance are graded identically, because deciding
+  whether a Reactome `IEA` inference is `established` or `hypothesis` is an editorial judgement
+  about what this platform will call a fact, and inventing a tier table per connector to turn a
+  test green is the failure the repository's stop-condition rule exists to prevent. That gap is
+  asserted by a test, so closing it fails loudly. And independence remains a **lower bound**:
+  two studies can share authors, a cohort or a cell line, and `study_id` cannot see any of it.
+
 - **Corroboration now requires independence, and the answer says how much it rests on.**
   `explain` boosted a target's confidence with a noisy-OR over *every* path that reached it.
   That aggregation is only meaningful for independent evidence - `combine_confidences` says so

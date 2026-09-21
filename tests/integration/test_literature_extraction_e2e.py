@@ -837,6 +837,32 @@ async def test_ingest_writes_weak_reviewable_evidence(jats_xml) -> None:
     assert out.claims == []
 
 
+async def test_ingest_records_the_study_each_edge_was_read_from(jats_xml) -> None:
+    """Provenance has to be machine-readable, not only printed for a human.
+
+    Ingestion already wrote ``article:<key>`` into the free-form ``evidence`` list, but
+    that list also carries database names and curation tags, so nothing downstream could
+    tell a study apart from a source. ``study_id`` is the typed half, and it is what
+    `explain` uses to refuse to let two edges from one paper corroborate each other.
+    Recorded here on the product path rather than on a hand-built store.
+    """
+    store = InMemoryKnowledgeStore()
+    await _store_agent(_FakeProvider(jats_xml), store).run(_ingest_inputs())
+
+    interactions = store.all_interactions()
+    assert interactions
+    assert all(i.study_id for i in interactions)
+    # The typed field and the human-readable line say the same thing.
+    for interaction in interactions:
+        assert f"article:{interaction.study_id}" in interaction.evidence
+
+    # And it survives the traversal boundary, which is where it is needed.
+    edges = store.edges(interactions[0].source_id, direction="any")
+    edge = next(e for e in edges if e.target_id == interactions[0].target_id)
+    assert edge.study_id == interactions[0].study_id
+    assert edge.evidence == interactions[0].evidence
+
+
 async def test_ingest_requires_convert(jats_xml) -> None:
     store = InMemoryKnowledgeStore()
     with pytest.raises(LiteratureQueryError):

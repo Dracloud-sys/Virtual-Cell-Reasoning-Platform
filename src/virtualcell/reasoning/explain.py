@@ -19,9 +19,23 @@ reports which entities are mechanistically reachable, each with:
   meaningful for independent evidence, and every path used to be fed to it, so a
   detour that re-entered an already-counted edge read as a second opinion: two
   routes ending on one ``B -> T`` edge lifted 0.50 to 0.75. Paths are now admitted
-  strongest-first and only while they share no edge with an admitted one, which can
-  never count one fact twice. It is a *lower bound* on corroboration — a greedy
-  choice, not a maximum edge-disjoint set — and under-counting is the safe direction.
+  strongest-first and only while they share neither an **edge** nor a **study** with
+  an admitted one, which can never count one fact twice. It is a *lower bound* on
+  corroboration — a greedy choice, not a maximum independent set — and under-counting
+  is the safe direction,
+* the **provenance** of the reported path, which is what makes the number checkable.
+
+Edge-disjointness alone was a proxy for independence: two distinct edges read out of
+one paper are still one reading. ``Edge`` now carries the provenance of the
+``Interaction`` it came from, so the traversal can see this. Only ``study_id`` — one
+document — constrains independence; the free-form ``evidence`` strings are a mixture of
+database names and curation tags that every edge from a connector shares, and treating
+those as shared evidence would collapse the curated graph into a single fact.
+
+What is *not* yet graded by provenance is the tier. A curated edge and a weak
+literature association at the same distance are still graded identically, because
+grading a source is an editorial judgement rather than a traversal property. That gap
+is recorded in ``docs/evidence_provenance_findings.md`` and pinned by a test.
 
 This is the platform's core primitive: turning a static graph into ranked,
 auditable mechanistic hypotheses.
@@ -30,6 +44,7 @@ auditable mechanistic hypotheses.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import NamedTuple
 
 from pydantic import BaseModel, Field
 
@@ -81,6 +96,11 @@ class MechanisticLink(BaseModel):
     #: because ``path`` shows only the shortest route, so the number is otherwise
     #: unauditable — 0.5 from one reading and 0.5 from two overlapping ones look alike.
     independent_paths: int = Field(default=1, ge=1)
+    #: The distinct provenance strings behind the edges of ``path``, sorted and
+    #: de-duplicated: database names, curation tags, article keys, review state. Empty
+    #: when nothing was recorded, never a placeholder. This is the reported route's
+    #: support, not the whole target's — ``path`` shows one route and so does this.
+    provenance: list[str] = Field(default_factory=list)
 
 
 class Explanation(BaseModel):
@@ -97,62 +117,87 @@ class Explanation(BaseModel):
 #: rendered string would also collide for two entities that happen to share a name.
 _EdgeKey = tuple[str, str, str]
 
-#: One frontier entry: where we are, the running confidence, the readable chain, the ids
-#: already visited on this path, the tier ceiling so far, and the edges taken. The chain is
-#: for the reader; the edge set is what decides whether two paths are independent evidence.
-_Entry = tuple[str, float, list[str], frozenset[str], EvidenceTier, frozenset[_EdgeKey]]
+
+class _Step(NamedTuple):
+    """One frontier entry: a partial path, and everything needed to judge it later.
+
+    ``chain`` is for the reader. ``edges`` and ``studies`` are what decide whether two
+    completed paths are independent evidence; ``provenance`` is the audit trail that
+    travels out with the answer.
+    """
+
+    node: str
+    confidence: float
+    chain: list[str]
+    visited: frozenset[str]
+    ceiling: EvidenceTier
+    edges: frozenset[_EdgeKey]
+    studies: frozenset[str]
+    provenance: frozenset[str]
+
+
+class _Path(NamedTuple):
+    """A completed route to one target, reduced to what independence turns on."""
+
+    confidence: float
+    edges: frozenset[_EdgeKey]
+    studies: frozenset[str]
 
 
 @dataclass
 class _Reach:
     """Accumulator for one reached target across all discovered paths.
 
-    Keeps each path's confidence *with the edges it used*, because whether two paths
-    corroborate is a question about their edges, not about their scores.
+    Keeps each path's confidence *with the edges and studies it used*, because whether
+    two paths corroborate is a question about their support, not about their scores.
     """
 
-    #: ``(confidence, edges)`` per discovered path, in discovery order.
-    paths: list[tuple[float, frozenset[_EdgeKey]]] = field(default_factory=list)
+    #: One entry per discovered path, in discovery order.
+    paths: list[_Path] = field(default_factory=list)
     best_hops: int = 10**9
     best_conf: float = -1.0
     best_path: list[str] = field(default_factory=list)
     best_ceiling: EvidenceTier = EvidenceTier.ESTABLISHED
+    best_provenance: frozenset[str] = frozenset()
 
-    def record(
-        self,
-        hops: int,
-        conf: float,
-        path: list[str],
-        ceiling: EvidenceTier,
-        edges: frozenset[_EdgeKey],
-    ) -> None:
-        self.paths.append((conf, edges))
-        if hops < self.best_hops or (hops == self.best_hops and conf > self.best_conf):
+    def record(self, hops: int, step: _Step) -> None:
+        self.paths.append(_Path(step.confidence, step.edges, step.studies))
+        if hops < self.best_hops or (hops == self.best_hops and step.confidence > self.best_conf):
             self.best_hops = hops
-            self.best_conf = conf
-            self.best_path = path
-            self.best_ceiling = ceiling
+            self.best_conf = step.confidence
+            self.best_path = step.chain
+            self.best_ceiling = step.ceiling
+            self.best_provenance = step.provenance
 
     def independent(self) -> list[float]:
-        """The confidences of a mutually edge-disjoint subset, strongest first.
+        """The confidences of a mutually independent subset of paths, strongest first.
 
-        Greedy: take the strongest path, then every next-strongest path that shares no
-        edge with one already taken. A maximum independent set would need a flow
-        computation and could only ever admit *more* paths, so the greedy answer is a
-        floor on corroboration — the direction that cannot overstate the evidence.
+        Greedy: take the strongest path, then every next-strongest path that shares
+        neither an **edge** nor a **study** with one already taken. Edge-disjointness
+        alone was a proxy — two distinct edges read out of one paper are one finding, and
+        a path whose study is already counted adds nothing. An edge with no recorded
+        study contributes no constraint, so unattributed and curated graphs behave exactly
+        as they did when edges were the only test.
 
-        Ties are broken by path length and then by the sorted edge keys so the result
-        does not depend on the order the traversal happened to discover paths in.
+        A maximum independent set would need a flow computation and could only ever admit
+        *more* paths, so the greedy answer is a floor on corroboration — the direction
+        that cannot overstate the evidence.
+
+        Ties are broken by path length and then by the sorted keys so the result does not
+        depend on the order the traversal happened to discover paths in.
         """
         chosen: list[float] = []
-        used: set[_EdgeKey] = set()
-        for conf, edges in sorted(
-            self.paths, key=lambda entry: (-entry[0], len(entry[1]), sorted(entry[1]))
+        used_edges: set[_EdgeKey] = set()
+        used_studies: set[str] = set()
+        for path in sorted(
+            self.paths,
+            key=lambda p: (-p.confidence, len(p.edges), sorted(p.edges), sorted(p.studies)),
         ):
-            if edges & used:
+            if path.edges & used_edges or path.studies & used_studies:
                 continue
-            chosen.append(conf)
-            used |= edges
+            chosen.append(path.confidence)
+            used_edges |= path.edges
+            used_studies |= path.studies
         return chosen
 
 
@@ -183,30 +228,49 @@ def explain(
 
     reached: dict[str, _Reach] = {}
     established = EvidenceTier.ESTABLISHED
-    frontier: list[_Entry] = [(seed_id, 1.0, [], frozenset({seed_id}), established, frozenset())]
+    frontier: list[_Step] = [
+        _Step(
+            node=seed_id,
+            confidence=1.0,
+            chain=[],
+            visited=frozenset({seed_id}),
+            ceiling=established,
+            edges=frozenset(),
+            studies=frozenset(),
+            provenance=frozenset(),
+        )
+    ]
 
     for hop in range(1, max_hops + 1):
-        next_frontier: list[_Entry] = []
-        for current, conf, chain, visited, ceiling, taken in frontier:
-            for edge in store.edges(current, direction=direction):
+        next_frontier: list[_Step] = []
+        for current in frontier:
+            for edge in store.edges(current.node, direction=direction):
                 target = edge.target_id
-                if target in visited:  # no cycles within a single path
+                if target in current.visited:  # no cycles within a single path
                     continue
-                new_conf = conf * edge.confidence
-                new_ceiling = _weaker_of(
-                    ceiling, _WEAK_RELATION_CEILING.get(edge.relation, established)
+                rendered = f"{name_of(current.node)} -{edge.relation}-> {name_of(target)}"
+                step = _Step(
+                    node=target,
+                    confidence=current.confidence * edge.confidence,
+                    chain=[*current.chain, rendered],
+                    visited=current.visited | {target},
+                    ceiling=_weaker_of(
+                        current.ceiling, _WEAK_RELATION_CEILING.get(edge.relation, established)
+                    ),
+                    edges=current.edges | {(current.node, edge.relation, target)},
+                    # An edge with no recorded study adds no study, rather than a shared
+                    # "unknown" that would make every unattributed path dependent.
+                    studies=(
+                        current.studies
+                        if edge.study_id is None
+                        else current.studies | {edge.study_id}
+                    ),
+                    provenance=current.provenance | frozenset(edge.evidence),
                 )
-                step = f"{name_of(current)} -{edge.relation}-> {name_of(target)}"
-                new_chain = [*chain, step]
-                new_taken = taken | {(current, edge.relation, target)}
-                reached.setdefault(target, _Reach()).record(
-                    hop, new_conf, new_chain, new_ceiling, new_taken
-                )
-                next_frontier.append(
-                    (target, new_conf, new_chain, visited | {target}, new_ceiling, new_taken)
-                )
+                reached.setdefault(target, _Reach()).record(hop, step)
+                next_frontier.append(step)
         # Bound growth: keep only the most-confident frontier entries for the next hop.
-        next_frontier.sort(key=lambda entry: entry[1], reverse=True)
+        next_frontier.sort(key=lambda entry: entry.confidence, reverse=True)
         frontier = next_frontier[:_MAX_FRONTIER]
 
     links = []
@@ -221,6 +285,7 @@ def explain(
                 confidence=combine_confidences(independent),
                 path=reach.best_path,
                 independent_paths=len(independent),
+                provenance=sorted(reach.best_provenance),
             )
         )
     # Rank by confidence, then closeness, then id for stable ordering.
