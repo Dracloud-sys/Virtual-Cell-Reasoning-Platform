@@ -207,6 +207,34 @@ a report as text *and* as JSON meant invoking the command twice — two model ca
 and two different answers compared as though they were one. `render_report_text` is now a
 function the CLI calls; anything holding a report can call it and get the same bytes.
 
+### The run bundle, and what it can and cannot show
+
+`tests/benchmarks/research/run/` is the deliverable for an environment with no credential:
+a bundle someone authorised runs unchanged. Nothing runs without `--spend-approved`.
+
+Two defects in its first version were reproduced through the runner and fixed:
+
+* **A reply that arrived and then failed checking left nothing on disk.** `c_raw.txt` and
+  `c_call.json` were written only after `investigate` returned, so a reply the provider had
+  produced and billed for vanished behind an error message. They are now written the instant
+  the reply arrives, before the JSON is parsed. If no reply ever arrives, neither file is
+  written — an invented raw text or a guessed token count is worse than the gap.
+* **The run returned `0` whatever happened.** It now uses `virtualcell research`'s own codes:
+  `0` clean · `1` bad usage · `3` no provider (nothing ran) · `4` a call failed · `5` findings.
+  The manifest is rewritten after every entry, and each run gets its own folder — a non-empty
+  `--out` is refused rather than cleared, because those are outputs somebody paid for.
+
+**What the comparison measures**: a system prompt, a required output structure, and a
+post-hoc check, against a plain answer from the same model on the same material. It is **not**
+a test of automated literature search (P2 does not exist), **not** a test of knowledge-graph
+reasoning, and **not** a measure of factual accuracy against the literature.
+
+**Every observation in every case is invented for development.** A `user_observation` is an
+input in the shape a caller's observation would take; the label says what the model is being
+handed, not that anyone performed the measurement. And a case containing no
+`retrieved_source` means no invented paper is in its *input* — it does **not** mean a model
+cannot fabricate a citation in the free text it writes.
+
 ### P2 — retrieval
 
 Per-question literature search, spans read from documents, and a **read-only** path into the

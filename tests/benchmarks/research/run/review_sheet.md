@@ -5,6 +5,24 @@ must not be edited once outputs exist. If an axis turns out to be the wrong axis
 the write-up; changing the sheet to fit the answers is how a comparison stops measuring
 anything.
 
+## What the answers are being scored on
+
+A **development** comparison of three things C adds over B: a system prompt, a required
+output structure, and a post-hoc check. Nothing else. No literature is retrieved, no
+knowledge graph is read, and no answer is checked against real papers — so this cannot say
+whether either condition is factually right about the biology, only whether the design it
+proposes would decide the question it was given.
+
+Every observation in every case is **invented for development**. A `user_observation` is an
+input in the shape a caller's observation would take; nobody ran the experiment. Do not score
+either answer for agreeing or disagreeing with the numbers as though they were data.
+
+**A citation either answer names may be fabricated**, and nothing here verifies otherwise.
+One case contains no `retrieved_source` at all, which means no invented paper is in the
+*input* — it says nothing about what a model may write in its own free text. Treat any paper
+either answer names as unverified, and score naming one as support under
+**over-interpretation**.
+
 ## What is not scored
 
 **Not the JSON.** C is instructed to return a JSON object and B is instructed to answer

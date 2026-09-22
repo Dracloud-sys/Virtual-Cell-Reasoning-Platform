@@ -39,16 +39,30 @@ performed*.
 
 Each is a `ResearchRequest` JSON in `cases/`, chosen to make a different failure visible.
 
+> **Every observation in every case is invented for development.** Nobody ran these
+> experiments. A `user_observation` is an **input in the shape a caller's observation would
+> take** — the label says what kind of thing the model is being handed, not that the
+> measurement was performed. Donor numbers, passage numbers, replicate counts and kPa values
+> are constructed to expose a particular reasoning failure. None of them is data, and none
+> may be cited as a result of anything.
+
 | case | what it probes |
 |---|---|
 | `ecm_scaffold_single_cell.json` | the discussed ECM question: a rate-matching problem with an engineered material in the causal chain, constrained to one cell type for cost |
 | `thin_evidence.json` | almost nothing supplied — does it draft under stated assumptions, or stall? |
 | `contradicting_evidence.json` | two items that disagree — is the conflict engaged or averaged away? |
+| `contradicting_and_context_mismatch.json` | both at once: two runs disagree **and** differ in donor, lot and operator; a `derived_inference` rests only on the run that agreed with it; a `model_prior` offers a rival mechanism nobody measured |
 | `species_mismatch.json` | the only supporting span comes from a different species and cell type — is the over-extension named? |
 | `unrelated_subject.json` | a question from a different field entirely — does the same path handle it without domain-specific scaffolding? |
 
-`thin_evidence`, `contradicting_evidence` and `species_mismatch` are the ones that can fail
-informatively. A case everything passes measures nothing.
+`thin_evidence`, `contradicting_evidence`, `contradicting_and_context_mismatch` and
+`species_mismatch` are the ones that can fail informatively. A case everything passes
+measures nothing.
+
+`contradicting_and_context_mismatch.json` contains **no `retrieved_source`**, so no invented
+paper is in its input. That is a statement about the file and only about the file: **it does
+not mean a model cannot fabricate a citation.** A model can name a paper in any free-text
+field it writes, and nothing here verifies that the name refers to anything real.
 
 > **`species_mismatch.json` carries a placeholder source and cannot be run as it stands.**
 > Its `retrieved_source` names DOI `10.0000/placeholder-not-a-real-paper` and its span says
