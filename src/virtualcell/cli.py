@@ -222,6 +222,82 @@ def _literature_agent():
     return LiteratureDiscoveryAgent()
 
 
+def _cmd_research(args: argparse.Namespace) -> int:
+    """Investigate an open research question — no domain, no pack, no registry.
+
+    Distinct exit codes, because the failures mean different things and a caller that
+    cannot tell them apart will retry the wrong one: 1 is a bad request, 3 is no model
+    provider (nothing ran), 4 is a provider that ran and failed.
+    """
+    import json
+
+    from pydantic import ValidationError
+
+    from virtualcell.research import (
+        BackendCallFailed,
+        BackendUnavailable,
+        ResearchRequest,
+        ResearchService,
+    )
+
+    try:
+        payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"could not read input: {exc}")
+        return 1
+    try:
+        request = ResearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        print(f"invalid research request: {exc}")
+        return 1
+
+    try:
+        report = ResearchService().investigate(request)
+    except BackendUnavailable as exc:
+        print(f"no research was performed: {exc}")
+        return 3
+    except BackendCallFailed as exc:
+        print(f"the research call failed: {exc}")
+        return 4
+
+    if args.format == "json":
+        print(report.model_dump_json(indent=2))
+        return 0
+
+    print(f"Q: {report.question}\n-> {report.restated_question}\n")
+    if report.assumptions:
+        print("Assumptions:")
+        for item in report.assumptions:
+            print(f"  - {item}")
+        print()
+    for hypothesis in report.hypotheses:
+        cited = ", ".join(hypothesis.supporting_evidence_ids) or "nothing supplied"
+        print(f"[{hypothesis.id}] ({hypothesis.support.value}) {hypothesis.statement}")
+        print(f"     supported by: {cited}")
+    print()
+    for experiment in report.experiments:
+        print(f"[{experiment.id}] {experiment.design}")
+        if experiment.discriminates:
+            print(f"     tells apart: {', '.join(experiment.discriminates)}")
+        for branch in experiment.branches:
+            print(f"     if {branch.outcome}: {branch.implication}")
+    if report.open_items:
+        print("\nOpen:")
+        for item in report.open_items:
+            print(f"  - {item}")
+    if report.integrity:
+        print("\nIntegrity findings (checkable defects, not a judgement of the biology):")
+        for finding in report.integrity:
+            print(f"  ! {finding.where}: {finding.detail}")
+    print(
+        f"\nproduced by {report.provenance.backend} "
+        f"({report.provenance.model or 'model unrecorded'}), "
+        f"prompt {report.provenance.prompt_version}, "
+        f"{report.provenance.evidence_offered} evidence item(s) offered"
+    )
+    return 0
+
+
 def _cmd_query(args: argparse.Namespace) -> int:
     """Run a domain-neutral platform query — the same service the API uses."""
     import asyncio
@@ -641,6 +717,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_query.add_argument("--format", choices=["json", "text"], default="json")
     p_query.add_argument("--load", help="merge the seed onto an existing saved graph JSON")
     p_query.set_defaults(func=_cmd_query)
+
+    p_research = sub.add_parser(
+        "research",
+        help="investigate an open research question (no domain required)",
+    )
+    p_research.add_argument("--input", required=True, help="path to a JSON ResearchRequest")
+    p_research.add_argument("--format", choices=["json", "text"], default="text")
+    p_research.set_defaults(func=_cmd_research)
 
     p_lit = sub.add_parser("literature", help="external literature discovery")
     lit_sub = p_lit.add_subparsers(dest="literature_command", required=True)
