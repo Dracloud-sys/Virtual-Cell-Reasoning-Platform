@@ -309,9 +309,16 @@ class ResearchProvenance(BaseModel):
     #: configured with. A limit, not a count — see ``model_calls``. Calling it a count
     #: would report a measurement nobody took.
     max_request_attempts: int | None = Field(default=None, ge=1)
-    #: Per-attempt timeout in seconds. Worst-case wall clock for one logical call is
-    #: roughly this times ``max_request_attempts``, because a timeout is itself retried.
+    #: The timeout applied to **one HTTP request**, in seconds.
+    #:
+    #: It is not a deadline for the call, and multiplying it by ``max_request_attempts``
+    #: does not produce one: the SDK sleeps between retries with backoff the timeout does
+    #: not cover, and nothing here cancels an operation that runs long. These two fields
+    #: record settings. ``elapsed_seconds`` records what happened.
     timeout_seconds: float | None = Field(default=None, gt=0)
+    #: Wall-clock seconds the provider call actually took. The one duration here that is a
+    #: measurement rather than a configured limit.
+    elapsed_seconds: float | None = Field(default=None, ge=0)
     #: Verbatim from the provider: why generation stopped. ``None`` when the backend does
     #: not report one.
     stop_reason: str | None = None

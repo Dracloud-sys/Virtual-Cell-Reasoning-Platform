@@ -30,6 +30,7 @@ from virtualcell.research import (
     ResearchService,
     build_prompt,
     get_research_backend,
+    render_report_text,
 )
 
 
@@ -920,11 +921,17 @@ class _GoodResponse:
     usage = _Usage()
 
 
-def test_the_provider_call_sets_its_own_time_and_retry_limits() -> None:
-    """The SDK's defaults are a ten-minute timeout and two retries, and a timeout is itself
-    retried — so leaving both implicit means one logical call can occupy half an hour and
-    the number saying so lives in a dependency's release notes. Both are set here, and the
-    product of the two is the figure a caller has to budget for.
+def test_the_provider_call_sets_its_own_per_request_limits() -> None:
+    """The SDK's default is a ten-minute timeout. Both limits are set here instead, so what
+    one request is allowed is readable in this repository rather than in a dependency's
+    release notes.
+
+    What they are **not** is a deadline, and an earlier version of this test asserted that
+    they were: ``timeout_seconds * max_request_attempts <= 600.0``, described as "the figure
+    a caller has to budget for". That product is not an upper bound — the SDK sleeps between
+    retries with backoff the per-request timeout does not cover — and nothing here cancels
+    an operation that exceeds it, so no total deadline is enforced at all. The assertion
+    pinned a control that does not exist.
     """
     from virtualcell.research.backend import (
         DEFAULT_MAX_RETRIES,
@@ -936,7 +943,52 @@ def test_the_provider_call_sets_its_own_time_and_retry_limits() -> None:
 
     assert backend.timeout_seconds == DEFAULT_TIMEOUT_SECONDS < 600.0
     assert backend.max_request_attempts == DEFAULT_MAX_RETRIES + 1
-    assert backend.timeout_seconds * backend.max_request_attempts <= 600.0
+
+
+def test_how_long_a_call_took_is_measured_rather_than_predicted() -> None:
+    """Since no deadline is enforced, the settings cannot say how long a run took. So the
+    call is timed on a monotonic clock and the number travels out with the report, next to
+    the limits it ran under and distinguishable from them.
+    """
+    from virtualcell.research.backend import AnthropicResearchBackend
+
+    reply = AnthropicResearchBackend(model="m")._read_reply(_GoodResponse(), elapsed_seconds=4.25)
+    assert reply.elapsed_seconds == 4.25
+
+    report = ResearchService(
+        backend=ScriptedBackend(_well_formed(), elapsed_seconds=4.25, timeout_seconds=120.0)
+    ).investigate(ResearchRequest(question="Q?", evidence=[_observation()]))
+
+    assert report.provenance.elapsed_seconds == 4.25
+    assert report.provenance.timeout_seconds == 120.0
+
+
+def test_a_backend_that_does_not_time_itself_reports_no_duration() -> None:
+    """Nothing is not zero, here as everywhere else in provenance."""
+    report = ResearchService(backend=ScriptedBackend(_well_formed())).investigate(
+        ResearchRequest(question="Q?")
+    )
+
+    assert report.provenance.elapsed_seconds is None
+
+
+def test_one_run_renders_as_both_text_and_json_without_a_second_call() -> None:
+    """Two renderings of one run are not worth two runs. The text form used to live inside
+    the CLI command, so seeing a report both ways meant invoking the command twice — two
+    model calls, two bills, and two different answers being compared as if they were one.
+    """
+    backend = ScriptedBackend(_well_formed())
+    report = ResearchService(backend=backend).investigate(
+        ResearchRequest(question="Q?", evidence=[_observation()])
+    )
+
+    text = render_report_text(report)
+    as_json = report.model_dump_json(indent=2)
+
+    assert len(backend.prompts) == 1
+    assert "cheapest thing that separates the two" in text
+    assert "cheapest thing that separates the two" in as_json
+    assert render_report_text(report) == text  # and rendering is pure
 
 
 def test_a_retry_ceiling_is_recorded_as_a_limit_and_never_as_a_count() -> None:

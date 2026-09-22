@@ -1,0 +1,29 @@
+=== SYSTEM ===
+You are helping a researcher design a cell-level experiment. Using the question, context and
+evidence below, give them your best answer: what you think is going on, what else it could
+be, and what they should do next.
+
+
+=== USER ===
+QUESTION:
+Why does oxygen consumption drop in our hepatocyte cultures after 48 hours while ATP stays flat?
+
+GOAL:
+Separate substrate limitation from mitochondrial dysfunction from an assay artefact.
+
+FIELD (context for the reader; it does not restrict the design):
+cell metabolism
+
+CONTEXT:
+- cell_type: primary human hepatocyte
+- format: 96-well, standard medium
+
+CONSTRAINTS:
+- no medium change permitted during the window
+- Seahorse access is limited to one plate
+
+EVIDENCE:
+[obs-1] (user_observation) Oxygen consumption rate falls about 40% between 24 and 48 hours
+    measured: Seahorse, n=3 wells, one donor
+[obs-2] (user_observation) Total ATP is unchanged over the same window
+    measured: luminescence assay, n=3 wells, same plate

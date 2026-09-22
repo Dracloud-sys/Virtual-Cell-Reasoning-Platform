@@ -182,16 +182,30 @@ left untouched the digest that exists to detect exactly that edit. Joining lists
 replaces the joins, and `id` stays excluded so the same content under two ids still agrees.
 
 **The provider's limits were the SDK's, not this repository's.** The Anthropic SDK defaults
-to a ten-minute timeout and two retries, and it retries timeouts — so one logical call could
-occupy half an hour, with the number saying so living in a dependency's release notes. Both
-are set here: 120s per attempt, 2 retries, six minutes worst case. `design()` returns a
-`ModelReply`, and the report records what the provider reported: the model it **served** (not
-only the one requested), `stop_reason`, and input and output tokens. A value the provider
-does not report stays `None`; a zero would read as a measurement.
+to a ten-minute timeout and two retries, so what one request was allowed lived in a
+dependency's release notes. Both are set here: 120s per request, 2 retries. `design()`
+returns a `ModelReply`, and the report records what the provider reported: the model it
+**served** (not only the one requested), `stop_reason`, and input and output tokens. A value
+the provider does not report stays `None`; a zero would read as a measurement.
+
+> **Correction.** An earlier version of this section said those two settings give "six
+> minutes worst case", and the code and a test said the same. **That was wrong.** The
+> timeout bounds a single HTTP request; the SDK sleeps between retries with backoff the
+> timeout does not cover, so `timeout × attempts` is not an upper bound. And nothing here
+> cancels a call that runs long, so **no total deadline is enforced at all** — the sentence
+> described a control that does not exist. No 360-second ceiling is claimed. The settings
+> are recorded as settings, and how long a call actually took is **measured** on a monotonic
+> clock and reported as `elapsed_seconds`. Building an execution-deadline mechanism to make
+> the old sentence true would be answering a documentation error with a subsystem.
 
 `model_calls` and HTTP attempts are kept apart. The SDK retries inside one logical call and
 never says how many attempts it made, so provenance carries `max_request_attempts` as the
 **ceiling it ran under**, named as a limit, and no field claims a count nobody took.
+
+**One run renders both ways.** The text form used to live inside the CLI command, so seeing
+a report as text *and* as JSON meant invoking the command twice — two model calls, two bills,
+and two different answers compared as though they were one. `render_report_text` is now a
+function the CLI calls; anything holding a report can call it and get the same bytes.
 
 ### P2 — retrieval
 

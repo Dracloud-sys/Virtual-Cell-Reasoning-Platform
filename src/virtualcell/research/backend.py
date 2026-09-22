@@ -15,12 +15,14 @@ one condition: anything proposed from the model's own knowledge comes back label
 `model_prior`, a search target rather than a finding. The permission and the label are the
 same sentence.
 
-**Its limits are its own, and written down here.** The timeout and the retry ceiling are
-passed explicitly rather than left to the SDK's defaults, so the wall clock a caller has to
-budget for is readable in this file instead of in a dependency's release notes. What the
-provider reports back — which model it served, why it stopped, what it spent — comes out in
-a `ModelReply` and is recorded, because a run that logs only what it *asked* for cannot
-afterwards be told apart from a different run.
+**Its limits are its own, and written down here.** The per-request timeout and the retry
+ceiling are passed explicitly rather than left to the SDK's defaults, so what this code runs
+under is readable here instead of in a dependency's release notes. They are limits on a
+request and a count of retries — **not a deadline for the call**, and this module does not
+enforce one. How long a call took is therefore measured and reported, not computed from the
+settings. What the provider says back — which model it served, why it stopped, what it spent
+— comes out in a `ModelReply` and is recorded, because a run that logs only what it *asked*
+for cannot afterwards be told apart from a different run.
 
 The Anthropic wiring, the settings lookup and the availability check are reused from
 `reasoning/llm.py` rather than copied.
@@ -29,6 +31,7 @@ The Anthropic wiring, the settings lookup and the availability check are reused 
 from __future__ import annotations
 
 import os
+import time
 from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -39,16 +42,26 @@ from virtualcell.reasoning.llm import _anthropic_available
 #: report's provenance, so two runs can be told apart without guessing.
 PROMPT_VERSION = "research-v1"
 
-#: Per-attempt timeout, in seconds. Set here rather than left to the SDK, whose default is
-#: ten minutes: a research design is one bounded generation, and a caller waiting ten
-#: minutes on a provider that has stopped answering has been told nothing for most of it.
+#: Per-attempt HTTP timeout, in seconds — the limit on **one request**, not on the call.
+#: Set here rather than left to the SDK, whose default is ten minutes: a research design is
+#: one bounded generation, and a caller waiting ten minutes on a provider that has stopped
+#: answering has been told nothing for most of it.
 DEFAULT_TIMEOUT_SECONDS = 120.0
 
 #: Retries per logical call, on top of the first attempt. The SDK retries connection
-#: errors, 408/409/429 and 5xx — **and timeouts** — so the worst case for one logical call
-#: is ``DEFAULT_TIMEOUT_SECONDS * (DEFAULT_MAX_RETRIES + 1)``, six minutes at these values.
-#: That product is the number a caller actually has to budget for; neither factor alone
-#: says how long this can take.
+#: errors, 408/409/429 and 5xx, and it retries timeouts too.
+#:
+#: **These two numbers do not multiply into a deadline.** An earlier version of this comment
+#: said the worst case was ``DEFAULT_TIMEOUT_SECONDS * (DEFAULT_MAX_RETRIES + 1)`` — "six
+#: minutes" — and that is wrong twice over. The timeout bounds a single HTTP request, and
+#: the SDK sleeps between retries with backoff that the timeout does not cover, so the
+#: product is not an upper bound; and nothing here cancels an operation that exceeds it, so
+#: no total deadline is enforced at all. Claiming a 360-second ceiling would be describing a
+#: control that does not exist.
+#:
+#: What can honestly be said is what these settings *are*: a per-request limit and a retry
+#: ceiling, both recorded as such. What actually happened is measured — see
+#: ``ModelReply.elapsed_seconds`` — rather than predicted from these two constants.
 DEFAULT_MAX_RETRIES = 2
 
 RESEARCH_SYSTEM_PROMPT = """\
@@ -133,11 +146,17 @@ class ModelReply(BaseModel):
     stop_reason: str | None = None
     input_tokens: int | None = Field(default=None, ge=0)
     output_tokens: int | None = Field(default=None, ge=0)
-    #: The attempt ceiling this call ran under (retries + 1), and the per-attempt timeout.
+    #: The attempt ceiling this call ran under (retries + 1), and the per-request timeout.
     #: Limits, not counts: the SDK retries internally and never says how many attempts it
-    #: made, so reporting a number here as "attempts used" would be inventing one.
+    #: made, so reporting a number here as "attempts used" would be inventing one. Nor do
+    #: they multiply into a deadline — see `DEFAULT_MAX_RETRIES`.
     max_request_attempts: int | None = Field(default=None, ge=1)
     timeout_seconds: float | None = Field(default=None, gt=0)
+    #: Wall-clock seconds the call actually took, monotonic, measured around the provider
+    #: call including whatever retrying and backoff happened inside it. This is the only
+    #: honest number about duration here: the limits above say what was *allowed*, and a
+    #: product of them would be a prediction. A run reports what it spent.
+    elapsed_seconds: float | None = Field(default=None, ge=0)
 
 
 @runtime_checkable
@@ -176,10 +195,13 @@ class AnthropicResearchBackend:
     def design(self, prompt: str, *, max_output_tokens: int) -> ModelReply:
         import anthropic  # lazy: only needed when this backend is actually used
 
+        # Measured, not predicted. The timeout and retry ceiling below say what one request
+        # is allowed; they do not bound the call, so how long it took is a thing to observe.
+        started = time.monotonic()
         try:
             # Both limits are passed explicitly. The SDK's own defaults are a ten-minute
-            # timeout and two retries, and leaving them implicit means the run's real time
-            # bound lives in a dependency's release notes rather than in this repository.
+            # timeout and two retries, and leaving them implicit means the per-request limit
+            # this code runs under lives in a dependency's release notes, not here.
             client = anthropic.Anthropic(  # reads ANTHROPIC_API_KEY from the environment
                 timeout=self.timeout_seconds,
                 max_retries=self.max_retries,
@@ -191,10 +213,13 @@ class AnthropicResearchBackend:
                 messages=[{"role": "user", "content": prompt}],
             )
         except Exception as exc:  # provider errors are many and none of them are success
-            raise BackendCallFailed(f"the model provider call failed: {exc}") from exc
-        return self._read_reply(response)
+            elapsed = time.monotonic() - started
+            raise BackendCallFailed(
+                f"the model provider call failed after {elapsed:.1f}s: {exc}"
+            ) from exc
+        return self._read_reply(response, elapsed_seconds=time.monotonic() - started)
 
-    def _read_reply(self, response: object) -> ModelReply:
+    def _read_reply(self, response: object, *, elapsed_seconds: float | None = None) -> ModelReply:
         """Read the reply, refusing the two non-answers that look like parse errors.
 
         A reply cut off at ``max_tokens`` is JSON that stops mid-object, so it fails to
@@ -229,6 +254,7 @@ class AnthropicResearchBackend:
             output_tokens=getattr(usage, "output_tokens", None),
             max_request_attempts=self.max_request_attempts,
             timeout_seconds=self.timeout_seconds,
+            elapsed_seconds=elapsed_seconds,
         )
 
 

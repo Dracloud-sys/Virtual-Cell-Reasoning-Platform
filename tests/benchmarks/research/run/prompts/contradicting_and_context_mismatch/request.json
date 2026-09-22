@@ -1,0 +1,84 @@
+{
+  "question": "Our coated ECM scaffold suppressed myofibroblast conversion in one run and promoted it in the repeat. Which explanation should we test first, before the coating formulation is frozen?",
+  "goal": "Pick the single next cell-level experiment that would actually resolve the contradiction, given that the two runs differ in more than the coating.",
+  "field_of_study": "biomaterials / wound repair",
+  "context": {
+    "cell_type_in_question": "adult human dermal fibroblast, abdominal skin, donor 2, passage 6",
+    "cell_type_in_repeat_run": "neonatal human dermal fibroblast, foreskin, donor 5, passage 3",
+    "system": "2D on scaffold, single cell type, no in vivo arm",
+    "stage": "cell experiment, not clinical"
+  },
+  "constraints": [
+    "single cell type only, for cost and time",
+    "one further experiment before the formulation is frozen",
+    "no new donor can be sourced in time"
+  ],
+  "evidence": [
+    {
+      "id": "obs-1",
+      "kind": "user_observation",
+      "statement": "alpha-SMA positive fraction was lower on the coated scaffold than on uncoated at day 14",
+      "locator": null,
+      "measurement_context": "immunofluorescence, n=3, coated and uncoated in the same plate, adult abdominal donor 2 at passage 6, scaffold lot A, operator 1, not blinded",
+      "verification": null,
+      "derived_from": [],
+      "assumptions": [],
+      "content_hash": "b8e11e4e6ad30c1cbdd1a70df050b632e8bb39bc37c9e60aaf8233da1059b379"
+    },
+    {
+      "id": "obs-2",
+      "kind": "user_observation",
+      "statement": "In the repeat run the coated scaffold showed a higher alpha-SMA positive fraction than uncoated at day 14",
+      "locator": null,
+      "measurement_context": "immunofluorescence, n=3, neonatal foreskin donor 5 at passage 3, scaffold lot B, operator 2, not blinded",
+      "verification": null,
+      "derived_from": [],
+      "assumptions": [],
+      "content_hash": "82fe634b70a42398663ed9b3c36debfe769d52cd19bf86fb11c5ca37cf7bcc7d"
+    },
+    {
+      "id": "obs-3",
+      "kind": "user_observation",
+      "statement": "The coated scaffold measured about 11 kPa and the uncoated about 26 kPa",
+      "locator": null,
+      "measurement_context": "nanoindentation, n=5 positions, hydrated, scaffold lot A only; lot B was never measured",
+      "verification": null,
+      "derived_from": [],
+      "assumptions": [],
+      "content_hash": "2250a234c3cf33b5cafbe70d09aab519b2333fe6bd910e018b2e56b82ca12018"
+    },
+    {
+      "id": "inf-1",
+      "kind": "derived_inference",
+      "statement": "The coating suppresses myofibroblast conversion by lowering the stiffness the cells experience",
+      "locator": null,
+      "measurement_context": null,
+      "verification": null,
+      "derived_from": [
+        "obs-1",
+        "obs-3"
+      ],
+      "assumptions": [
+        "lot B has the same coated-versus-uncoated stiffness difference as lot A",
+        "nanoindentation stiffness is what the cell senses on this surface"
+      ],
+      "content_hash": "b85599641a5487fb99eef09f5c12e283dc4ee7a2fef034464924eebbd8e24af4"
+    },
+    {
+      "id": "prior-1",
+      "kind": "model_prior",
+      "statement": "Growth factor released from an ECM scaffold as it degrades is a common alternative driver of myofibroblast conversion, independent of stiffness",
+      "locator": null,
+      "measurement_context": null,
+      "verification": null,
+      "derived_from": [],
+      "assumptions": [
+        "nothing in this session has measured release from either lot"
+      ],
+      "content_hash": "0646bf27738f026f4c918a9032d0e9d712d4e371e3c126318b3374777754b561"
+    }
+  ],
+  "budget": {
+    "max_output_tokens": 4096
+  }
+}

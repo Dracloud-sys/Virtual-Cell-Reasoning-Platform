@@ -401,6 +401,7 @@ def _assemble(
             model_calls=1,
             max_request_attempts=reply.max_request_attempts,
             timeout_seconds=reply.timeout_seconds,
+            elapsed_seconds=reply.elapsed_seconds,
             stop_reason=reply.stop_reason,
             input_tokens=reply.input_tokens,
             output_tokens=reply.output_tokens,

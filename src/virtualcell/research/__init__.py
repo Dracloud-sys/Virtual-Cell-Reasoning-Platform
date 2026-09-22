@@ -31,6 +31,7 @@ from virtualcell.research.contracts import (
     ResearchReport,
     ResearchRequest,
 )
+from virtualcell.research.render import render_report_text
 from virtualcell.research.service import ResearchService, build_prompt, check_integrity
 
 __all__ = [
@@ -55,4 +56,5 @@ __all__ = [
     "build_prompt",
     "check_integrity",
     "get_research_backend",
+    "render_report_text",
 ]
