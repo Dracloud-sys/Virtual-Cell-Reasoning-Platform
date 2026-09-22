@@ -172,6 +172,9 @@ def _assemble(
         experiments=experiments,
         open_items=[str(x) for x in payload.get("open_items", [])],
         evidence_used=[str(x) for x in payload.get("evidence_used", [])],
+        # Verbatim from the request, never from the payload: the model has no channel
+        # for an EvidenceItem, so it cannot slip a source record of its own in here.
+        evidence_snapshot=[item.model_copy(deep=True) for item in request.evidence],
         provenance=ResearchProvenance(
             backend=backend.name,
             model=getattr(backend, "model", None),

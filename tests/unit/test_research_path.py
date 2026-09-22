@@ -408,11 +408,156 @@ def test_the_cli_prints_a_report_including_its_integrity_findings(tmp_path, monk
         },
     )
 
-    assert main(["research", "--input", str(path), "--format", "text"]) == 0
+    # 5, not 0: the report is printed, and a script reading only the exit code is still
+    # told that something in it does not check out. See the dedicated test below.
+    assert main(["research", "--input", str(path), "--format", "text"]) == 5
     out = capsys.readouterr().out
     assert "H1" in out and "tells apart" in out
     assert "Integrity findings" in out
     assert "never-supplied" in out
+
+
+# --- P1.1 review: defects found by reading the code against its own claims ---------------
+
+
+def test_the_model_cannot_manufacture_a_source_record() -> None:
+    """Q1. Evidence enters only from the request; the model returns hypotheses and
+    experiments and has no channel for an `EvidenceItem`. A payload that tries anyway is
+    ignored rather than merged, so a fabricated citation cannot become trusted evidence.
+    """
+    payload = _well_formed()
+    payload["evidence"] = [
+        {"id": "forged-1", "kind": "retrieved_source", "statement": "a paper I invented"}
+    ]
+    service = ResearchService(backend=ScriptedBackend(payload))
+
+    report = service.investigate(ResearchRequest(question="Q?", evidence=[_observation()]))
+
+    assert [item.id for item in report.evidence_snapshot] == ["obs-1"]
+    assert "forged-1" not in {item.id for item in report.evidence_snapshot}
+
+
+def test_the_report_resolves_its_citations_rather_than_only_naming_them() -> None:
+    """Q2. A report carrying only ids cannot be audited on its own: a later reader sees
+    `obs-1` and has no way to know what it said. The offered evidence travels with it.
+    """
+    report = ResearchService(backend=ScriptedBackend(_well_formed())).investigate(
+        ResearchRequest(question="Q?", evidence=[_observation(), _read_span()])
+    )
+
+    snapshot = {item.id: item for item in report.evidence_snapshot}
+    assert snapshot["obs-1"].statement == "Y rose two-fold when X was added"
+    assert snapshot["obs-1"].measurement_context
+    assert snapshot["lit-1"].locator is not None
+    assert snapshot["lit-1"].locator.source_text_hash
+
+
+def test_reusing_an_id_with_changed_content_is_detectable() -> None:
+    """Q3. Stable ids across sessions are useful and dangerous: the same `obs-1` with a
+    different statement must not silently look like the same evidence. A content digest
+    makes the change visible to anyone comparing two reports.
+    """
+    original = _observation()
+    edited = EvidenceItem(
+        id="obs-1",
+        kind=EvidenceKind.USER_OBSERVATION,
+        statement="Y rose ten-fold when X was added",
+        measurement_context=original.measurement_context,
+    )
+
+    assert original.content_hash != edited.content_hash
+    assert original.content_hash == _observation().content_hash
+
+
+def test_a_supplied_content_hash_that_disagrees_with_the_content_is_rejected() -> None:
+    """A stale digest travelling with changed text would be worse than no digest."""
+    with pytest.raises(ValidationError, match="content_hash"):
+        EvidenceItem(
+            id="obs-1",
+            kind=EvidenceKind.USER_OBSERVATION,
+            statement="Y rose two-fold",
+            content_hash="0" * 64,
+        )
+
+
+def test_integrity_findings_are_not_reported_only_as_a_plain_success(tmp_path, monkeypatch, capsys):
+    """Q6. The report is still produced and still printed — but a script that checks only
+    the exit code must not read "cites evidence that does not exist" as success.
+    """
+    import virtualcell.research as research_pkg
+
+    payload = _well_formed()
+    payload["hypotheses"][0]["supporting_evidence_ids"] = ["obs-1", "never-supplied"]
+    backend = ScriptedBackend(payload)
+    monkeypatch.setattr(
+        research_pkg, "ResearchService", lambda *a, **k: ResearchService(backend=backend)
+    )
+
+    from virtualcell.cli import main
+
+    path = _write_request(
+        tmp_path,
+        {
+            "question": "Q?",
+            "evidence": [{"id": "obs-1", "kind": "user_observation", "statement": "Y rose"}],
+        },
+    )
+
+    assert main(["research", "--input", str(path), "--format", "text"]) == 5
+    out = capsys.readouterr().out
+    assert "H1" in out  # the report is still shown
+    assert "never-supplied" in out
+
+
+def test_a_clean_report_still_exits_zero(tmp_path, monkeypatch, capsys):
+    import virtualcell.research as research_pkg
+
+    backend = ScriptedBackend(_well_formed())
+    monkeypatch.setattr(
+        research_pkg, "ResearchService", lambda *a, **k: ResearchService(backend=backend)
+    )
+
+    from virtualcell.cli import main
+
+    path = _write_request(
+        tmp_path,
+        {
+            "question": "Q?",
+            "evidence": [{"id": "obs-1", "kind": "user_observation", "statement": "Y rose"}],
+        },
+    )
+
+    assert main(["research", "--input", str(path), "--format", "text"]) == 0
+
+
+def test_the_budget_does_not_promise_a_ceiling_nothing_enforces() -> None:
+    """Q7. `max_model_calls` was declared, validated, and read by nothing. A budget field
+    that cannot be exceeded and cannot be checked is a claim, not a control; the loop that
+    will need one is P3's. `max_output_tokens` stays because the provider enforces it.
+    """
+    from virtualcell.research.contracts import ResearchBudget
+
+    assert "max_model_calls" not in ResearchBudget.model_fields
+    assert "max_output_tokens" in ResearchBudget.model_fields
+
+
+def test_a_truncated_reply_says_the_output_budget_was_too_small() -> None:
+    """Q7. Hitting `max_tokens` produces JSON that stops mid-object, and reporting that as
+    "the model did not return parseable JSON" sends the caller to debug the wrong thing.
+    """
+    from virtualcell.research.backend import AnthropicResearchBackend, BackendCallFailed
+
+    class _Block:
+        type = "text"
+        text = '{"restated_question": "half a repl'
+
+    class _Response:
+        stop_reason = "max_tokens"
+        content = [_Block()]
+
+    backend = AnthropicResearchBackend(model="test-model")
+    with pytest.raises(BackendCallFailed, match="output budget"):
+        backend._check_complete(_Response())
 
 
 def test_the_report_records_what_produced_it() -> None:

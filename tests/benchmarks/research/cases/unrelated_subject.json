@@ -1,0 +1,30 @@
+{
+  "question": "Why does oxygen consumption drop in our hepatocyte cultures after 48 hours while ATP stays flat?",
+  "goal": "Separate substrate limitation from mitochondrial dysfunction from an assay artefact.",
+  "field_of_study": "cell metabolism",
+  "context": {
+    "cell_type": "primary human hepatocyte",
+    "format": "96-well, standard medium"
+  },
+  "constraints": [
+    "no medium change permitted during the window",
+    "Seahorse access is limited to one plate"
+  ],
+  "evidence": [
+    {
+      "id": "obs-1",
+      "kind": "user_observation",
+      "statement": "Oxygen consumption rate falls about 40% between 24 and 48 hours",
+      "measurement_context": "Seahorse, n=3 wells, one donor"
+    },
+    {
+      "id": "obs-2",
+      "kind": "user_observation",
+      "statement": "Total ATP is unchanged over the same window",
+      "measurement_context": "luminescence assay, n=3 wells, same plate"
+    }
+  ],
+  "budget": {
+    "max_output_tokens": 4096
+  }
+}

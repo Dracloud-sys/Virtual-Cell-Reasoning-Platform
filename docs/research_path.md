@@ -61,6 +61,15 @@ Five things that are easy to conflate, kept apart by `EvidenceKind`:
 | `model_prior` | the model proposed it with nothing behind it — a **search target** | forbidden |
 | `predicted_outcome` | what an experiment is expected to show | forbidden |
 
+Every item also carries a `content_hash`, filled automatically. Ids are stable across
+sessions on purpose — that is what makes them citable — and the same stability would let a
+silent edit pass unnoticed: `obs-1` saying "two-fold" and `obs-1` saying "ten-fold" compare
+equal by id. The digest makes the change visible, and a supplied hash that disagrees with
+the content is rejected outright.
+
+The report carries an `evidence_snapshot` of everything it was offered, so a citation
+resolves **inside the artifact**. A report holding only ids cannot be audited on its own.
+
 `SourceLocator` is reused from `literature/contracts.py`, hash-verified, so "read from a
 document" is a checkable claim rather than a style of sentence. A `model_prior` carrying a
 locator is rejected outright: that is a guess wearing a citation.
@@ -121,6 +130,21 @@ works, **never** that the designs are good.
 **Rollback.** Delete `src/virtualcell/research/`, revert the CLI hunk, delete the test file.
 Nothing else imports it.
 
+### P1.1 — review of P1 against its own claims · **done**
+
+Six of seven review questions were checked by reading the code; three found real defects,
+all fixed minimally:
+
+| | finding | fix |
+|---|---|---|
+| model fabricating a source record | none — the model has no channel for an `EvidenceItem`, and `_assemble` builds none | test added to pin it |
+| citations resolving to real evidence | ids were *checked* but never *resolved*; the report could not be audited alone | `evidence_snapshot` |
+| same id, changed content | undetectable | `content_hash` |
+| hypothesis promoted to fact | none — only `evidence_linked` / `unverified_candidate`, no `EvidenceTier` | — |
+| format check vs scientific review | none — kept apart by construction and named as such | — |
+| integrity errors shown only as success | **exit 0 regardless of findings** | exit `5` |
+| provider limits, empty, malformed, truncated, budget | `max_model_calls` was declared and read by nothing; a `max_tokens` truncation was reported as a parse error | field removed (P3 adds it with the loop that spends it); `stop_reason` checked and named |
+
 ### P2 — retrieval
 
 Per-question literature search, spans read from documents, and a **read-only** path into the
@@ -166,4 +190,9 @@ virtualcell research --input request.json            # text
 virtualcell research --input request.json --format json
 ```
 
-Exit codes: `0` report, `1` bad request, `3` no provider (nothing ran), `4` provider failed.
+Exit codes: `0` clean report · `1` bad request · `3` no provider (**nothing ran**) ·
+`4` provider ran and failed · `5` report produced **with integrity findings**.
+
+`5` exists so a script reading only the exit code cannot take "cites evidence that does not
+exist" for an ordinary success. The report is still printed; the findings are information
+about it, not a reason to withhold it.

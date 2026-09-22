@@ -227,7 +227,12 @@ def _cmd_research(args: argparse.Namespace) -> int:
 
     Distinct exit codes, because the failures mean different things and a caller that
     cannot tell them apart will retry the wrong one: 1 is a bad request, 3 is no model
-    provider (nothing ran), 4 is a provider that ran and failed.
+    provider (nothing ran), 4 is a provider that ran and failed, and 5 is a report that
+    was produced but carries integrity findings.
+
+    5 exists because a script that checks only the exit code would otherwise read "cites
+    evidence that does not exist" as an ordinary success. The report is still printed —
+    the findings are information about it, not a reason to withhold it.
     """
     import json
 
@@ -260,9 +265,11 @@ def _cmd_research(args: argparse.Namespace) -> int:
         print(f"the research call failed: {exc}")
         return 4
 
+    exit_code = 5 if report.integrity else 0
+
     if args.format == "json":
         print(report.model_dump_json(indent=2))
-        return 0
+        return exit_code
 
     print(f"Q: {report.question}\n-> {report.restated_question}\n")
     if report.assumptions:
@@ -295,7 +302,7 @@ def _cmd_research(args: argparse.Namespace) -> int:
         f"prompt {report.provenance.prompt_version}, "
         f"{report.provenance.evidence_offered} evidence item(s) offered"
     )
-    return 0
+    return exit_code
 
 
 def _cmd_query(args: argparse.Namespace) -> int:

@@ -33,7 +33,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from virtualcell.literature.contracts import SourceLocator, VerificationStatus
+from virtualcell.literature.contracts import SourceLocator, VerificationStatus, hash_source_text
 
 
 class EvidenceKind(StrEnum):
@@ -82,6 +82,13 @@ class EvidenceItem(BaseModel):
     #: For `derived_inference`: the ids this was reasoned from.
     derived_from: list[str] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
+    #: SHA-256 over what this item asserts, filled automatically. Ids are stable across
+    #: sessions on purpose — that is what makes them citable — and the same stability makes
+    #: a silent edit invisible: `obs-1` saying "two-fold" and `obs-1` saying "ten-fold"
+    #: would otherwise compare equal. Mirrors `SourceLocator.source_text_hash`, including
+    #: rejecting a supplied hash that disagrees, because a stale digest travelling with
+    #: changed text is worse than none.
+    content_hash: str | None = None
 
     @field_validator("id", "statement")
     @classmethod
@@ -106,19 +113,48 @@ class EvidenceItem(BaseModel):
             raise ValueError(
                 f"evidence {self.id!r} is a derived_inference but names nothing it was derived from"
             )
+        expected = self._digest()
+        if self.content_hash is None:
+            self.content_hash = expected
+        elif self.content_hash != expected:
+            raise ValueError(
+                f"evidence {self.id!r} carries a content_hash that does not match its "
+                "content; the text was edited after the digest was taken"
+            )
         return self
+
+    def _digest(self) -> str:
+        """Everything this item asserts, in a fixed order, hashed.
+
+        The locator contributes its own text hash rather than its text, so a span and its
+        digest cannot disagree here while agreeing there.
+        """
+        parts = [
+            self.kind.value,
+            self.statement,
+            self.measurement_context or "",
+            self.verification.value if self.verification else "",
+            "|".join(self.derived_from),
+            "|".join(self.assumptions),
+            self.locator.source_text_hash or "" if self.locator else "",
+        ]
+        return hash_source_text("\x1f".join(parts))
 
 
 class ResearchBudget(BaseModel):
     """What one investigation is allowed to spend.
 
-    Small by default. A budget exists so a run fails loudly instead of looping, not so a
-    caller can tune throughput, and the ceiling is raised when a real failure asks for it.
+    Only what is actually enforced. A ``max_model_calls`` field was declared here, and read
+    by nothing: P1 makes exactly one call, so the ceiling could neither be exceeded nor
+    checked, which makes it a claim rather than a control. The loop that will genuinely
+    need one is P3's, and it can add it then with the code that spends it.
+
+    ``max_output_tokens`` stays because the provider enforces it, and because running past
+    it is a real failure the backend has to name.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    max_model_calls: int = Field(default=1, ge=1, le=8)
     max_output_tokens: int = Field(default=4096, ge=256, le=32768)
 
 
@@ -251,5 +287,11 @@ class ResearchReport(BaseModel):
     open_items: list[str] = Field(default_factory=list)
     #: Evidence ids the report actually used, as opposed to what it was offered.
     evidence_used: list[str] = Field(default_factory=list)
+    #: The evidence this session was given, carried verbatim. A report that holds only ids
+    #: cannot be audited on its own — a later reader sees `obs-1` and has no way to learn
+    #: what it said, or whether it has since been edited. With the snapshot, every citation
+    #: resolves inside the artifact and its `content_hash` says whether it is the same item
+    #: an earlier report cited.
+    evidence_snapshot: list[EvidenceItem] = Field(default_factory=list)
     integrity: list[IntegrityFinding] = Field(default_factory=list)
     provenance: ResearchProvenance

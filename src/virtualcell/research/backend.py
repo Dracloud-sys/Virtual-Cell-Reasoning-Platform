@@ -92,10 +92,6 @@ class BackendCallFailed(ResearchBackendError):
     """The provider was reachable and the call did not produce usable output."""
 
 
-class BudgetExhausted(ResearchBackendError):
-    """The run hit its own ceiling before finishing. Whatever exists is partial."""
-
-
 @runtime_checkable
 class ResearchBackend(Protocol):
     """Turns a fully-assembled research prompt into a raw JSON string."""
@@ -128,7 +124,25 @@ class AnthropicResearchBackend:
             )
         except Exception as exc:  # provider errors are many and none of them are success
             raise BackendCallFailed(f"the model provider call failed: {exc}") from exc
-        text = "".join(block.text for block in response.content if block.type == "text")
+        return self._check_complete(response)
+
+    @staticmethod
+    def _check_complete(response: object) -> str:
+        """Read the reply, and refuse a truncated one by its own name.
+
+        A reply cut off at ``max_tokens`` is JSON that stops mid-object, so it fails to
+        parse downstream and the caller is told "the model did not return parseable JSON" —
+        which sends them to debug the prompt when the actual fix is a larger output budget.
+        The provider says which happened; this asks.
+        """
+        if getattr(response, "stop_reason", None) == "max_tokens":
+            raise BackendCallFailed(
+                "the reply was cut off because the output budget was too small; raise "
+                "`budget.max_output_tokens` and run again. The partial text is not a design."
+            )
+        text = "".join(
+            block.text for block in getattr(response, "content", []) if block.type == "text"
+        )
         if not text.strip():
             raise BackendCallFailed("the model returned no text")
         return text
