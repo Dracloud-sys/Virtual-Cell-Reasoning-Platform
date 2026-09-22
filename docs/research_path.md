@@ -161,6 +161,18 @@ Take a prior report plus new observations and update the judgement: what was kep
 changed, what was withdrawn, and on what evidence. A past output is never treated as an
 observation.
 
+### Real-model status
+
+**Not performed in the environment this was built in.** No `ANTHROPIC_API_KEY`, and the
+`anthropic` package is not installed; the Claude-prefixed variables present are the Claude
+Code harness's own session plumbing, not a general API credential this work is authorized to
+spend. The CLI's refusal path was exercised and returns exit 3 with *"nothing ran"*.
+
+So two things are true and must not be merged: **the path is verified to work** by contract
+and integration tests over a scripted backend, and **no design it produces has ever been
+judged**, because none has been produced by a model. The development cases, the B-condition
+renderer and the rubric are committed and waiting.
+
 ### P4 — comparison
 
 **A** the same model alone · **B** the same model given the same evidence · **C** the same
@@ -182,6 +194,16 @@ adjusted to make C win.
 Connect the verified path to API/MCP. Same service, no second implementation. Optional
 consultation of a domain pack only where its context genuinely applies. Permanent knowledge
 adoption is a separate decision.
+
+## Development cases
+
+`tests/benchmarks/research/` holds five cases, the scoring rubric, and
+`build_condition_b.py`, which renders a case as the **B** condition using the *same*
+`build_prompt` that C sends — so B cannot accidentally be given a looser paraphrase of the
+evidence than C receives, which would make any C advantage partly an artefact of
+transcription.
+
+Its README states in its first paragraph that these were written **after** P1, not before.
 
 ## Try it
 
