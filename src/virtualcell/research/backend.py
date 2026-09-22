@@ -15,6 +15,13 @@ one condition: anything proposed from the model's own knowledge comes back label
 `model_prior`, a search target rather than a finding. The permission and the label are the
 same sentence.
 
+**Its limits are its own, and written down here.** The timeout and the retry ceiling are
+passed explicitly rather than left to the SDK's defaults, so the wall clock a caller has to
+budget for is readable in this file instead of in a dependency's release notes. What the
+provider reports back — which model it served, why it stopped, what it spent — comes out in
+a `ModelReply` and is recorded, because a run that logs only what it *asked* for cannot
+afterwards be told apart from a different run.
+
 The Anthropic wiring, the settings lookup and the availability check are reused from
 `reasoning/llm.py` rather than copied.
 """
@@ -24,11 +31,25 @@ from __future__ import annotations
 import os
 from typing import Protocol, runtime_checkable
 
+from pydantic import BaseModel, ConfigDict, Field
+
 from virtualcell.reasoning.llm import _anthropic_available
 
 #: Bumped when the prompt changes in a way that could change an answer. Recorded in every
 #: report's provenance, so two runs can be told apart without guessing.
 PROMPT_VERSION = "research-v1"
+
+#: Per-attempt timeout, in seconds. Set here rather than left to the SDK, whose default is
+#: ten minutes: a research design is one bounded generation, and a caller waiting ten
+#: minutes on a provider that has stopped answering has been told nothing for most of it.
+DEFAULT_TIMEOUT_SECONDS = 120.0
+
+#: Retries per logical call, on top of the first attempt. The SDK retries connection
+#: errors, 408/409/429 and 5xx — **and timeouts** — so the worst case for one logical call
+#: is ``DEFAULT_TIMEOUT_SECONDS * (DEFAULT_MAX_RETRIES + 1)``, six minutes at these values.
+#: That product is the number a caller actually has to budget for; neither factor alone
+#: says how long this can take.
+DEFAULT_MAX_RETRIES = 2
 
 RESEARCH_SYSTEM_PROMPT = """\
 You are a research design assistant for a Virtual Cell Reasoning Platform. You are given a \
@@ -92,14 +113,41 @@ class BackendCallFailed(ResearchBackendError):
     """The provider was reachable and the call did not produce usable output."""
 
 
+class ModelReply(BaseModel):
+    """One logical design call: the text, and what the provider said about producing it.
+
+    ``design`` returns this rather than a bare string so a report can record what actually
+    answered it. A run that logs only the model it *asked* for, and no token counts, cannot
+    later be told apart from a different run — which is the whole purpose of provenance.
+
+    Every field but ``text`` is optional and defaults to ``None``, because a backend that
+    does not report a thing must leave it blank rather than supply a default that reads
+    like a measurement.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+    #: What the provider reported it served, which need not be what was requested.
+    model_served: str | None = None
+    stop_reason: str | None = None
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    #: The attempt ceiling this call ran under (retries + 1), and the per-attempt timeout.
+    #: Limits, not counts: the SDK retries internally and never says how many attempts it
+    #: made, so reporting a number here as "attempts used" would be inventing one.
+    max_request_attempts: int | None = Field(default=None, ge=1)
+    timeout_seconds: float | None = Field(default=None, gt=0)
+
+
 @runtime_checkable
 class ResearchBackend(Protocol):
-    """Turns a fully-assembled research prompt into a raw JSON string."""
+    """Turns a fully-assembled research prompt into one :class:`ModelReply`."""
 
     name: str
     model: str | None
 
-    def design(self, prompt: str, *, max_output_tokens: int) -> str: ...
+    def design(self, prompt: str, *, max_output_tokens: int) -> ModelReply: ...
 
 
 class AnthropicResearchBackend:
@@ -107,15 +155,35 @@ class AnthropicResearchBackend:
 
     name = "anthropic-research"
 
-    def __init__(self, model: str, system_prompt: str = RESEARCH_SYSTEM_PROMPT) -> None:
+    def __init__(
+        self,
+        model: str,
+        system_prompt: str = RESEARCH_SYSTEM_PROMPT,
+        *,
+        timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+        max_retries: int = DEFAULT_MAX_RETRIES,
+    ) -> None:
         self.model = model
         self._system = system_prompt
+        self.timeout_seconds = timeout_seconds
+        self.max_retries = max_retries
 
-    def design(self, prompt: str, *, max_output_tokens: int) -> str:
+    @property
+    def max_request_attempts(self) -> int:
+        """Attempts allowed per logical call. One first try plus the retries."""
+        return self.max_retries + 1
+
+    def design(self, prompt: str, *, max_output_tokens: int) -> ModelReply:
         import anthropic  # lazy: only needed when this backend is actually used
 
         try:
-            client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from the environment
+            # Both limits are passed explicitly. The SDK's own defaults are a ten-minute
+            # timeout and two retries, and leaving them implicit means the run's real time
+            # bound lives in a dependency's release notes rather than in this repository.
+            client = anthropic.Anthropic(  # reads ANTHROPIC_API_KEY from the environment
+                timeout=self.timeout_seconds,
+                max_retries=self.max_retries,
+            )
             response = client.messages.create(
                 model=self.model,
                 max_tokens=max_output_tokens,
@@ -124,28 +192,44 @@ class AnthropicResearchBackend:
             )
         except Exception as exc:  # provider errors are many and none of them are success
             raise BackendCallFailed(f"the model provider call failed: {exc}") from exc
-        return self._check_complete(response)
+        return self._read_reply(response)
 
-    @staticmethod
-    def _check_complete(response: object) -> str:
-        """Read the reply, and refuse a truncated one by its own name.
+    def _read_reply(self, response: object) -> ModelReply:
+        """Read the reply, refusing the two non-answers that look like parse errors.
 
         A reply cut off at ``max_tokens`` is JSON that stops mid-object, so it fails to
         parse downstream and the caller is told "the model did not return parseable JSON" —
         which sends them to debug the prompt when the actual fix is a larger output budget.
-        The provider says which happened; this asks.
+        A refusal carries no text at all, so it would surface as "the model returned no
+        text" and send them to debug the transport. The provider says which happened in
+        ``stop_reason``; this asks instead of guessing.
         """
-        if getattr(response, "stop_reason", None) == "max_tokens":
+        stop_reason = getattr(response, "stop_reason", None)
+        if stop_reason == "max_tokens":
             raise BackendCallFailed(
                 "the reply was cut off because the output budget was too small; raise "
                 "`budget.max_output_tokens` and run again. The partial text is not a design."
+            )
+        if stop_reason == "refusal":
+            raise BackendCallFailed(
+                "the model declined to answer this request. That is a refusal, not an "
+                "empty result and not a transport problem; the request is what to look at."
             )
         text = "".join(
             block.text for block in getattr(response, "content", []) if block.type == "text"
         )
         if not text.strip():
-            raise BackendCallFailed("the model returned no text")
-        return text
+            raise BackendCallFailed(f"the model returned no text (stop_reason: {stop_reason!r})")
+        usage = getattr(response, "usage", None)
+        return ModelReply(
+            text=text,
+            model_served=getattr(response, "model", None),
+            stop_reason=stop_reason,
+            input_tokens=getattr(usage, "input_tokens", None),
+            output_tokens=getattr(usage, "output_tokens", None),
+            max_request_attempts=self.max_request_attempts,
+            timeout_seconds=self.timeout_seconds,
+        )
 
 
 def get_research_backend(model: str | None = None) -> ResearchBackend:

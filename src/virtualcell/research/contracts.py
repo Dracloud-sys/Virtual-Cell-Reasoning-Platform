@@ -28,6 +28,7 @@ what matters and the field count is not.
 
 from __future__ import annotations
 
+import json
 from enum import StrEnum
 from typing import Any
 
@@ -124,21 +125,33 @@ class EvidenceItem(BaseModel):
         return self
 
     def _digest(self) -> str:
-        """Everything this item asserts, in a fixed order, hashed.
+        """Everything this item asserts, serialised unambiguously, hashed.
 
-        The locator contributes its own text hash rather than its text, so a span and its
-        digest cannot disagree here while agreeing there.
+        Two properties this has to have, and an earlier version had neither.
+
+        **The whole locator counts.** A digest taken over the span's text alone made the
+        *same sentence* read from two different papers hash identically, and the same
+        sentence read from the Results and from the Discussion of one paper likewise. The
+        source is part of what a retrieved item asserts: "this was published in X" and
+        "this was published in Y" are different claims, and a digest that cannot tell them
+        apart cannot detect the edit that swaps one for the other. So the locator goes in
+        whole — article identifiers, section, table and figure ids, exact cell
+        coordinates, the span and its hash — via the model's own JSON dump.
+
+        **The serialisation has to be injective.** Joining lists on a separator made
+        ``["a|b"]`` and ``["a", "b"]`` the same bytes, so a digest could be preserved
+        across a change in what an inference was derived from. JSON with sorted keys
+        encodes list structure, which a join discards; it is the same construction
+        :func:`literature.contracts._deterministic_candidate_id` already uses.
+
+        ``id`` is excluded, so two items asserting the same thing under different ids
+        agree — that is the comparison this digest is for. Everything else is included,
+        which means adding a field to this model changes every digest: correct, because
+        the new field is new content, and the alternative is a hash that silently stops
+        covering part of the item.
         """
-        parts = [
-            self.kind.value,
-            self.statement,
-            self.measurement_context or "",
-            self.verification.value if self.verification else "",
-            "|".join(self.derived_from),
-            "|".join(self.assumptions),
-            self.locator.source_text_hash or "" if self.locator else "",
-        ]
-        return hash_source_text("\x1f".join(parts))
+        payload = self.model_dump(mode="json", exclude={"id", "content_hash"})
+        return hash_source_text(json.dumps(payload, sort_keys=True))
 
 
 class ResearchBudget(BaseModel):
@@ -249,7 +262,14 @@ class ProposedExperiment(BaseModel):
 
 
 class IntegrityFinding(BaseModel):
-    """Something checkable that is wrong or unsupported in a produced report.
+    """Something a reader must be told about a produced report before acting on it.
+
+    Usually that is a checkable defect — a citation to an id nobody supplied, a label that
+    disagrees with what it cites. Two of the codes are not defects at all: a reply that
+    produced no design, and one that declined and said why, are both *reported* here so
+    that a caller reading only the exit code cannot take either for an ordinary completed
+    design. Withholding a design can be the right answer; reporting it as a finished one
+    never is.
 
     Findings do not fail the run. They travel with the report, because a report that
     validated against a schema has not thereby reasoned well, and the gap between those two
@@ -264,14 +284,39 @@ class IntegrityFinding(BaseModel):
 
 
 class ResearchProvenance(BaseModel):
-    """What produced this report. Enough to tell two runs apart, and no secrets."""
+    """What produced this report. Enough to tell two runs apart, and no secrets.
+
+    Nothing here is inferred. Every field is either what this code asked for or what the
+    provider reported back, and a value the provider does not report stays ``None`` rather
+    than being filled with a plausible number.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     backend: str
+    #: The model this code *asked* for.
     model: str | None = None
+    #: The model the provider reported it *served*. It need not equal ``model``: an alias
+    #: resolves to a dated id, and a deployment can serve something else again. A report
+    #: recording only the request cannot say which weights answered it.
+    model_served: str | None = None
     prompt_version: str
+    #: Logical design calls — one per investigation in P1. **Not** HTTP attempts: the SDK
+    #: retries inside a single call and does not report how many times, so these two
+    #: numbers are different measurements and must not be read as one.
     model_calls: int = Field(ge=0)
+    #: The ceiling on HTTP attempts per logical call (retries + 1) that this run was
+    #: configured with. A limit, not a count — see ``model_calls``. Calling it a count
+    #: would report a measurement nobody took.
+    max_request_attempts: int | None = Field(default=None, ge=1)
+    #: Per-attempt timeout in seconds. Worst-case wall clock for one logical call is
+    #: roughly this times ``max_request_attempts``, because a timeout is itself retried.
+    timeout_seconds: float | None = Field(default=None, gt=0)
+    #: Verbatim from the provider: why generation stopped. ``None`` when the backend does
+    #: not report one.
+    stop_reason: str | None = None
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
     evidence_offered: int = Field(ge=0)
 
 

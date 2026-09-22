@@ -145,6 +145,54 @@ all fixed minimally:
 | integrity errors shown only as success | **exit 0 regardless of findings** | exit `5` |
 | provider limits, empty, malformed, truncated, budget | `max_model_calls` was declared and read by nothing; a `max_tokens` truncation was reported as a parse error | field removed (P3 adds it with the loop that spends it); `stop_reason` checked and named |
 
+### P1.2 — review of P1.1, and the reply checked before it is used · **done**
+
+Every defect below was reproduced first, through `ResearchService.investigate` and through
+the CLI, against the code as shipped — in a separate worktree, so the reproduction could
+not be contaminated by the fix. What is recorded is what was observed.
+
+The report was assembled straight out of the model's payload, with coercion standing in for
+validation. `investigate` now runs four steps in a fixed order — read the reply, **check the
+reply**, assemble from what was checked, check the report — and the middle one was missing.
+
+| | what could reach a reader | fix |
+|---|---|---|
+| a reply with no design | `{"restated_question": "R?"}` → 0 hypotheses, 0 experiments, **0 findings, exit 0** | `no_design_produced` / `design_withheld`, kept as two codes; no minimum count is imposed |
+| malformed output | `null`, `[null]` and an unknown `support` escaped as raw `TypeError` / `AttributeError` / `ValueError`, past the CLI's typed handlers | `BackendCallFailed` naming the exact path |
+| coercion inventing content | `"assumptions": "abc"` → `['a','b','c']`; an integer id → the string `"1"` | a string is not a list; no coercion after validation |
+| a field nobody declared | `certainty: 0.99` and `citation: "Nature 2020"` **silently dropped, no trace** | `unexpected_model_field`, with the value quoted back |
+| a reused id | two hypotheses called `H1`, both accepted, every citation ambiguous | `duplicate_hypothesis_id` / `duplicate_experiment_id` |
+
+Declining to design is a legitimate answer, so none of this is made into a failure and no
+minimum hypothesis or experiment count is required. A reply padded to a quota is worse than
+a short one.
+
+**The default text output hid what a reader most needs.** `--format text` is the default,
+and it dropped `contradicting_evidence_ids`, `applicability`, `controls`, `measurements`,
+`timepoints` and `priority_rationale`. `applicability` is the worst of those to lose: it is
+where a hypothesis says its support came from another species — the over-extension warning,
+printed nowhere. A design without its controls is not a design.
+
+**The evidence digest did not cover the evidence.** It hashed the span's text and nothing
+about where the span came from, so the same sentence from two different papers hashed
+identically — measured, `59403c14a3a53de9` on both sides — and so did the same sentence read
+from the Results and from the Discussion of one paper. Swapping one citation for another
+left untouched the digest that exists to detect exactly that edit. Joining lists on `|` made
+`["a|b"]` and `["a", "b"]` the same bytes. The locator now goes in whole, sorted-key JSON
+replaces the joins, and `id` stays excluded so the same content under two ids still agrees.
+
+**The provider's limits were the SDK's, not this repository's.** The Anthropic SDK defaults
+to a ten-minute timeout and two retries, and it retries timeouts — so one logical call could
+occupy half an hour, with the number saying so living in a dependency's release notes. Both
+are set here: 120s per attempt, 2 retries, six minutes worst case. `design()` returns a
+`ModelReply`, and the report records what the provider reported: the model it **served** (not
+only the one requested), `stop_reason`, and input and output tokens. A value the provider
+does not report stays `None`; a zero would read as a measurement.
+
+`model_calls` and HTTP attempts are kept apart. The SDK retries inside one logical call and
+never says how many attempts it made, so provenance carries `max_request_attempts` as the
+**ceiling it ran under**, named as a limit, and no field claims a count nobody took.
+
 ### P2 — retrieval
 
 Per-question literature search, spans read from documents, and a **read-only** path into the
@@ -172,6 +220,12 @@ So two things are true and must not be merged: **the path is verified to work** 
 and integration tests over a scripted backend, and **no design it produces has ever been
 judged**, because none has been produced by a model. The development cases, the B-condition
 renderer and the rubric are committed and waiting.
+
+P1.2 prepared the call rather than made it: explicit timeout and retry limits, and
+provenance that records what the provider reported back. That is what a real run needs in
+place beforehand so its cost and its answer can be attributed afterwards — it is not a run,
+and `species_mismatch.json` stays excluded from any literature-based scoring until its
+placeholder DOI is replaced by a span someone actually read.
 
 ### P4 — comparison
 

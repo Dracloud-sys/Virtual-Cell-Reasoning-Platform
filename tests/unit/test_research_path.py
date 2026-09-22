@@ -25,6 +25,7 @@ from virtualcell.research import (
     BackendUnavailable,
     EvidenceItem,
     EvidenceKind,
+    ModelReply,
     ResearchRequest,
     ResearchService,
     build_prompt,
@@ -42,15 +43,15 @@ class ScriptedBackend:
     name = "scripted-test"
     model = "scripted"
 
-    def __init__(self, payload: dict | str) -> None:
+    def __init__(self, payload: dict | str, **reply_fields) -> None:
         self._payload = payload
+        self._reply_fields = reply_fields
         self.prompts: list[str] = []
 
-    def design(self, prompt: str, *, max_output_tokens: int) -> str:
+    def design(self, prompt: str, *, max_output_tokens: int) -> ModelReply:
         self.prompts.append(prompt)
-        if isinstance(self._payload, str):
-            return self._payload
-        return json.dumps(self._payload)
+        text = self._payload if isinstance(self._payload, str) else json.dumps(self._payload)
+        return ModelReply(text=text, **self._reply_fields)
 
 
 def _well_formed(**overrides) -> dict:
@@ -557,7 +558,7 @@ def test_a_truncated_reply_says_the_output_budget_was_too_small() -> None:
 
     backend = AnthropicResearchBackend(model="test-model")
     with pytest.raises(BackendCallFailed, match="output budget"):
-        backend._check_complete(_Response())
+        backend._read_reply(_Response())
 
 
 def test_the_report_records_what_produced_it() -> None:
@@ -571,3 +572,443 @@ def test_the_report_records_what_produced_it() -> None:
     assert report.provenance.prompt_version
     assert report.provenance.evidence_offered == 2
     assert report.provenance.model_calls == 1
+
+
+# --- P1.2: what the model returns is checked before a report is built from it -------------
+#
+# Every question in this block was reproduced against the shipped code first, through
+# `ResearchService.investigate` and through the CLI, before anything was changed. They are
+# recorded as the behaviour that was actually observed, not as the behaviour that was
+# feared.
+
+
+def _run(payload, **request_kwargs):
+    """Investigate `payload` through the product path. Returns the report."""
+    return ResearchService(backend=ScriptedBackend(payload)).investigate(
+        ResearchRequest(question="Q?", **request_kwargs)
+    )
+
+
+def test_a_reply_containing_no_design_is_not_an_ordinary_success() -> None:
+    """Observed before the fix: `{"restated_question": "R?"}` produced a report with zero
+    hypotheses, zero experiments, **zero integrity findings and exit 0**. A caller reading
+    only the exit code was told a research design had been produced. It had not.
+    """
+    report = _run({"restated_question": "Does X change Y, measured as W?"})
+
+    assert report.hypotheses == []
+    assert report.experiments == []
+    assert [f.code for f in report.integrity] == ["no_design_produced"]
+
+
+def test_a_stated_hold_is_told_apart_from_an_empty_shell() -> None:
+    """Declining to design, and saying what is missing, is a legitimate answer — the one
+    the prompt asks for when nothing supplied can carry a design. It still must not read
+    as a completed design, and it must not read as the same thing as an empty reply: one
+    needs the missing material, the other needs the call re-examined.
+    """
+    report = _run(
+        {
+            "restated_question": "Does X change Y?",
+            "open_items": ["no baseline for Y in this cell type; nothing can be designed yet"],
+        }
+    )
+
+    assert [f.code for f in report.integrity] == ["design_withheld"]
+    assert report.open_items
+
+
+def test_a_hypothesis_count_is_never_padded_to_reach_a_quota() -> None:
+    """The counterpart to the two questions above, and the reason neither of them demands
+    a number. A single well-founded hypothesis is a valid answer; a validator that
+    required three would be asking the model to invent two.
+    """
+    payload = _well_formed(
+        hypotheses=[
+            {
+                "id": "H1",
+                "statement": "X drives Y directly",
+                "support": "evidence_linked",
+                "supporting_evidence_ids": ["obs-1"],
+                "contradicting_evidence_ids": [],
+                "applicability": None,
+            }
+        ],
+        experiments=[],
+    )
+    report = _run(payload, evidence=[_observation()])
+
+    assert len(report.hypotheses) == 1
+    assert report.integrity == []
+
+
+def test_a_null_where_a_list_belongs_is_a_typed_failure() -> None:
+    """Observed before the fix: `"hypotheses": null` escaped as a raw
+    ``TypeError: 'NoneType' object is not iterable``, straight past the CLI's typed
+    handlers, so a caller saw a traceback instead of a diagnosis.
+    """
+    with pytest.raises(BackendCallFailed, match="hypotheses"):
+        _run(_well_formed(hypotheses=None))
+
+
+def test_a_null_element_inside_a_list_is_a_typed_failure() -> None:
+    """Observed before the fix: a raw
+    ``AttributeError: 'NoneType' object has no attribute 'get'``.
+    """
+    with pytest.raises(BackendCallFailed, match=r"hypotheses\[0\]"):
+        _run(_well_formed(hypotheses=[None]))
+
+
+def test_a_bare_string_is_not_a_list_of_its_own_characters() -> None:
+    """The quietest of the lot. `"assumptions": "abc"` produced ``['a', 'b', 'c']`` — three
+    assumptions nobody wrote, each one character long, printed in the report as if the
+    model had listed them. A string is iterable; that is not the same as being a list.
+    """
+    with pytest.raises(BackendCallFailed, match="assumptions"):
+        _run(_well_formed(assumptions="abc"))
+
+
+def test_an_evidence_id_that_is_not_a_string_is_refused_rather_than_stringified() -> None:
+    """``str(1)`` is ``"1"``, which is a perfectly well-formed evidence id that nobody
+    supplied. Coercion here would manufacture the citation the integrity check then goes
+    looking for.
+    """
+    payload = _well_formed()
+    payload["hypotheses"][0]["supporting_evidence_ids"] = [1]
+
+    with pytest.raises(BackendCallFailed, match="supporting_evidence_ids"):
+        _run(payload)
+
+
+def test_an_unknown_support_value_is_named_rather_than_raised_raw() -> None:
+    """Observed before the fix: `"support": "definitely_true"` raised a bare ``ValueError``
+    from inside a list comprehension. The two legal values are now in the message, because
+    a model that invented a third needs to be told which two exist.
+    """
+    payload = _well_formed()
+    payload["hypotheses"][0]["support"] = "definitely_true"
+
+    with pytest.raises(BackendCallFailed, match="definitely_true") as exc:
+        _run(payload)
+    assert "evidence_linked" in str(exc.value)
+    assert "unverified_candidate" in str(exc.value)
+
+
+def test_a_field_nobody_declared_is_reported_rather_than_dropped() -> None:
+    """The one that mattered most. Observed before the fix: a hypothesis carrying
+    ``"certainty": 0.99`` and ``"citation": "Nature 2020"`` was assembled into a report
+    with **both silently discarded and no trace anywhere**. The prompt forbids a numeric
+    confidence and forbids inventing a citation; the model did both, and the report said
+    the model had complied.
+
+    The value is quoted back, not just the key, because "the model attached a citation"
+    and "the model attached *this* citation" are different things to a reader deciding
+    whether a fabricated source nearly reached their notes.
+    """
+    payload = _well_formed()
+    payload["hypotheses"][0]["certainty"] = 0.99
+    payload["hypotheses"][0]["citation"] = "Nature 2020"
+
+    report = _run(payload, evidence=[_observation()])
+
+    reported = [f for f in report.integrity if f.code == "unexpected_model_field"]
+    assert {f.where for f in reported} == {"hypothesis:H1"}
+    joined = " ".join(f.detail for f in reported)
+    assert "certainty" in joined and "0.99" in joined
+    assert "citation" in joined and "Nature 2020" in joined
+
+
+def test_an_undeclared_key_at_the_top_of_the_reply_is_reported_too() -> None:
+    """`evidence_snapshot`, `integrity` and `provenance` are written from the request and
+    the call, never from the payload. A reply offering one is trying to author the record
+    of its own trustworthiness, and that attempt should be visible.
+    """
+    report = _run(_well_formed(evidence_snapshot=[{"id": "made-up", "statement": "invented"}]))
+
+    assert any(
+        f.code == "unexpected_model_field" and "evidence_snapshot" in f.detail
+        for f in report.integrity
+    )
+    assert report.evidence_snapshot == []
+
+
+def test_two_hypotheses_sharing_an_id_are_reported() -> None:
+    """Observed before the fix: both were accepted, and an experiment saying it
+    discriminates ``H1`` named neither in particular — while the integrity check happily
+    confirmed that ``H1`` existed.
+    """
+    payload = _well_formed()
+    payload["hypotheses"][1]["id"] = "H1"
+
+    report = _run(payload, evidence=[_observation()])
+
+    assert any(f.code == "duplicate_hypothesis_id" for f in report.integrity)
+
+
+def test_an_empty_statement_is_reported_without_discarding_the_reply() -> None:
+    """A hypothesis with no statement says nothing, but the rest of the reply may still be
+    worth reading. It stays, and the gap is named where it is.
+    """
+    payload = _well_formed()
+    payload["hypotheses"][0]["statement"] = "   "
+
+    report = _run(payload, evidence=[_observation()])
+
+    assert len(report.hypotheses) == 2
+    assert any(
+        f.code == "empty_required_text" and f.where == "hypothesis:H1" for f in report.integrity
+    )
+
+
+def test_the_reply_is_checked_before_any_part_of_a_report_is_built() -> None:
+    """Ordering, stated as behaviour rather than as a comment. A payload that is malformed
+    in one place and fine everywhere else produces **no report at all** — not a partial one
+    with the good half filled in, which is what assembling first produced.
+    """
+    service = ResearchService(backend=ScriptedBackend(_well_formed(open_items=None)))
+
+    with pytest.raises(BackendCallFailed, match="open_items"):
+        service.investigate(ResearchRequest(question="Q?"))
+
+
+# --- P1.2: the default output does not hide what the reader needs -------------------------
+
+
+def test_the_text_output_prints_everything_the_report_holds(tmp_path, monkeypatch, capsys):
+    """`--format text` is the default, so what it omits is what most readers never see.
+    Observed before the fix: it dropped `contradicting_evidence_ids`, `applicability`,
+    `controls`, `measurements`, `timepoints` and `priority_rationale`.
+
+    `applicability` is the worst of those to lose. It is where a hypothesis says the
+    supporting result came from another species — the species-mismatch warning, printed
+    nowhere. And a design without its controls is not a design.
+    """
+    from virtualcell import cli
+
+    request = tmp_path / "request.json"
+    request.write_text(
+        json.dumps(
+            {
+                "question": "Why does Y rise when X is added?",
+                "evidence": [
+                    {
+                        "id": "obs-1",
+                        "kind": "user_observation",
+                        "statement": "Y rose two-fold when X was added",
+                    },
+                    {
+                        "id": "obs-2",
+                        "kind": "user_observation",
+                        "statement": "Y did not rise in the second batch",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    payload = _well_formed()
+    payload["hypotheses"][0]["contradicting_evidence_ids"] = ["obs-2"]
+    payload["hypotheses"][0]["applicability"] = "shown in mouse cortex, asked about human skin"
+    monkeypatch.setattr(
+        "virtualcell.research.ResearchService",
+        lambda: ResearchService(backend=ScriptedBackend(payload)),
+    )
+
+    cli.main(["research", "--input", str(request)])
+    out = capsys.readouterr().out
+
+    assert "obs-2" in out
+    assert "shown in mouse cortex, asked about human skin" in out
+    assert "vehicle" in out and "readout-only" in out
+    assert "day 3" in out and "day 7" in out
+    assert "cheapest thing that separates the two" in out
+
+
+# --- P1.2: an evidence digest that covers what the evidence actually asserts ---------------
+
+
+def _span(statement: str, **locator_kwargs) -> EvidenceItem:
+    fields = {
+        "article": ArticleIdentifier(doi="10.1000/paper-a"),
+        "source_kind": SourceKind.ABSTRACT,
+        "source_text": "X treatment increased Y approximately two-fold.",
+    }
+    fields.update(locator_kwargs)
+    return EvidenceItem(
+        id="lit-1",
+        kind=EvidenceKind.RETRIEVED_SOURCE,
+        statement=statement,
+        locator=SourceLocator(**fields),
+    )
+
+
+def test_the_same_sentence_from_two_different_papers_is_not_the_same_evidence() -> None:
+    """Observed before the fix: **identical hashes**. The digest covered the span's text
+    and nothing about where it came from, so "this was published in A" and "this was
+    published in B" were the same item — and swapping one citation for another left the
+    digest that exists to detect exactly that kind of edit completely unmoved.
+    """
+    from_a = _span("X raises Y", article=ArticleIdentifier(doi="10.1000/paper-a"))
+    from_b = _span("X raises Y", article=ArticleIdentifier(doi="10.2000/paper-b"))
+
+    assert from_a.content_hash != from_b.content_hash
+
+
+def test_the_same_span_read_in_two_places_in_one_paper_is_not_the_same_evidence() -> None:
+    """Observed before the fix: **identical hashes**. A sentence in the Results and the
+    same sentence in the Discussion are a measurement and a gloss on one, and the locator
+    is the only thing that says which was read.
+    """
+    results = _span("X raises Y", section_title="Results")
+    discussion = _span("X raises Y", section_title="Discussion")
+
+    assert results.content_hash != discussion.content_hash
+
+
+def test_a_joined_list_cannot_impersonate_two_entries() -> None:
+    """Observed before the fix: **identical hashes**. The digest joined lists on ``|``, so
+    one id containing that character and two separate ids produced the same bytes. A
+    digest whose serialisation is not injective cannot say two items differ.
+    """
+    one = EvidenceItem(
+        id="inf-1",
+        kind=EvidenceKind.DERIVED_INFERENCE,
+        statement="X probably acts through Z",
+        derived_from=["a|b"],
+    )
+    two = one.model_copy(update={"derived_from": ["a", "b"], "content_hash": None})
+    two = EvidenceItem(**two.model_dump(exclude={"content_hash"}))
+
+    assert one.content_hash != two.content_hash
+
+
+def test_the_digest_still_ignores_the_id_it_exists_to_outlive() -> None:
+    """The property the digest is for: the same content under two ids agrees, so a later
+    reader can tell that `obs-1` in one report and `obs-7` in another are the same claim —
+    and that `obs-1` saying "two-fold" and `obs-1` saying "ten-fold" are not.
+    """
+    first = _observation("obs-1")
+    second = _observation("obs-7")
+    edited = EvidenceItem(
+        id="obs-1",
+        kind=EvidenceKind.USER_OBSERVATION,
+        statement="Y rose ten-fold when X was added",
+        measurement_context="n=3, day 7, plate reader, not independently replicated",
+    )
+
+    assert first.content_hash == second.content_hash
+    assert first.content_hash != edited.content_hash
+
+
+# --- P1.2: what a real provider call is allowed to spend, and what it reported -------------
+
+
+class _Usage:
+    input_tokens = 1234
+    output_tokens = 567
+
+
+class _TextBlock:
+    type = "text"
+    text = '{"restated_question": "R?"}'
+
+
+class _GoodResponse:
+    stop_reason = "end_turn"
+    model = "claude-opus-5-dated-id"
+    content = [_TextBlock()]
+    usage = _Usage()
+
+
+def test_the_provider_call_sets_its_own_time_and_retry_limits() -> None:
+    """The SDK's defaults are a ten-minute timeout and two retries, and a timeout is itself
+    retried — so leaving both implicit means one logical call can occupy half an hour and
+    the number saying so lives in a dependency's release notes. Both are set here, and the
+    product of the two is the figure a caller has to budget for.
+    """
+    from virtualcell.research.backend import (
+        DEFAULT_MAX_RETRIES,
+        DEFAULT_TIMEOUT_SECONDS,
+        AnthropicResearchBackend,
+    )
+
+    backend = AnthropicResearchBackend(model="test-model")
+
+    assert backend.timeout_seconds == DEFAULT_TIMEOUT_SECONDS < 600.0
+    assert backend.max_request_attempts == DEFAULT_MAX_RETRIES + 1
+    assert backend.timeout_seconds * backend.max_request_attempts <= 600.0
+
+
+def test_a_retry_ceiling_is_recorded_as_a_limit_and_never_as_a_count() -> None:
+    """The distinction the instruction asks for. One logical design call is one thing; the
+    HTTP attempts the SDK made inside it are another, and the SDK does not report the
+    second. So the report carries the *ceiling* it ran under, under a name that says so,
+    and no field anywhere claims how many attempts were actually made.
+    """
+    from virtualcell.research.contracts import ResearchProvenance
+
+    backend = ScriptedBackend(_well_formed(), max_request_attempts=3, timeout_seconds=120.0)
+    report = ResearchService(backend=backend).investigate(
+        ResearchRequest(question="Q?", evidence=[_observation()])
+    )
+
+    assert report.provenance.model_calls == 1
+    assert report.provenance.max_request_attempts == 3
+    assert report.provenance.timeout_seconds == 120.0
+    assert not [f for f in ResearchProvenance.model_fields if "attempts_made" in f]
+
+
+def test_what_the_provider_reported_is_recorded_not_only_what_was_asked_for() -> None:
+    """An alias resolves to a dated id, and a deployment can serve something else again. A
+    run that logs only the model it requested cannot afterwards be told apart from a
+    different run, which is the one job provenance has.
+    """
+    from virtualcell.research.backend import AnthropicResearchBackend
+
+    reply = AnthropicResearchBackend(model="claude-opus-5")._read_reply(_GoodResponse())
+
+    assert reply.model_served == "claude-opus-5-dated-id"
+    assert reply.stop_reason == "end_turn"
+    assert reply.input_tokens == 1234
+    assert reply.output_tokens == 567
+
+    report = ResearchService(
+        backend=ScriptedBackend(
+            _well_formed(),
+            model_served="claude-opus-5-dated-id",
+            stop_reason="end_turn",
+            input_tokens=1234,
+            output_tokens=567,
+        )
+    ).investigate(ResearchRequest(question="Q?", evidence=[_observation()]))
+
+    assert report.provenance.model == "scripted"
+    assert report.provenance.model_served == "claude-opus-5-dated-id"
+    assert report.provenance.input_tokens == 1234
+    assert report.provenance.output_tokens == 567
+    assert report.provenance.stop_reason == "end_turn"
+
+
+def test_a_backend_that_reports_no_usage_leaves_it_blank_rather_than_guessing() -> None:
+    """A zero would read as a measurement. Nothing is not zero."""
+    report = ResearchService(backend=ScriptedBackend(_well_formed())).investigate(
+        ResearchRequest(question="Q?", evidence=[_observation()])
+    )
+
+    assert report.provenance.input_tokens is None
+    assert report.provenance.stop_reason is None
+
+
+def test_a_refusal_is_not_reported_as_an_empty_reply() -> None:
+    """A refusal carries no text, so it used to surface as "the model returned no text" and
+    send the caller to debug the transport. The request is what to look at.
+    """
+    from virtualcell.research.backend import AnthropicResearchBackend
+
+    class _Refusal:
+        stop_reason = "refusal"
+        model = "claude-opus-5-dated-id"
+        content = []
+
+    with pytest.raises(BackendCallFailed, match="declined"):
+        AnthropicResearchBackend(model="test-model")._read_reply(_Refusal())

@@ -277,17 +277,36 @@ def _cmd_research(args: argparse.Namespace) -> int:
         for item in report.assumptions:
             print(f"  - {item}")
         print()
+    # Everything the report holds, because `--format text` is the default and what it
+    # omits is what most readers will never see. The earlier version dropped exactly the
+    # fields a reader most needs: which evidence *disagrees* with a hypothesis, and where
+    # a hypothesis is expected to hold — the over-extension warning, printed nowhere — plus
+    # an experiment's controls, measurements, timepoints and why it comes first. A design
+    # without its controls is not a design, and a species mismatch nobody prints is a
+    # species mismatch nobody acts on.
     for hypothesis in report.hypotheses:
         cited = ", ".join(hypothesis.supporting_evidence_ids) or "nothing supplied"
         print(f"[{hypothesis.id}] ({hypothesis.support.value}) {hypothesis.statement}")
         print(f"     supported by: {cited}")
+        if hypothesis.contradicting_evidence_ids:
+            print(f"     contradicted by: {', '.join(hypothesis.contradicting_evidence_ids)}")
+        if hypothesis.applicability:
+            print(f"     applies to: {hypothesis.applicability}")
     print()
     for experiment in report.experiments:
         print(f"[{experiment.id}] {experiment.design}")
         if experiment.discriminates:
             print(f"     tells apart: {', '.join(experiment.discriminates)}")
+        if experiment.controls:
+            print(f"     controls: {', '.join(experiment.controls)}")
+        if experiment.measurements:
+            print(f"     measures: {', '.join(experiment.measurements)}")
+        if experiment.timepoints:
+            print(f"     timepoints: {', '.join(experiment.timepoints)}")
         for branch in experiment.branches:
             print(f"     if {branch.outcome}: {branch.implication}")
+        if experiment.priority_rationale:
+            print(f"     why first: {experiment.priority_rationale}")
     if report.open_items:
         print("\nOpen:")
         for item in report.open_items:
@@ -295,13 +314,20 @@ def _cmd_research(args: argparse.Namespace) -> int:
     if report.integrity:
         print("\nIntegrity findings (checkable defects, not a judgement of the biology):")
         for finding in report.integrity:
-            print(f"  ! {finding.where}: {finding.detail}")
+            print(f"  ! [{finding.code}] {finding.where}: {finding.detail}")
+    prov = report.provenance
     print(
-        f"\nproduced by {report.provenance.backend} "
-        f"({report.provenance.model or 'model unrecorded'}), "
-        f"prompt {report.provenance.prompt_version}, "
-        f"{report.provenance.evidence_offered} evidence item(s) offered"
+        f"\nproduced by {prov.backend} "
+        f"({prov.model_served or prov.model or 'model unrecorded'}), "
+        f"prompt {prov.prompt_version}, "
+        f"{prov.evidence_offered} evidence item(s) offered"
     )
+    if prov.input_tokens is not None or prov.output_tokens is not None:
+        print(
+            f"  {prov.model_calls} model call(s), "
+            f"{prov.input_tokens} in / {prov.output_tokens} out, "
+            f"stop_reason {prov.stop_reason!r}"
+        )
     return exit_code
 
 
