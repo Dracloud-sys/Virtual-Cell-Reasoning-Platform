@@ -159,19 +159,31 @@ arms:
       and soft agar colony formation assays indicated that hTERT and sTERT-transfected cells
       maintained normal characteristics without malignant transformation. β-galactosidase
       staining indicated that TERT transfection significantly reduced cellular senescence."
+      — and, from the full text only: the doubling time table (hTERT 16.16 → 19.66 → 20.33 →
+      22.45 h across P6/P16/P26/P36), plus "only telomerase activity was activated, explaining
+      the inability of Mongolian sheep fibroblasts to achieve complete immortalization" and
+      "a slow but inevitable aging process was observed in this study".
     reported:
       species: sheep
       cell_type: fibroblast
       construct: TERT_only
       PDL_trend: increasing
+      DT_trend: worsening
       SA_b_gal: low
       genomic_stability: stable
-    reported_outcome: immortalized
-    expected_status: possible_candidate
+    reported_outcome: lifespan_extended_not_immortalized
+    expected_status: senescence_or_stress_prone
     expected_status_basis: >-
-      Sustained passage, reduced SA-β-gal, normal karyotype and no anchorage-independent
-      growth. The best-measured positive arm in the set, and the one where a wrong answer
-      would be hardest to excuse.
+      CORRECTED after reading the full text; the original encoding was this project's error,
+      not the platform's. The abstract's "effectively extends the lifespan" was read as
+      immortalization, and the doubling time was recorded as unknown. The full text reports a
+      doubling time in a table the abstract omits, it lengthens monotonically in both arms,
+      and the Discussion states outright that complete immortalization was not achieved. So
+      the paper describes cells that proliferate further than controls while still aging —
+      which is the non-candidate branch, not the candidate one. Restoring `DT_trend` is what
+      the transcription-only rule requires; changing `expected_status` after a score existed
+      was authorized separately rather than done unilaterally, and both are recorded here
+      rather than applied silently.
 
   - id: EXT-3b
     paper: liu2025
@@ -179,20 +191,23 @@ arms:
     source_quote: >-
       "sTERT-transfected cells exhibited higher TERT expression, enhanced viability,
       proliferation, and anti-senescence effects compared to hTERT-transfected cells
-      (<0.05)."
+      (<0.05)." — and, from the full text only, the sTERT doubling times: 9.81 → 10.59 →
+      14.00 → 18.61 h across P6/P16/P26/P36.
     reported:
       species: sheep
       cell_type: fibroblast
       construct: TERT_only
       PDL_trend: increasing
+      DT_trend: worsening
       SA_b_gal: low
       genomic_stability: stable
-    reported_outcome: immortalized
-    expected_status: possible_candidate
+    reported_outcome: lifespan_extended_not_immortalized
+    expected_status: senescence_or_stress_prone
     expected_status_basis: >-
-      Same readouts as EXT-3a with a species-matched transgene. Included because the
-      species-matched-vs-human-transgene contrast is the paper's own finding, even though the
-      input vocabulary flattens the two arms to the same encoding.
+      Same correction as EXT-3a, and the same paper's conclusion covers both arms: sTERT
+      outperforms hTERT, and neither reaches complete immortalization. The sTERT doubling
+      time lengthens more steeply in relative terms (9.81 → 18.61 h, a 90% increase, against
+      hTERT's 39%), so the better arm is not the one that escapes the trend.
     unrepresentable:
       - field: construct
         reported: "sheep TERT (sTERT) vs human TERT (hTERT)"

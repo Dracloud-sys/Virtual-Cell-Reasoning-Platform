@@ -6,6 +6,48 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **The positive-call gate no longer privileges one marker the field does not run.**
+  `baseline.py` gated `possible_candidate` on a conjunction naming **γH2AX** specifically. The
+  50-paper survey found γH2AX in **zero** of them and all three gate conditions together in
+  zero, so the positive branch was unreachable from published characterization data: every
+  real case read `insufficient_evidence` however well characterized it was.
+
+  Requiring senescence evidence was never the defect and stays. Requiring *one particular
+  axis* was. The condition generalizes to **at least one senescence axis measured and reading
+  low while none reads high** (γH2AX, SA-β-gal, p16, p21 — any of them), and an *unreported*
+  doubling time stops blocking a call while a *worsening* one still blocks: silence is not a
+  stress signal, a lengthening doubling time is.
+
+  **The first cut of this was wrong, and IMM-Q10 caught it.** Clearing on "some axis reads
+  low" let a single clean reading outvote two that read high — exactly the contradictory panel
+  that question exists to pose (γH2AX high, p21 high, SA-β-gal low). Generalizing which marker
+  counts must not become letting a caller cherry-pick a clean one. The rule is now pinned in
+  `tests/unit/test_immortalization_gate_panel.py` as well, so it cannot regress silently.
+
+  **All four scorecards are byte-identical, per question** — 10/10 · 10/10 · 6/6 · 10/10,
+  verified by running each against the pre-change code and diffing. A material change to the
+  one rule that decides whether anything is ever called a candidate moved the in-house set not
+  at all, which is the project's own thesis arriving as a measurement.
+
+  The external evaluation moved: `status_match` **2/9 → 4/9**. The five arms still failing all
+  fail for one reason — they report no senescence axis whatsoever, only passages, karyotype,
+  morphology and anchorage dependence. Against a field that publishes SA-β-gal in 8% of
+  abstracts, requiring any senescence axis is still requiring something most papers do not
+  provide. Letting a normal karyotype contribute is the obvious next move and is **not** taken
+  here: `genomic_stability` is declared orthogonal ("instability does not stop the cells
+  proliferating, so it cannot retract a call the proliferation axes support"), and making
+  stability *support* a call reverses that axis's declared role rather than widening a panel.
+
+- **EXT-3a/3b corrected from the full text.** `DT_trend` restored to `worsening` (the paper
+  reports a doubling-time table the abstract omits, lengthening monotonically in both arms),
+  and `reported_outcome`/`expected_status` changed to the non-candidate branch on the strength
+  of the paper's own Discussion: *"only telomerase activity was activated, explaining the
+  inability of Mongolian sheep fibroblasts to achieve complete immortalization"*. The first is
+  required by the transcription-only rule; the second is a revision of an expected answer after
+  a score existed, so it was put to a person and authorized rather than folded in quietly. Both
+  are recorded in the spec beside the quotes that justify them.
+
 ### Added
 - **A literature survey, because one paper cannot establish what a field does.**
   The external evaluation's first finding read *"not one of the five papers reports γH2AX"* -
