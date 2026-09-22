@@ -1,0 +1,554 @@
+{
+  "source": {
+    "database": "PubMed",
+    "query": "immortalized[Title] AND (fibroblast OR myoblast OR \"satellite cell\" OR preadipocyte) AND (TERT OR telomerase) AND cell line",
+    "sort": "relevance",
+    "retrieved": "2026-09-22",
+    "total_hits": 93,
+    "returned": 50
+  },
+  "generated": "2026-09-22",
+  "unit": "title + abstract + author keywords",
+  "papers": [
+    {
+      "pmid": "10655550",
+      "doi": "10.1093/hmg/9.3.403",
+      "year": "2000",
+      "title": "The establishment of telomerase-immortalized cell lines representing human chromosome instability syndromes.",
+      "hits": [
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "10744686",
+      "doi": "10.1074/jbc.275.14.10072",
+      "year": "2000",
+      "title": "Subsenescent telomere lengths in fibroblasts immortalized by limiting amounts of telomerase.",
+      "hits": [
+        "passages / population doublings",
+        "telomerase activity",
+        "telomere length"
+      ]
+    },
+    {
+      "pmid": "10793065",
+      "doi": "10.1016/S0002-9440(10)65025-0",
+      "year": "2000",
+      "title": "Genetic and epigenetic changes in human epithelial cells immortalized by telomerase.",
+      "hits": [
+        "telomere length",
+        "karyotype / cytogenetics",
+        "differentiation capacity",
+        "marker / phenotype expression",
+        "p16 / p21 / p53 / Rb pathway"
+      ]
+    },
+    {
+      "pmid": "11257191",
+      "doi": "10.1099/0022-1317-82-4-855",
+      "year": "2001",
+      "title": "Human telomerase reverse transcriptase-immortalized MRC-5 and HCA2 human fibroblasts are fully permissive for human cytomegalovirus.",
+      "hits": [
+        "passages / population doublings",
+        "growth curve / doubling time",
+        "telomerase activity",
+        "telomere length",
+        "morphology"
+      ]
+    },
+    {
+      "pmid": "11344338",
+      "doi": "",
+      "year": "2001",
+      "title": "MK/T-1, an immortalized fibroblast cell line derived using cultures of mouse corneal stroma.",
+      "hits": [
+        "passages / population doublings",
+        "telomerase activity",
+        "telomere length",
+        "SA-beta-gal / senescence stain",
+        "morphology"
+      ]
+    },
+    {
+      "pmid": "11745461",
+      "doi": "10.1002/ijc.1521",
+      "year": "2001",
+      "title": "Telomerase deregulation in immortalized human epidermal cells: modulation by cellular microenvironment.",
+      "hits": [
+        "passages / population doublings",
+        "telomerase activity"
+      ]
+    },
+    {
+      "pmid": "12766048",
+      "doi": "10.1167/iovs.02-0851",
+      "year": "2003",
+      "title": "Mucin gene expression in immortalized human corneal-limbal and conjunctival epithelial cell lines.",
+      "hits": [
+        "tumorigenicity in vivo",
+        "morphology",
+        "differentiation capacity",
+        "marker / phenotype expression",
+        "p16 / p21 / p53 / Rb pathway"
+      ]
+    },
+    {
+      "pmid": "15001567",
+      "doi": "10.1074/jbc.M401714200",
+      "year": "2004",
+      "title": "The establishment of telomerase-immortalized Tangier disease cell lines indicates the existence of an apolipoprotein A-I-inducible but ABCA1-independent cholesterol efflux pathway.",
+      "hits": [
+        "passages / population doublings"
+      ]
+    },
+    {
+      "pmid": "16140041",
+      "doi": "10.1016/j.dnarep.2005.07.005",
+      "year": "2005",
+      "title": "Telomerase-immortalized human fibroblasts retain UV-induced mutagenesis and p53-mediated DNA damage responses.",
+      "hits": [
+        "passages / population doublings",
+        "soft agar / anchorage / colony",
+        "apoptosis",
+        "p16 / p21 / p53 / Rb pathway"
+      ]
+    },
+    {
+      "pmid": "16357149",
+      "doi": "10.1158/0008-5472.CAN-05-1140",
+      "year": "2005",
+      "title": "Stepwise neoplastic transformation of a telomerase immortalized fibroblast cell line.",
+      "hits": [
+        "karyotype / cytogenetics",
+        "soft agar / anchorage / colony",
+        "tumorigenicity in vivo",
+        "marker / phenotype expression",
+        "p16 / p21 / p53 / Rb pathway"
+      ]
+    },
+    {
+      "pmid": "16408200",
+      "doi": "10.1007/s00441-005-0101-4",
+      "year": "2006",
+      "title": "Establishing and characterizing human periodontal ligament fibroblasts immortalized by SV40T-antigen and hTERT gene transfer.",
+      "hits": [
+        "passages / population doublings",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "17543094",
+      "doi": "10.1186/1471-2121-8-20",
+      "year": "2007",
+      "title": "Characteristics of primary and immortalized fibroblast cells derived from the miniature and domestic pigs.",
+      "hits": [
+        "growth curve / doubling time",
+        "marker / phenotype expression",
+        "p16 / p21 / p53 / Rb pathway"
+      ]
+    },
+    {
+      "pmid": "18160772",
+      "doi": "10.1269/jrr.07088",
+      "year": "2007",
+      "title": "hTERT-immortalized cells useful for analyzing effects of low-dose-rate radiation on human cells.",
+      "hits": []
+    },
+    {
+      "pmid": "18497972",
+      "doi": "",
+      "year": "2008",
+      "title": "Telomere length and radiosensitivity in human fibroblast clones immortalized by ectopic telomerase expression.",
+      "hits": [
+        "telomerase activity",
+        "telomere length",
+        "karyotype / cytogenetics"
+      ]
+    },
+    {
+      "pmid": "19556288",
+      "doi": "10.1093/humrep/dep232",
+      "year": "2009",
+      "title": "Immortalized human skin fibroblast feeder cells support growth and maintenance of both human embryonic and induced pluripotent stem cells.",
+      "hits": [
+        "passages / population doublings",
+        "karyotype / cytogenetics",
+        "morphology",
+        "differentiation capacity",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "19619280",
+      "doi": "10.1186/1477-7827-7-76",
+      "year": "2009",
+      "title": "Characterization of a novel telomerase-immortalized human endometrial stromal cell line, St-T1b.",
+      "hits": [
+        "passages / population doublings",
+        "morphology",
+        "differentiation capacity",
+        "marker / phenotype expression",
+        "p16 / p21 / p53 / Rb pathway"
+      ]
+    },
+    {
+      "pmid": "19766308",
+      "doi": "10.1016/j.placenta.2009.08.007",
+      "year": "2009",
+      "title": "The isolation and characterization of a novel telomerase immortalized first trimester trophoblast cell line, Swan 71.",
+      "hits": [
+        "passages / population doublings",
+        "karyotype / cytogenetics",
+        "marker / phenotype expression",
+        "apoptosis"
+      ]
+    },
+    {
+      "pmid": "20189955",
+      "doi": "10.1093/cvr/cvq067",
+      "year": "2010",
+      "title": "Wnt/frizzled signalling modulates the migration and differentiation of immortalized cardiac fibroblasts.",
+      "hits": [
+        "passages / population doublings",
+        "differentiation capacity",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "22424056",
+      "doi": "10.1186/1752-153X-6-18",
+      "year": "2012",
+      "title": "Glucose metabolite glyoxal induces senescence in telomerase-immortalized human mesenchymal stem cells.",
+      "hits": [
+        "SA-beta-gal / senescence stain",
+        "morphology",
+        "differentiation capacity",
+        "marker / phenotype expression",
+        "p16 / p21 / p53 / Rb pathway"
+      ]
+    },
+    {
+      "pmid": "24112823",
+      "doi": "10.1016/j.placenta.2013.09.009",
+      "year": "2013",
+      "title": "The isolation and characterization of a telomerase immortalized goat trophoblast cell line.",
+      "hits": [
+        "passages / population doublings",
+        "growth curve / doubling time",
+        "telomerase activity",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "24857590",
+      "doi": "10.1089/scd.2013.0599",
+      "year": "2014",
+      "title": "Generation and characterization of an immortalized human mesenchymal stromal cell line.",
+      "hits": [
+        "passages / population doublings",
+        "karyotype / cytogenetics",
+        "tumorigenicity in vivo",
+        "differentiation capacity",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "25592246",
+      "doi": "10.1016/j.virusres.2014.10.028",
+      "year": "2015",
+      "title": "hTERT-immortalized ovine microglia propagate natural scrapie isolates.",
+      "hits": [
+        "passages / population doublings"
+      ]
+    },
+    {
+      "pmid": "25978455",
+      "doi": "10.1371/journal.pone.0126562",
+      "year": "2015",
+      "title": "Transcriptional Dynamics of Immortalized Human Mesenchymal Stem Cells during Transformation.",
+      "hits": [
+        "karyotype / cytogenetics",
+        "soft agar / anchorage / colony",
+        "tumorigenicity in vivo",
+        "marker / phenotype expression",
+        "apoptosis"
+      ]
+    },
+    {
+      "pmid": "28244042",
+      "doi": "10.1007/978-1-4939-6820-6_8",
+      "year": "2017",
+      "title": "Protocols for Generation of Immortalized Human Brown and White Preadipocyte Cell Lines.",
+      "hits": [
+        "differentiation capacity"
+      ]
+    },
+    {
+      "pmid": "28957413",
+      "doi": "10.1371/journal.pone.0185624",
+      "year": "2017",
+      "title": "Characterization of immortalized human brown and white pre-adipocyte cell models from a single donor.",
+      "hits": [
+        "passages / population doublings",
+        "growth curve / doubling time",
+        "differentiation capacity",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "30381489",
+      "doi": "10.1128/JVI.01216-18",
+      "year": "2019",
+      "title": "Inhibition of Epstein-Barr Virus Replication in Human Papillomavirus-Immortalized Keratinocytes.",
+      "hits": [
+        "differentiation capacity",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "30600465",
+      "doi": "10.1007/s10616-018-0272-y",
+      "year": "2019",
+      "title": "Development and biochemical and immunological characterization of early passage and immortalized bovine intestinal epithelial cell lines from the ileum of a young calf.",
+      "hits": [
+        "passages / population doublings",
+        "growth curve / doubling time",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "30770928",
+      "doi": "10.1093/molehr/gaz006",
+      "year": "2019",
+      "title": "Generation of immortalized human endometrial stromal cell lines with different endometriosis risk genotypes.",
+      "hits": [
+        "morphology",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "32178875",
+      "doi": "10.1016/j.bbrc.2020.03.036",
+      "year": "2020",
+      "title": "Primary and immortalized cell lines derived from the Amami rabbit (Pentalagus furnessi) and evolutionally conserved cell cycle control with CDK4 and Cyclin D1.",
+      "hits": [
+        "p16 / p21 / p53 / Rb pathway"
+      ]
+    },
+    {
+      "pmid": "32542539",
+      "doi": "10.1007/s43032-020-00228-0",
+      "year": "2020",
+      "title": "Establishment of an Immortalized Endometriotic Stromal Cell Line from Human Ovarian Endometrioma.",
+      "hits": [
+        "karyotype / cytogenetics",
+        "morphology",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "33428261",
+      "doi": "10.1096/fj.202001423R",
+      "year": "2021",
+      "title": "Novel immortalized human vocal fold epithelial cell line: In vitro tool for mucosal biology.",
+      "hits": [
+        "passages / population doublings",
+        "karyotype / cytogenetics",
+        "morphology",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "33567244",
+      "doi": "10.1089/nat.2020.0907",
+      "year": "2021",
+      "title": "Immortalized Canine Dystrophic Myoblast Cell Lines for Development of Peptide-Conjugated Splice-Switching Oligonucleotides.",
+      "hits": [
+        "passages / population doublings",
+        "growth curve / doubling time",
+        "differentiation capacity"
+      ]
+    },
+    {
+      "pmid": "33912845",
+      "doi": "10.1016/j.xpro.2021.100436",
+      "year": "2021",
+      "title": "Detecting single cell interferon-beta production using a fluorescent reporter telomerase-immortalized human fibroblast cell line.",
+      "hits": []
+    },
+    {
+      "pmid": "33961649",
+      "doi": "10.1371/journal.pone.0251188",
+      "year": "2021",
+      "title": "Overexpression of oncogenic H-Ras in hTERT-immortalized and SV40-transformed human cells targets replicative and specialized DNA polymerases for depletion.",
+      "hits": [
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "34031466",
+      "doi": "10.1038/s41598-021-90037-5",
+      "year": "2021",
+      "title": "hTERT-immortalized gingival fibroblasts respond to cytokines but fail to mimic primary cell responses to Porphyromonas gingivalis.",
+      "hits": []
+    },
+    {
+      "pmid": "34090857",
+      "doi": "10.1016/j.ab.2021.114268",
+      "year": "2021",
+      "title": "hTERT-immortalized adipose-derived stem cell line ASC52Telo demonstrates limited potential for adipose biology research.",
+      "hits": [
+        "differentiation capacity",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "35198008",
+      "doi": "10.3389/fgene.2022.815328",
+      "year": "2022",
+      "title": "Development of an Immortalized Porcine Fibroblast Cell Panel With Different Swine Leukocyte Antigen Genotypes.",
+      "hits": [
+        "passages / population doublings",
+        "soft agar / anchorage / colony"
+      ]
+    },
+    {
+      "pmid": "35961484",
+      "doi": "10.1016/j.jviromet.2022.114605",
+      "year": "2022",
+      "title": "Establishment of a fetal cow (Bos Borus) skin fibroblasts cell line with immortalized characterization through human telomerase reverse transcriptase (hTERT) ectopic expression.",
+      "hits": []
+    },
+    {
+      "pmid": "36012192",
+      "doi": "10.3390/ijms23168925",
+      "year": "2022",
+      "title": "Generation of an Immortalized Human Adipose-Derived Mesenchymal Stromal Cell Line Suitable for Wound Healing Therapy.",
+      "hits": [
+        "passages / population doublings",
+        "differentiation capacity"
+      ]
+    },
+    {
+      "pmid": "36139359",
+      "doi": "10.3390/cells11182784",
+      "year": "2022",
+      "title": "Establishment and Characterization ofImmortalized Hutchinson-Gilford Progeria Fibroblast Cell Lines.",
+      "hits": [
+        "passages / population doublings",
+        "telomere length",
+        "SA-beta-gal / senescence stain",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "36191515",
+      "doi": "10.1016/j.psj.2022.102147",
+      "year": "2022",
+      "title": "Construction of a peacock immortalized fibroblast cell line for avian virus production.",
+      "hits": []
+    },
+    {
+      "pmid": "37374120",
+      "doi": "10.3390/life13061337",
+      "year": "2023",
+      "title": "Construction and Characterization of Immortalized Fibroblast Cell Line from Bactrian Camel.",
+      "hits": [
+        "passages / population doublings",
+        "growth curve / doubling time",
+        "karyotype / cytogenetics",
+        "morphology",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "38373743",
+      "doi": "10.1002/2211-5463.13781",
+      "year": "2024",
+      "title": "Establishment of immortalized Egyptian Rousettus bat cell lines.",
+      "hits": [
+        "passages / population doublings",
+        "karyotype / cytogenetics"
+      ]
+    },
+    {
+      "pmid": "38915394",
+      "doi": "10.3389/fimmu.2024.1326728",
+      "year": "2024",
+      "title": "Development and validation of novel keloid-derived immortalized fibroblast cell lines.",
+      "hits": [
+        "passages / population doublings",
+        "growth curve / doubling time",
+        "SA-beta-gal / senescence stain",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "38986855",
+      "doi": "10.1016/j.exger.2024.112508",
+      "year": "2024",
+      "title": "Exosomes derived from hTERT-immortalized cells delay cellular senescence of human fibroblasts.",
+      "hits": [
+        "telomere length",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "40211367",
+      "doi": "10.1186/s12958-025-01393-0",
+      "year": "2025",
+      "title": "Development and characterization of a novel immortalized human vaginal fibroblast cell line for advanced applications in reproductive health.",
+      "hits": [
+        "passages / population doublings",
+        "karyotype / cytogenetics",
+        "morphology",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "40690428",
+      "doi": "10.1371/journal.pone.0327728",
+      "year": "2025",
+      "title": "Incorporation of iPSCs together with TERT-immortalized keratinocytes and fibroblasts into reconstructed human gingiva enhances phenotype of gingival epithelium.",
+      "hits": [
+        "differentiation capacity",
+        "marker / phenotype expression",
+        "apoptosis"
+      ]
+    },
+    {
+      "pmid": "40695943",
+      "doi": "10.1038/s41598-025-12386-9",
+      "year": "2025",
+      "title": "Isolation, establishment, and characterization of immortalized ileum bovine intestinal epithelial cell line.",
+      "hits": [
+        "morphology",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "41296178",
+      "doi": "10.1007/s13577-025-01324-6",
+      "year": "2025",
+      "title": "Establishment of immortalized ovarian stromal cell lines using Sendai virus vectors: a platform for studying tumor-stroma interactions and carcinogenesis.",
+      "hits": [
+        "passages / population doublings",
+        "morphology",
+        "marker / phenotype expression"
+      ]
+    },
+    {
+      "pmid": "41387848",
+      "doi": "10.1186/s12917-025-05204-x",
+      "year": "2025",
+      "title": "Development of an immortalized porcine intramuscular pre-adipocyte cell line to facilitate adipogenic investigation in vitro.",
+      "hits": [
+        "passages / population doublings",
+        "telomerase activity",
+        "differentiation capacity",
+        "marker / phenotype expression",
+        "apoptosis"
+      ]
+    }
+  ]
+}

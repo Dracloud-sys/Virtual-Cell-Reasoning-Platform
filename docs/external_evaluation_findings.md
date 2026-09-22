@@ -28,6 +28,27 @@ finding weakens to "not reported prominently" — still something, but much less
 Stating this first because a finding whose limits arrive after the headline has already done
 its damage.
 
+**This limit fired, and it cost a case.** Full texts were sought for all five papers; only one
+is retrievable (PMC holds no body for Akimov 2005 or He 2015, and Stout 2023 and Zhang 2016
+have no PMC record). Reading the one available — Liu 2025,
+[10.1080/10495398.2025.2459915](https://doi.org/10.1080/10495398.2025.2459915), retrieved via
+PubMed — turned up two errors in **this project's own encoding** of EXT-3a/3b:
+
+- **Doubling time is reported**, in a table the abstract does not mention, and it *worsens*
+  monotonically across passages in both arms (hTERT 16.16 → 22.45 h; sTERT 9.81 → 18.61 h over
+  P6→P36). The encoding recorded `DT_trend: unknown`.
+- **The paper states the cells did not achieve complete immortalization**: *"only telomerase
+  activity was activated, explaining the inability of Mongolian sheep fibroblasts to achieve
+  complete immortalization"*, alongside *"a slow but inevitable aging process was observed"*.
+  The encoding recorded `reported_outcome: immortalized`, read off the abstract's "effectively
+  extends the lifespan".
+
+Corrected, the input carries a worsening doubling time, which is a functional stress signal,
+and the platform would return `senescence_or_stress_prone` — which is close to what the paper
+actually describes. **So at least two of the seven "failures" were transcription error here,
+not platform limitation.** Finding 1 survives on its own evidence (see below), but its arm
+count does not. The disposition of EXT-3a/3b is open; see the last section.
+
 ## Finding 1 — the positive branch is unreachable from published characterization data
 
 `agents/immortalization/baseline.py` gates `possible_candidate` on a three-way conjunction:
@@ -40,8 +61,43 @@ proliferation_signal = (
 )
 ```
 
-**Not one of the five papers reports γH2AX.** Every arm whose paper reports a successfully
-immortalized line therefore returns `insufficient_evidence` — seven of nine.
+**In a 50-paper corpus, γH2AX appears zero times.** Every arm whose paper reports a
+successfully immortalized line returns `insufficient_evidence` — seven of nine.
+
+The original form of this finding was weaker than it looked, and the correction matters more
+than the conclusion. It read *"not one of the five papers reports γH2AX"* — which is n=1,
+repeated five times. Each case was bounded by whatever that one paper happened to measure, so
+"the platform requires something the literature does not report" was a guess wearing a sample
+size. **One paper cannot establish what a field does.**
+
+The question is distributional, and `tests/benchmarks/literature/` now answers it. Searching
+PubMed for `immortalized[Title] AND (fibroblast OR myoblast OR "satellite cell" OR
+preadipocyte) AND (TERT OR telomerase) AND cell line` (93 hits, top 50 by relevance,
+2026-09-22) and tallying what each paper offers in support of its claim:
+
+| evidence class | papers | share |
+|---|---:|---:|
+| marker / phenotype expression | 31 | 62% |
+| passages / population doublings | 27 | 54% |
+| differentiation capacity | 15 | 30% |
+| morphology | 13 | 26% |
+| karyotype / cytogenetics | 12 | 24% |
+| growth curve / doubling time | 8 | 16% |
+| p16 / p21 / p53 / Rb pathway | 8 | 16% |
+| telomerase activity | 7 | 14% |
+| telomere length | 7 | 14% |
+| apoptosis | 5 | 10% |
+| SA-β-gal / senescence stain | 4 | 8% |
+| soft agar / anchorage / colony | 4 | 8% |
+| tumorigenicity in vivo | 4 | 8% |
+| **γH2AX (DNA damage)** | **0** | **0%** |
+
+Verified against a regex artifact by raw search over the corpus: `H2AX` 0 occurrences,
+`53BP1` 0. The scan works — `senescen` matches 47 times, `karyotyp` 14.
+
+**The gate's three conditions are satisfied together by 0 of 50 papers.** Its two
+non-γH2AX conditions are themselves uncommon in abstracts (PDL 54%, doubling time 16%), but
+γH2AX is the one that makes the conjunction unreachable rather than merely demanding.
 
 Measured rather than inferred, on EXT-3a (Liu 2025, sheep fibroblast + TERT):
 
@@ -136,7 +192,15 @@ A platform that is cautious, refuses to overcall, and errs toward `insufficient_
 defensible thing to be. The question Finding 1 raises is whether the threshold for leaving that
 state was set against real data or against the questions it was going to be asked.
 
-## One open domain question
+## Two open domain questions
+
+**EXT-3a/3b's encoding is wrong and its correction is not an unattended run's to make.**
+Fixing `DT_trend` to `worsening` is required by admissibility rule 3 — it restores what the
+paper reports, and leaving a known transcription error in place would be the worse sin.
+Changing `expected_status` is a different act: it would be revising an expected answer *after
+seeing the score*, in the direction that raises fidelity, which is the first thing the protocol
+prohibits. The correction is warranted by the paper's own words, and it is still a person's to
+authorize. Until then the case stands as recorded, with this note attached.
 
 **EXT-2a's expected status is disputed, and is recorded as disputed rather than settled.**
 Akimov 2005 reports a clear negative — hTERT alone did not prolong replicative capacity — but
@@ -146,4 +210,4 @@ finding is a negative result rather than an absence of data; a reader who would 
 `insufficient_evidence` is making a defensible different call.
 
 This one is a person's to settle, not an unattended run's. It is the only expected answer in
-the set that is not read directly off the paper.
+the set that was not read directly off a paper when it was written.

@@ -7,6 +7,53 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **A literature survey, because one paper cannot establish what a field does.**
+  The external evaluation's first finding read *"not one of the five papers reports γH2AX"* -
+  which is n=1, repeated five times. Each case was bounded by whatever that one paper happened
+  to measure, so "the platform requires something the literature does not report" was a guess
+  wearing a sample size. The question is distributional.
+
+  `tests/benchmarks/literature/` answers it. PubMed,
+  `immortalized[Title] AND (fibroblast OR myoblast OR "satellite cell" OR preadipocyte) AND
+  (TERT OR telomerase) AND cell line`, 93 hits, top 50 by relevance, tallied for what each
+  paper offers in support of its claim: markers 62%, passages/PDL 54%, differentiation 30%,
+  morphology 26%, karyotype 24%, growth curve/doubling time 16%, p16/p21/p53/Rb 16%, telomerase
+  activity 14%, telomere length 14%, SA-β-gal 8%, soft agar 8%, tumorigenicity 8% - and
+  **γH2AX 0%, zero of fifty**. Checked against a regex artifact by raw search: `H2AX` 0
+  occurrences, `53BP1` 0, while `senescen` matches 47 times and `karyotyp` 14.
+
+  **The gate's three conditions are satisfied together by 0 of 50 papers.** Finding 1 now rests
+  on a distribution rather than on five convenience samples.
+
+  **Abstracts are deliberately not committed** - they are publisher-copyrighted, and a survey
+  does not need to redistribute fifty of them. What ships is the derived hit matrix
+  (`assay_hits.json`: PMID, DOI, year, title, matched classes), the patterns that produced it
+  (`assay_classes.py`, written out so any classification can be disputed), a rebuild script and
+  an offline `tally.py`. Reproduction is a re-run from the PMIDs, not a rediscovery.
+
+  Two limits are stated rather than implied: abstract-level reporting is a **lower bound** on
+  assays performed (though a class at 0% is 0% either way), and the corpus is **not
+  livestock-specific** - narrowing it is a one-line query change and a re-run.
+
+  Nothing here changes behaviour. Deciding what a positive call should require is a biological
+  and editorial judgement, which this repository treats as a stop condition; this is the
+  material a person decides from.
+
+- **Full-text verification fired the limit it was written to catch.** `docs/` records that
+  every case encoding was abstract-derived and that full texts should be checked first. They
+  were: only one of the five is retrievable (PMC holds no body for two, and two have no PMC
+  record). Reading it found two errors in **this project's own encoding** of EXT-3a/3b - the
+  paper reports a doubling time, in a table the abstract omits, and it *worsens* across
+  passages; and the paper explicitly states the cells did **not** achieve complete
+  immortalization, where the encoding had recorded "immortalized" from the abstract's
+  "effectively extends the lifespan". Corrected, the platform would return
+  `senescence_or_stress_prone`, close to what the paper describes. At least two of the seven
+  "failures" were transcription error, not platform limitation. Recorded as an open question
+  rather than silently re-scored: fixing `DT_trend` is required by the admissibility rules,
+  but changing an expected status after seeing the score is the first thing the protocol
+  prohibits, so it waits for a person.
+
+### Added
 - **An external evaluation: nine published cases the platform did not author.**
   The four in-house scorecards read 10/10 · 10/10 · 6/6 · 10/10. Every one of those questions,
   its rubric and the seed graph it runs against were written here. Benchmark-first was followed
