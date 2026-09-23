@@ -1385,3 +1385,45 @@ def test_the_draft_check_says_graph_findings_are_out_of_its_scope() -> None:
     scope = " ".join(result["not_checked"])
     assert "graph_findings" in scope
     assert "user_observation" in scope and "retrieved_source" in scope
+
+
+# --- the project MCP config a host actually reads ------------------------------------------
+
+
+def test_the_project_mcp_config_names_this_server_and_stays_parseable() -> None:
+    """`.mcp.json` is what a Claude Code host reads at session start. If it drifts from the
+    module it names, the host spawns something that dies and the tools are simply absent —
+    there is no error a user sees, so the failure reads as "these tools do not exist".
+    """
+    config = json.loads((MCP_PACKAGE.parents[2] / ".mcp.json").read_text(encoding="utf-8"))
+
+    server = config["mcpServers"]["virtualcell"]
+    assert server["args"][:2] == ["-m", "virtualcell.mcp"]
+    assert "--literature" in server["args"], (
+        "the committed config enables the searcher; without it every "
+        "search_literature=true answers not_implemented"
+    )
+
+
+def test_the_config_names_an_interpreter_variable_rather_than_a_path() -> None:
+    """An absolute path is wrong on every machine but one, and a relative path assumes the
+    host spawns with the repository as its working directory. Neither is safe to commit, so
+    the config reads `VCRP_PYTHON` and the environment supplies it.
+    """
+    config = json.loads((MCP_PACKAGE.parents[2] / ".mcp.json").read_text(encoding="utf-8"))
+    command = config["mcpServers"]["virtualcell"]["command"]
+
+    assert command == "${VCRP_PYTHON}"
+    assert not command.startswith("/")
+    assert "${PWD}" not in command
+
+
+def test_the_setup_script_installs_what_the_server_needs_and_nothing_it_does_not() -> None:
+    """The MCP research tools call no model. Installing `[llm]` would pull a dependency
+    nothing on this path uses, and would imply an API key is part of the setup.
+    """
+    script = (MCP_PACKAGE.parents[2] / "scripts" / "setup_mcp_env.sh").read_text(encoding="utf-8")
+
+    assert "[mcp]" in script
+    assert "[llm]" not in script.replace("`[llm]` is deliberately NOT installed", "")
+    assert "python3.12" in script

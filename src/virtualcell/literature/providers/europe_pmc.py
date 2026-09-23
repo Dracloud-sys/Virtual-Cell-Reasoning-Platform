@@ -125,18 +125,57 @@ class EuropePmcProvider:
         return data
 
     @staticmethod
-    def _results(data: dict) -> list:
-        """Validate the nested response shape; a bad shape is a provider failure.
+    def _page(data: dict) -> tuple[int, list]:
+        """Read one page's envelope. A response missing it is a failure, not a result.
 
-        (A bad *row* inside a well-shaped list is skippable — see ``_search``.)
+        **A search that genuinely found nothing and a response that carries no answer are
+        different things, and this endpoint returns them differently.** Measured against
+        the live API:
+
+        * a real zero-hit query answers with the full envelope — ``hitCount: 0`` and
+          ``resultList: {"result": []}`` — every time, 6 of 6;
+        * *any* query, including one with 43,683 hits, intermittently answers
+          ``{"version": "6.9"}`` and nothing else: no ``hitCount``, no ``resultList``, no
+          ``request`` echo. HTTP 200, identical headers, 3 to 4 times in 10.
+
+        The old code read the second with ``data.get("resultList", {})``, so an absent
+        envelope became an empty result list and the run was reported as `zero_results`.
+        Downstream that reached a caller as "the search ran and returned no articles" —
+        telling them the literature is silent on a subject with tens of thousands of
+        papers. Under-reporting a failure as an absence is the one direction that cannot
+        be recovered from later, because nobody goes looking again.
+
+        So presence is checked rather than assumed, and on every page: an incomplete
+        envelope is incomplete wherever it occurs. Termination is a separate question,
+        decided by `_search` from an **empty result list inside a valid envelope**, which
+        is why this returns rather than raises for that case. A malformed *row* inside a
+        valid list is a third thing again, skipped with a warning by `_search`.
+
+        Deliberately not retried here. A retry would mask how often this happens, and how
+        often it happens is what a caller needs to know.
         """
-        result_list = data.get("resultList", {})
+        hit_count = data.get("hitCount")
+        # bool is a subclass of int, and `True` is not a count.
+        if not isinstance(hit_count, int) or isinstance(hit_count, bool):
+            raise ProviderError(
+                "europe_pmc returned a response with no usable hitCount "
+                f"(got {hit_count!r}); the response carries no result envelope, so this "
+                "is a failed lookup and not a zero-result search"
+            )
+        if "resultList" not in data:
+            raise ProviderError(
+                "europe_pmc returned a response with no resultList; a genuine zero-result "
+                "search still carries resultList.result as an empty list"
+            )
+        result_list = data["resultList"]
         if not isinstance(result_list, dict):
             raise ProviderError("europe_pmc resultList was not an object")
-        results = result_list.get("result", []) or []
+        if "result" not in result_list:
+            raise ProviderError("europe_pmc resultList carried no result field")
+        results = result_list["result"]
         if not isinstance(results, list):
             raise ProviderError("europe_pmc resultList.result was not a list")
-        return results
+        return hit_count, results
 
     # -- search -------------------------------------------------------------
 
@@ -157,6 +196,7 @@ class EuropePmcProvider:
         page_size = min(query.max_results, _PAGE_SIZE_CAP)
         articles: list[ArticleRecord] = []
         warnings: list[str] = []
+        # Set from each page's envelope, which `_page` refuses to leave absent.
         hit_count: int | None = None
         cursor = "*"
         pages = 0
@@ -167,8 +207,7 @@ class EuropePmcProvider:
                 f"&format=json&resultType=core&pageSize={page_size}&cursorMark={quote(cursor)}"
             )
             data = self._parse(self._fetch(url).text)
-            hit_count = data.get("hitCount", hit_count)
-            results = self._results(data)
+            hit_count, results = self._page(data)
             for raw in results:
                 if not isinstance(raw, dict):
                     warnings.append(f"skipped malformed record: expected an object, got {raw!r}")
