@@ -182,26 +182,102 @@ Whether the right answer is a sixth kind, a separate contract, or leaving graph 
 outside the evidence vocabulary entirely is a decision for whoever has seen how hosts
 actually use them.
 
-### Connecting it, and what is not done
+### Connecting it
+
+Install with the MCP extra (`pip install -e ".[mcp]"`). `[llm]` is **not** needed for this
+route — no tool here calls a model.
 
 ```jsonc
-// the host's MCP config
+// offline: the graph and the draft check, no outbound network
 { "mcpServers": { "virtualcell": {
     "command": "<path to the venv python>",
     "args": ["-m", "virtualcell.mcp"]
 } } }
 ```
 
-Install with the MCP extra (`pip install -e ".[mcp]"`); `[llm]` is **not** needed for this
-route. `build_server(literature_agent=...)` is what enables external search — without it,
-`search_literature=true` reports `not_implemented` rather than silently returning nothing.
+```jsonc
+// with public literature search enabled
+{ "mcpServers": { "virtualcell": {
+    "command": "<path to the venv python>",
+    "args": ["-m", "virtualcell.mcp", "--literature"]
+} } }
+```
 
-**Not performed: use with a real host.** Nothing here has been driven by a host LLM. The
-tools are exercised end to end by tests and by a walkthrough with no credential, which
-establishes that the path runs — never that a host uses it well, and never that connecting a
-tool improved anyone's reasoning. That takes a new research question, real tool calls, and a
-look at what the host designed and what it changed after the check. Until then it stays
-marked not performed.
+`VIRTUALCELL_MCP_LITERATURE=1` does the same thing. **Enabling it searches nothing on its
+own**: it wires the existing Europe PMC discovery agent in, constructing it performs no I/O,
+and a request still has to pass `search_literature=true` before anything leaves the machine.
+No new provider, no model call.
+
+Without the flag, `search_literature=true` answers `not_implemented` — which is honest, and
+was previously the *only* possible answer from the shipped config.
+
+### Four defects in the first version, reproduced through the tools
+
+**The startup path could never search.** `main()` called `build_server()` with no arguments,
+so `literature_agent` was always `None`. The tool was reachable and the capability was not,
+and no configuration could change it. Fixed by the flag above — and because the MCP package
+is forbidden by an AST test from importing `virtualcell.agents`, the wiring lives in
+`virtualcell/composition.py` rather than in the adapter. Widening the test would have been
+one line and would have removed the only thing keeping that boundary true.
+
+**The annotation said the opposite of the truth.** `open_world_hint` was hard-coded `false`
+while the tool could reach the public internet. Hosts use annotations to decide what needs
+confirming. It is now `true` exactly when a searcher is wired in.
+
+**The draft adapter re-introduced the coercion defects P1.2 had already fixed.** Measured on
+the shipped tool: `"discriminates": "H1"` became `["H", "1"]` and produced two bogus
+`unknown_hypothesis_id` findings — a defect report the adapter invented, about hypotheses the
+host never wrote. An integer evidence id became `"1"`, an id nobody supplied. A hypothesis
+carrying `certainty: 0.99` and `citation: "Nature 2020"` had both silently dropped, so a host
+that attached a fabricated citation was told its draft checked out clean.
+
+Fixed by **reusing** `validate_report_payload` (made public for this) rather than cloning it.
+Every check in it is about the payload, not about who wrote it, and it imposes no minimum
+number of hypotheses or experiments.
+
+**Repeated searches collided on one evidence id.** Every search numbered from `lit-1`, so the
+first hit of a second search took the first hit of the first search's id with different text,
+and the ledger's hash was overwritten — after which the **unedited** first item came back
+classified `server_retrieved_but_modified`. A fabrication warning about material the server
+itself had handed over. Ids are now derived from the content hash, so they collide only when
+the content is genuinely the same, and the ledger's first write wins.
+
+### Usability of what comes back
+
+* **Short names survive tokenisation.** A flat four-character floor dropped `ECM`, `p53`,
+  `p16` and `Rb` — the names this field is mostly made of. A short token now earns its place
+  by mixing letters and digits or by being a capitalised symbol; a bare `60` does not.
+* **`context` is not a search filter, and the status says so.** It was accepted and passed to
+  the searcher as `{}`. Mapping it onto `LiteratureQuery`'s species/cell-type/gene fields is
+  real work with its own vocabulary questions; claiming it happened would be cheaper and
+  false.
+* **A truncated span is reported beside the evidence, not marked inside it.** `" [...]"` used
+  to be appended to `source_text`, so the span no longer matched the document it claimed to
+  come from and its hash covered a display artefact. `truncated_evidence_ids` carries the cut.
+* **Graph findings are out of scope for the draft check**, and `not_checked` says so —
+  including that re-submitting one as a `user_observation` or `retrieved_source` to get it
+  checked would make an unverified traversal look like something someone read.
+
+### What has and has not been exercised
+
+Three different things, kept apart:
+
+| | |
+|---|---|
+| **protocol** | done — `initialize` / `list_tools` / `call_tool` over a real `ClientSession`, not `server.call_tool`, which skips the wire |
+| **real public literature lookup** | **not performed** — every search in tests and records uses a stub, so nothing here has queried Europe PMC |
+| **use with a real host LLM** | **not performed** — nothing here has been driven by a host |
+
+The tools running is not a host using them well, and connecting a tool is not evidence that
+anyone's reasoning improved. That needs a new research question, real tool calls, and a look
+at what the host designed and what it changed after the check.
+
+**To try it:** start with `--literature`, then ask the host a question with no registered
+domain — *"For an ECM scaffold bridging a dermal defect, does degradation outpace collagen
+deposition, and does that drive myofibroblast conversion? Use the virtualcell tools."* Watch
+whether it calls `research_evidence` before designing, whether it relays `lookups` and
+`limits`, whether it cites returned ids rather than papers it names itself, and what
+`check_research_draft` changes about its answer.
 
 ## Stages
 

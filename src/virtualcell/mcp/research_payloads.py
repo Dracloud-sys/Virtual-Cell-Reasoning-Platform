@@ -47,13 +47,12 @@ from virtualcell.research.contracts import (
     EvidenceItem,
     EvidenceKind,
     Hypothesis,
-    HypothesisSupport,
     ProposedExperiment,
     ResearchProvenance,
     ResearchReport,
     ResearchRequest,
 )
-from virtualcell.research.service import check_integrity
+from virtualcell.research.service import check_integrity, validate_report_payload
 
 #: How much of an abstract travels back as a verifiable span. Enough to check the claim
 #: against the source, short enough not to redistribute the whole abstract.
@@ -174,6 +173,15 @@ class ResearchEvidenceResult(BaseModel):
         description=(
             "Spans actually read from documents, each with a locator and a content hash. "
             "Cite these by id; the ids are what check_research_draft verifies."
+        ),
+    )
+    truncated_evidence_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Evidence whose span was cut to fit the excerpt limit. Reported here rather "
+            "than marked inside `source_text`: the span has to stay findable in the source "
+            "it claims to come from, and its hash has to cover the text and not a display "
+            "artefact. Re-read the source before quoting one of these as complete."
         ),
     )
     graph_findings: list[GraphFinding] = Field(default_factory=list)
@@ -305,9 +313,22 @@ _STOPWORDS = frozenset(
     ]
 )
 
-#: Below this, a token matches too much to be a seed. `TERT` is four characters, so the
-#: floor cannot go higher without losing gene symbols.
-_MIN_TERM = 4
+#: Below this, an ordinary word matches too much to be worth a seed.
+_MIN_WORD = 4
+
+
+def _is_symbol(token: str) -> bool:
+    """A short token that is still worth searching for.
+
+    A flat four-character floor threw away the names this field is mostly made of — `ECM`,
+    `p53`, `p16`, `Rb`, `TGF` — so a question about any of them could not reach the graph
+    at all. Two shapes are kept regardless of length: a token mixing letters and digits
+    (`p53`, `H2AX`), and an all-capital token (`ECM`, `TERT`). Digits alone are not enough:
+    `60` in "60% by day 14" would match half the graph and mean nothing.
+    """
+    if any(c.isdigit() for c in token) and any(c.isalpha() for c in token):
+        return True
+    return token.isupper() and len(token) >= 2 and token.isalpha()
 
 
 def seed_terms(question: str, limit: int = _MAX_SEEDS * 3) -> list[str]:
@@ -327,7 +348,9 @@ def seed_terms(question: str, limit: int = _MAX_SEEDS * 3) -> list[str]:
     for raw in "".join(c if c.isalnum() or c in "-_" else " " for c in question).split():
         token = raw.strip("-_")
         lowered = token.lower()
-        if len(token) < _MIN_TERM or lowered in _STOPWORDS or lowered in seen:
+        if lowered in _STOPWORDS or lowered in seen:
+            continue
+        if len(token) < _MIN_WORD and not _is_symbol(token):
             continue
         seen.add(lowered)
         terms.append(token)
@@ -336,40 +359,63 @@ def seed_terms(question: str, limit: int = _MAX_SEEDS * 3) -> list[str]:
     return terms
 
 
-def _span(text: str) -> str:
-    """A bounded excerpt, marked when it is one."""
+def _excerpt(text: str) -> tuple[str, bool]:
+    """A bounded excerpt, and whether it was cut. The marker is **not** put in the text.
+
+    The first version appended `" [...]"` to `source_text`, so the span no longer matched
+    the document it claimed to come from and its `source_text_hash` covered a display
+    artefact. A locator exists to be checkable against the source; a reader pasting that
+    string into the paper would not find it.
+    """
     cleaned = " ".join(text.split())
     if len(cleaned) <= _SPAN_CHARS:
-        return cleaned
-    return cleaned[:_SPAN_CHARS].rstrip() + " [...]"
+        return cleaned, False
+    return cleaned[:_SPAN_CHARS].rstrip(), True
 
 
-def evidence_from_articles(bundle: Any, question: str) -> list[EvidenceItem]:
+def evidence_from_articles(bundle: Any, question: str) -> tuple[list[EvidenceItem], list[str]]:
     """Turn discovered articles with abstracts into labelled, locator-backed evidence.
 
     Only articles that actually carry text become evidence. A record with no abstract is a
     reference, not a span someone read, and inventing a statement for it would produce
     exactly the fabricated citation the contracts exist to refuse.
+
+    **The id is derived from the content, not from position in this result set.** Numbering
+    from `lit-1` each time meant the first hit of a second search reused the first hit of
+    the first search's id with different text — so two unrelated papers were one id, and
+    the unedited first item came back classified `server_retrieved_but_modified` because
+    the ledger's hash had been overwritten. A content-derived id collides only when the
+    content is genuinely the same, which is exactly when it should: re-retrieving a span
+    across two searches yields one id and one hash, and a real edit still changes both.
+
+    Returns the items and the ids whose span was truncated, so the cut is reported beside
+    the evidence rather than written into the span.
     """
     items: list[EvidenceItem] = []
-    for index, article in enumerate(getattr(bundle, "articles", []) or []):
+    truncated: list[str] = []
+    for article in getattr(bundle, "articles", []) or []:
         abstract = getattr(article, "abstract", None)
         if not abstract or not abstract.strip():
             continue
         identifiers: ArticleIdentifier = article.identifiers
-        items.append(
-            EvidenceItem(
-                id=f"lit-{index + 1}",
-                kind=EvidenceKind.RETRIEVED_SOURCE,
-                statement=(article.title or identifiers.stable_key()).strip(),
-                locator=SourceLocator(
-                    article=identifiers,
-                    source_kind=SourceKind.ABSTRACT,
-                    source_text=_span(abstract),
-                ),
-            )
+        span, was_cut = _excerpt(abstract)
+        provisional = EvidenceItem(
+            id="pending",
+            kind=EvidenceKind.RETRIEVED_SOURCE,
+            statement=(article.title or identifiers.stable_key()).strip(),
+            locator=SourceLocator(
+                article=identifiers,
+                source_kind=SourceKind.ABSTRACT,
+                source_text=span,
+            ),
         )
-    return items
+        # `content_hash` excludes `id` by construction, so renaming leaves it valid — that
+        # exclusion is what lets the id be derived from the hash at all.
+        item = provisional.model_copy(update={"id": f"lit-{provisional.content_hash[:12]}"})
+        items.append(item)
+        if was_cut:
+            truncated.append(item.id)
+    return items, truncated
 
 
 def domain_overlap(registry: DomainRegistry, context: dict[str, Any]) -> list[DomainOverlap]:
@@ -446,26 +492,45 @@ def draft_check(
     evidence: list[EvidenceItem],
     origins: list[EvidenceOrigin],
 ) -> DraftCheckResult:
-    """Run the existing integrity checks over a draft the host wrote.
+    """Validate the draft, then assemble it, then check it. In that order.
 
-    `check_integrity` is reused unchanged. It was built for reports this platform's own
-    backend produced, and none of what it checks — does a cited id exist, does a claim
-    marked evidence-linked cite something grounded, does an experiment say what a result
-    would change — depends on who wrote the draft.
+    The first version of this adapter skipped the middle step and went straight to
+    building models out of the submitted dicts with ``str()`` around every field — which
+    re-introduced, on the MCP route, exactly the defects the research path had already
+    been through. Measured on the shipped tool: ``"discriminates": "H1"`` became
+    ``["H", "1"]`` and produced two bogus `unknown_hypothesis_id` findings; an integer
+    evidence id became the string ``"1"``, an id nobody supplied; and a hypothesis
+    carrying ``certainty`` and ``citation`` had both silently dropped.
 
-    The provenance recorded says `host_llm` with **zero** model calls, because that is what
-    happened. Filing a host's design under an internal provider run would misattribute the
-    reasoning and inflate what this server did.
+    So `validate_report_payload` is reused rather than re-implemented. Every check in it
+    is about the payload, not about who wrote it: a host LLM writing a bare string where a
+    list belongs and this platform's own backend writing one are the same defect. It also
+    imposes no minimum number of hypotheses or experiments — declining to design is a
+    legitimate answer, and padding to a quota is worse than a short draft.
+
+    `check_integrity` is likewise reused unchanged, and provenance records `host_llm` with
+    **zero** model calls, because that is what happened. Filing a host's design under an
+    internal provider run would misattribute the reasoning.
     """
+    checked, payload_findings = validate_report_payload(
+        {
+            "restated_question": restated_question,
+            "assumptions": assumptions,
+            "hypotheses": hypotheses,
+            "experiments": experiments,
+            "open_items": open_items,
+            "evidence_used": evidence_used,
+        }
+    )
     request = ResearchRequest(question=question, evidence=evidence)
     report = ResearchReport(
         question=question,
-        restated_question=restated_question,
-        assumptions=assumptions,
-        hypotheses=[_hypothesis(item) for item in hypotheses],
-        experiments=[_experiment(item) for item in experiments],
-        open_items=open_items,
-        evidence_used=evidence_used,
+        restated_question=checked["restated_question"],
+        assumptions=checked["assumptions"],
+        hypotheses=[_hypothesis(item) for item in checked["hypotheses"]],
+        experiments=[_experiment(item) for item in checked["experiments"]],
+        open_items=checked["open_items"],
+        evidence_used=checked["evidence_used"],
         evidence_snapshot=[item.model_copy(deep=True) for item in evidence],
         provenance=ResearchProvenance(
             backend="host_llm",
@@ -475,7 +540,7 @@ def draft_check(
             evidence_offered=len(evidence),
         ),
     )
-    findings = check_integrity(request, report)
+    findings = payload_findings + check_integrity(request, report)
     return DraftCheckResult(
         not_checked=list(NOT_CHECKED),
         evidence_origins=origins,
@@ -494,38 +559,23 @@ NOT_CHECKED: tuple[str, ...] = (
     "Whether a source named in free text refers to a real publication. Only ids in the "
     "submitted evidence list are resolved; a paper named inside a sentence is not.",
     "Whether the controls, timepoints or measurements are adequate.",
+    "Anything about a graph_findings path. Only ids in the submitted evidence[] are "
+    "resolved, so a knowledge-graph path cannot be cited here and is out of scope for "
+    "every check above. Do not re-submit one as a user_observation or a retrieved_source "
+    "to get it checked: it is neither, and relabelling it would make an unverified "
+    "traversal look like something someone read.",
 )
 
 
 def _hypothesis(item: dict[str, Any]) -> Hypothesis:
-    return Hypothesis(
-        id=str(item.get("id", "")).strip() or "H?",
-        statement=str(item.get("statement", "")),
-        support=HypothesisSupport(
-            item.get("support", HypothesisSupport.UNVERIFIED_CANDIDATE.value)
-        ),
-        supporting_evidence_ids=[str(x) for x in item.get("supporting_evidence_ids", [])],
-        contradicting_evidence_ids=[str(x) for x in item.get("contradicting_evidence_ids", [])],
-        applicability=item.get("applicability") or None,
-    )
+    """Map a **checked** hypothesis. No coercion: `validate_report_payload` ran first."""
+    return Hypothesis(**item)
 
 
 def _experiment(item: dict[str, Any]) -> ProposedExperiment:
+    """Map a **checked** experiment. No coercion: `validate_report_payload` ran first."""
     return ProposedExperiment(
-        id=str(item.get("id", "")).strip() or "E?",
-        design=str(item.get("design", "")),
-        discriminates=[str(x) for x in item.get("discriminates", [])],
-        controls=[str(x) for x in item.get("controls", [])],
-        measurements=[str(x) for x in item.get("measurements", [])],
-        timepoints=[str(x) for x in item.get("timepoints", [])],
-        branches=[
-            DecisionBranch(
-                outcome=str(branch.get("outcome", "")),
-                implication=str(branch.get("implication", "")),
-            )
-            for branch in item.get("branches", [])
-        ],
-        priority_rationale=item.get("priority_rationale") or None,
+        **{**item, "branches": [DecisionBranch(**b) for b in item["branches"]]}
     )
 
 
@@ -548,9 +598,17 @@ class IssuedEvidence:
         self._limit = limit
 
     def record(self, items: list[EvidenceItem]) -> None:
+        """Remember what was issued. **First write wins.**
+
+        Overwriting meant a second search silently redefined what a first-search id had
+        stood for, and the unedited original then came back reported as modified. Ids are
+        content-derived now, so a re-issue carries the same hash and this is belt and
+        braces — but a ledger whose entries can change is not a provenance record.
+        """
         for item in items:
-            if item.id not in self._hashes:
-                self._order.append(item.id)
+            if item.id in self._hashes:
+                continue
+            self._order.append(item.id)
             self._hashes[item.id] = item.content_hash or ""
             while len(self._order) > self._limit:
                 self._hashes.pop(self._order.pop(0), None)
@@ -613,6 +671,17 @@ def literature_status(bundle: Any) -> LookupStatus:
         status="ok",
         detail=(
             f"{len(bundle.articles)} article(s) discovered, {with_text} with text that "
-            "could be returned as a citable span."
+            "could be returned as a citable span. " + CONTEXT_NOT_A_FILTER
         ),
     )
+
+
+#: Said on every literature status, because the tool takes a `context` argument and a
+#: caller can reasonably assume it narrowed the search. It does not: the query is the
+#: question text, and `context` is used only for the domain-overlap report. Mapping it
+#: onto `LiteratureQuery`'s species/cell_types/genes fields is a real piece of work with
+#: its own vocabulary questions, and claiming it happened would be cheaper and false.
+CONTEXT_NOT_A_FILTER = (
+    "The search used the question text only; `context` was NOT applied as a filter, so "
+    "these results are not restricted to the species, cell type or system you supplied."
+)

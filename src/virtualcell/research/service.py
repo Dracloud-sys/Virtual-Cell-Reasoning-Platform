@@ -118,7 +118,7 @@ class ResearchService:
 
         reply = backend.design(prompt, max_output_tokens=request.budget.max_output_tokens)
         payload = _parse(reply.text)
-        checked, reply_findings = _validate_payload(payload)
+        checked, reply_findings = validate_report_payload(payload)
 
         report = _assemble(request, checked, backend, reply)
         report.integrity = reply_findings + check_integrity(request, report)
@@ -257,8 +257,15 @@ def _blank_text(value: str, code_where: str) -> list[IntegrityFinding]:
     ]
 
 
-def _validate_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], list[IntegrityFinding]]:
-    """Check the model's reply before a single field of a report is built from it.
+def validate_report_payload(
+    payload: dict[str, Any],
+) -> tuple[dict[str, Any], list[IntegrityFinding]]:
+    """Check a report payload before a single field of a report is built from it.
+
+    Public because the MCP draft check needs exactly this, and a second copy would
+    drift. Who wrote the payload changes none of these checks: a host LLM writing
+    ``"discriminates": "H1"`` and this platform's own backend writing it are the same
+    defect, and both silently become ``["H", "1"]`` without this step.
 
     Two kinds of wrong, kept apart, because they need different answers from the caller:
 
@@ -376,7 +383,7 @@ def _assemble(
 ) -> ResearchReport:
     """Map a **checked** payload onto the report contract.
 
-    Nothing here coerces: `_validate_payload` has already established every type, so a
+    Nothing here coerces: `validate_report_payload` has already established every type, so a
     ``str()`` call in this function would be either dead or a second, quieter validator.
     """
     return ResearchReport(

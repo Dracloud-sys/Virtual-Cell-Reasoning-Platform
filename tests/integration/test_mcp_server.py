@@ -1049,3 +1049,339 @@ def test_the_specialist_door_still_refuses_exactly_what_it_always_refused() -> N
     refusal = _refusal(_server(), "reason", {"domain": "no_such_domain", "task": "anything"})
 
     assert refusal.error == "unknown_domain"
+
+
+# --------------------------------------------------------------------------- #
+# the startup path a host actually launches, and repeated use within a session
+#
+# Everything below was reproduced against the shipped server at 561a58a before
+# anything was changed.
+# --------------------------------------------------------------------------- #
+
+import anyio  # noqa: E402
+from mcp.client.session import ClientSession  # noqa: E402
+from mcp.shared.memory import create_client_server_memory_streams  # noqa: E402
+
+
+class _SequentialLiterature:
+    """Returns a different article per call, the way two real searches would."""
+
+    def __init__(self, *article_sets: list[ArticleRecord]) -> None:
+        self._sets = list(article_sets)
+        self.calls = 0
+
+    async def run(self, inputs: AgentInput) -> AgentOutput:
+        articles = self._sets[min(self.calls, len(self._sets) - 1)]
+        self.calls += 1
+        return AgentOutput(
+            agent="stub",
+            claims=[],
+            confidence=0.0,
+            notes="",
+            result=_bundle(DiscoveryRunStatus.SUCCESS, articles).model_dump(mode="json"),
+        )
+
+
+_LONG = ArticleRecord(
+    identifiers=ArticleIdentifier(doi="10.1000/long-abstract"),
+    title="A long abstract",
+    abstract="Degradation outpaced deposition. " + "padding " * 120,
+)
+
+
+def _protocol_session(server, exchange):
+    """Drive a real initialize / list_tools / call_tool over the MCP protocol.
+
+    `server.call_tool` in the other questions here bypasses the protocol entirely. That is
+    the right level for most of them, but it cannot catch a tool whose schema the SDK
+    refuses to serialise, or an entry point that builds the server differently from the
+    way a test does — which is exactly the class of defect this block exists for.
+    """
+    result: dict[str, Any] = {}
+
+    async def _run() -> None:
+        low = server._lowlevel_server
+        async with (
+            create_client_server_memory_streams() as (client_streams, server_streams),
+            anyio.create_task_group() as tg,
+        ):
+            tg.start_soon(
+                lambda: low.run(
+                    server_streams[0],
+                    server_streams[1],
+                    low.create_initialization_options(),
+                    raise_exceptions=True,
+                )
+            )
+            async with ClientSession(client_streams[0], client_streams[1]) as session:
+                result.update(await exchange(session))
+            tg.cancel_scope.cancel()
+
+    anyio.run(_run)
+    return result
+
+
+def test_the_process_entry_point_can_start_with_the_search_wired_in(monkeypatch) -> None:
+    """`main()` called `build_server()` with no arguments, so `literature_agent` was always
+    None and the connection config that shipped could only ever answer
+    `search_literature=true` with `not_implemented`. The tool was reachable; the capability
+    was not, and no configuration could change that.
+
+    Off by default, and **enabling it searches nothing on its own** — a request still has
+    to ask.
+    """
+    monkeypatch.delenv("VIRTUALCELL_MCP_LITERATURE", raising=False)
+    monkeypatch.setattr(mcp_server.sys, "argv", ["virtualcell.mcp"])
+    assert mcp_server.literature_agent_from_env() is None
+
+    monkeypatch.setenv("VIRTUALCELL_MCP_LITERATURE", "1")
+    assert mcp_server.literature_agent_from_env() is not None
+
+    monkeypatch.delenv("VIRTUALCELL_MCP_LITERATURE")
+    monkeypatch.setattr(mcp_server.sys, "argv", ["virtualcell.mcp", "--literature"])
+    assert mcp_server.literature_agent_from_env() is not None
+
+
+def test_the_open_world_annotation_matches_what_the_server_can_actually_do() -> None:
+    """A host uses annotations to decide what needs confirming. `open_world_hint` was
+    hard-coded false while the tool could reach the public internet — the annotation
+    saying the opposite of the truth. It is now true exactly when a searcher is wired in,
+    which is exactly when a call can leave the machine.
+    """
+    offline = _tools(_server())["research_evidence"].annotations
+    online = _tools(
+        _server(literature_agent=_StubLiterature(_bundle(DiscoveryRunStatus.SUCCESS, [_WITH_TEXT])))
+    )["research_evidence"].annotations
+
+    assert offline.open_world_hint is False
+    assert online.open_world_hint is True
+    assert offline.read_only_hint is online.read_only_hint is True
+
+
+def test_the_tools_are_reachable_over_the_real_protocol() -> None:
+    """initialize, list_tools and call_tool, through a client session rather than through
+    the server object. `server.call_tool` skips the protocol, so nothing else here would
+    notice a result type the SDK cannot put on the wire.
+    """
+
+    async def exchange(session: ClientSession) -> dict[str, Any]:
+        init = await session.initialize()
+        tools = await session.list_tools()
+        evidence = await session.call_tool(
+            "research_evidence", {"question": "Does p53 drive arrest in ECM culture?"}
+        )
+        draft = await session.call_tool("check_research_draft", _draft())
+        return {
+            "name": init.server_info.name,
+            "instructions": init.instructions or "",
+            "tools": sorted(t.name for t in tools.tools),
+            "evidence": evidence,
+            "draft": draft,
+        }
+
+    out = _protocol_session(_server(), exchange)
+
+    assert out["name"] == mcp_server.SERVER_NAME
+    assert out["tools"] == sorted(TOOL_NAMES)
+    assert "No domain is required" in guidance.flatten(out["instructions"])
+    assert out["evidence"].is_error is False
+    assert out["evidence"].structured_content["question"]
+    assert out["draft"].is_error is False
+    assert out["draft"].structured_content["internal_model_calls"] == 0
+
+
+# --- the draft adapter must not re-introduce what the research path already fixed ------- #
+
+
+def test_a_bare_string_in_the_draft_is_not_split_into_characters() -> None:
+    """Measured on the shipped tool: `"discriminates": "H1"` became `["H", "1"]` and
+    produced two bogus `unknown_hypothesis_id` findings — a defect report invented by the
+    adapter, about hypotheses the host never wrote.
+
+    `validate_report_payload` is reused rather than re-implemented: every check in it is
+    about the payload, not about who wrote it.
+    """
+    draft = _draft(hypotheses=[], experiments=[{"id": "E1", "design": "D", "discriminates": "H1"}])
+
+    refusal = _refusal(_server(), "check_research_draft", draft)
+
+    assert refusal.error == "malformed_draft"
+    assert "discriminates" in refusal.detail
+
+
+def test_an_evidence_id_in_the_draft_is_not_stringified_into_existence() -> None:
+    """`str(1)` is `"1"`, a well-formed id nobody supplied. The shipped adapter coerced it
+    and the integrity check then reported the citation it had just manufactured.
+    """
+    draft = _draft()
+    draft["hypotheses"][0]["supporting_evidence_ids"] = [1]
+
+    refusal = _refusal(_server(), "check_research_draft", draft)
+
+    assert refusal.error == "malformed_draft"
+    assert "supporting_evidence_ids" in refusal.detail
+
+
+def test_a_field_nobody_declared_in_the_draft_is_reported_not_dropped() -> None:
+    """The shipped adapter dropped `certainty` and `citation` with no trace, so a host that
+    attached a fabricated citation was told its draft checked out clean.
+    """
+    draft = _draft()
+    draft["hypotheses"][0]["certainty"] = 0.99
+    draft["hypotheses"][0]["citation"] = "Nature 2020"
+
+    findings = _call(_server(), "check_research_draft", draft)["findings"]
+
+    reported = [f for f in findings if f["code"] == "unexpected_model_field"]
+    joined = " ".join(f["detail"] for f in reported)
+    assert "certainty" in joined and "0.99" in joined
+    assert "citation" in joined and "Nature 2020" in joined
+
+
+def test_the_draft_check_still_imposes_no_minimum_number_of_anything() -> None:
+    """Reusing the validator must not smuggle in a quota. A single hypothesis and a stated
+    hold are both legitimate answers from a host.
+    """
+    result = _call(_server(), "check_research_draft", _draft())
+
+    assert result["findings"] == []
+
+
+# --- two searches in one session -------------------------------------------------------- #
+
+
+def test_two_searches_do_not_collide_on_one_evidence_id() -> None:
+    """Measured on the shipped server: every search numbered from `lit-1`, so the first hit
+    of a second search took the first hit of the first search's id with different text. The
+    ledger's hash was overwritten, and the **unedited** first item then came back classified
+    `server_retrieved_but_modified` — a fabrication warning about material the server itself
+    had handed over.
+
+    Ids are derived from content now, so they collide only when the content is the same.
+    """
+    server = _server(literature_agent=_SequentialLiterature([_WITH_TEXT], [_WITHOUT_TEXT, _LONG]))
+
+    first = _call(server, "research_evidence", {"question": "collagen", "search_literature": True})[
+        "evidence"
+    ]
+    second = _call(
+        server, "research_evidence", {"question": "degradation", "search_literature": True}
+    )["evidence"]
+
+    assert len(first) == len(second) == 1
+    assert first[0]["id"] != second[0]["id"], "two different papers must not share an id"
+
+    origins = {
+        row["id"]: row["origin"]
+        for row in _call(
+            server,
+            "check_research_draft",
+            _draft(
+                hypotheses=[],
+                evidence=first + second,
+                evidence_used=[first[0]["id"], second[0]["id"]],
+            ),
+        )["evidence_origins"]
+    }
+    assert origins == {first[0]["id"]: "server_retrieved", second[0]["id"]: "server_retrieved"}
+
+
+def test_retrieving_the_same_span_twice_yields_one_id_and_stays_unmodified() -> None:
+    """The other half. A content-derived id has to be stable, or a host that re-ran a search
+    would find its earlier citations reported as edited.
+    """
+    server = _server(literature_agent=_SequentialLiterature([_WITH_TEXT], [_WITH_TEXT]))
+
+    first = _call(server, "research_evidence", {"question": "collagen", "search_literature": True})[
+        "evidence"
+    ][0]
+    again = _call(server, "research_evidence", {"question": "collagen", "search_literature": True})[
+        "evidence"
+    ][0]
+
+    assert first == again
+    origin = _call(
+        server,
+        "check_research_draft",
+        _draft(hypotheses=[], evidence=[first], evidence_used=[first["id"]]),
+    )["evidence_origins"][0]
+    assert origin["origin"] == "server_retrieved"
+
+
+# --- is what comes back usable ------------------------------------------------------------ #
+
+
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("ECM scaffold degradation", "ECM"),
+        ("Does p53 or p16 drive arrest?", "p53"),
+        ("Does p53 or p16 drive arrest?", "p16"),
+        ("TERT overexpression", "TERT"),
+    ],
+)
+def test_short_names_survive_tokenisation(question: str, expected: str) -> None:
+    """A flat four-character floor threw away the names this field is mostly made of, so a
+    question about ECM, p53 or p16 could not reach the graph at all.
+    """
+    assert expected in research_payloads.seed_terms(question)
+
+
+def test_a_bare_number_is_not_a_seed() -> None:
+    """`60` in "60% by day 14" would match half the graph and mean nothing. A short token
+    earns its place by mixing letters and digits, or by being a capitalised symbol.
+    """
+    terms = research_payloads.seed_terms("60% mass loss by day 14 in TERT cells")
+
+    assert "TERT" in terms
+    assert "60" not in terms and "14" not in terms
+
+
+def test_a_truncated_span_is_reported_beside_the_evidence_not_inside_it() -> None:
+    """The shipped version appended `" [...]"` to `source_text`, so the span no longer
+    matched the document it claimed to come from and its hash covered a display artefact. A
+    reader pasting that string into the paper would not find it.
+    """
+    result = _call(
+        _server(literature_agent=_StubLiterature(_bundle(DiscoveryRunStatus.SUCCESS, [_LONG]))),
+        "research_evidence",
+        {"question": "degradation", "search_literature": True},
+    )
+
+    item = result["evidence"][0]
+    assert "[...]" not in item["locator"]["source_text"]
+    assert item["id"] in result["truncated_evidence_ids"]
+    assert _LONG.abstract.startswith(item["locator"]["source_text"][:30])
+
+
+def test_the_search_does_not_claim_the_context_narrowed_it() -> None:
+    """`context` is accepted and was passed to the searcher as `{}` — the shape of a filter
+    that does nothing. A tool that takes a species and a cell type invites the assumption
+    that it searched for them, so the status says plainly that it did not.
+    """
+    result = _call(
+        _server(
+            literature_agent=_StubLiterature(_bundle(DiscoveryRunStatus.SUCCESS, [_WITH_TEXT]))
+        ),
+        "research_evidence",
+        {
+            "question": "collagen deposition",
+            "context": {"species": "human", "cell_type": "dermal fibroblast"},
+            "search_literature": True,
+        },
+    )
+
+    detail = next(s for s in result["lookups"] if s["source"] == "literature")["detail"]
+    assert "NOT applied as a filter" in detail
+
+
+def test_the_draft_check_says_graph_findings_are_out_of_its_scope() -> None:
+    """A graph path cannot be cited in a draft: only `evidence[]` ids resolve. Saying so is
+    what stops a host relabelling a traversal as a user_observation to get it checked —
+    which would make an unverified path look like something someone read.
+    """
+    result = _call(_server(), "check_research_draft", _draft())
+
+    scope = " ".join(result["not_checked"])
+    assert "graph_findings" in scope
+    assert "user_observation" in scope and "retrieved_source" in scope
