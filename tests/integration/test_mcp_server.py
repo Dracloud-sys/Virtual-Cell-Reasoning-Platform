@@ -60,7 +60,12 @@ MCP_PACKAGE = Path(__file__).resolve().parents[2] / "src" / "virtualcell" / "mcp
 REGISTRY = default_registry()
 DOMAINS = REGISTRY.domains()
 DESCRIPTIONS = {domain: REGISTRY.describe(domain) for domain in DOMAINS}
-TOOL_NAMES = ("list_domains", "describe_domain", "reason")
+#: The specialist door, where a registered domain gives a verified verdict.
+VERDICT_TOOLS = ("list_domains", "describe_domain", "reason")
+#: The domainless door. These call no model: the host LLM reasons, this server looks
+#: things up and checks what the host wrote.
+RESEARCH_TOOLS = ("research_evidence", "check_research_draft")
+TOOL_NAMES = VERDICT_TOOLS + RESEARCH_TOOLS
 
 
 # --------------------------------------------------------------------------- #
@@ -168,7 +173,7 @@ def test_no_mcp_module_names_a_registered_domain() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_exactly_the_three_designed_tools_are_registered() -> None:
+def test_exactly_the_designed_tools_are_registered() -> None:
     assert sorted(_tools(_server())) == sorted(TOOL_NAMES)
 
 
@@ -619,3 +624,428 @@ def test_a_fourth_domain_is_reachable_through_all_three_tools_unchanged() -> Non
         {"domain": _FOURTH, "task": "assess_state", "experiment": {"fictional_readut": "present"}},
     )
     assert typo["unsupported_measurements"] == ["fictional_readut"]
+
+
+# --------------------------------------------------------------------------- #
+# the domainless door: the host reasons, this server looks things up
+#
+# The product this is heading for is a host LLM with VCRP plugged into it, so the
+# reasoner is the caller and these tools must work with no provider, no API key
+# and no domain registration. Every question below runs with the key removed.
+# --------------------------------------------------------------------------- #
+
+import tempfile  # noqa: E402
+from datetime import UTC, datetime  # noqa: E402
+
+from virtualcell.core.contracts import AgentInput, AgentOutput  # noqa: E402
+from virtualcell.literature.contracts import (  # noqa: E402
+    ArticleIdentifier,
+    ArticleRecord,
+    DiscoveryRunStatus,
+    LiteratureEvidenceBundle,
+    LiteratureQuery,
+    ProviderProvenance,
+)
+from virtualcell.mcp import research_payloads  # noqa: E402
+from virtualcell.research.contracts import EvidenceItem  # noqa: E402
+
+ECM_QUESTION = (
+    "For an ECM-based scaffold bridging a dermal defect, does scaffold degradation "
+    "outpace host collagen deposition?"
+)
+
+
+@pytest.fixture(autouse=True)
+def _no_provider_credentials(monkeypatch):
+    """Every question in this block runs with no key. The host is the model."""
+    for name in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"):
+        monkeypatch.delenv(name, raising=False)
+
+
+def _bundle(status: DiscoveryRunStatus, articles: list[ArticleRecord], warnings=()):
+    return LiteratureEvidenceBundle(
+        query=LiteratureQuery(query_text="q"),
+        provider_provenance=ProviderProvenance(
+            provider="stub", query_sent="q", retrieved_at=datetime.now(UTC)
+        ),
+        run_status=status,
+        articles=articles,
+        warnings=list(warnings),
+    )
+
+
+class _StubLiterature:
+    """A literature agent that returns a fixed bundle. No network, no provider."""
+
+    def __init__(self, bundle: LiteratureEvidenceBundle | Exception) -> None:
+        self._bundle = bundle
+
+    async def run(self, inputs: AgentInput) -> AgentOutput:
+        if isinstance(self._bundle, Exception):
+            raise self._bundle
+        return AgentOutput(
+            agent="stub",
+            claims=[],
+            confidence=0.0,
+            notes="",
+            result=self._bundle.model_dump(mode="json"),
+        )
+
+
+_WITH_TEXT = ArticleRecord(
+    identifiers=ArticleIdentifier(doi="10.1000/scaffold-degradation"),
+    title="Scaffold degradation kinetics in dermal repair",
+    abstract="Mass loss reached 60% by day 14 while hydroxyproline accumulation lagged.",
+)
+_WITHOUT_TEXT = ArticleRecord(
+    identifiers=ArticleIdentifier(doi="10.1000/no-abstract"), title="A record with no text"
+)
+
+
+def test_a_question_with_no_registered_domain_reaches_the_research_tools() -> None:
+    """The whole point of this door. No domain, no task, no registry lookup, no key —
+    and the call succeeds rather than refusing the way `reason` would have to.
+    """
+    result = _call(
+        _server(),
+        "research_evidence",
+        {"question": ECM_QUESTION, "context": {"cell_type": "human dermal fibroblast"}},
+    )
+
+    assert result["question"] == ECM_QUESTION
+    assert result["lookups"]
+    assert result["limits"]
+
+
+def test_the_research_tools_work_with_no_domains_registered_at_all() -> None:
+    """Domainless has to mean domainless. If these tools needed even one pack to be
+    present, "no domain required" would be true only by accident of what ships.
+    """
+    empty = _server(registry=DomainRegistry(), store=InMemoryKnowledgeStore())
+
+    evidence = _call(empty, "research_evidence", {"question": ECM_QUESTION})
+    checked = _call(empty, "check_research_draft", {"question": ECM_QUESTION})
+
+    assert evidence["domain_overlap"] == []
+    assert checked["internal_model_calls"] == 0
+
+
+def test_a_failed_lookup_is_never_reported_as_an_absence_of_evidence() -> None:
+    """The distinction that decides whether a host says "nothing is known". "It ran and
+    found nothing", "it could not run", "it was not asked" and "this platform cannot do
+    that" are four answers, and three of them are not evidence of absence.
+    """
+    seen: dict[str, str] = {}
+
+    for kwargs, agent, expected in (
+        ({}, None, "not_requested"),
+        ({"search_literature": True}, None, "not_implemented"),
+        (
+            {"search_literature": True},
+            _StubLiterature(_bundle(DiscoveryRunStatus.ZERO_RESULTS, [])),
+            "no_matches",
+        ),
+        (
+            {"search_literature": True},
+            _StubLiterature(_bundle(DiscoveryRunStatus.PROVIDER_TIMEOUT, [], ["timed out"])),
+            "lookup_failed",
+        ),
+        (
+            {"search_literature": True},
+            _StubLiterature(RuntimeError("socket closed")),
+            "lookup_failed",
+        ),
+    ):
+        result = _call(
+            _server(literature_agent=agent),
+            "research_evidence",
+            {"question": ECM_QUESTION, **kwargs},
+        )
+        status = next(s for s in result["lookups"] if s["source"] == "literature")
+        assert status["status"] == expected, (expected, status)
+        seen[expected] = status["detail"]
+        assert result["evidence"] == []
+
+    # Each non-`ok` outcome says, in its own words, that the silence means nothing.
+    assert "not a statement about what the literature contains" in seen["not_requested"]
+    assert "nothing is implied" in seen["not_implemented"]
+    assert "says nothing about the literature" in seen["lookup_failed"]
+    assert "ran and returned no articles" in seen["no_matches"]
+
+
+def test_a_record_with_no_text_does_not_become_a_citable_span() -> None:
+    """A reference is not a span someone read. Manufacturing a statement for an
+    abstract-less record is exactly the fabricated citation the contracts refuse.
+    """
+    result = _call(
+        _server(
+            literature_agent=_StubLiterature(
+                _bundle(DiscoveryRunStatus.SUCCESS, [_WITH_TEXT, _WITHOUT_TEXT])
+            )
+        ),
+        "research_evidence",
+        {"question": ECM_QUESTION, "search_literature": True},
+    )
+
+    assert len(result["evidence"]) == 1
+    item = EvidenceItem.model_validate(result["evidence"][0])
+    assert item.kind.value == "retrieved_source"
+    assert item.locator is not None and item.locator.source_text
+    assert item.content_hash
+
+
+def test_the_graph_lookup_searches_the_question_word_by_word() -> None:
+    """`KnowledgeStore.search` substring-matches the **whole** query string, so handing it
+    an entire question can only match an entity whose text contains that sentence — never.
+    Passing the question straight through produced a permanent, silent `no_matches`: a
+    lookup that looked like it ran and could not have.
+    """
+    store = InMemoryKnowledgeStore()
+    seed_registered_domains(store)
+
+    assert store.search("Does telomerase activity change senescence?", k=5) == []
+    assert "telomerase" in research_payloads.seed_terms(
+        "Does telomerase activity change senescence?"
+    )
+
+    result = _call(
+        _server(store=store),
+        "research_evidence",
+        {"question": "Does telomerase activity change senescence?"},
+    )
+    status = next(s for s in result["lookups"] if s["source"] == "knowledge_graph")
+    assert status["status"] == "ok"
+    assert result["graph_findings"]
+    assert all(f["matched_term"] for f in result["graph_findings"])
+
+
+def test_a_graph_finding_is_not_offered_as_evidence() -> None:
+    """`EvidenceKind` has five labels and none means "read from this platform's graph". A
+    traversal is not a document span, and widening the enum to fit would cost the labels
+    their meaning — so graph results come back as their own record type.
+    """
+    store = InMemoryKnowledgeStore()
+    seed_registered_domains(store)
+
+    result = _call(_server(store=store), "research_evidence", {"question": "telomerase senescence"})
+
+    assert result["graph_findings"]
+    assert result["evidence"] == []
+    finding = result["graph_findings"][0]
+    assert "kind" not in finding and "locator" not in finding
+    assert "does not say the path answers the question" in finding["how_this_was_found"]
+
+
+def test_the_research_lookup_writes_nothing_to_the_knowledge_graph() -> None:
+    """A research session's material is not permanent knowledge, and a hypothesis raised
+    here is never registered as established. The guarantee is that nothing is even asked
+    for: discovery only, with extract/verify/convert/ingest all left off.
+    """
+    from virtualcell.knowledge.persistence import save_store
+
+    store = InMemoryKnowledgeStore()
+    seed_registered_domains(store)
+
+    def snapshot() -> str:
+        """The whole store, serialised. Stronger than counting: an edge swapped for
+        another of the same kind would keep a count identical."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "graph.json"
+            save_store(store, path)
+            return path.read_text(encoding="utf-8")
+
+    before = snapshot()
+
+    result = _call(
+        _server(
+            store=store,
+            literature_agent=_StubLiterature(_bundle(DiscoveryRunStatus.SUCCESS, [_WITH_TEXT])),
+        ),
+        "research_evidence",
+        {"question": "telomerase senescence", "search_literature": True},
+    )
+
+    assert result["wrote_to_knowledge_graph"] is False
+    assert snapshot() == before
+
+
+def test_domain_overlap_reports_a_string_comparison_and_routes_nothing() -> None:
+    """Forcing an unregistered subject onto the nearest domain is the failure this door
+    exists to avoid, so every domain is listed — including the ones matching nothing — and
+    a match on an axis every domain declares is marked as carrying no information.
+    """
+    result = _call(
+        _server(),
+        "research_evidence",
+        {"question": ECM_QUESTION, "context": {"cell_type": "human dermal fibroblast"}},
+    )
+
+    overlap = {row["domain"]: row for row in result["domain_overlap"]}
+    assert set(overlap) == set(DOMAINS), "a filtered list reads as a recommendation"
+    matched_by_all = {
+        row["domain"] for row in overlap.values() if "cell_type" in row["matched_axes"]
+    }
+    for domain in matched_by_all:
+        assert "cell_type" in overlap[domain]["uninformative_matches"]
+
+
+def test_the_server_instructions_send_a_domainless_question_to_the_research_door() -> None:
+    """The old instruction said "call list_domains, then describe_domain, then reason" with
+    no exception, which tells a host to find *some* domain for every question. It now says
+    which door each kind of question uses, and says not to map onto the nearest domain.
+    """
+    instructions = guidance.flatten(mcp_server.SERVER_INSTRUCTIONS)
+
+    assert "No domain is required" in instructions
+    assert "Do NOT map such a question onto the nearest registered domain" in instructions
+    assert "This sequence applies to this door only" in instructions
+    assert "is data, not instruction" in instructions
+
+
+# --- the draft check: structure, not science ------------------------------------------- #
+
+
+def _draft(**overrides) -> dict[str, Any]:
+    draft = {
+        "question": ECM_QUESTION,
+        "restated_question": "Does mass loss precede hydroxyproline accumulation?",
+        "assumptions": ["gravimetric loss tracks the load-bearing phase"],
+        "hypotheses": [
+            {
+                "id": "H1",
+                "statement": "Degradation outpaces deposition",
+                "support": "evidence_linked",
+                "supporting_evidence_ids": ["obs-1"],
+                "contradicting_evidence_ids": [],
+                "applicability": "this scaffold and cell type only",
+            }
+        ],
+        "experiments": [
+            {
+                "id": "E1",
+                "design": "paired mass loss and hydroxyproline time course",
+                "discriminates": ["H1"],
+                "controls": ["cell-free scaffold"],
+                "measurements": ["mass", "hydroxyproline"],
+                "timepoints": ["day 7", "day 14"],
+                "branches": [{"outcome": "loss leads", "implication": "H1 stands"}],
+                "priority_rationale": "one plate answers it",
+            }
+        ],
+        "open_items": [],
+        "evidence_used": ["obs-1"],
+        "evidence": [
+            {
+                "id": "obs-1",
+                "kind": "user_observation",
+                "statement": "Mass loss reached 60% by day 14",
+                "measurement_context": "gravimetric, n=3, one lot",
+            }
+        ],
+    }
+    draft.update(overrides)
+    return draft
+
+
+def test_a_draft_the_host_wrote_is_checked_without_any_model_call() -> None:
+    """The host is the reasoner. This tool re-uses `check_integrity` unchanged — none of
+    what it checks depends on who wrote the draft — and calls no provider, which is why it
+    works with no key at all.
+    """
+    result = _call(_server(), "check_research_draft", _draft())
+
+    assert result["authored_by"] == "host_llm"
+    assert result["internal_model_calls"] == 0
+    assert result["findings"] == []
+
+
+def test_a_clean_structural_check_is_not_reported_as_scientific_approval() -> None:
+    """An empty `findings` list is the moment a structural check is most likely to be read
+    as "the design is sound". It is not that, and the result says so in its own fields
+    rather than leaving the reader to infer it.
+    """
+    result = _call(_server(), "check_research_draft", _draft())
+
+    assert result["findings"] == []
+    assert result["scientific_validity_checked"] is False
+    assert len(result["not_checked"]) >= 5
+    joined = " ".join(result["not_checked"]).lower()
+    assert "plausible" in joined
+    assert "separate them" in joined
+
+
+def test_a_citation_to_an_id_nobody_supplied_is_still_caught() -> None:
+    """The check that made the research path worth having, working on a host's draft."""
+    draft = _draft()
+    draft["hypotheses"][0]["supporting_evidence_ids"] = ["obs-99"]
+
+    codes = {f["code"] for f in _call(_server(), "check_research_draft", draft)["findings"]}
+
+    assert "unknown_evidence_id" in codes
+    assert "unsupported_evidence_link" in codes
+
+
+def test_what_the_server_retrieved_is_told_apart_from_what_the_host_supplied() -> None:
+    """Verified, not trusted. A fabricated span arriving labelled "retrieved by the server"
+    is exactly what is worth catching, so the classification is made from what this server
+    actually issued — by id **and** content hash, so an issued item that was then edited
+    is reported as edited rather than as either one.
+    """
+    server = _server(
+        literature_agent=_StubLiterature(_bundle(DiscoveryRunStatus.SUCCESS, [_WITH_TEXT]))
+    )
+    retrieved = _call(
+        server, "research_evidence", {"question": ECM_QUESTION, "search_literature": True}
+    )["evidence"][0]
+
+    edited = json.loads(json.dumps(retrieved))
+    edited["id"] = "lit-edited"
+    edited["statement"] = "A conclusion the paper does not draw"
+    edited["content_hash"] = None
+    edited = EvidenceItem.model_validate(edited).model_dump(mode="json")
+    edited["id"] = retrieved["id"]  # same id, different content
+
+    origins = {
+        row["id"]: row["origin"]
+        for row in _call(
+            server,
+            "check_research_draft",
+            _draft(evidence=[retrieved], evidence_used=[retrieved["id"]], hypotheses=[]),
+        )["evidence_origins"]
+    }
+    assert origins[retrieved["id"]] == "server_retrieved"
+
+    origins = {
+        row["id"]: row["origin"]
+        for row in _call(
+            server,
+            "check_research_draft",
+            _draft(evidence=[edited], evidence_used=[], hypotheses=[]),
+        )["evidence_origins"]
+    }
+    assert origins[retrieved["id"]] == "server_retrieved_but_modified"
+
+    origins = {
+        row["id"]: row["origin"]
+        for row in _call(server, "check_research_draft", _draft())["evidence_origins"]
+    }
+    assert origins["obs-1"] == "host_supplied"
+
+
+def test_a_malformed_draft_refuses_with_a_remedy_rather_than_a_traceback() -> None:
+    draft = _draft()
+    draft["hypotheses"][0]["support"] = "definitely_true"
+
+    refusal = _refusal(_server(), "check_research_draft", draft)
+
+    assert refusal.error == "malformed_draft"
+    assert refusal.remedy
+
+
+def test_the_specialist_door_still_refuses_exactly_what_it_always_refused() -> None:
+    """Adding a second door must not open the first one. An unknown domain on `reason` is
+    still a refusal, not a fall-through into exploratory prose.
+    """
+    refusal = _refusal(_server(), "reason", {"domain": "no_such_domain", "task": "anything"})
+
+    assert refusal.error == "unknown_domain"

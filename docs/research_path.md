@@ -102,6 +102,107 @@ failed (4).
 The exploratory system prompt is **separate**. `reasoning/llm.py`'s evidence-only prompt is
 untouched and stays global for the strict path.
 
+## Who reasons: the plugin split
+
+The delivery shape is **a host LLM with VCRP plugged into it as an MCP server**, not VCRP
+calling a model of its own. That decides the division of labour, and it is close to the
+opposite of the one P1 was built under:
+
+| | does |
+|---|---|
+| **the host LLM** | understands the question, proposes competing hypotheses, designs the experiment, weighs the meaning, writes the explanation |
+| **VCRP** | looks evidence up, walks mechanism paths, checks sources and structure, reports which registered domains declare anything matching |
+| **the researcher** | makes the research judgement, approves the experiment |
+
+So `research_evidence` and `check_research_draft` **call no model and need no API key**. That
+is not a limitation being worked around; it is what the split means. The internal backend and
+the B/C runner stay as an optional path — nothing on the MCP route imports them — and a real
+provider run is no longer a precondition for anything here.
+
+What gets reused rather than rebuilt: the evidence contracts, `SourceLocator` and its hash,
+`content_hash`, `check_integrity` unchanged, the literature run statuses, and `explain`.
+
+### Two tools on the existing server
+
+Registered in `virtualcell/mcp/server.py` beside `list_domains` / `describe_domain` /
+`reason`, which are unchanged. A second server would double what a host must configure and
+split the guidance a model reads in two, for what is two more tools.
+
+**`research_evidence(question, context, search_literature, max_graph_seeds)`** — no domain
+required. Returns, in this order: what ran, what it does not establish, then the material.
+
+* `lookups[]` separates four outcomes that an empty list would merge: `ok`, `no_matches` (it
+  ran, found nothing), `lookup_failed` (it did not complete — absence means nothing here),
+  `not_requested`, `not_implemented`. The literature statuses come from
+  `DiscoveryRunStatus`, which already tells a zero-result search from a provider error and
+  from a timeout.
+* `evidence[]` is `EvidenceItem`s built only from records that actually carry text. A record
+  with no abstract is a reference, not a span someone read, and inventing a statement for it
+  would be the fabricated citation the contracts exist to refuse.
+* `graph_findings[]` is **not** evidence — see the finding below.
+* `domain_overlap[]` lists **every** registered domain, with `uninformative_matches` naming
+  the axes every domain declares. A filtered list reads as a recommendation, and matching
+  `cell_type` — which all three declare — made every domain look equally applicable to a
+  scaffold-degradation question.
+* Discovery only: extraction, verification, conversion and ingestion are all opt-ins on the
+  literature agent and none is passed. Nothing reaches the permanent graph, and a test
+  asserts the serialised store is byte-identical across a lookup.
+
+**`check_research_draft(...)`** — runs `check_integrity` over a draft the host wrote. None of
+what that checks depends on who wrote it. The result leads with what it did **not** do:
+`scientific_validity_checked` is always `false` and `not_checked` lists the six things a
+clean `findings` list does not mean. Provenance records `authored_by: host_llm` with
+`model_calls: 0`, because filing a host's design under an internal provider run would
+misattribute the reasoning.
+
+Evidence origin is **verified, not trusted**: each submitted item is matched against what
+this server actually issued, by id *and* `content_hash`, giving `server_retrieved`,
+`server_retrieved_but_modified` or `host_supplied`.
+
+### Two defects found by driving the tools
+
+**The graph lookup could never hit.** `KnowledgeStore.search` substring-matches the *whole*
+query string, so passing an entire question can only match an entity whose text contains that
+sentence. `search("Does telomerase activity change senescence?")` returns `[]` while
+`search("telomerase")` returns `TERT`. The lookup reported `no_matches` permanently and
+looked like it had run. It now tokenises, and each finding carries the `matched_term` that
+found its seed so a reader can see how thin the connection is.
+
+**Every domain "matched" the question.** See `uninformative_matches` above.
+
+### Finding: a graph hit has no evidence label
+
+`EvidenceKind` has five values and none means *read from this platform's knowledge graph*. A
+traversal is not a document span, not the caller's observation, not an inference from session
+evidence, not a model's prior and not a prediction. Widening the enum to fit its third caller
+on first contact is how a vocabulary stops meaning anything, so `GraphFinding` is its own
+record type and this is recorded rather than fixed inside the milestone that found it.
+
+Whether the right answer is a sixth kind, a separate contract, or leaving graph results
+outside the evidence vocabulary entirely is a decision for whoever has seen how hosts
+actually use them.
+
+### Connecting it, and what is not done
+
+```jsonc
+// the host's MCP config
+{ "mcpServers": { "virtualcell": {
+    "command": "<path to the venv python>",
+    "args": ["-m", "virtualcell.mcp"]
+} } }
+```
+
+Install with the MCP extra (`pip install -e ".[mcp]"`); `[llm]` is **not** needed for this
+route. `build_server(literature_agent=...)` is what enables external search — without it,
+`search_literature=true` reports `not_implemented` rather than silently returning nothing.
+
+**Not performed: use with a real host.** Nothing here has been driven by a host LLM. The
+tools are exercised end to end by tests and by a walkthrough with no credential, which
+establishes that the path runs — never that a host uses it well, and never that connecting a
+tool improved anyone's reasoning. That takes a new research question, real tool calls, and a
+look at what the host designed and what it changed after the check. Until then it stays
+marked not performed.
+
 ## Stages
 
 ### P0 — survey and baseline · **done**
