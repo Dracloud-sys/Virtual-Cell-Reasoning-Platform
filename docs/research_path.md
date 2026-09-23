@@ -182,31 +182,93 @@ Whether the right answer is a sixth kind, a separate contract, or leaving graph 
 outside the evidence vocabulary entirely is a decision for whoever has seen how hosts
 actually use them.
 
-### Connecting it
+### Connecting it to a Claude Code host
 
-Install with the MCP extra (`pip install -e ".[mcp]"`). `[llm]` is **not** needed for this
-route — no tool here calls a model.
-
-```jsonc
-// offline: the graph and the draft check, no outbound network
-{ "mcpServers": { "virtualcell": {
-    "command": "<path to the venv python>",
-    "args": ["-m", "virtualcell.mcp"]
-} } }
-```
+`.mcp.json` at the repository root registers the stdio server as a project MCP server. A
+host reads it **at session start**, so nothing about it takes effect in a session that is
+already running.
 
 ```jsonc
-// with public literature search enabled
 { "mcpServers": { "virtualcell": {
-    "command": "<path to the venv python>",
+    "command": "${VCRP_PYTHON}",
     "args": ["-m", "virtualcell.mcp", "--literature"]
 } } }
 ```
 
-`VIRTUALCELL_MCP_LITERATURE=1` does the same thing. **Enabling it searches nothing on its
-own**: it wires the existing Europe PMC discovery agent in, constructing it performs no I/O,
-and a request still has to pass `search_literature=true` before anything leaves the machine.
-No new provider, no model call.
+`${VCRP_PYTHON}` rather than a path: an absolute path is wrong on every machine but one,
+and a relative path assumes the host spawns with the repository as its working directory.
+Neither belongs in a committed file.
+
+**Two values the user sets in the environment settings** (cloud environment menu in the
+session title bar → Edit). Neither can be set from inside a session, and both apply to
+**new** sessions only:
+
+| field | value |
+|---|---|
+| **Setup script** | `bash scripts/setup_mcp_env.sh` |
+| **Environment variable** `VCRP_PYTHON` | the absolute path the script prints — in this container `/home/user/Virtual-Cell-Reasoning-Platform/.venv-mcp/bin/python` |
+
+The setup script builds that interpreter: guarded `python3.12` discovery, `uv` when
+present, `.[mcp]` installed, idempotent. Measured 3.5 s cold, 1.0 s warm, so running it on
+every session start is cheap. `.[llm]` is **not** installed and no API key is needed — these
+tools call no model.
+
+Confirm the path rather than trusting it: `bash scripts/setup_mcp_env.sh` prints it, and the
+venv self-ignores so it never appears in `git status`.
+
+**Start the new session on this branch, not `main`.** `.mcp.json` and the setup script live
+on `feat/research-path`; a session started from `main` has neither.
+
+### A failed lookup is not a search that found nothing
+
+Measured against the live API, and it is the difference between "nobody has studied this"
+and "we did not manage to look":
+
+| | body | stability |
+|---|---|---|
+| genuine zero hits | `{"version":"6.9","hitCount":0,"request":{…},"resultList":{"result":[]}}` — 192 B | 6 of 6 |
+| incomplete response | `{"version":"6.9"}` — 17 B, HTTP 200, identical headers | 3–4 of 10, **for any query**, including one with 43,683 hits |
+
+`data.get("resultList", {})` turned the second into an empty result list, so the run was
+recorded `zero_results` and reached a host as *"The search ran and returned no articles for
+this query"* — on a subject with tens of thousands of papers. Under-reporting a failure as an
+absence is the direction nobody recovers from, because nobody looks again.
+
+`_page` now checks the envelope's presence on every page, and a missing **or mistyped**
+field is enough: no `hitCount`, a null/string/bool `hitCount` (`bool` is a subclass of `int`,
+so `True` would otherwise have passed as zero hits), no `resultList`, no `result` field, or a
+null `result`. Three cases stay apart — an incomplete envelope is a failure wherever it
+lands; an empty result list *inside* a valid envelope is how pagination ends; a malformed row
+inside a valid list is still skipped with a warning.
+
+It routes through the path that already existed: `ProviderError` → `PROVIDER_ERROR` →
+`lookup_failed`. No new provider, no new status, and **no retry** — a retry would hide how
+often this happens, which is the thing a caller needs to know.
+
+Six live calls after the fix, every outcome recorded:
+
+```
+collagen scaffold degradation      #1 [ok]            23 evidence
+collagen scaffold degradation      #2 [ok]            23 evidence
+fibroblast stiffness myofibroblast #1 [lookup_failed]  no usable hitCount
+fibroblast stiffness myofibroblast #2 [lookup_failed]  provider_timeout after 10.0s
+zzqqxx_no_such_term_98765          #1 [no_matches]     ran and returned no articles
+zzqqxx_no_such_term_98765          #2 [no_matches]     ran and returned no articles
+```
+
+The `curl` reproduction is recorded as evidence that this is not a quirk of the Python
+transport. It is **not** evidence about the origin server: every request here goes through the
+same proxy, so where the response is produced is not something these measurements establish.
+
+### The literature switch
+
+`--literature`, or `VIRTUALCELL_MCP_LITERATURE=1`, is what wires the searcher in. The
+committed `.mcp.json` above passes it; omit it to run the graph and the draft check with no
+outbound network at all.
+
+**Enabling it searches nothing on its own**: it wires the existing Europe PMC discovery
+agent in, constructing it performs no I/O, and a request still has to pass
+`search_literature=true` before anything leaves the machine. No new provider, no model call.
 
 Without the flag, `search_literature=true` answers `not_implemented` — which is honest, and
 was previously the *only* possible answer from the shipped config.
