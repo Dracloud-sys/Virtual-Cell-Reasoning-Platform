@@ -95,3 +95,29 @@ Neither was fixed in the change that recorded them. Both were fixed together in 
 separately approved change (provider URL; status taken from the provider's contract). The
 live re-read of this paper's body needs the host to load the fixed server; it is recorded as
 its own section when it happens, not folded into the table above.
+
+## Live re-read on the fixed server (2026-09-24, server started after `22e067d`)
+
+Same paper, same host, a server process started at 05:23:14 UTC — after the fix commit (05:01:26).
+
+| call | status | what it shows |
+|---|---|---|
+| `research_evidence` (issued in this process) | literature `ok` | `lit-36fa8d506553` — DOI 10.1172/jci.insight.175188, PMCID PMC12128996 |
+| `read_evidence_source(part="full_text")` | `lookup_failed` | detail: "the body could not be parsed (XML DOCTYPE/ENTITY declarations are not allowed)" |
+
+**What changed.** The fetch no longer ends at the 404: the provider now reaches the body, and a
+body that will not parse is reported as `lookup_failed`, not as absence — the status split works
+as intended. **What did not happen.** No section list came back, no Discussion span was read, and
+no draft was checked against a server-read body passage. The decision "measure new collagen in
+both construct and medium" is therefore **unchanged and still rests only on the earlier
+`host_supplied` passage (`host-dup-2`)**; this run neither supports nor limits it.
+
+**A third defect, found by this run — recorded, not fixed.** `literature/documents.py` refuses any
+document containing a DOCTYPE declaration (`_FORBIDDEN_DECLARATION`). A real Europe PMC JATS body
+begins with an external DOCTYPE — `<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal
+Archiving and Interchange DTD with MathML3 v1.4 20241031//EN" "JATS-archivearticle1-4-mathml3.dtd">`
+— and, in the body fetched for PMC12128996, no `<!ENTITY` declaration. So every real open-access
+body is rejected at parse time, on this tool and on the discovery agent's extraction path; the
+tests passed because their JATS fixtures carry no DOCTYPE. Changing what the parser accepts is a
+safety decision (it exists to refuse entity expansion and external references) and was outside
+the approval for this change.

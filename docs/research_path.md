@@ -377,6 +377,13 @@ contract rather than a message: `None` → `not_available`; `ProviderError`, tim
 section. The discovery agent's `_document_for` was left as it is: it still treats an empty body
 like no body and falls back to the abstract without a warning — recorded, not changed here.
 
+**Then a third, found by the live re-read on the fixed server.** The body now arrives, and
+`parse_jats` rejects it: `_reject_entity_constructs` refuses any `<!DOCTYPE`, and real Europe PMC
+JATS begins with an external DOCTYPE (no `<!ENTITY` in the body checked). Every real open-access
+body therefore fails to parse, and `read_evidence_source` reports it — correctly — as
+`lookup_failed`. The test fixtures carry no DOCTYPE, which is why nothing caught it. Not fixed:
+what the parser accepts is a safety decision and needs its own approval.
+
 Also observed: a host conversation that had already loaded the tool definitions kept the old
 schema after the server restarted; only a fresh context saw the new one.
 
