@@ -320,6 +320,40 @@ the content is genuinely the same, and the ledger's first write wins.
   including that re-submitting one as a `user_observation` or `retrieved_source` to get it
   checked would make an unverified traversal look like something someone read.
 
+### Two gaps a real host session exposed
+
+Found on 2026-09-23 by a Claude Code host driving the shipped server on an ECM bridging-scaffold
+question (baseline and revised designs: `docs/research_sessions/`). The revised design in that
+session was written from passages the host read with its own PubMed tools; the fixes below came
+**after** it and did not shape it.
+
+**The draft contract was not published.** `check_research_draft` took `hypotheses`,
+`experiments` and `evidence` as `list[dict]`, which publishes as a bare `object`. The host
+guessed field names, was told its experiment had `no_decision_branches` and
+`discriminates_nothing` for fields it had written under other names, and then read
+`research/contracts.py` to find `support`, `discriminates` and `branches`. Fixed by attaching
+the JSON Schema of the contract models themselves (`contract_schema`, `$ref`s inlined so they
+resolve from the tool's root) to those parameters. Validation did **not** move:
+`validate_report_payload` still judges what arrives and still quotes an undeclared key back as
+a finding. No field name is written in the server; a test fills a draft from the published
+schema alone and checks that nothing is reported undeclared.
+
+**A span could not be read past 400 characters.** All 23 spans of the first search were cut,
+none reached methods or results, and there was no way to continue — although the bundle held
+the whole abstract. Added `read_evidence_source(evidence_id, part, section, offset)`: the rest of
+the abstract as consecutive spans, or one section of an open-access body (the provider's
+existing `fetch_open_full_text` and `parse_jats`, the pair extraction already uses; no new
+provider). Every span is a **new** evidence item with its own content-derived id, recorded in
+the issued ledger so it checks as `server_retrieved`; the id read from is never rewritten.
+`reached_end` is true only when the text was read to its end, and `next_offset` says where to
+resume. Tables and figures are not returned, and the result says only what was read may be
+described. `not_available` (no open-access body on record) and `lookup_failed` (the fetch did
+not complete) are kept apart and neither is a statement about the paper.
+
+What returning bounded full-text spans changes: `documents.py` keeps the parsed body in the
+process and puts only metadata into a bundle. This tool still never returns a whole body — one
+requested section, in bounded spans, with the licence the document declares.
+
 ### What has and has not been exercised
 
 Three different things, kept apart:
@@ -327,8 +361,8 @@ Three different things, kept apart:
 | | |
 |---|---|
 | **protocol** | done — `initialize` / `list_tools` / `call_tool` over a real `ClientSession`, not `server.call_tool`, which skips the wire |
-| **real public literature lookup** | **not performed** — every search in tests and records uses a stub, so nothing here has queried Europe PMC |
-| **use with a real host LLM** | **not performed** — nothing here has been driven by a host |
+| **real public literature lookup** | performed from a live host on 2026-09-23 (Europe PMC); tests still use stubs. Two of eight searches returned `lookup_failed` and succeeded on one retry |
+| **use with a real host LLM** | performed once on 2026-09-23 (one question, one host); the two gaps above came from it. One session is a case, not an evaluation |
 
 The tools running is not a host using them well, and connecting a tool is not evidence that
 anyone's reasoning improved. That needs a new research question, real tool calls, and a look

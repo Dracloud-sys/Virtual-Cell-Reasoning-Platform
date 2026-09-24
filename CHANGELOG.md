@@ -7,6 +7,16 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`read_evidence_source`: read past the 400-character excerpt.** A live host session got 23
+  spans, all cut at 400 characters, and no way to read methods or results. The new tool reads
+  the rest of an issued abstract, or one section of an open-access body through the existing
+  provider and JATS parser, as new evidence items with their own ids; the id read from is never
+  rewritten, and `reached_end`/`next_offset` say whether the text was read to its end.
+- **`check_research_draft` publishes its nested contract.** `hypotheses`, `experiments` and
+  `evidence` were published as bare objects, and the host had to read `research/contracts.py`
+  to learn `support`, `discriminates` and `branches`. The input schema is now generated from
+  the contract models (refs inlined); validation is unchanged and still reports undeclared keys
+  as findings.
 - **A literature survey, because one paper cannot establish what a field does.**
   The external evaluation's first finding read *"not one of the five papers reports γH2AX"* -
   which is n=1, repeated five times. Each case was bounded by whatever that one paper happened
