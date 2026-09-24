@@ -354,6 +354,24 @@ What returning bounded full-text spans changes: `documents.py` keeps the parsed 
 process and puts only metadata into a bundle. This tool still never returns a whole body — one
 requested section, in bounded spans, with the licence the document declares.
 
+### First live use of the read tool, and two defects it found
+
+On 2026-09-24 the host picked up `read_evidence_source` and a fresh-context agent built a
+draft from the published schema alone, guessing no nested field names (record:
+`docs/research_sessions/ecm_bridging_scaffold_live_read.md`). Reading an abstract to its end
+worked. Reading an open-access body did not, for a reason that predates this tool:
+
+* **The provider's full-text URL is wrong.** `EuropePmcProvider.fetch_open_full_text` requests
+  `…/rest/PMC/{pmcid}/fullTextXML` (HTTP 404); `…/rest/{pmcid}/fullTextXML` returns the body
+  (HTTP 200) for the same paper. Every open-access body has been reading as unavailable, on
+  this tool and on the discovery agent's extraction path.
+* **`read_evidence_source` reports the provider's `None` as `lookup_failed`.** `None` means
+  "not openly available"; with the URL fixed it belongs in `not_available`. Recorded, not
+  flipped alone, because while the URL is wrong `lookup_failed` misleads less.
+
+Also observed: a host conversation that had already loaded the tool definitions kept the old
+schema after the server restarted; only a fresh context saw the new one.
+
 ### What has and has not been exercised
 
 Three different things, kept apart:
