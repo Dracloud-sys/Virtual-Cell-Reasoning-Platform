@@ -376,17 +376,20 @@ def build_server(
                 ),
                 article=article,
             )
-        document, failure = await documents.get(provider, article)
+        document, fetch_status, failure = await documents.get(provider, article)
         if document is None:
+            if fetch_status == "not_available":
+                detail = (
+                    f"{failure.capitalize()}, so only the abstract can be read here. That says "
+                    "nothing about what the paper reports, or whether a body exists elsewhere."
+                )
+            else:
+                detail = (
+                    f"{failure}. The fetch did not produce a document, so nothing here says "
+                    "what the paper holds."
+                )
             return research_payloads.read_refusal(
-                evidence_id,
-                part,
-                "lookup_failed",
-                (
-                    f"{failure}. The fetch did not complete, so nothing here says what the "
-                    "paper holds."
-                ),
-                article=article,
+                evidence_id, part, fetch_status, detail, article=article
             )
         entries = [
             research_payloads.SectionEntry(
@@ -426,7 +429,10 @@ def build_server(
                 evidence_id,
                 part,
                 "not_available",
-                f"No section with text matches {section!r}. Choose one from `sections`.",
+                (
+                    f"The body was read, but no section with text matches {section!r}. That "
+                    "section is not available here; choose one from `sections`."
+                ),
                 article=article,
                 sections=entries,
                 license=document.license,
@@ -622,27 +628,37 @@ class _DocumentCache:
         self._documents: dict[str, Any] = {}
         self._limit = limit
 
-    async def get(self, provider: Any, article: ArticleRecord) -> tuple[Any | None, str]:
+    async def get(self, provider: Any, article: ArticleRecord) -> tuple[Any | None, str, str]:
+        """Return ``(document, status, detail)``; status is ``ok``, ``not_available`` or
+        ``lookup_failed``, decided by the provider's contract rather than by a message.
+
+        ``fetch_open_full_text`` returns ``None`` only when the provider holds no open body
+        for this id, so that is ``not_available``. It raises ``ProviderError`` (timeouts
+        included) when the fetch fails. An empty body or XML that will not parse means a
+        fetch happened and produced no document, which is ``lookup_failed``, not absence.
+        """
         from virtualcell.literature.documents import JatsParseError, parse_jats
         from virtualcell.literature.providers.base import ProviderError
 
         key = article.identifiers.stable_key()
         if key in self._documents:
-            return self._documents[key], ""
+            return self._documents[key], "ok", ""
         try:
             xml = await asyncio.to_thread(provider.fetch_open_full_text, article.identifiers)
         except ProviderError as exc:
-            return None, f"{type(exc).__name__}: {exc}"
-        if not xml:
-            return None, "the provider returned no full-text body"
+            return None, "lookup_failed", f"{type(exc).__name__}: {exc}"
+        if xml is None:
+            return None, "not_available", "the provider holds no open-access body for this id"
+        if not xml.strip():
+            return None, "lookup_failed", "the provider answered with an empty body"
         try:
             document = parse_jats(xml, article=article.identifiers, provider=article.provider)
         except JatsParseError as exc:
-            return None, f"the body could not be parsed ({exc})"
+            return None, "lookup_failed", f"the body could not be parsed ({exc})"
         self._documents[key] = document
         while len(self._documents) > self._limit:
             self._documents.pop(next(iter(self._documents)))
-        return document, ""
+        return document, "ok", ""
 
 
 def literature_agent_from_env() -> object | None:

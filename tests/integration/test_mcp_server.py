@@ -1724,3 +1724,98 @@ def test_a_failed_full_text_fetch_is_a_failed_lookup() -> None:
 
     assert result["status"] == "lookup_failed"
     assert result["evidence"] == []
+
+
+# --- full-text status: the provider's own contract decides, not a message string -----------
+#
+# `fetch_open_full_text` returns XML, returns None when the provider holds no open body (a
+# 404 at the correct endpoint), or raises ProviderError / ProviderTimeoutError. The read tool
+# reported None as `lookup_failed`; None is `not_available`, and an empty 200 body or XML that
+# will not parse is a fetch that did not produce a document, so `lookup_failed`.
+
+
+def _full_text(xml: str | Exception | None, section: str | None = None) -> dict[str, Any]:
+    server, first, _ = _searched(xml=xml)
+    arguments: dict[str, Any] = {"evidence_id": first["id"], "part": "full_text"}
+    if section is not None:
+        arguments["section"] = section
+    return _call(server, "read_evidence_source", arguments)
+
+
+def test_no_open_body_from_the_provider_is_not_available() -> None:
+    result = _full_text(None)
+
+    assert result["status"] == "not_available"
+    assert result["evidence"] == []
+    assert "says nothing about" in result["detail"]
+
+
+def test_an_empty_body_is_a_failed_fetch_not_an_absence() -> None:
+    result = _full_text("")
+
+    assert result["status"] == "lookup_failed"
+    assert result["evidence"] == []
+
+
+def test_a_body_that_will_not_parse_is_a_failed_fetch() -> None:
+    result = _full_text("<article><body><sec>unclosed")
+
+    assert result["status"] == "lookup_failed"
+
+
+def test_a_timeout_is_a_failed_fetch() -> None:
+    from virtualcell.literature.providers.base import ProviderTimeoutError
+
+    result = _full_text(ProviderTimeoutError("europe_pmc request timed out"))
+
+    assert result["status"] == "lookup_failed"
+
+
+def test_a_missing_section_is_that_section_not_the_body() -> None:
+    result = _full_text(_JATS, section="Supplementary Methods")
+
+    assert result["status"] == "not_available"
+    assert "Supplementary Methods" in result["detail"]
+    assert [s["title"] for s in result["sections"]] == ["Methods", "Results"]
+
+
+class _RoutedTransport:
+    """Answers only the real Europe PMC full-text URL; anything else is a 404, as live."""
+
+    def __init__(self, url: str, body: str) -> None:
+        self._url, self._body = url, body
+        self.calls: list[str] = []
+
+    def get(self, url: str, *, headers=None, timeout: float = 10.0):
+        from virtualcell.literature.providers.base import HttpResponse
+
+        self.calls.append(url)
+        if url == self._url:
+            return HttpResponse(status_code=200, text=self._body)
+        return HttpResponse(status_code=404, text="")
+
+
+def test_the_real_provider_reaches_the_body_through_the_read_tool() -> None:
+    """End to end with the shipped provider, not a stub that answers any URL: the section
+    list comes back only if the provider asks for the one URL that serves the body."""
+    from virtualcell.literature.providers.europe_pmc import EuropePmcProvider
+
+    transport = _RoutedTransport(
+        "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC0000001/fullTextXML", _JATS
+    )
+    literature = _ReadableLiterature(_LONG_ABSTRACT)
+    literature.provider = EuropePmcProvider(transport, retries=0)
+    server = _server(literature_agent=literature)
+    first = _call(
+        server, "research_evidence", {"question": "degradation", "search_literature": True}
+    )["evidence"][0]
+
+    listing = _call(
+        server, "read_evidence_source", {"evidence_id": first["id"], "part": "full_text"}
+    )
+
+    assert transport.calls == [
+        "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC0000001/fullTextXML"
+    ]
+    assert listing["status"] == "ok"
+    assert [s["title"] for s in listing["sections"]] == ["Methods", "Results"]

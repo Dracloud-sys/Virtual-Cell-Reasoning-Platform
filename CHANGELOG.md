@@ -129,6 +129,19 @@ to [Semantic Versioning](https://semver.org/).
   before Finding 1 is acted on.
 
 ### Fixed
+- **Open-access full text was never reached.** `EuropePmcProvider.fetch_open_full_text`
+  requested `…/rest/PMC/{pmcid}/fullTextXML`, which answers 404 for articles that do have an
+  open body; the endpoint is `…/rest/{pmcid}/fullTextXML` (the PMCID keeps its `PMC` prefix).
+  Every open-access body therefore read as unavailable, on `read_evidence_source` and on the
+  discovery agent's extraction path. Tests now assert the exact URL requested, and an end-to-end
+  test drives the shipped provider through the read tool with a transport that answers only
+  that URL.
+- **`read_evidence_source` separates "no open body" from "the fetch failed".** It reported the
+  provider's `None` as `lookup_failed`. The status now follows the provider's contract, not a
+  message string: `None` (no PMCID, or a 404 at the correct endpoint) → `not_available`;
+  `ProviderError`/timeout, an empty 200 body, or XML that will not parse → `lookup_failed`; a
+  body without the requested section → `not_available` for that section. `not_available` says
+  nothing about whether the paper or a body elsewhere exists.
 - **Provenance now reaches the traversal boundary, and independence uses it.**
   The previous entry closed the double-count from re-entered edges and recorded its own limit:
   edge-disjointness is a *proxy* for independence, and two distinct edges read out of one paper

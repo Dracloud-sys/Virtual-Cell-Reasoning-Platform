@@ -91,4 +91,7 @@ its hypotheses) returned one finding, `question_not_restated`, and empty `eviden
    `lookup_failed` is the less misleading of the two, which is why it is recorded rather than
    flipped in isolation.
 
-Neither was fixed in this change: fixing them is new work beyond preserving this session.
+Neither was fixed in the change that recorded them. Both were fixed together in a later,
+separately approved change (provider URL; status taken from the provider's contract). The
+live re-read of this paper's body needs the host to load the fixed server; it is recorded as
+its own section when it happens, not folded into the table above.

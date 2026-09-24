@@ -15,7 +15,8 @@ Verified endpoints (see the API docs / a live `resultType=core` response):
   ``title``, ``abstractText``, ``authorString``, ``pubYear``, ``pubTypeList``,
   ``publicationStatus``, ``isOpenAccess`` (Y/N), ``inPMC``/``inEPMC`` (Y/N),
   ``hasSuppl`` (Y/N), ``commentCorrectionList``.
-* open full text: ``GET /europepmc/webservices/rest/{source}/{pmcid}/fullTextXML``.
+* open full text: ``GET /europepmc/webservices/rest/{pmcid}/fullTextXML`` (the PMCID keeps its
+  ``PMC`` prefix; there is no separate ``/PMC/`` path segment).
 """
 
 from __future__ import annotations
@@ -258,10 +259,19 @@ class EuropePmcProvider:
         return _to_record(results[0], datetime.now(UTC))
 
     def fetch_open_full_text(self, identifier: ArticleIdentifier) -> str | None:
-        """Return open-access full-text XML, or ``None`` if not openly available."""
+        """Return open-access full-text XML, or ``None`` if not openly available.
+
+        ``None`` means exactly that: no PMCID, or a 404 at the full-text endpoint. Any other
+        failure raises ``ProviderError``; an empty 200 body is returned as it came, so a
+        caller can tell it apart from ``None``.
+
+        The endpoint is ``/rest/{pmcid}/fullTextXML``. An earlier ``/rest/PMC/{pmcid}/...``
+        answered 404 for articles that do have an open body (measured 2026-09-24 on
+        PMC12128996), so every open-access body read as unavailable.
+        """
         if not identifier.pmcid:
             return None
-        url = f"{_BASE}/PMC/{quote(identifier.pmcid)}/fullTextXML"
+        url = f"{_BASE}/{quote(identifier.pmcid)}/fullTextXML"
         response = self._fetch(url, ok_statuses=frozenset({404}))
         if response.status_code == 404:
             return None

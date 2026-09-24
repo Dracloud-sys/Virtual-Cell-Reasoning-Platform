@@ -880,3 +880,50 @@ def test_the_agent_turns_an_incomplete_response_into_lookup_failed_not_zero_resu
 
     assert literature_status(failed).status == "lookup_failed"
     assert literature_status(empty).status == "no_matches"
+
+
+# --- the open full-text endpoint ---------------------------------------------
+#
+# Measured live on 2026-09-24: `…/rest/PMC/PMC12128996/fullTextXML` answered 404 and
+# `…/rest/PMC12128996/fullTextXML` answered 200 with the article body. The provider built the
+# first, so every open-access body read as "not openly available". A fake transport that
+# answers any URL cannot catch that, so these assert the exact URL requested.
+
+_FULL_TEXT_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12128996/fullTextXML"
+
+
+def test_full_text_is_requested_from_the_pmcid_path_not_a_pmc_segment() -> None:
+    transport = _FakeTransport([HttpResponse(status_code=200, text="<article/>")])
+
+    xml = EuropePmcProvider(transport).fetch_open_full_text(ArticleIdentifier(pmcid="PMC12128996"))
+
+    assert transport.calls == [_FULL_TEXT_URL]
+    assert "/PMC/" not in transport.calls[0]
+    assert xml == "<article/>"
+
+
+def test_a_404_at_the_correct_endpoint_is_none() -> None:
+    """None keeps its contract: the provider holds no open body for this id."""
+    transport = _FakeTransport([HttpResponse(status_code=404, text="")])
+
+    assert (
+        EuropePmcProvider(transport).fetch_open_full_text(ArticleIdentifier(pmcid="PMC12128996"))
+        is None
+    )
+    assert transport.calls == [_FULL_TEXT_URL]
+
+
+def test_an_empty_200_body_is_not_turned_into_none() -> None:
+    """An empty 200 is not "not openly available"; the caller must see it as what it is."""
+    transport = _FakeTransport([HttpResponse(status_code=200, text="")])
+
+    assert EuropePmcProvider(transport).fetch_open_full_text(ArticleIdentifier(pmcid="PMC1")) == ""
+
+
+def test_a_server_error_on_the_full_text_endpoint_raises() -> None:
+    transport = _FakeTransport([HttpResponse(status_code=500, text="")])
+
+    with pytest.raises(ProviderError):
+        EuropePmcProvider(transport, retries=0).fetch_open_full_text(
+            ArticleIdentifier(pmcid="PMC1")
+        )

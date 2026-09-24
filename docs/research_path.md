@@ -369,6 +369,14 @@ worked. Reading an open-access body did not, for a reason that predates this too
   "not openly available"; with the URL fixed it belongs in `not_available`. Recorded, not
   flipped alone, because while the URL is wrong `lookup_failed` misleads less.
 
+**Both fixed together afterwards.** The provider requests `/rest/{pmcid}/fullTextXML` (tests
+assert the exact URL; an end-to-end test drives the shipped provider through the read tool with
+a transport that serves only that URL). The read tool takes its status from the provider's
+contract rather than a message: `None` → `not_available`; `ProviderError`, timeout, an empty
+200 body or unparseable XML → `lookup_failed`; a missing section → `not_available` for that
+section. The discovery agent's `_document_for` was left as it is: it still treats an empty body
+like no body and falls back to the abstract without a warning — recorded, not changed here.
+
 Also observed: a host conversation that had already loaded the tool definitions kept the old
 schema after the server restarted; only a fresh context saw the new one.
 
