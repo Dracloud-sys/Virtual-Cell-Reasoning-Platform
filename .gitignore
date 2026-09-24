@@ -47,3 +47,12 @@ Thumbs.db
 docker/volumes/
 neo4j/
 qdrant_storage/
+
+# Unattended-run scratch artifacts (docs/operations/routine_runbook.md)
+# Root-anchored on purpose: these are the gate's request files and its lock/confirmation/
+# proceed/completion token directory, written into the repository root by a scheduled run.
+# They are transient outputs, never repository inputs — the durable run state lives in
+# refs/heads/vcrp-automation/*, and the run record lives on issue #21.
+/phase1.json
+/phase2.json
+/.automation/
