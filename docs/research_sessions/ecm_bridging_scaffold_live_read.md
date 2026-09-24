@@ -121,3 +121,8 @@ body is rejected at parse time, on this tool and on the discovery agent's extrac
 tests passed because their JATS fixtures carry no DOCTYPE. Changing what the parser accepts is a
 safety decision (it exists to refuse entity expansion and external references) and was outside
 the approval for this change.
+
+The parser was changed afterwards under its own approval (external DOCTYPE without an internal
+subset accepted and never followed; internal subsets, entity declarations, external references
+and undefined entities still refused). The live read on a server carrying that change is
+recorded in the next section when it happens.

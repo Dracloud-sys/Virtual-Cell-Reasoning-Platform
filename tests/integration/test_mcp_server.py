@@ -1819,3 +1819,69 @@ def test_the_real_provider_reaches_the_body_through_the_read_tool() -> None:
     ]
     assert listing["status"] == "ok"
     assert [s["title"] for s in listing["sections"]] == ["Methods", "Results"]
+
+
+# --- a real-shaped body: external DOCTYPE, through the shipped provider and parser -----------
+
+_REAL_SHAPED_JATS = (
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Archiving and Interchange '
+    'DTD with MathML3 v1.4 20241031//EN" "JATS-archivearticle1-4-mathml3.dtd">\n'
+    '<article xmlns:xlink="http://www.w3.org/1999/xlink"><front><article-meta>'
+    '<permissions><license xlink:href="https://creativecommons.org/licenses/by/4.0/"/>'
+    "</permissions></article-meta></front><body>"
+    '<sec id="sec1"><title>Results</title><p>Explants synthesised type I collagen.</p></sec>'
+    '<sec id="sec7"><title>Discussion</title><p>Fully processed collagen was primarily '
+    "detected within constructs &#8212; the media contained primarily proforms.</p></sec>"
+    "</body></article>"
+)
+_BODY_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC0000001/fullTextXML"
+
+
+def _real_provider_server(body: str):
+    from virtualcell.literature.providers.europe_pmc import EuropePmcProvider
+
+    literature = _ReadableLiterature(_LONG_ABSTRACT)
+    literature.provider = EuropePmcProvider(_RoutedTransport(_BODY_URL, body), retries=0)
+    server = _server(literature_agent=literature)
+    first = _call(
+        server, "research_evidence", {"question": "degradation", "search_literature": True}
+    )["evidence"][0]
+    return server, first
+
+
+def test_a_real_shaped_body_lists_and_reads_a_section_by_its_returned_id() -> None:
+    server, first = _real_provider_server(_REAL_SHAPED_JATS)
+
+    listing = _call(
+        server, "read_evidence_source", {"evidence_id": first["id"], "part": "full_text"}
+    )
+    assert listing["status"] == "ok"
+    discussion = next(s for s in listing["sections"] if s["title"] == "Discussion")
+    assert discussion["section_id"] == "sec7"
+
+    read = _call(
+        server,
+        "read_evidence_source",
+        {"evidence_id": first["id"], "part": "full_text", "section": discussion["section_id"]},
+    )
+    (item,) = read["evidence"]
+    assert read["reached_end"] is True
+    assert item["locator"]["source_kind"] == "section"
+    assert item["locator"]["section_title"] == "Discussion"
+    assert item["locator"]["article"]["pmcid"] == "PMC0000001"
+    assert "— the media contained primarily proforms" in item["locator"]["source_text"]
+
+
+def test_a_hostile_body_through_the_real_provider_is_a_failed_lookup() -> None:
+    hostile = _REAL_SHAPED_JATS.replace(
+        '"JATS-archivearticle1-4-mathml3.dtd">', '"JATS.dtd" [<!ENTITY x "smuggled">]>'
+    )
+    server, first = _real_provider_server(hostile)
+
+    result = _call(
+        server, "read_evidence_source", {"evidence_id": first["id"], "part": "full_text"}
+    )
+
+    assert result["status"] == "lookup_failed"
+    assert result["evidence"] == []

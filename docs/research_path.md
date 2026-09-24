@@ -384,6 +384,16 @@ body therefore fails to parse, and `read_evidence_source` reports it — correct
 `lookup_failed`. The test fixtures carry no DOCTYPE, which is why nothing caught it. Not fixed:
 what the parser accepts is a safety decision and needs its own approval.
 
+**Fixed under a separate, narrower approval.** The parser now decides from expat's declaration
+events rather than a regex: an external PUBLIC/SYSTEM DOCTYPE **without an internal subset** is
+accepted and never followed; an internal subset (even `[]`), any entity, unparsed-entity or
+notation declaration, any external entity reference, and any entity the document does not define
+are refused as `JatsParseError` → `lookup_failed`. That last case matters: under an external
+DOCTYPE expat *skips* an undefined entity, which would silently delete text. Size, section and
+table limits and the content hash of the original bytes are unchanged. Tests instrument file and
+socket access during the parse — including DOCTYPEs naming a local sentinel DTD and a network
+URL — and record none. The PMC12128996 body saved by the earlier probe now parses to 26 sections.
+
 Also observed: a host conversation that had already loaded the tool definitions kept the old
 schema after the server restarted; only a fresh context saw the new one.
 

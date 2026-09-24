@@ -129,6 +129,17 @@ to [Semantic Versioning](https://semver.org/).
   before Finding 1 is acted on.
 
 ### Fixed
+- **A real JATS body could not be parsed.** `parse_jats` refused any `<!DOCTYPE` by regex, and
+  every Europe PMC body begins with an external DOCTYPE, so every real open-access body failed
+  to parse; no fixture carried one. The policy is now decided from expat's own declaration
+  events, not the text: an external PUBLIC/SYSTEM DOCTYPE with no internal subset is accepted
+  and never followed (parameter-entity parsing NEVER; no handler fetches anything). Still
+  refused, as `JatsParseError`: an internal subset (even `[]`), entity/unparsed-entity/notation
+  declarations (general or parameter), external entity references, and any entity the document
+  does not define — which expat would otherwise *skip* silently under an external DOCTYPE.
+  Declaration-like text inside comments or CDATA is no longer mistaken for a declaration.
+  Standard library only; no dependency added. Tests cover a real-shaped fixture, the refused
+  constructs, and file/socket access instrumented during the parse (none occurs).
 - **Open-access full text was never reached.** `EuropePmcProvider.fetch_open_full_text`
   requested `…/rest/PMC/{pmcid}/fullTextXML`, which answers 404 for articles that do have an
   open body; the endpoint is `…/rest/{pmcid}/fullTextXML` (the PMCID keeps its `PMC` prefix).
