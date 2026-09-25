@@ -36,6 +36,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
+from virtualcell.core.experiment import ExperimentRun
 from virtualcell.literature.contracts import (
     ArticleIdentifier,
     ArticleRecord,
@@ -49,16 +50,19 @@ from virtualcell.research.contracts import (
     EvidenceItem,
     EvidenceKind,
     EvidenceLink,
+    HostDecision,
     Hypothesis,
     MechanismLink,
     Objective,
+    ObservationMapping,
     ProposedExperiment,
     ResearchProvenance,
     ResearchReport,
     ResearchRequest,
     SubQuestion,
 )
-from virtualcell.research.plan import PlanAnalysis, analyze_plan
+from virtualcell.research.observe import ObservationComparison, compare_observations
+from virtualcell.research.plan import PlanAnalysis, WhatIf, analyze_plan
 from virtualcell.research.service import check_integrity, validate_report_payload
 
 #: How much of an abstract travels back as a verifiable span. Enough to check the claim
@@ -535,6 +539,7 @@ def draft_check(
     evidence_links: list[dict[str, Any]] | None = None,
     mechanism_links: list[dict[str, Any]] | None = None,
     store: Any = None,
+    what_if: dict[str, Any] | None = None,
 ) -> DraftCheckResult:
     """Validate the draft, then assemble it, then check it. In that order.
 
@@ -556,6 +561,51 @@ def draft_check(
     **zero** model calls, because that is what happened. Filing a host's design under an
     internal provider run would misattribute the reasoning.
     """
+    report, findings = assemble_draft(
+        question=question,
+        restated_question=restated_question,
+        assumptions=assumptions,
+        hypotheses=hypotheses,
+        experiments=experiments,
+        open_items=open_items,
+        evidence_used=evidence_used,
+        evidence=evidence,
+        objectives=objectives,
+        sub_questions=sub_questions,
+        confirmed_conditions=confirmed_conditions,
+        open_conditions=open_conditions,
+        evidence_links=evidence_links,
+        mechanism_links=mechanism_links,
+    )
+    scenario = WhatIf.model_validate(what_if) if what_if is not None else None
+    plan = analyze_plan(report, evidence, store=store, what_if=scenario)
+    return DraftCheckResult(
+        not_checked=list(NOT_CHECKED),
+        evidence_origins=origins,
+        findings=[{"code": f.code, "where": f.where, "detail": f.detail} for f in findings]
+        + [{"code": f.code, "where": f.where, "detail": f.detail} for f in plan.findings],
+        plan_analysis=plan,
+    )
+
+
+def assemble_draft(
+    *,
+    question: str,
+    restated_question: str,
+    assumptions: list[str],
+    hypotheses: list[dict[str, Any]],
+    experiments: list[dict[str, Any]],
+    open_items: list[str],
+    evidence_used: list[str],
+    evidence: list[EvidenceItem],
+    objectives: list[dict[str, Any]] | None = None,
+    sub_questions: list[dict[str, Any]] | None = None,
+    confirmed_conditions: list[str] | None = None,
+    open_conditions: list[str] | None = None,
+    evidence_links: list[dict[str, Any]] | None = None,
+    mechanism_links: list[dict[str, Any]] | None = None,
+) -> tuple[ResearchReport, list[Any]]:
+    """The draft as a report, and the payload and integrity findings. Shared by both checks."""
     checked, payload_findings = validate_report_payload(
         {
             "restated_question": restated_question,
@@ -595,14 +645,60 @@ def draft_check(
         ),
         **plan_fields,
     )
-    findings = payload_findings + check_integrity(request, report)
-    plan = analyze_plan(report, evidence, store=store)
-    return DraftCheckResult(
-        not_checked=list(NOT_CHECKED),
-        evidence_origins=origins,
+    return report, payload_findings + check_integrity(request, report)
+
+
+class ObservationCheckResult(BaseModel):
+    """Observations read against a plan the host wrote: comparability first, then values."""
+
+    model_config = ConfigDict(frozen=True)
+
+    scientific_validity_checked: bool = Field(
+        default=False, description="Always false. No part of this judges the biology."
+    )
+    not_checked: list[str] = Field(default_factory=list)
+    authored_by: str = Field(
+        default="host_llm",
+        description="The plan, mappings and decisions were written by the calling model.",
+    )
+    internal_model_calls: int = Field(default=0, description="Always 0.")
+    findings: list[dict[str, str]] = Field(
+        default_factory=list,
+        description="Plan defects and comparison defects, each with a code, where and detail.",
+    )
+    comparison: ObservationComparison
+
+
+#: What a comparison does not establish, said on every result.
+OBSERVATIONS_NOT_CHECKED: tuple[str, ...] = (
+    "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+    "Whether a consistent result supports the hypothesis over others predicting the same value.",
+    "Whether the runs are what their provenance says they are.",
+    "Whether the plan should change. Keep, revise and hold are the host's proposal.",
+)
+
+
+def observation_check(
+    *,
+    runs: list[dict[str, Any]],
+    mappings: list[dict[str, Any]],
+    decisions: list[dict[str, Any]] | None = None,
+    **draft: Any,
+) -> ObservationCheckResult:
+    """Assemble the plan exactly as the draft check does, then read the runs against it."""
+    report, findings = assemble_draft(**draft)
+    comparison = compare_observations(
+        report,
+        draft["evidence"],
+        TypeAdapter(list[ExperimentRun]).validate_python(runs),
+        TypeAdapter(list[ObservationMapping]).validate_python(mappings),
+        TypeAdapter(list[HostDecision]).validate_python(decisions or []),
+    )
+    return ObservationCheckResult(
+        not_checked=list(OBSERVATIONS_NOT_CHECKED),
         findings=[{"code": f.code, "where": f.where, "detail": f.detail} for f in findings]
-        + [{"code": f.code, "where": f.where, "detail": f.detail} for f in plan.findings],
-        plan_analysis=plan,
+        + [{"code": f.code, "where": f.where, "detail": f.detail} for f in comparison.findings],
+        comparison=comparison,
     )
 
 

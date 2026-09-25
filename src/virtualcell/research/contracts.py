@@ -301,7 +301,14 @@ class MechanismLink(BaseModel):
 
 
 class Expectation(StrEnum):
-    """A predicted direction for one readout. Compared by value; wording is never compared."""
+    """A predicted value for one readout. Compared by value; wording is never compared.
+
+    Two different kinds of claim share this vocabulary and are never compared with each other:
+    a **state** (`present` / `absent`: the thing the readout names is, or is not, detected) and
+    a **change** (`increase` / `decrease` / `no_change`: relative to the reference in
+    `Prediction.versus`). `absent` is not `no_change`, and a reading of zero is not a reading
+    below the detection limit. `not_predicted` means the hypothesis says nothing about it.
+    """
 
     INCREASE = "increase"
     DECREASE = "decrease"
@@ -312,6 +319,37 @@ class Expectation(StrEnum):
     """The hypothesis says nothing about this readout. Not the same as no_change."""
 
 
+STATE_EXPECTATIONS = frozenset({"present", "absent"})
+CHANGE_EXPECTATIONS = frozenset({"increase", "decrease", "no_change"})
+
+
+def expectation_kind(expected: str) -> str | None:
+    """`state`, `change`, or None for `not_predicted`."""
+    if expected in STATE_EXPECTATIONS:
+        return "state"
+    if expected in CHANGE_EXPECTATIONS:
+        return "change"
+    return None
+
+
+class PredictionBasis(StrEnum):
+    """How the host arrived at a prediction. The host's statement; code only checks it is backed."""
+
+    EVIDENCE_OBSERVED = "evidence_observed"
+    """A cited source reports this result, in some system."""
+
+    MECHANISM_DERIVED = "mechanism_derived"
+    """Derived from mechanism links (which carry their own evidence and conditions)."""
+
+    MEASUREMENT_MODEL = "measurement_model"
+    """Follows from how the assay reads its target (what it detects and what can distort it)."""
+
+    ASSUMPTION = "assumption"
+    """Not yet backed by evidence or mechanism; the listed assumptions carry it."""
+
+    UNSTATED = "unstated"
+
+
 class Prediction(BaseModel):
     """What one hypothesis predicts for one readout of one experiment, if it holds."""
 
@@ -320,6 +358,69 @@ class Prediction(BaseModel):
     hypothesis_id: str
     readout: str = Field(description="Should name one of the experiment's measurements.")
     expected: Expectation
+    note: str | None = None
+    versus: str | None = Field(
+        default=None,
+        description=(
+            "For increase/decrease/no_change: the reference the change is relative to (e.g. "
+            "vehicle, acellular scaffold). Two change predictions against different references "
+            "are not compared."
+        ),
+    )
+    condition: str | None = Field(
+        default=None, description="The intervention or condition this prediction is for."
+    )
+    biological_expectation: str | None = Field(
+        default=None,
+        description="The biological state or process expected, before it is read by an assay.",
+    )
+    basis: PredictionBasis = PredictionBasis.UNSTATED
+    evidence_ids: list[str] = Field(default_factory=list)
+    mechanism_link_ids: list[str] = Field(default_factory=list)
+    assumptions: list[str] = Field(
+        default_factory=list, description="Assumptions this prediction depends on, in words."
+    )
+    unresolved: str | None = Field(
+        default=None, description="What cannot yet be predicted here, and what would decide it."
+    )
+
+
+class ReadoutSpec(BaseModel):
+    """How a readout is measured: what it reads, with what, where, when, against what."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(description="The readout name predictions use.")
+    target: str | None = Field(default=None, description="The entity or state the readout reads.")
+    assay: str | None = None
+    compartment: str | None = None
+    timepoint: str | None = None
+    reference: str | None = Field(default=None, description="The comparison baseline.")
+    normalization: str | None = None
+    unit: str | None = None
+
+
+class ExperimentPurpose(StrEnum):
+    DISCRIMINATE = "discriminate"
+    METHOD_CHECK = "method_check"
+    FUNCTION_CHECK = "function_check"
+    BASELINE = "baseline"
+    OTHER = "other"
+
+
+class ObjectiveCoverage(BaseModel):
+    """How directly an experiment addresses an objective. A judgement, recorded as whose."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    objective_id: str
+    level: Literal["direct", "proxy", "out_of_scope"] = Field(
+        description=(
+            "direct: measures the objective itself. proxy: a related indicator. out_of_scope: "
+            "the objective's outcome lies beyond what this experiment can show."
+        )
+    )
+    judged_by: Literal["host", "user"] = "host"
     note: str | None = None
 
 
@@ -342,6 +443,13 @@ class Hypothesis(BaseModel):
             "treated as alternatives (which may coexist) and compared; hypotheses with no shared "
             "sub-question are not compared. Put competing explanations of one observation under "
             "one sub-question."
+        ),
+    )
+    alternative_to: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Hypotheses the host states are alternative explanations of the same observation. "
+            "These are compared even without a shared sub-question."
         ),
     )
     mutually_exclusive_with: list[str] = Field(
@@ -377,6 +485,20 @@ class ProposedExperiment(BaseModel):
     #: Why this one first, in words. Deliberately not a number: an invented probability or
     #: information-gain score would be a confidence nobody measured.
     priority_rationale: str | None = None
+    readouts: list[ReadoutSpec] = Field(
+        default_factory=list,
+        description=(
+            "How each readout is measured; needed to compare observations with predictions."
+        ),
+    )
+    purposes: list[ExperimentPurpose] = Field(
+        default_factory=list,
+        description=(
+            "Why the experiment is in the plan. An experiment that separates no hypothesis pair "
+            "can still be needed for a method check, a function check or a baseline."
+        ),
+    )
+    objective_coverage: list[ObjectiveCoverage] = Field(default_factory=list)
     predictions: list[Prediction] = Field(
         default_factory=list,
         description=(
@@ -480,3 +602,70 @@ class ResearchReport(BaseModel):
     open_conditions: list[str] = Field(default_factory=list)
     evidence_links: list[EvidenceLink] = Field(default_factory=list)
     mechanism_links: list[MechanismLink] = Field(default_factory=list)
+
+
+# --- B1: comparing quantitative observations with the plan's predictions ------------------ #
+#
+# The observations themselves arrive as `virtualcell.core.experiment.ExperimentRun`; nothing
+# here restates measurements, units, quality or conditions. What these records add is the
+# mapping from a run to a predicted readout, and the decision rule someone declared for reading
+# a change. Without a declared rule no change is classified: no threshold is invented.
+
+
+class DecisionRule(BaseModel):
+    """How to read a change between a treatment arm and its reference. Declared, never inferred."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    comparison: Literal["ratio", "difference"]
+    increase_at_or_above: float | None = None
+    decrease_at_or_below: float | None = None
+    no_change_between: list[float] | None = Field(
+        default=None,
+        min_length=2,
+        max_length=2,
+        description=(
+            "[low, high], inclusive. Outside every declared band the result is indeterminate."
+        ),
+    )
+    declared_by: Literal["researcher", "host"]
+    basis: str = Field(description="Why these bounds; where they come from.")
+
+
+class ObservationMapping(BaseModel):
+    """Which observations stand for one predicted readout, and how to read them."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    experiment_id: str
+    readout: str
+    run_ids: list[str] = Field(
+        default_factory=list, description="Runs to read; empty means every supplied run."
+    )
+    measurement_name: str
+    unit: str | None = Field(
+        default=None, description="The unit the rule assumes. A different unit is not comparable."
+    )
+    time_point: dict[str, Any] | None = Field(
+        default=None,
+        description="A time point, in the run's own time-point form, to match exactly.",
+    )
+    treatment: dict[str, Any] = Field(
+        description="Condition values an observation must carry to count as the treatment arm."
+    )
+    reference: dict[str, Any] | None = Field(
+        default=None,
+        description="Condition values of the reference arm. Required for change predictions.",
+    )
+    rule: DecisionRule | None = None
+
+
+class HostDecision(BaseModel):
+    """What the host proposes after reading the comparison. Recorded as the host's."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    target_id: str = Field(description="A hypothesis, prediction's experiment, or assumption id.")
+    decision: Literal["keep", "revise", "hold"]
+    reason: str
+    next_experiment_ids: list[str] = Field(default_factory=list)

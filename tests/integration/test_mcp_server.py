@@ -64,7 +64,12 @@ DESCRIPTIONS = {domain: REGISTRY.describe(domain) for domain in DOMAINS}
 VERDICT_TOOLS = ("list_domains", "describe_domain", "reason")
 #: The domainless door. These call no model: the host LLM reasons, this server looks
 #: things up and checks what the host wrote.
-RESEARCH_TOOLS = ("research_evidence", "read_evidence_source", "check_research_draft")
+RESEARCH_TOOLS = (
+    "research_evidence",
+    "read_evidence_source",
+    "check_research_draft",
+    "compare_research_observations",
+)
 TOOL_NAMES = VERDICT_TOOLS + RESEARCH_TOOLS
 
 
@@ -1967,3 +1972,130 @@ def test_a_malformed_plan_record_refuses_with_its_path() -> None:
 
     assert refusal.error == "malformed_draft"
     assert "stated_by" in refusal.detail
+
+
+def test_the_fields_added_for_traces_travel_through_the_draft_check() -> None:
+    draft = _draft()
+    draft["hypotheses"].append(
+        {
+            "id": "H2",
+            "statement": "an alternative",
+            "support": "unverified_candidate",
+            "alternative_to": ["H1"],
+        }
+    )
+    draft["experiments"][0].update(
+        readouts=[{"name": "mass", "assay": "gravimetry", "unit": "mg"}],
+        purposes=["discriminate"],
+        objective_coverage=[{"objective_id": "O1", "level": "proxy"}],
+        predictions=[
+            {
+                "hypothesis_id": "H1",
+                "readout": "mass",
+                "expected": "decrease",
+                "versus": "acellular",
+                "basis": "evidence_observed",
+                "evidence_ids": ["obs-1"],
+            },
+        ],
+    )
+    draft["objectives"] = [{"id": "O1", "statement": "g", "stated_by": "user"}]
+
+    result = _call(
+        _server(),
+        "check_research_draft",
+        {**draft, "what_if": {"remove_evidence_ids": ["obs-1"]}},
+    )
+
+    codes = {f["code"] for f in result["findings"]}
+    assert "unexpected_model_field" not in codes
+    plan = result["plan_analysis"]
+    (level,) = plan["objective_levels"]
+    assert level["proxy"] == [draft["experiments"][0]["id"]]
+    assert {tuple(s["pair"]): s["reason"] for s in plan["pair_selection"]}[("H1", "H2")] == (
+        "declared_alternative"
+    )
+    assert plan["readout_specs_missing"][0]["readout"] == "mass"
+    assert [a["hypothesis_id"] for a in plan["impact"]["affected_predictions"]] == ["H1"]
+
+
+def test_the_observation_records_are_published_from_their_contracts() -> None:
+    from virtualcell.core.experiment import ExperimentRun
+    from virtualcell.research.contracts import HostDecision, ObservationMapping
+
+    props = _published_schema("compare_research_observations")["properties"]
+
+    for name, model in (
+        ("runs", ExperimentRun),
+        ("mappings", ObservationMapping),
+        ("decisions", HostDecision),
+    ):
+        assert set(_items(props[name])["properties"]) == set(model.model_fields), name
+    assert _refs(_published_schema("compare_research_observations")) == []
+    assert "what_if" in _published_schema("check_research_draft")["properties"]
+
+
+def test_observations_are_read_against_the_plan_over_the_tool() -> None:
+    draft = _draft()
+    exp = draft["experiments"][0]
+    draft["hypotheses"].append(
+        {"id": "H2", "statement": "an alternative", "support": "unverified_candidate"}
+    )
+    exp["predictions"] = [
+        {"hypothesis_id": "H1", "readout": "mass", "expected": "decrease", "versus": "acellular"},
+        {"hypothesis_id": "H2", "readout": "mass", "expected": "no_change", "versus": "acellular"},
+    ]
+
+    def obs(arm: str, value: float) -> dict[str, Any]:
+        return {
+            "time_point": {"kind": "elapsed_time", "value": 7, "unit": "day"},
+            "conditions": {"arm": arm},
+            "measurements": [{"name": "mass", "value": value, "unit": "mg"}],
+        }
+
+    run = {
+        "schema_version": "1.0",
+        "run_id": "dev:synthetic-1",
+        "provenance": {"origin_kind": "experiment", "acquisition_mode": "manual"},
+        "observations": [obs("cells", 6.0), obs("acellular", 10.0)],
+    }
+    mapping = {
+        "experiment_id": exp["id"],
+        "readout": "mass",
+        "measurement_name": "mass",
+        "unit": "mg",
+        "treatment": {"arm": "cells"},
+        "reference": {"arm": "acellular"},
+        "rule": {
+            "comparison": "ratio",
+            "decrease_at_or_below": 0.8,
+            "no_change_between": [0.9, 1.1],
+            "declared_by": "researcher",
+            "basis": "synthetic",
+        },
+    }
+
+    result = _call(
+        _server(),
+        "compare_research_observations",
+        {
+            "question": draft["question"],
+            "hypotheses": draft["hypotheses"],
+            "experiments": draft["experiments"],
+            "evidence": draft["evidence"],
+            "runs": [run],
+            "mappings": [mapping],
+            "decisions": [{"target_id": "H2", "decision": "revise", "reason": "one readout"}],
+        },
+    )
+
+    assert result["scientific_validity_checked"] is False
+    assert result["internal_model_calls"] == 0
+    (row,) = result["comparison"]["comparisons"]
+    assert row["observed"] == "decrease"
+    assert {o["hypothesis_id"]: o["outcome"] for o in row["by_hypothesis"]} == {
+        "H1": "consistent",
+        "H2": "inconsistent",
+    }
+    assert result["comparison"]["decisions_by"] == "host"
+    assert result["comparison"]["prior_plan_unchanged"] is True

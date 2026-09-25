@@ -41,7 +41,10 @@ from virtualcell.research.contracts import (
     EvidenceRole,
     Expectation,
     MechanismLink,
+    Prediction,
+    PredictionBasis,
     ResearchReport,
+    expectation_kind,
 )
 
 #: How far the graph is walked from one end of a link looking for the other.
@@ -167,7 +170,22 @@ class UnseparatedPair(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     pair: list[str]
-    reason: Literal["same_prediction_on_every_shared_readout", "no_shared_predicted_readout"]
+    reason: Literal[
+        "same_prediction_on_every_shared_readout",
+        "no_shared_predicted_readout",
+        "not_comparable_on_shared_readouts",
+    ]
+
+
+class ReadoutExclusion(BaseModel):
+    """A shared readout on which two predictions were not compared, and why."""
+
+    model_config = ConfigDict(frozen=True)
+
+    pair: list[str]
+    readout: str
+    reason: Literal["different_prediction_kinds", "different_reference"]
+    detail: str
 
 
 class OutcomeRow(BaseModel):
@@ -188,6 +206,7 @@ class ExperimentDiscrimination(BaseModel):
     unseparated_pairs: list[UnseparatedPair] = Field(default_factory=list)
     outcome_table: list[OutcomeRow] = Field(default_factory=list)
     controls: list[str] = Field(default_factory=list)
+    readout_exclusions: list[ReadoutExclusion] = Field(default_factory=list)
     next_decisions: list[DecisionBranch] = Field(default_factory=list)
     next_decisions_by: Literal["host"] = "host"
 
@@ -200,6 +219,138 @@ class Coverage(BaseModel):
     experiment_id: str
     covers_experiment_id: str
     relation: Literal["same_pairs", "strict_superset"]
+
+
+class PairSelection(BaseModel):
+    """Whether two hypotheses were treated as alternatives, and on what grounds."""
+
+    model_config = ConfigDict(frozen=True)
+
+    pair: list[str]
+    compared: bool
+    reason: Literal[
+        "shared_sub_question",
+        "declared_alternative",
+        "no_sub_question_links",
+        "no_shared_sub_question_and_not_declared_alternatives",
+    ]
+
+
+class ObjectiveLevel(BaseModel):
+    """How directly each objective is tested. The levels are the declarer's judgement."""
+
+    model_config = ConfigDict(frozen=True)
+
+    objective_id: str
+    direct: list[str] = Field(default_factory=list)
+    proxy: list[str] = Field(default_factory=list)
+    out_of_scope: list[str] = Field(default_factory=list)
+    reached_without_stated_level: list[str] = Field(
+        default_factory=list,
+        description="Experiments linked to the objective through hypotheses, with no level stated.",
+    )
+    directly_measured: bool = False
+    judged_by: list[str] = Field(default_factory=list)
+
+
+class NonDiscriminating(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    experiment_id: str
+    purposes: list[str] = Field(default_factory=list)
+    note: str = (
+        "Separates no hypothesis pair as written. That is not a defect: an experiment can be "
+        "needed as a method check, a function check or a baseline."
+    )
+
+
+class MissingReadoutSpec(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    experiment_id: str
+    readout: str
+    missing: list[str]
+
+
+class MechanismRef(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    gaps: list[str] = Field(default_factory=list)
+
+
+class PredictionTrace(BaseModel):
+    """From evidence and mechanism, through the expected biology, to the reading and decision."""
+
+    model_config = ConfigDict(frozen=True)
+
+    experiment_id: str
+    hypothesis_id: str
+    readout: str
+    expected: str
+    kind: str | None = Field(default=None, description="state, change, or null (not predicted)")
+    versus: str | None = None
+    condition: str | None = None
+    biological_expectation: str | None = None
+    basis: str
+    basis_stated_by: Literal["host"] = "host"
+    direct_evidence_ids: list[str] = Field(default_factory=list)
+    mechanism_evidence_ids: list[str] = Field(default_factory=list)
+    grounded_evidence_ids: list[str] = Field(default_factory=list)
+    ungrounded_evidence_ids: list[str] = Field(default_factory=list)
+    independent_studies: int = 0
+    mechanism_links: list[MechanismRef] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list)
+    unresolved: str | None = None
+    separates: list[list[str]] = Field(
+        default_factory=list,
+        description="Pairs whose predicted values differ on this readout in this experiment.",
+    )
+    decisions: list[DecisionBranch] = Field(default_factory=list)
+    gaps: list[str] = Field(
+        default_factory=list,
+        description=(
+            "basis_unstated | evidence_observed_without_evidence | "
+            "mechanism_derived_without_links | assumption_without_stated_assumptions | "
+            "change_without_reference | readout_not_specified | unknown_mechanism_link"
+        ),
+    )
+
+
+class WhatIf(BaseModel):
+    """A question about dependency: which predictions rest on this evidence or condition?"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    remove_evidence_ids: list[str] = Field(default_factory=list)
+    changed_conditions: list[str] = Field(
+        default_factory=list,
+        description="Condition text, matched exactly (case and spacing ignored).",
+    )
+
+
+class AffectedPrediction(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    experiment_id: str
+    hypothesis_id: str
+    readout: str
+    via: list[str]
+
+
+class Impact(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    removed_evidence_ids: list[str] = Field(default_factory=list)
+    changed_conditions: list[str] = Field(default_factory=list)
+    affected_predictions: list[AffectedPrediction] = Field(default_factory=list)
+    affected_mechanism_links: list[str] = Field(default_factory=list)
+    affected_hypotheses: list[str] = Field(default_factory=list)
+    affected_experiments: list[str] = Field(default_factory=list)
+    note: str = (
+        "These rest on what was withdrawn or changed and need re-examining. No predicted value "
+        "is changed or reversed here, and nothing is propagated from one assay to another."
+    )
 
 
 class PlanAnalysis(BaseModel):
@@ -223,6 +374,12 @@ class PlanAnalysis(BaseModel):
         description="Experiments with no predictions; what they separate cannot be computed.",
     )
     coverage: list[Coverage] = Field(default_factory=list)
+    pair_selection: list[PairSelection] = Field(default_factory=list)
+    objective_levels: list[ObjectiveLevel] = Field(default_factory=list)
+    non_discriminating_experiments: list[NonDiscriminating] = Field(default_factory=list)
+    prediction_traces: list[PredictionTrace] = Field(default_factory=list)
+    readout_specs_missing: list[MissingReadoutSpec] = Field(default_factory=list)
+    impact: Impact | None = None
     findings: list[PlanFinding] = Field(default_factory=list)
     wrote_to_knowledge_graph: bool = False
 
@@ -238,6 +395,13 @@ LIMITS: tuple[str, ...] = (
     "between two exactly-matched entities; it says nothing about this case's conditions.",
     "Nothing here ranks experiments. Which to run first is the host's argument and the "
     "researcher's decision.",
+    "Two hypotheses predicting different values on a readout is not a measure of how well the "
+    "experiment would discriminate them, and says nothing about separating causes acting "
+    "together: effect size, noise and interference are not modelled.",
+    "A state (present/absent) and a change (increase/decrease/no_change) are different claims "
+    "and are never compared; neither are two changes stated against different references.",
+    "Prediction traces follow the references the host gave. A connected path is not a verified "
+    "causal chain.",
 )
 
 
@@ -250,6 +414,7 @@ def analyze_plan(
     evidence: list[EvidenceItem],
     *,
     store: KnowledgeStore | None = None,
+    what_if: WhatIf | None = None,
 ) -> PlanAnalysis:
     findings: list[PlanFinding] = []
     by_id = {item.id: item for item in evidence}
@@ -265,7 +430,21 @@ def analyze_plan(
     ]
     experiments = [_discriminate(exp, report, findings) for exp in report.experiments]
 
+    traces = _traces(report, by_id, mechanisms, experiments, findings)
     return PlanAnalysis(
+        pair_selection=_pair_selection(report),
+        objective_levels=_objective_levels(report, trace, findings),
+        non_discriminating_experiments=[
+            NonDiscriminating(
+                experiment_id=e.experiment_id,
+                purposes=[pp.value for pp in _experiment(report, e.experiment_id).purposes],
+            )
+            for e in experiments
+            if not e.separated_pairs
+        ],
+        prediction_traces=traces,
+        readout_specs_missing=_missing_specs(report),
+        impact=_impact(report, what_if) if what_if is not None else None,
         limits=list(LIMITS),
         conditions=conditions,
         goal_trace=trace,
@@ -559,17 +738,46 @@ _OPPOSED = {frozenset({Expectation.INCREASE, Expectation.DECREASE})}
 _NULL = {Expectation.NO_CHANGE, Expectation.ABSENT}
 
 
-def _comparable(report: ResearchReport, a: str, b: str) -> bool:
-    """Two hypotheses are alternatives only if they answer a shared sub-question.
+def _selection_reason(report: ResearchReport, a: str, b: str) -> str:
+    """Why two hypotheses are, or are not, treated as alternatives.
 
     Comparing across sub-questions listed a degradation-route hypothesis and a handover
     hypothesis as "never separated" (found on development case 1): they are not competing
-    explanations of one thing. A hypothesis with no sub-question links is compared with every
-    other, so a draft that does not use sub-questions keeps the earlier behaviour.
+    explanations of one thing. But the host can say two hypotheses explain the same observation
+    whatever questions they sit under (`alternative_to`), and a hypothesis with no sub-question
+    links is compared with every other, so a draft that does not use them keeps the earlier
+    behaviour. Every excluded pair is reported with this reason, never silently dropped.
     """
-    subs = {h.id: set(h.sub_question_ids) for h in report.hypotheses}
-    first, second = subs.get(a, set()), subs.get(b, set())
-    return not first or not second or bool(first & second)
+    by_id = {h.id: h for h in report.hypotheses}
+    ha, hb = by_id.get(a), by_id.get(b)
+    first = set(ha.sub_question_ids) if ha else set()
+    second = set(hb.sub_question_ids) if hb else set()
+    if first & second:
+        return "shared_sub_question"
+    if (ha and b in ha.alternative_to) or (hb and a in hb.alternative_to):
+        return "declared_alternative"
+    if not first or not second:
+        return "no_sub_question_links"
+    return "no_shared_sub_question_and_not_declared_alternatives"
+
+
+def _comparable(report: ResearchReport, a: str, b: str) -> bool:
+    return _selection_reason(report, a, b) != "no_shared_sub_question_and_not_declared_alternatives"
+
+
+def _pair_selection(report: ResearchReport) -> list[PairSelection]:
+    ids = [h.id for h in report.hypotheses]
+    out = []
+    for a, b in combinations(ids, 2):
+        reason = _selection_reason(report, a, b)
+        out.append(
+            PairSelection(
+                pair=[a, b],
+                compared=reason != "no_shared_sub_question_and_not_declared_alternatives",
+                reason=reason,
+            )
+        )
+    return out
 
 
 def _exclusive(report: ResearchReport, a: str, b: str) -> bool:
@@ -603,8 +811,9 @@ def _coexistence(a: str, b: str, readout: str, ea: Expectation, eb: Expectation)
 def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimination:
     known = {h.id for h in report.hypotheses}
     measured = {_norm(m) for m in exp.measurements}
-    # hypothesis -> readout -> expected
+    # hypothesis -> readout -> expected (and the prediction, for its kind and reference)
     table: dict[str, dict[str, Expectation]] = {}
+    preds: dict[str, dict[str, Prediction]] = {}
     labels: dict[str, str] = {}
     for p in exp.predictions:
         if p.hypothesis_id not in known:
@@ -627,6 +836,7 @@ def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimina
                 )
             )
         table.setdefault(p.hypothesis_id, {})[key] = p.expected
+        preds.setdefault(p.hypothesis_id, {})[key] = p
 
     if exp.predictions and not exp.controls:
         findings.append(
@@ -652,16 +862,58 @@ def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimina
     order = [h.id for h in report.hypotheses if h.id in table]
     separated: list[SeparatedPair] = []
     unseparated: list[UnseparatedPair] = []
+    exclusions: list[ReadoutExclusion] = []
     for a, b in combinations(order, 2):
         if not _comparable(report, a, b):
             continue
-        shared = [
+        predicted = [
             r
             for r in table[a]
             if r in table[b] and Expectation.NOT_PREDICTED not in (table[a][r], table[b][r])
         ]
-        if not shared:
+        if not predicted:
             unseparated.append(UnseparatedPair(pair=[a, b], reason="no_shared_predicted_readout"))
+            continue
+        shared = []
+        for r in predicted:
+            pa, pb = preds[a][r], preds[b][r]
+            kind_a, kind_b = (
+                expectation_kind(pa.expected.value),
+                expectation_kind(pb.expected.value),
+            )
+            if kind_a != kind_b:
+                exclusions.append(
+                    ReadoutExclusion(
+                        pair=[a, b],
+                        readout=labels[r],
+                        reason="different_prediction_kinds",
+                        detail=(
+                            f"{a} predicts a {kind_a} ({pa.expected.value}) and {b} a {kind_b} "
+                            f"({pb.expected.value}); a state and a change are different claims."
+                        ),
+                    )
+                )
+                continue
+            if (
+                kind_a == "change"
+                and pa.versus
+                and pb.versus
+                and _norm(pa.versus) != _norm(pb.versus)
+            ):
+                exclusions.append(
+                    ReadoutExclusion(
+                        pair=[a, b],
+                        readout=labels[r],
+                        reason="different_reference",
+                        detail=f"changes against {pa.versus!r} and {pb.versus!r}.",
+                    )
+                )
+                continue
+            shared.append(r)
+        if not shared:
+            unseparated.append(
+                UnseparatedPair(pair=[a, b], reason="not_comparable_on_shared_readouts")
+            )
             continue
         differing = [r for r in shared if table[a][r] != table[b][r]]
         if not differing:
@@ -702,6 +954,7 @@ def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimina
         unseparated_pairs=unseparated,
         outcome_table=outcome,
         controls=list(exp.controls),
+        readout_exclusions=exclusions,
         next_decisions=list(exp.branches),
     )
 
@@ -753,3 +1006,200 @@ def _coverage(experiments: list[ExperimentDiscrimination]) -> list[Coverage]:
                     )
                 )
     return out
+
+
+# --- how directly objectives are tested, and readouts' specifications ----------------------- #
+
+
+def _experiment(report: ResearchReport, experiment_id: str):
+    return next(e for e in report.experiments if e.id == experiment_id)
+
+
+def _objective_levels(report, trace, findings) -> list[ObjectiveLevel]:
+    objective_ids = {o.id for o in report.objectives}
+    declared: dict[str, dict[str, list[str]]] = {}
+    judges: dict[str, list[str]] = {}
+    for exp in report.experiments:
+        for cov in exp.objective_coverage:
+            if cov.objective_id not in objective_ids:
+                findings.append(
+                    PlanFinding(
+                        code="unknown_objective_id",
+                        where=f"experiment:{exp.id}",
+                        detail=f"covers {cov.objective_id!r}, which is not an objective here.",
+                    )
+                )
+                continue
+            declared.setdefault(cov.objective_id, {}).setdefault(cov.level, []).append(exp.id)
+            if cov.judged_by not in judges.setdefault(cov.objective_id, []):
+                judges[cov.objective_id].append(cov.judged_by)
+    reached = {t.objective_id: t.experiment_ids for t in trace}
+    out = []
+    for o in report.objectives:
+        levels = declared.get(o.id, {})
+        stated = {e for exps in levels.values() for e in exps}
+        out.append(
+            ObjectiveLevel(
+                objective_id=o.id,
+                direct=levels.get("direct", []),
+                proxy=levels.get("proxy", []),
+                out_of_scope=levels.get("out_of_scope", []),
+                reached_without_stated_level=[e for e in reached.get(o.id, []) if e not in stated],
+                directly_measured=bool(levels.get("direct")),
+                judged_by=judges.get(o.id, []),
+            )
+        )
+    return out
+
+
+_SPEC_FIELDS = ("target", "assay", "compartment", "timepoint", "reference", "normalization", "unit")
+
+
+def _missing_specs(report: ResearchReport) -> list[MissingReadoutSpec]:
+    out = []
+    for exp in report.experiments:
+        for spec in exp.readouts:
+            missing = [f for f in _SPEC_FIELDS if not getattr(spec, f)]
+            if missing:
+                out.append(
+                    MissingReadoutSpec(experiment_id=exp.id, readout=spec.name, missing=missing)
+                )
+    return out
+
+
+# --- from evidence to prediction, and what depends on what ---------------------------------- #
+
+
+def _traces(report, by_id, mechanisms, experiments, findings) -> list[PredictionTrace]:
+    known = {h.id for h in report.hypotheses}
+    links = {m.id: m for m in report.mechanism_links}
+    link_reports = {m.id: m for m in mechanisms}
+    discrimination = {e.experiment_id: e for e in experiments}
+    out: list[PredictionTrace] = []
+    for exp in report.experiments:
+        spec_names = {_norm(s.name) for s in exp.readouts}
+        for p in exp.predictions:
+            if p.hypothesis_id not in known:
+                continue
+            kind = expectation_kind(p.expected.value)
+            gaps: list[str] = []
+            mechanism_evidence: list[str] = []
+            refs: list[MechanismRef] = []
+            for lid in p.mechanism_link_ids:
+                link = links.get(lid)
+                if link is None:
+                    gaps.append("unknown_mechanism_link")
+                    findings.append(
+                        PlanFinding(
+                            code="unknown_mechanism_link",
+                            where=f"experiment:{exp.id}:{p.hypothesis_id}:{p.readout}",
+                            detail=f"depends on {lid!r}, which is not a mechanism link here.",
+                        )
+                    )
+                    continue
+                refs.append(MechanismRef(id=lid, gaps=list(link_reports[lid].gaps)))
+                mechanism_evidence.extend(
+                    e for e in link.evidence_ids if e not in mechanism_evidence
+                )
+            for eid in p.evidence_ids:
+                if eid not in by_id:
+                    findings.append(
+                        PlanFinding(
+                            code="unknown_evidence_id",
+                            where=f"experiment:{exp.id}:{p.hypothesis_id}:{p.readout}",
+                            detail=f"cites {eid!r}, which was not supplied as evidence.",
+                        )
+                    )
+            cited = list(dict.fromkeys([*p.evidence_ids, *mechanism_evidence]))
+            grounded = [e for e in cited if e in by_id and by_id[e].kind in GROUNDED_KINDS]
+            ungrounded = [e for e in cited if e in by_id and by_id[e].kind not in GROUNDED_KINDS]
+            studies = {_study_key(by_id[e]) for e in grounded} - {None}
+            observations = [e for e in grounded if _study_key(by_id[e]) is None]
+
+            if kind is not None:
+                if p.basis is PredictionBasis.UNSTATED:
+                    gaps.append("basis_unstated")
+                elif p.basis is PredictionBasis.EVIDENCE_OBSERVED and not p.evidence_ids:
+                    gaps.append("evidence_observed_without_evidence")
+                elif p.basis is PredictionBasis.MECHANISM_DERIVED and not p.mechanism_link_ids:
+                    gaps.append("mechanism_derived_without_links")
+                elif p.basis is PredictionBasis.ASSUMPTION and not p.assumptions:
+                    gaps.append("assumption_without_stated_assumptions")
+                if kind == "change" and not p.versus:
+                    gaps.append("change_without_reference")
+                if spec_names and _norm(p.readout) not in spec_names:
+                    gaps.append("readout_not_specified")
+
+            separates = [
+                pair.pair
+                for pair in discrimination[exp.id].separated_pairs
+                if p.hypothesis_id in pair.pair
+                and any(_norm(d.readout) == _norm(p.readout) for d in pair.readouts)
+            ]
+            out.append(
+                PredictionTrace(
+                    experiment_id=exp.id,
+                    hypothesis_id=p.hypothesis_id,
+                    readout=p.readout,
+                    expected=p.expected.value,
+                    kind=kind,
+                    versus=p.versus,
+                    condition=p.condition,
+                    biological_expectation=p.biological_expectation,
+                    basis=p.basis.value,
+                    direct_evidence_ids=list(p.evidence_ids),
+                    mechanism_evidence_ids=mechanism_evidence,
+                    grounded_evidence_ids=grounded,
+                    ungrounded_evidence_ids=ungrounded,
+                    independent_studies=len(studies) + len(observations),
+                    mechanism_links=refs,
+                    assumptions=list(p.assumptions),
+                    unresolved=p.unresolved,
+                    separates=separates,
+                    decisions=list(exp.branches),
+                    gaps=gaps,
+                )
+            )
+    return out
+
+
+def _impact(report: ResearchReport, what_if: WhatIf) -> Impact:
+    removed = set(what_if.remove_evidence_ids)
+    changed = {_norm(c) for c in what_if.changed_conditions}
+    affected_links = [
+        m.id
+        for m in report.mechanism_links
+        if removed & set(m.evidence_ids) or changed & {_norm(c) for c in m.conditions}
+    ]
+    predictions: list[AffectedPrediction] = []
+    for exp in report.experiments:
+        for p in exp.predictions:
+            via = [f"evidence:{e}" for e in p.evidence_ids if e in removed]
+            via += [
+                f"mechanism_link:{lid}" for lid in p.mechanism_link_ids if lid in affected_links
+            ]
+            if p.condition and _norm(p.condition) in changed:
+                via.append("condition")
+            if via:
+                predictions.append(
+                    AffectedPrediction(
+                        experiment_id=exp.id,
+                        hypothesis_id=p.hypothesis_id,
+                        readout=p.readout,
+                        via=via,
+                    )
+                )
+    hypotheses = list(dict.fromkeys(a.hypothesis_id for a in predictions))
+    for h in report.hypotheses:
+        cites = set(h.supporting_evidence_ids) | set(h.contradicting_evidence_ids)
+        cites |= {lk.evidence_id for lk in report.evidence_links if lk.target_id == h.id}
+        if cites & removed and h.id not in hypotheses:
+            hypotheses.append(h.id)
+    return Impact(
+        removed_evidence_ids=sorted(removed),
+        changed_conditions=list(what_if.changed_conditions),
+        affected_predictions=predictions,
+        affected_mechanism_links=affected_links,
+        affected_hypotheses=hypotheses,
+        affected_experiments=list(dict.fromkeys(a.experiment_id for a in predictions)),
+    )

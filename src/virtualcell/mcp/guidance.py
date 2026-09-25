@@ -154,8 +154,37 @@ values separate. Predictions are compared by value, never by wording; hypotheses
 unless you mark them mutually exclusive; nothing is scored or ranked. Choosing the first
 experiment is your argument and the researcher's decision.
 
+Every prediction also comes back as a trace: its basis (evidence observed, mechanism-derived,
+measurement model, assumption), the evidence and mechanism links it rests on, counted by study,
+and the decision it feeds. A connected path is not a verified causal chain. Send `what_if`
+(evidence ids to withdraw, conditions that change) to see which predictions, links and
+experiments depend on them; a withdrawn source never reverses a prediction.
+
 `authored_by` is `host_llm` and `internal_model_calls` is 0. This draft is your work, and
 the result must not be reported as this platform's reasoning.\
+"""
+
+
+COMPARE_RESEARCH_OBSERVATIONS = """\
+Read observed results against the plan you sent to check_research_draft. This calls no model.
+
+Send the same plan fields, the results as `runs` (the platform's ExperimentRun records, with
+their own units, time points, conditions and quality), and `mappings` saying which readout of
+which experiment each measurement stands for, the treatment and reference arms, and the
+decision rule. Comparability is checked before any value is read: the run's method against the
+readout's assay, the unit, the time point and the arms. Bounded, suspect, excluded, missing and
+above-detection readings are left out and counted. Below detection reads as absent for a state;
+a zero is not below detection.
+
+A change is classified only by the rule you declare. No rule, no classification: no threshold,
+mean or test statistic is invented. Each treatment/reference pairing is classified on its own,
+and replicates count only when every pairing agrees. 'Consistent' means the result equals the
+predicted value; it does not show the hypothesis holds. Interference on one assay is not carried
+to another.
+
+The plan is not modified: the result is a revision naming the plan it read by hash. Send
+`decisions` (keep, revise or hold, with a reason) as your proposal; they are recorded as yours
+and the researcher decides. Relay `not_checked` and `limits` with the result.\
 """
 
 
@@ -198,4 +227,13 @@ REQUIRED_PHRASES: tuple[tuple[str, str], ...] = (
     ("check_research_draft", "compared by value, never by wording"),
     ("check_research_draft", "nothing is scored or ranked"),
     ("check_research_draft", "must not be reported as this platform's reasoning"),
+    ("check_research_draft", "A connected path is not a verified causal chain"),
+    ("check_research_draft", "a withdrawn source never reverses a prediction"),
+    ("compare_research_observations", "calls no model"),
+    ("compare_research_observations", "Comparability is checked before any value is read"),
+    ("compare_research_observations", "No rule, no classification"),
+    ("compare_research_observations", "a zero is not below detection"),
+    ("compare_research_observations", "it does not show the hypothesis holds"),
+    ("compare_research_observations", "The plan is not modified"),
+    ("compare_research_observations", "recorded as yours"),
 )

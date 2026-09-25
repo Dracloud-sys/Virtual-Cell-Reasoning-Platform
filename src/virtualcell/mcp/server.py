@@ -2,19 +2,20 @@
 
     API / CLI / MCP  ->  ReasoningService.query()  ->  DomainRegistry  ->  DomainPack
 
-This module registers six tools and does nothing else. It re-derives no
+This module registers seven tools and does nothing else. It re-derives no
 scientific value, owns no vocabulary, branches on no domain, and names no
 vertical - everything domain-specific arrives through ``DomainRegistry`` and
 ``DomainDescription``. Adding a fourth domain must change zero lines in this
 package; a test asserts it.
 
-Three of those six are the **domainless door**, and they invert who reasons. The
+Four of those seven are the **domainless door**, and they invert who reasons. The
 final shape of this product is a host LLM with VCRP plugged into it: the host
 understands the question, proposes the hypotheses, designs the experiment and
 writes the explanation; this server looks evidence up, walks mechanism paths,
 checks sources and structure, and reports which registered domains declare
 anything matching; the researcher decides and approves. So ``research_evidence``,
-``read_evidence_source`` and ``check_research_draft`` call no model and need no API
+``read_evidence_source``, ``check_research_draft`` and ``compare_research_observations`` call
+no model and need no API
 key, and they live on this server rather than a second one - a separate server would
 double what a host must configure and split the guidance a model reads in two.
 
@@ -44,6 +45,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import ValidationError, WithJsonSchema
 
+from virtualcell.core.experiment import ExperimentRun
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.literature.contracts import ArticleRecord, SourceKind
@@ -70,12 +72,15 @@ from virtualcell.research.backend import ResearchBackendError
 from virtualcell.research.contracts import (
     EvidenceItem,
     EvidenceLink,
+    HostDecision,
     Hypothesis,
     MechanismLink,
     Objective,
+    ObservationMapping,
     ProposedExperiment,
     SubQuestion,
 )
+from virtualcell.research.plan import WhatIf
 
 SERVER_NAME = "virtualcell"
 
@@ -95,7 +100,8 @@ sequence applies to this door only.
 
 **An open research question.** Call research_evidence, read on with
 read_evidence_source before a paper shapes a decision, and call check_research_draft
-on what you write. No domain is required, and most new questions have none - a
+on what you write. When results come back, compare_research_observations reads them
+against the same plan. No domain is required, and most new questions have none - a
 subject nobody has registered is the normal case, not an error. Do NOT map such a
 question onto the nearest registered domain to get past list_domains; a verdict
 from a vocabulary built for something else is worse than no verdict. You do the
@@ -150,6 +156,13 @@ _ObjectivesParam = _published(Objective)
 _SubQuestionsParam = _published(SubQuestion)
 _EvidenceLinksParam = _published(EvidenceLink)
 _MechanismLinksParam = _published(MechanismLink)
+_RunsParam = _published(ExperimentRun)
+_MappingsParam = _published(ObservationMapping)
+_DecisionsParam = _published(HostDecision)
+_WhatIfParam = Annotated[
+    dict[str, Any] | None,
+    WithJsonSchema({"anyOf": [research_payloads.contract_schema(WhatIf), {"type": "null"}]}),
+]
 
 
 def _refuse(error: str, detail: str, remedy: str) -> ToolError:
@@ -497,18 +510,9 @@ def build_server(
         open_conditions: list[str] | None = None,
         evidence_links: _EvidenceLinksParam = None,
         mechanism_links: _MechanismLinksParam = None,
+        what_if: _WhatIfParam = None,
     ) -> research_payloads.DraftCheckResult:
-        try:
-            items = [EvidenceItem.model_validate(raw) for raw in evidence or []]
-        except ValidationError as exc:
-            raise _refuse(
-                "malformed_evidence",
-                str(exc),
-                (
-                    "Each evidence item needs an id, a kind and a statement. A "
-                    "retrieved_source needs its locator; nothing else may carry one."
-                ),
-            ) from exc
+        items = _evidence_items(evidence)
         try:
             return research_payloads.draft_check(
                 question=question,
@@ -527,22 +531,81 @@ def build_server(
                 evidence_links=evidence_links,
                 mechanism_links=mechanism_links,
                 store=store,
+                what_if=what_if,
             )
         except (ValueError, ValidationError, ResearchBackendError) as exc:
             # `validate_report_payload` raises the research path's own typed failure, whose
             # message names the exact path in the draft. It is reused rather than
             # re-implemented, so its error type comes along; the refusal carries the detail.
-            raise _refuse(
-                "malformed_draft",
-                str(exc),
-                (
-                    "Fix the field the message names. A list field must be a JSON list, not "
-                    "a string — a bare string becomes a list of its characters. Hypothesis "
-                    "support is evidence_linked or unverified_candidate."
-                ),
-            ) from exc
+            raise _malformed_draft(exc) from exc
+
+    @server.tool(
+        name="compare_research_observations",
+        description=guidance.COMPARE_RESEARCH_OBSERVATIONS,
+        annotations=_READ_ONLY,
+    )
+    def _compare_research_observations(
+        question: str,
+        runs: _RunsParam,
+        mappings: _MappingsParam,
+        decisions: _DecisionsParam = None,
+        restated_question: str = "",
+        assumptions: list[str] | None = None,
+        hypotheses: _HypothesesParam = None,
+        experiments: _ExperimentsParam = None,
+        evidence: _EvidenceParam = None,
+        objectives: _ObjectivesParam = None,
+        sub_questions: _SubQuestionsParam = None,
+        mechanism_links: _MechanismLinksParam = None,
+    ) -> research_payloads.ObservationCheckResult:
+        items = _evidence_items(evidence)
+        try:
+            return research_payloads.observation_check(
+                runs=runs or [],
+                mappings=mappings or [],
+                decisions=decisions,
+                question=question,
+                restated_question=restated_question,
+                assumptions=assumptions or [],
+                hypotheses=hypotheses or [],
+                experiments=experiments or [],
+                open_items=[],
+                evidence_used=[],
+                evidence=items,
+                objectives=objectives,
+                sub_questions=sub_questions,
+                mechanism_links=mechanism_links,
+            )
+        except (ValueError, ValidationError, ResearchBackendError) as exc:
+            raise _malformed_draft(exc) from exc
 
     return server
+
+
+def _evidence_items(evidence: list[dict[str, Any]] | None) -> list[EvidenceItem]:
+    try:
+        return [EvidenceItem.model_validate(raw) for raw in evidence or []]
+    except ValidationError as exc:
+        raise _refuse(
+            "malformed_evidence",
+            str(exc),
+            (
+                "Each evidence item needs an id, a kind and a statement. A "
+                "retrieved_source needs its locator; nothing else may carry one."
+            ),
+        ) from exc
+
+
+def _malformed_draft(exc: Exception) -> ToolError:
+    return _refuse(
+        "malformed_draft",
+        str(exc),
+        (
+            "Fix the field the message names. A list field must be a JSON list, not "
+            "a string — a bare string becomes a list of its characters. Hypothesis "
+            "support is evidence_linked or unverified_candidate."
+        ),
+    )
 
 
 def _graph_lookup(

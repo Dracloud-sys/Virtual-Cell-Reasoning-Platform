@@ -25,7 +25,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from virtualcell.research.backend import (
     PROMPT_VERSION,
@@ -38,11 +38,14 @@ from virtualcell.research.contracts import (
     GROUNDED_KINDS,
     DecisionBranch,
     EvidenceItem,
+    ExperimentPurpose,
     Hypothesis,
     HypothesisSupport,
     IntegrityFinding,
+    ObjectiveCoverage,
     Prediction,
     ProposedExperiment,
+    ReadoutSpec,
     ResearchProvenance,
     ResearchReport,
     ResearchRequest,
@@ -260,14 +263,29 @@ def _blank_text(value: str, code_where: str) -> list[IntegrityFinding]:
     ]
 
 
-def _predictions(value: Any, where: str) -> list[Prediction]:
-    """Predictions are small closed records; the contract validates each one and names the path."""
-    out: list[Prediction] = []
+def _records[R: BaseModel](model: type[R], value: Any, where: str) -> list[R]:
+    """Small closed records; the contract validates each one and the failure names the path."""
+    out: list[R] = []
     for index, raw in enumerate(_as_list(value, where)):
         try:
-            out.append(Prediction.model_validate(_as_object(raw, f"{where}[{index}]")))
+            out.append(model.model_validate(_as_object(raw, f"{where}[{index}]")))
         except ValidationError as exc:
             raise _bad(f"{where}[{index}]", str(exc).splitlines()[0]) from exc
+    return out
+
+
+def _predictions(value: Any, where: str) -> list[Prediction]:
+    return _records(Prediction, value, where)
+
+
+def _purposes(value: Any, where: str) -> list[ExperimentPurpose]:
+    out: list[ExperimentPurpose] = []
+    for index, raw in enumerate(_as_str_list(value, where)):
+        try:
+            out.append(ExperimentPurpose(raw))
+        except ValueError as exc:
+            allowed = ", ".join(repr(p.value) for p in ExperimentPurpose)
+            raise _bad(f"{where}[{index}]", f"{raw!r} is not one of {allowed}") from exc
     return out
 
 
@@ -340,6 +358,9 @@ def validate_report_payload(
                 "mutually_exclusive_with": _as_str_list(
                     obj.get("mutually_exclusive_with", []), f"{where}.mutually_exclusive_with"
                 ),
+                "alternative_to": _as_str_list(
+                    obj.get("alternative_to", []), f"{where}.alternative_to"
+                ),
             }
         )
 
@@ -382,6 +403,13 @@ def validate_report_payload(
                 )
                 or None,
                 "predictions": _predictions(obj.get("predictions", []), f"{where}.predictions"),
+                "readouts": _records(ReadoutSpec, obj.get("readouts", []), f"{where}.readouts"),
+                "purposes": _purposes(obj.get("purposes", []), f"{where}.purposes"),
+                "objective_coverage": _records(
+                    ObjectiveCoverage,
+                    obj.get("objective_coverage", []),
+                    f"{where}.objective_coverage",
+                ),
             }
         )
 
