@@ -69,7 +69,9 @@ hypothesis**. Nothing was written to the graph.
   arm but the plan gives no prediction for H4 in it, so the arm separates nothing as written; H3
   against H8.
 - **E4 without "gap length"** (the general answer's version): H3 (contraction) and H6 (handover)
-  predict the same continuity result and are **not separated**; with gap length they are.
+  predict the same continuity result and are **not separated**; with gap length they are. That
+  separation is by predicted values. It does **not** show handover: H6 says new collagen begins
+  to carry load, and no readout in the plan measures that (see the revision below).
 - Coexistence notes, e.g. E4: H1 (loss) and H6 (new ECM) predict opposite continuity effects and
   can both hold — an intermediate result could mean both, not neither.
 - Coverage: E4's separated pairs strictly contain E3's.
@@ -116,6 +118,12 @@ not in the graph. M1 and M2 carry evidence but are not in the graph.
 - **General answer's experiments** (cell-free resazurin, per-cell normalisation, ATP/membrane,
   mitochondrial content/OCR): **H3b is never separated from H2a or H2b.** A compound that quenches
   resorufin would read as lower metabolic activity per cell in every one of them.
+  > **Withdrawn as stated (review, later the same day).** The second sentence is wrong: ATP,
+  > membrane integrity, citrate synthase and OCR do not read resorufin. The first sentence came
+  > from three defects in the matrix: no H3b prediction in E5, an ATP cell that generalised
+  > graphene's luminometric interference, and H2 ATP cells the hypotheses do not fix. On the
+  > corrected matrix, H3b **is** separated from H2a (E5 citrate synthase, under an assumption
+  > about that assay) and **is not** separated from H2b. See `case2_matrix_review.md`.
 - **Adding E2** (resorufin ± compound, no cells): no pair is left unseparated.
 - E1 separates H3a from everything else, and nothing else.
 - Coexistence: a per-cell decrease says H2 (or H3) holds; it cannot rule out H1 as well.
@@ -145,8 +153,112 @@ A more careful ordinary answer could have caught it; this one did not.
    was restructured with Q0 "What causes the lower signal?" shared by all five hypotheses. Whether
    two hypotheses compete is the host's statement, not something code infers.
 
-## Not done (stage B and C)
+---
 
-Updating the plan from actual results (`ExperimentRun` exists and is untouched), file input,
-saving and resuming sessions, and independent evaluation of design quality. No reader has scored
-either design; these two cases are cases, not an evaluation.
+# Revision: prediction traces, corrected semantics, and B1
+
+Everything below was run through the product path, as above: fresh `build_server()`, the same
+searches and reads repeated so every cited id is `server_retrieved`, then `check_research_draft`
+(with `what_if`) or `compare_research_observations`. The original drafts and results above are
+kept unchanged.
+
+| file | what |
+|---|---|
+| `case2_matrix_review.md` | every cell of the original case 2 matrix, kept / corrected / unconfirmed, with the reason |
+| `caseN_structured_only.md` | condition 2: the same plan in structured form, written by hand **before** the revised draft was run |
+| `caseN_revised_draft.json`, `caseN_revised_draft_result.json` | the corrected plan (references, bases, evidence, assumptions, readout specs, coverage) and its check, with `caseN_what_if.json` |
+| `case2_revised_draft_general_experiments*.json` | the revised plan restricted to the general answer's experiments |
+| `case2_b1_rules.json` | mappings and decision rules, **committed (d7d8bc2) before any observation was written** |
+| `case2_b1_observations.json` | four synthetic scenarios as `ExperimentRun` records |
+| `case2_b1_reading_without_vcrp.md` | conditions 1 and 2 for the observations, written before the comparison ran |
+| `case2_b1_decisions.json`, `case2_b1_S*_result.json` | the host's keep/revise/hold, and each scenario's comparison |
+
+**Every number in the B1 files is synthetic.** The rules' bounds are the host's, invented to
+exercise the comparison. None of them is a literature or instrument value.
+
+## Case 1: evidence → prediction
+
+*Computed:*
+- **Objectives.** O3 (handover) and O4 (scar) are **reached by no experiment directly**. O3 is
+  reached through proxies only (E1, E3, E4) and O4 through a proxy only (E5). O1 is reached
+  directly by E4 and O2 by E2. The levels are the host's judgement, and code only collects them.
+- **Traces.**
+  - E3's H6 prediction rests on `lit-670133a47aa6` (method) plus a stated assumption about chase
+    length and type-I specificity.
+  - E5's H5 uptake prediction rests on M1, whose one span is from lung myofibroblasts.
+  - **Eleven predictions** say their basis is `assumption` and state none. The hand-written
+    structured answer did not notice a single one.
+- **Pairs.** 14 pairs were not compared, each listed (no shared sub-question, not declared
+  alternatives). Never separated: H4 against H1, H2, H3 and H5; H5 against H1, H2 and H3; and H3
+  against H8.
+- **E1 corrected.** "Loss reduction by inhibitor" was a change written as a state, and it is now
+  a change vs vehicle. E1 no longer claims H5: H5's degradation claim is relative to
+  non-activated cells, an arm E1 does not have. The crosslinking arm now carries an H4
+  prediction, but it still separates nothing, because crosslinking may slow proteolysis and
+  hydrolysis too. It is kept as a function check.
+- **What if.**
+  - Withdrawing `lit-670133a47aa6` affects E3/H6 and M4.
+  - The same-study span `lit-eba9427a4c2d` stays in force. `what_if` withdraws spans, not
+    studies (finding 4 in `docs/research_path.md`).
+  - Changing the E5 condition string, or M1's condition, affects every E5 prediction. For H5
+    uptake the change travels through M1 as well. Condition matching is exact text.
+
+## Case 2: evidence → prediction, and the corrected finding
+
+*Computed on the revised draft:*
+- E2 separates H3b from H1, H2a and H2b.
+- E3 separates H1 from the rest.
+- E5 content separates H2a from H1, H2b, H3a and H3b.
+- **E4 now separates nothing.** Its ATP cells for H2 became `not_predicted`, because glycolysis
+  may compensate. It stays in the plan as a function check (O1 direct).
+- E6, the cell-free luciferase check that the ATP cells' assumption needs, separates nothing by
+  design.
+- Never separated: H2b vs H3a, and H3a vs H3b.
+- Restricted to the general answer's experiments, H2b vs H3b is never separated either.
+
+**Withdrawing the graphene product-control span** (`lit-fd67cab1bedc`) affects H3b's
+predictions in E2 and E3 and link M1. No value changes.
+
+## B1: observation-driven keep / revise / hold (case 2, synthetic)
+
+| | what the comparison computed | host's proposal |
+|---|---|---|
+| **S1** interference-consistent | E2 decrease on all 9 pairings (0.51–0.58): H3b consistent. H1, H2a and H2b read **inconsistent**, meaning "alone they predict no cell-free change". Cell number unchanged: H1 inconsistent. Per-cell decrease. | keep H3b; revise the per-cell resazurin readout (unusable for this compound); revise H1; **hold** H2a/H2b (coexistence), next E6 → E4 → E5 |
+| **S2** needs more measures | E2 no change: H3b inconsistent. Per-cell decrease. ATP unchanged: H1, H3a and H3b consistent, H2 not read (not predicted). **E6 could not be read** (`unknown_readout`). | revise H3b and H1; hold H2a/H2b, next E5; hold the luciferase assumption, which rests on a hand reading |
+| **S3** insufficient | E2 `replicates_disagree` (0.60–0.99). Per-cell 0.85: between bands, all undecided. | hold everything; repeat E2 and E3. No replicate rule invented |
+| **S4** not comparable | E2 `unit_mismatch` (AU vs RFU). E3 `no_observations_at_time_point` (vehicle at 48 h). E4 `all_treatment_readings_left_out` (2 suspect, 1 bound). E5 `assay_mismatch` ("absorbance" vs "DTNB absorbance"). | hold E2–E5 and fix the records |
+
+In every scenario the plan's hash was unchanged, and each run is its own revision.
+
+**Code vs host.** Code computed comparability, the classifications under the declared rules,
+the per-prediction outcomes and the dependencies to re-examine. The host wrote the rules, the
+mappings and every keep/revise/hold, and read E6 by hand. The biggest judgement the code could
+not make was S1's H2 "inconsistent": the host held H2 because it can coexist with H3b.
+
+## The three conditions, compared
+
+| | general answer (1) | structured, by hand (2) | VCRP analysis + update (3) |
+|---|---|---|---|
+| case 2 H3b vs H2 | stated no product control at all | H3b vs H2a only under an assumption; H3b vs H2b not separated | same as (2), computed; also H2b vs H3a never separated, which (2) did not state |
+| case 1 bases | none | wrote bases, but 11 carried no assumption | flagged all 11 |
+| case 1 pairs | none listed | three groups of unseparated pairs | 8 never separated, plus 14 excluded pairs, each with its reason |
+| what if | none | noted M1 and M4 | named every affected prediction, link and experiment; exposed span-vs-study |
+| S4 (bad records) | **built a biological story from unusable data** | caught all four issues, with the rule file open | caught all four issues, including the assay string (2) would have accepted |
+| S1 H2 | "quenching; check biology orthogonally" | marked ✗ without saying it isn't evidence against H2 | marked inconsistent; the limit and the host's hold carry the caveat |
+
+**What could not be matched, or would not be fair.**
+- (2) was written by a host who had already seen stage A's output, so it is not an independent
+  condition.
+- No reader outside the host has judged any of the three.
+- Counts of flagged items are not a quality score, and no holdout claim is made.
+- The B1 scenarios were designed by the same host who wrote the rules, so they test that the
+  comparison does what it says, not that it helps with real data.
+
+## Not done
+
+- File input, saving and resuming a session, statistics, and unit conversion.
+- A place in the plan for an experiment that checks an assumption (finding 2).
+- Study-level withdrawal (finding 4).
+- Independent evaluation of design or update quality.
+
+These cases are cases, not an evaluation.

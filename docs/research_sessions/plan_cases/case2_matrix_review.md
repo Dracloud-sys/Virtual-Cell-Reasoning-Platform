@@ -96,8 +96,8 @@ alone".
 
 ## What the corrected matrix says about the claim
 
-Computed on the revised draft (`case2_revised_draft_result.json`), restricted to the general
-answer's experiments (E1, E3, E4, E5):
+Computed on the revised draft restricted to the general answer's experiments (E1, E3, E4, E5;
+`case2_revised_draft_general_experiments_result.json`):
 
 - **H3b vs H2a is separated** by E5 citrate synthase content (H2a decrease, H3b no change). It
   rests on an unchecked assumption, that the compound does not affect the citrate synthase

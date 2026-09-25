@@ -325,3 +325,46 @@ def test_changing_a_condition_names_the_links_and_predictions_it_touches() -> No
 
 def test_without_a_what_if_there_is_no_impact_section() -> None:
     assert analyze_plan(_traced_report(), _traced_evidence()).impact is None
+
+
+# --- findings, pinned rather than fixed (docs/research_path.md, "Findings from the cases") --------
+
+
+def test_finding_withdrawing_a_span_does_not_withdraw_its_study() -> None:
+    """Case 1: withdrawing one span of the Dupuytren paper left a same-study span in force.
+
+    `what_if` removes evidence ids, not studies. Pinned so a change to study-level withdrawal is
+    a deliberate decision, not a side effect.
+    """
+    report = _one_experiment(
+        [
+            _p("A", "r", "increase", versus="v", basis="evidence_observed", evidence_ids=["d1"]),
+            _p("B", "r", "no_change", versus="v", basis="evidence_observed", evidence_ids=["m1"]),
+        ]
+    )
+
+    impact = analyze_plan(
+        report, _traced_evidence(), what_if=WhatIf(remove_evidence_ids=["d1"])
+    ).impact
+
+    assert [a.hypothesis_id for a in impact.affected_predictions] == ["A"], (
+        "m1 is the same paper as d1 and is not affected"
+    )
+
+
+def test_finding_there_is_no_value_for_changes_in_an_unknown_direction() -> None:
+    """Case 2: H3a (direct chemistry) changes a cell-free reading in a direction it does not fix.
+
+    The vocabulary has no value for that, so the cell is `not_predicted` with the reason in
+    `unresolved`, and it separates nothing.
+    """
+    from virtualcell.research.contracts import Expectation
+
+    assert {e.value for e in Expectation} == {
+        "increase",
+        "decrease",
+        "no_change",
+        "present",
+        "absent",
+        "not_predicted",
+    }

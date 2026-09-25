@@ -298,3 +298,51 @@ def test_only_runs_that_carry_the_readout_are_checked_against_its_assay() -> Non
 
     assert row.status == "compared"
     assert "assay_mismatch" not in row.reasons
+
+
+def test_an_arm_whose_every_reading_is_left_out_is_not_comparable() -> None:
+    run = _run(
+        [
+            (
+                "compound",
+                [_m(50.0, quality=MeasurementQuality.SUSPECT), _m(5.0, flags=["bound:>"])],
+            ),
+            ("vehicle", [_m(100.0)]),
+        ]
+    )
+
+    row = _only(compare_observations(_report(), [], [run], [_mapping()]))
+
+    assert row.status == "not_comparable"
+    assert "all_treatment_readings_left_out" in row.reasons
+    assert row.left_out == {"suspect": 1, "bounded": 1}
+
+
+def test_a_cell_the_plan_left_unpredicted_is_not_read_and_says_why() -> None:
+    report = _report()
+    report.experiments[0].predictions.append(
+        Prediction(
+            hypothesis_id="A",
+            readout="signal",
+            expected="not_predicted",
+            unresolved="depends on the stock",
+        )
+    )
+    run = _run([("compound", [_m(50.0)]), ("vehicle", [_m(100.0)])])
+
+    row = _only(compare_observations(report, [], [run], [_mapping()]))
+
+    unread = [o for o in row.by_hypothesis if o.expected == "not_predicted"]
+    assert unread[0].outcome == "not_read" and unread[0].note == "depends on the stock"
+
+
+def test_finding_inconsistent_is_said_not_to_be_a_refutation() -> None:
+    """Case 2, S1: H2 read 'inconsistent' on a cell-free control because H3b caused the effect.
+
+    The comparison has no notion of "this hypothesis alone"; the limit says so.
+    """
+    run = _run([("compound", [_m(50.0)]), ("vehicle", [_m(100.0)])])
+
+    limits = " ".join(compare_observations(_report(), [], [run], [_mapping()]).limits)
+
+    assert "it is not a refutation" in limits

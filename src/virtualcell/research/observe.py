@@ -164,6 +164,8 @@ LIMITS: tuple[str, ...] = (
     "classified on its own and replicates count only when every pairing agrees.",
     "'Consistent' means the classified result equals the predicted value. It does not show the "
     "hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+    "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses "
+    "may coexist, another may account for the result; it is not a refutation.",
     "'present' means the producer recorded a valid non-zero reading and did not mark it below "
     "detection; the detection limit is the producer's. A zero is not below detection.",
     "Units are compared as written; nothing is converted. The run's method is compared with the "
@@ -357,6 +359,12 @@ def _compare(
     row.below_detection = t_below + r_below
     row.treatment_values = t_values
     row.reference_values = r_values
+    # Readings that exist but that quality leaves out entirely make the arm unreadable: that
+    # is a comparability failure, not a shortage of data.
+    if treatment and not t_values and not (kind == "state" and t_below):
+        _add(row.reasons, "all_treatment_readings_left_out")
+    if kind == "change" and reference and not r_values:
+        _add(row.reasons, "all_reference_readings_left_out")
 
     if row.reasons:
         row.status = "not_comparable"
@@ -503,7 +511,9 @@ def _outcomes(
     for p in predictions:
         expected = p.expected.value
         p_kind = expectation_kind(expected)
-        if p_kind != kind:
+        if p_kind is None:
+            outcome, note = "not_read", p.unresolved or "the plan predicts no value here"
+        elif p_kind != kind:
             outcome, note = "not_read", f"a {p_kind} prediction; this mapping reads a {kind}"
         elif observed is None:
             outcome, note = "not_read", why_not or "nothing classified"

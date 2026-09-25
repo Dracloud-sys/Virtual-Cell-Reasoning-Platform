@@ -427,8 +427,83 @@ compared and nothing is scored or ranked. Choosing the first experiment stays th
 and the researcher's decision. Development cases and their comparison with an ordinary answer:
 `docs/research_sessions/plan_cases/`.
 
-Deliberately not built: updating the plan from results (stage B — `ExperimentRun` is untouched),
-file input, saving and resuming (stage C).
+### Predictions traced to what they rest on
+
+Stage A compared predicted values. What it now says *around* a comparison:
+
+- **State vs change.** A state (`present`/`absent`) and a change (`increase`/`decrease`/`no_change`)
+  are different claims and are never compared. Two changes stated against different references
+  (`Prediction.versus`) are not compared either. Each exclusion is listed with its reason
+  (`readout_exclusions`).
+- **Pairs.** Every hypothesis pair is listed, compared or not, with the reason
+  (`pair_selection`). The reasons are a shared sub-question, a declared `alternative_to`, or
+  neither. Differing predictions are not called sufficient discrimination: effect size, noise and
+  interference are not modelled.
+- **Objectives.** `objective_coverage` records the host's judgement per experiment: direct, proxy
+  or out of scope. `objective_levels` then says which objectives nothing measures directly. An
+  experiment that separates no pair is listed with its stated purposes (method check, function
+  check, baseline) and is not called a defect.
+- **Readouts.** `readouts` (`ReadoutSpec`) give target, assay, compartment, timepoint,
+  reference, normalization and unit. Whatever is missing is listed, because B1 needs every
+  field to compare an observation.
+- **Traces.** Every prediction is traced from its basis to the decision branches it feeds. The
+  basis is one of evidence observed, mechanism-derived, measurement model or assumption. Along
+  the way the trace carries the direct evidence, the mechanism links with their evidence and
+  gaps, independent studies (same-paper spans counted once), stated assumptions and what is
+  unresolved. A basis the prediction does not carry is a gap: for example, `assumption` with no
+  assumption stated. A connected path is not a verified causal chain.
+- **What if.** `what_if` names every prediction, mechanism link, hypothesis and experiment
+  resting on withdrawn evidence or a changed condition. It changes no predicted value and carries
+  nothing from one assay to another.
+
+### B1: observations read against the plan
+
+`compare_research_observations` (a tool on the same server; `research/observe.py`) takes the plan
+fields and three more inputs:
+
+- the results, as the platform's existing `ExperimentRun` records;
+- `mappings` (`ObservationMapping`): which measurement stands for which readout, the treatment
+  and reference arms, the time point, the unit and the `DecisionRule`;
+- optionally, the host's `decisions`.
+
+In order:
+
+1. **Comparability.** The readout must exist in the plan. The run's (or measurement's) method
+   must be the readout's declared assay, compared as written. The unit must be the rule's, with
+   no conversion. The time point and both arms must be present. Readings that are bounded,
+   suspect, excluded, missing or above detection are left out and counted. An arm left with
+   nothing usable is not comparable.
+2. **Classification by a declared rule only.** No rule, no classification. Each
+   treatment/reference pairing is classified on its own, with no mean and no test statistic.
+   Replicates count only when every pairing agrees, and a value between bands is indeterminate.
+   For a state, below detection reads `absent`, while a zero is not below detection and is
+   insufficient.
+3. **Per prediction:** consistent, inconsistent, undecided or not read. An inconsistent
+   prediction is listed with what it rested on, and every other prediction that shares an
+   assumption, mechanism link or evidence id with it.
+
+The plan is never modified. The result names the plan it read by SHA-256 and is a separate
+revision. Keep, revise and hold are recorded as the host's proposals (`decisions_by: host`), and
+targets that name nothing in the plan are findings.
+
+### Findings from the cases, pinned rather than fixed
+
+1. **There is no value for "changes, direction unknown".** Case 2's H3a (direct chemistry)
+   changes a cell-free reading without fixing the direction. The cell is `not_predicted`, and it
+   separates nothing.
+2. **An experiment that checks an assumption has nothing to be read against.** Case 2's E6
+   (luciferase ± compound) tests the assumption behind the ATP cells. No hypothesis predicts it,
+   so B1 reports `unknown_readout`, and the host read it by hand.
+3. **"Inconsistent" has no notion of "this hypothesis alone".** In S1, H2 read inconsistent on the
+   cell-free product control because H3b caused the effect, though H2 may coexist. The limit says
+   so; the host's decision held H2.
+4. **`what_if` withdraws spans, not studies.** Withdrawing one Dupuytren span left a same-study
+   span supporting other predictions.
+5. **Assays, conditions and units are matched as written.** "absorbance" is not "DTNB
+   absorbance". This is deliberate, and it is visible in S4.
+
+Deliberately still not built: file input, saving and resuming a session, statistics, unit
+conversion, and any automatic update of a prediction.
 
 ### What has and has not been exercised
 
@@ -594,11 +669,13 @@ Watch the existing literature orchestrator's ingestion side effects and keep the
 boundary separate — a research session's evidence does not belong in the permanent graph, and
 a hypothesis generated here is never registered as established knowledge.
 
-### P3 — the loop
+### P3 — the loop · **B1 done (minimal)**
 
 Take a prior report plus new observations and update the judgement: what was kept, what
 changed, what was withdrawn, and on what evidence. A past output is never treated as an
-observation.
+observation. B1 (above) reads `ExperimentRun` observations against the plan's predictions and
+records the host's keep/revise/hold as a separate revision. Nothing is stored, and no prediction
+is changed by code.
 
 ### Real-model status
 

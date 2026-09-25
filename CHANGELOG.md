@@ -7,6 +7,30 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Observations read against the plan's predictions (B1).** A new tool on the existing server,
+  `compare_research_observations`, takes the same plan fields plus `ExperimentRun` results,
+  explicit mappings (readout, arms, time point, unit, decision rule) and, optionally, the host's
+  keep/revise/hold. Comparability is checked before any value is read (assay as declared, unit,
+  time point, arms, quality flags and bounds). A change is classified only by a declared rule,
+  pairing by pairing, with no mean or statistic. Each prediction reads consistent, inconsistent,
+  undecided or not read, and an inconsistent one names what it rested on and which other
+  predictions share it. The plan is never modified; the result is a revision naming the plan by
+  hash. No storage.
+- **Predictions traced to their basis.** `Prediction` gains a reference (`versus`), condition,
+  biological expectation, basis (evidence observed / mechanism-derived / measurement model /
+  assumption), evidence and mechanism-link ids, assumptions and what is unresolved.
+  `ProposedExperiment` gains `readouts` (how each is measured), `purposes` and
+  `objective_coverage` (direct / proxy / out of scope, the host's judgement). `Hypothesis` gains
+  `alternative_to`. `plan_analysis` adds per-prediction traces, pair selection with reasons,
+  readout exclusions (state vs change, different references), objective levels, missing readout
+  fields, experiments that separate nothing listed with their purpose, and a `what_if` impact
+  that flips nothing.
+- **Stage A comparisons corrected.** A state and a change are no longer compared, and neither
+  are two changes against different references. Case 2's matrix was reviewed cell by cell: its
+  earlier finding that general-answer experiments never separate quenching (H3b) from lower
+  mitochondrial content or function (H2a/H2b) is withdrawn as stated. H3b is separated from H2a
+  only under an assumption about the citrate synthase assay, and still not from H2b. See
+  `docs/research_sessions/plan_cases/case2_matrix_review.md`.
 - **A research plan the draft check can follow from goal to experiment.** `check_research_draft`
   accepts, optionally, the researcher's objectives, confirmed and open conditions, sub-questions,
   evidence roles (supports / contradicts / method / scope_limit), case-local mechanism links and,
