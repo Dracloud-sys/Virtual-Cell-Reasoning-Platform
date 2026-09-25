@@ -67,7 +67,15 @@ from virtualcell.platform.domains import (
 )
 from virtualcell.platform.service import ReasoningService
 from virtualcell.research.backend import ResearchBackendError
-from virtualcell.research.contracts import EvidenceItem, Hypothesis, ProposedExperiment
+from virtualcell.research.contracts import (
+    EvidenceItem,
+    EvidenceLink,
+    Hypothesis,
+    MechanismLink,
+    Objective,
+    ProposedExperiment,
+    SubQuestion,
+)
 
 SERVER_NAME = "virtualcell"
 
@@ -138,6 +146,10 @@ def _published(contract: Any) -> Any:
 _HypothesesParam = _published(Hypothesis)
 _ExperimentsParam = _published(ProposedExperiment)
 _EvidenceParam = _published(EvidenceItem)
+_ObjectivesParam = _published(Objective)
+_SubQuestionsParam = _published(SubQuestion)
+_EvidenceLinksParam = _published(EvidenceLink)
+_MechanismLinksParam = _published(MechanismLink)
 
 
 def _refuse(error: str, detail: str, remedy: str) -> ToolError:
@@ -479,6 +491,12 @@ def build_server(
         open_items: list[str] | None = None,
         evidence_used: list[str] | None = None,
         evidence: _EvidenceParam = None,
+        objectives: _ObjectivesParam = None,
+        sub_questions: _SubQuestionsParam = None,
+        confirmed_conditions: list[str] | None = None,
+        open_conditions: list[str] | None = None,
+        evidence_links: _EvidenceLinksParam = None,
+        mechanism_links: _MechanismLinksParam = None,
     ) -> research_payloads.DraftCheckResult:
         try:
             items = [EvidenceItem.model_validate(raw) for raw in evidence or []]
@@ -502,6 +520,13 @@ def build_server(
                 evidence_used=evidence_used or [],
                 evidence=items,
                 origins=[issued.classify(item) for item in items],
+                objectives=objectives,
+                sub_questions=sub_questions,
+                confirmed_conditions=confirmed_conditions,
+                open_conditions=open_conditions,
+                evidence_links=evidence_links,
+                mechanism_links=mechanism_links,
+                store=store,
             )
         except (ValueError, ValidationError, ResearchBackendError) as exc:
             # `validate_report_payload` raises the research path's own typed failure, whose

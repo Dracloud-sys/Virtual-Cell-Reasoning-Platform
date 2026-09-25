@@ -142,6 +142,18 @@ The input schema publishes every nested field of `hypotheses`, `experiments` and
 with the required ones and the allowed values; build the draft from it. A key the schema
 does not declare is quoted back as a finding and not used.
 
+Optionally send the plan around the hypotheses: `objectives` (the researcher's, marked
+`stated_by`), `sub_questions`, `confirmed_conditions` and `open_conditions` (the researcher's;
+your own go in `assumptions`), `evidence_links` (what a span does for a claim: supports,
+contradicts, method, scope_limit), `mechanism_links` (case candidates with evidence and
+conditions), and per experiment `predictions` (what each hypothesis predicts for each readout).
+`plan_analysis` then reports, by code: objectives no experiment reaches, evidence counted by
+study rather than by span, mechanism links lacking evidence or conditions and whether the
+knowledge graph holds a path (read-only), and which hypothesis pairs each experiment's predicted
+values separate. Predictions are compared by value, never by wording; hypotheses may coexist
+unless you mark them mutually exclusive; nothing is scored or ranked. Choosing the first
+experiment is your argument and the researcher's decision.
+
 `authored_by` is `host_llm` and `internal_model_calls` is 0. This draft is your work, and
 the result must not be reported as this platform's reasoning.\
 """
@@ -183,5 +195,7 @@ REQUIRED_PHRASES: tuple[tuple[str, str], ...] = (
     ("check_research_draft", "is not approval"),
     ("check_research_draft", "server_retrieved_but_modified"),
     ("check_research_draft", "publishes every nested field"),
+    ("check_research_draft", "compared by value, never by wording"),
+    ("check_research_draft", "nothing is scored or ranked"),
     ("check_research_draft", "must not be reported as this platform's reasoning"),
 )

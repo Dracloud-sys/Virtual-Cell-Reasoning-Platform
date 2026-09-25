@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import json
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -221,6 +221,108 @@ class HypothesisSupport(StrEnum):
     """Proposed, with nothing grounded behind it yet. A search target."""
 
 
+# --- the plan around the hypotheses ----------------------------------------------------- #
+#
+# A research question is answered for a goal. These records keep that goal, what the
+# researcher has fixed, what is still open, and how each hypothesis and experiment connects
+# back to it, so a design cannot quietly narrow the question it was asked. All of them are
+# written by the host; code only checks the connections and computes what follows from them.
+
+
+class Objective(BaseModel):
+    """One thing the work is for. Kept separate from how the host restated it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    statement: str
+    stated_by: Literal["user", "host"] = Field(
+        description=(
+            "user: the researcher's own goal. host: an objective the host added; it is "
+            "reported as the host's, never as the researcher's."
+        )
+    )
+
+
+class SubQuestion(BaseModel):
+    """A question an experiment can answer, and which objectives it serves."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    question: str
+    objective_ids: list[str] = Field(default_factory=list)
+
+
+class EvidenceRole(StrEnum):
+    """What the host says a span does for a claim. The host's reading, not a verified fact."""
+
+    SUPPORTS = "supports"
+    CONTRADICTS = "contradicts"
+    METHOD = "method"
+    """The span informs how to measure or control something, not whether a claim holds."""
+
+    SCOPE_LIMIT = "scope_limit"
+    """The span limits where a claim can apply (species, system, condition)."""
+
+
+class EvidenceLink(BaseModel):
+    """The host's statement that one evidence item bears on one hypothesis or mechanism link."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    evidence_id: str
+    target_id: str = Field(description="A hypothesis id or a mechanism link id.")
+    role: EvidenceRole
+    reading: str = Field(
+        default="",
+        description="What the host takes the span to say. Reported as the host's interpretation.",
+    )
+
+
+class MechanismLink(BaseModel):
+    """A candidate relation for this case: source -relation-> target, with its conditions.
+
+    Case-local. It is checked against the knowledge graph read-only and never written to it.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    source: str
+    relation: str
+    target: str
+    evidence_ids: list[str] = Field(default_factory=list)
+    conditions: list[str] = Field(
+        default_factory=list,
+        description="Where the relation is claimed to hold: species, cell type, system, dose.",
+    )
+    hypothesis_ids: list[str] = Field(default_factory=list)
+
+
+class Expectation(StrEnum):
+    """A predicted direction for one readout. Compared by value; wording is never compared."""
+
+    INCREASE = "increase"
+    DECREASE = "decrease"
+    NO_CHANGE = "no_change"
+    PRESENT = "present"
+    ABSENT = "absent"
+    NOT_PREDICTED = "not_predicted"
+    """The hypothesis says nothing about this readout. Not the same as no_change."""
+
+
+class Prediction(BaseModel):
+    """What one hypothesis predicts for one readout of one experiment, if it holds."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    hypothesis_id: str
+    readout: str = Field(description="Should name one of the experiment's measurements.")
+    expected: Expectation
+    note: str | None = None
+
+
 class Hypothesis(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -233,6 +335,22 @@ class Hypothesis(BaseModel):
     #: a different species, cell type or model system is the commonest way a mechanism is
     #: over-extended.
     applicability: str | None = None
+    sub_question_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "The sub-questions this hypothesis answers. Hypotheses sharing a sub-question are "
+            "treated as alternatives (which may coexist) and compared; hypotheses with no shared "
+            "sub-question are not compared. Put competing explanations of one observation under "
+            "one sub-question."
+        ),
+    )
+    mutually_exclusive_with: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Hypotheses that cannot hold together with this one. Leave empty when both could "
+            "be true at once; coexistence is the default."
+        ),
+    )
 
 
 class DecisionBranch(BaseModel):
@@ -259,6 +377,13 @@ class ProposedExperiment(BaseModel):
     #: Why this one first, in words. Deliberately not a number: an invented probability or
     #: information-gain score would be a confidence nobody measured.
     priority_rationale: str | None = None
+    predictions: list[Prediction] = Field(
+        default_factory=list,
+        description=(
+            "What each hypothesis predicts for each readout if it holds. Discrimination is "
+            "computed from these values, never from wording."
+        ),
+    )
 
 
 class IntegrityFinding(BaseModel):
@@ -347,3 +472,11 @@ class ResearchReport(BaseModel):
     evidence_snapshot: list[EvidenceItem] = Field(default_factory=list)
     integrity: list[IntegrityFinding] = Field(default_factory=list)
     provenance: ResearchProvenance
+    objectives: list[Objective] = Field(default_factory=list)
+    sub_questions: list[SubQuestion] = Field(default_factory=list)
+    #: What the researcher has fixed, and what they have explicitly left open. Kept apart from
+    #: `assumptions`, which are the host's.
+    confirmed_conditions: list[str] = Field(default_factory=list)
+    open_conditions: list[str] = Field(default_factory=list)
+    evidence_links: list[EvidenceLink] = Field(default_factory=list)
+    mechanism_links: list[MechanismLink] = Field(default_factory=list)

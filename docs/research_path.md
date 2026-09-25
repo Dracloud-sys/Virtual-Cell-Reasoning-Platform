@@ -401,6 +401,35 @@ URL — and record none. The PMC12128996 body saved by the earlier probe now par
 Also observed: a host conversation that had already loaded the tool definitions kept the old
 schema after the server restarted; only a fresh context saw the new one.
 
+### Stage A: the plan around the hypotheses
+
+A draft used to be hypotheses and experiments only, so a design could narrow the goal it was asked,
+count three spans of one paper as three findings, and claim an experiment "discriminates" without
+saying what it would show. `check_research_draft` now accepts, optionally, the plan around them —
+all written by the host, all published in the input schema from the contracts:
+
+| record | what it holds |
+|---|---|
+| `objectives` | the researcher's goals (`stated_by: user`) and any the host added (`host`) |
+| `confirmed_conditions` / `open_conditions` | what the researcher fixed and left open; the host's own go in `assumptions` |
+| `sub_questions`, `Hypothesis.sub_question_ids` | the chain objective → question → hypothesis; hypotheses sharing a question are alternatives |
+| `evidence_links` | what a span does for a claim — supports, contradicts, method, scope_limit — with the host's reading |
+| `mechanism_links` | case-local candidate relations with evidence and conditions |
+| `ProposedExperiment.predictions` | per hypothesis, per readout: increase / decrease / no_change / present / absent / not_predicted |
+
+`plan_analysis` (`research/plan.py`) computes only what follows: objectives no experiment reaches;
+evidence counted by study, not span; mechanism links lacking evidence, grounded evidence, conditions
+or a hypothesis, and whether the seeded graph holds a path between exactly-matched ends (read-only;
+a path is reported as not carrying the case's conditions); per experiment, which comparable pairs
+the predicted **values** separate and which they cannot, with coexistence notes; across experiments,
+pairs nothing separates and set relations between experiments' separated pairs. No wording is
+compared and nothing is scored or ranked. Choosing the first experiment stays the host's argument
+and the researcher's decision. Development cases and their comparison with an ordinary answer:
+`docs/research_sessions/plan_cases/`.
+
+Deliberately not built: updating the plan from results (stage B — `ExperimentRun` is untouched),
+file input, saving and resuming (stage C).
+
 ### What has and has not been exercised
 
 Three different things, kept apart:

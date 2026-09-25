@@ -48,12 +48,17 @@ from virtualcell.research.contracts import (
     DecisionBranch,
     EvidenceItem,
     EvidenceKind,
+    EvidenceLink,
     Hypothesis,
+    MechanismLink,
+    Objective,
     ProposedExperiment,
     ResearchProvenance,
     ResearchReport,
     ResearchRequest,
+    SubQuestion,
 )
+from virtualcell.research.plan import PlanAnalysis, analyze_plan
 from virtualcell.research.service import check_integrity, validate_report_payload
 
 #: How much of an abstract travels back as a verifiable span. Enough to check the claim
@@ -245,6 +250,16 @@ class DraftCheckResult(BaseModel):
     findings: list[dict[str, str]] = Field(
         default_factory=list,
         description="Structural and citation defects, each with a code, where and detail.",
+    )
+
+    # 4. what follows from the plan, by code
+    plan_analysis: PlanAnalysis | None = Field(
+        default=None,
+        description=(
+            "Goal trace, evidence counted by study, mechanism-link gaps and graph check, and "
+            "which hypothesis pairs each experiment's predicted values separate. Computed from "
+            "what was submitted; it judges no biology and ranks nothing."
+        ),
     )
 
 
@@ -513,6 +528,13 @@ def draft_check(
     evidence_used: list[str],
     evidence: list[EvidenceItem],
     origins: list[EvidenceOrigin],
+    objectives: list[dict[str, Any]] | None = None,
+    sub_questions: list[dict[str, Any]] | None = None,
+    confirmed_conditions: list[str] | None = None,
+    open_conditions: list[str] | None = None,
+    evidence_links: list[dict[str, Any]] | None = None,
+    mechanism_links: list[dict[str, Any]] | None = None,
+    store: Any = None,
 ) -> DraftCheckResult:
     """Validate the draft, then assemble it, then check it. In that order.
 
@@ -544,6 +566,16 @@ def draft_check(
             "evidence_used": evidence_used,
         }
     )
+    # The plan records are small closed contracts; the models validate them directly and a
+    # malformed one refuses with the path, the same way a malformed hypothesis does.
+    plan_fields = {
+        "objectives": TypeAdapter(list[Objective]).validate_python(objectives or []),
+        "sub_questions": TypeAdapter(list[SubQuestion]).validate_python(sub_questions or []),
+        "confirmed_conditions": TypeAdapter(list[str]).validate_python(confirmed_conditions or []),
+        "open_conditions": TypeAdapter(list[str]).validate_python(open_conditions or []),
+        "evidence_links": TypeAdapter(list[EvidenceLink]).validate_python(evidence_links or []),
+        "mechanism_links": TypeAdapter(list[MechanismLink]).validate_python(mechanism_links or []),
+    }
     request = ResearchRequest(question=question, evidence=evidence)
     report = ResearchReport(
         question=question,
@@ -561,12 +593,16 @@ def draft_check(
             model_calls=0,
             evidence_offered=len(evidence),
         ),
+        **plan_fields,
     )
     findings = payload_findings + check_integrity(request, report)
+    plan = analyze_plan(report, evidence, store=store)
     return DraftCheckResult(
         not_checked=list(NOT_CHECKED),
         evidence_origins=origins,
-        findings=[{"code": f.code, "where": f.where, "detail": f.detail} for f in findings],
+        findings=[{"code": f.code, "where": f.where, "detail": f.detail} for f in findings]
+        + [{"code": f.code, "where": f.where, "detail": f.detail} for f in plan.findings],
+        plan_analysis=plan,
     )
 
 

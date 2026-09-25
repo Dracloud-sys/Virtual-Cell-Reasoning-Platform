@@ -7,6 +7,16 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **A research plan the draft check can follow from goal to experiment.** `check_research_draft`
+  accepts, optionally, the researcher's objectives, confirmed and open conditions, sub-questions,
+  evidence roles (supports / contradicts / method / scope_limit), case-local mechanism links and,
+  per experiment, each hypothesis's predicted value per readout. `plan_analysis` reports objectives
+  no experiment reaches, evidence counted by study rather than span, mechanism links lacking evidence
+  or conditions and whether the graph holds a path (read-only), and which hypothesis pairs each
+  experiment's predicted values separate, with coexistence caveats and the pairs no candidate
+  separates. Values are compared, never wording; nothing is scored or ranked. The fields are added
+  to the existing `Hypothesis`, `ProposedExperiment` and `ResearchReport` and published from them;
+  no new tool, domain pack or provider. Two development cases in `docs/research_sessions/plan_cases/`.
 - **The same MCP tools over Streamable HTTP, behind OAuth, for one person.** A Claude custom
   connector reaches its server from Anthropic's cloud, which stdio cannot serve.
   `python -m virtualcell.mcp --transport streamable-http` serves the unchanged `build_server()`

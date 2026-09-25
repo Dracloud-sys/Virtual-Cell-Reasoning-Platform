@@ -25,6 +25,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from pydantic import ValidationError
+
 from virtualcell.research.backend import (
     PROMPT_VERSION,
     BackendCallFailed,
@@ -39,6 +41,7 @@ from virtualcell.research.contracts import (
     Hypothesis,
     HypothesisSupport,
     IntegrityFinding,
+    Prediction,
     ProposedExperiment,
     ResearchProvenance,
     ResearchReport,
@@ -257,6 +260,17 @@ def _blank_text(value: str, code_where: str) -> list[IntegrityFinding]:
     ]
 
 
+def _predictions(value: Any, where: str) -> list[Prediction]:
+    """Predictions are small closed records; the contract validates each one and names the path."""
+    out: list[Prediction] = []
+    for index, raw in enumerate(_as_list(value, where)):
+        try:
+            out.append(Prediction.model_validate(_as_object(raw, f"{where}[{index}]")))
+        except ValidationError as exc:
+            raise _bad(f"{where}[{index}]", str(exc).splitlines()[0]) from exc
+    return out
+
+
 def validate_report_payload(
     payload: dict[str, Any],
 ) -> tuple[dict[str, Any], list[IntegrityFinding]]:
@@ -320,6 +334,12 @@ def validate_report_payload(
                 ),
                 "applicability": _as_str(obj.get("applicability"), f"{where}.applicability")
                 or None,
+                "sub_question_ids": _as_str_list(
+                    obj.get("sub_question_ids", []), f"{where}.sub_question_ids"
+                ),
+                "mutually_exclusive_with": _as_str_list(
+                    obj.get("mutually_exclusive_with", []), f"{where}.mutually_exclusive_with"
+                ),
             }
         )
 
@@ -361,6 +381,7 @@ def validate_report_payload(
                     obj.get("priority_rationale"), f"{where}.priority_rationale"
                 )
                 or None,
+                "predictions": _predictions(obj.get("predictions", []), f"{where}.predictions"),
             }
         )
 

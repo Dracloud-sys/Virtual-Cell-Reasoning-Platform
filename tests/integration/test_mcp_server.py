@@ -1885,3 +1885,85 @@ def test_a_hostile_body_through_the_real_provider_is_a_failed_lookup() -> None:
 
     assert result["status"] == "lookup_failed"
     assert result["evidence"] == []
+
+
+# --- the plan around the hypotheses, over the tool ------------------------------------------
+
+from virtualcell.research.contracts import (  # noqa: E402
+    EvidenceLink,
+    EvidenceRole,
+    Expectation,
+    MechanismLink,
+    Objective,
+    Prediction,
+    SubQuestion,
+)
+
+
+def test_the_plan_records_are_published_from_their_contracts() -> None:
+    props = _published_schema("check_research_draft")["properties"]
+
+    for name, model in (
+        ("objectives", Objective),
+        ("sub_questions", SubQuestion),
+        ("evidence_links", EvidenceLink),
+        ("mechanism_links", MechanismLink),
+    ):
+        assert set(_items(props[name])["properties"]) == set(model.model_fields), name
+    assert set(_items(props["evidence_links"])["properties"]["role"]["enum"]) == {
+        r.value for r in EvidenceRole
+    }
+    prediction = _items(props["experiments"])["properties"]["predictions"]["items"]
+    assert set(prediction["properties"]) == set(Prediction.model_fields)
+    assert set(prediction["properties"]["expected"]["enum"]) == {e.value for e in Expectation}
+    assert _refs(_published_schema("check_research_draft")) == []
+
+
+def test_the_draft_check_returns_the_plan_analysis_over_the_tool() -> None:
+    draft = _draft(
+        objectives=[
+            {"id": "O1", "statement": "keep the goal", "stated_by": "user"},
+            {"id": "O2", "statement": "an objective nothing tests", "stated_by": "user"},
+        ],
+        sub_questions=[{"id": "Q1", "question": "which holds?", "objective_ids": ["O1"]}],
+        confirmed_conditions=["in vitro"],
+        open_conditions=["cell type"],
+        mechanism_links=[
+            {
+                "id": "M1",
+                "source": "PPARGC1A",
+                "relation": "promotes",
+                "target": "Mitochondrial function",
+                "conditions": ["case cells"],
+                "hypothesis_ids": ["H1"],
+            }
+        ],
+    )
+    draft["hypotheses"][0]["sub_question_ids"] = ["Q1"]
+    draft["hypotheses"].append(
+        {"id": "H2", "statement": "an alternative", "support": "unverified_candidate"}
+    )
+    draft["experiments"][0]["predictions"] = [
+        {"hypothesis_id": "H1", "readout": "mass", "expected": "decrease"},
+        {"hypothesis_id": "H2", "readout": "mass", "expected": "no_change"},
+    ]
+
+    plan = _call(_server(), "check_research_draft", draft)["plan_analysis"]
+
+    assert plan["unreached_objectives"] == ["O2"]
+    assert plan["conditions"]["open"] == ["cell type"]
+    assert plan["mechanism_links"][0]["graph"]["status"] == "path_found"
+    (exp,) = plan["experiments"]
+    assert [p["pair"] for p in exp["separated_pairs"]] == [["H1", "H2"]]
+    assert plan["wrote_to_knowledge_graph"] is False
+
+
+def test_a_malformed_plan_record_refuses_with_its_path() -> None:
+    refusal = _refusal(
+        _server(),
+        "check_research_draft",
+        _draft(objectives=[{"id": "O1", "statement": "g", "stated_by": "somebody"}]),
+    )
+
+    assert refusal.error == "malformed_draft"
+    assert "stated_by" in refusal.detail
