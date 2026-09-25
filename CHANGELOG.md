@@ -7,6 +7,19 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **The same MCP tools over Streamable HTTP, behind OAuth, for one person.** A Claude custom
+  connector reaches its server from Anthropic's cloud, which stdio cannot serve.
+  `python -m virtualcell.mcp --transport streamable-http` serves the unchanged `build_server()`
+  statelessly on `/mcp`, publishes protected resource metadata, answers `401` with
+  `WWW-Authenticate: resource_metadata=...`, and accepts only an RS256 JWT whose issuer,
+  audience (the exact server URL), expiry and scope verify **and** whose `sub` is the one
+  configured person. Missing settings stop the process before it binds. One worker, stated,
+  because the issued-evidence record is per process; a restart empties it, reads back as
+  `not_issued` / `host_supplied`, and a re-search re-issues the same id. stdio stays the
+  default and `.mcp.json` is untouched. New `[mcp-http]` extra and `docker/mcp.Dockerfile`
+  (non-root, no `[llm]`); `docker/Dockerfile` unchanged. Render Free + Auth0 Free procedure in
+  `docs/remote_mcp.md`. **Nothing is deployed**: a real Auth0 login, a public address and a
+  registered connector have not been exercised.
 - **`read_evidence_source`: read past the 400-character excerpt.** A live host session got 23
   spans, all cut at 400 characters, and no way to read methods or results. The new tool reads
   the rest of an issued abstract, or one section of an open-access body through the existing

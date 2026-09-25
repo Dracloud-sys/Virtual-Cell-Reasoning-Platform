@@ -219,6 +219,10 @@ venv self-ignores so it never appears in `git status`.
 **Start the new session on this branch, not `main`.** `.mcp.json` and the setup script live
 on `feat/research-path`; a session started from `main` has neither.
 
+A **Claude custom connector** (added by URL) cannot use this stdio entry: it connects from
+Anthropic's cloud. The same server over Streamable HTTP, behind OAuth for one person, is in
+[`remote_mcp.md`](remote_mcp.md) — not yet deployed.
+
 ### A failed lookup is not a search that found nothing
 
 Measured against the live API, and it is the difference between "nobody has studied this"

@@ -19,8 +19,10 @@ key, and they live on this server rather than a second one - a separate server w
 double what a host must configure and split the guidance a model reads in two.
 
 The MCP SDK is an optional dependency (``pip install "virtualcell[mcp]"``). It is
-imported here and nowhere else, so the rest of the package - and
-:mod:`virtualcell.mcp.payloads` with it - stays importable without it.
+imported here and, for the HTTP transport only, in :mod:`virtualcell.mcp.remote`, so the
+rest of the package - and :mod:`virtualcell.mcp.payloads` with it - stays importable
+without it. stdio stays the default transport; ``--transport streamable-http`` serves
+this same server, built by this same ``build_server``, behind OAuth.
 
 Every tool returns exactly one concrete type. A union of "answer or refusal"
 would be wrapped by the SDK under a single ``result`` property, and that wrapper
@@ -37,6 +39,7 @@ import sys
 from typing import Annotated, Any, Literal
 
 from mcp.server import MCPServer
+from mcp.server.auth.settings import AuthSettings
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import ValidationError, WithJsonSchema
@@ -147,18 +150,29 @@ def build_server(
     registry: DomainRegistry | None = None,
     store: KnowledgeStore | None = None,
     literature_agent: object | None = None,
+    auth: AuthSettings | None = None,
+    token_verifier: Any = None,
 ) -> MCPServer:
     """Build the MCP server over a registry and a seeded knowledge store.
 
     Both are injectable so a test can register a domain this repository does not
     ship and prove the tools reach it without a change here.
+
+    `auth` and `token_verifier` are passed to the SDK untouched and only matter to the HTTP
+    transport (:mod:`virtualcell.mcp.remote`). The tools do not see them: whoever the caller
+    is, the six tools are the same six tools.
     """
     registry = registry if registry is not None else default_registry()
     if store is None:
         store = InMemoryKnowledgeStore()
         seed_registered_domains(store)
 
-    server: MCPServer = MCPServer(name=SERVER_NAME, instructions=SERVER_INSTRUCTIONS)
+    server: MCPServer = MCPServer(
+        name=SERVER_NAME,
+        instructions=SERVER_INSTRUCTIONS,
+        auth=auth,
+        token_verifier=token_verifier,
+    )
 
     @server.tool(
         name="list_domains",
@@ -689,6 +703,39 @@ def literature_agent_from_env() -> object | None:
     return default_literature_agent()
 
 
+TRANSPORTS = ("stdio", "streamable-http")
+
+
+def transport_from_argv(argv: list[str]) -> str:
+    """`--transport stdio|streamable-http`, read the way `--literature` is read.
+
+    Absent means stdio, so the committed `.mcp.json` - which passes no transport - keeps
+    starting exactly what it always started. An unknown value stops the process rather than
+    falling back: a typo must not quietly choose a transport.
+    """
+    value = "stdio"
+    for index, arg in enumerate(argv):
+        if arg == "--transport":
+            if index + 1 >= len(argv):
+                raise SystemExit("--transport needs a value: " + " or ".join(TRANSPORTS))
+            value = argv[index + 1]
+        elif arg.startswith("--transport="):
+            value = arg.split("=", 1)[1]
+    if value not in TRANSPORTS:
+        raise SystemExit(f"unknown --transport {value!r}; expected " + " or ".join(TRANSPORTS))
+    return value
+
+
 def main() -> None:
-    """Entry point: serve over stdio."""
-    build_server(literature_agent=literature_agent_from_env()).run(transport="stdio")
+    """Entry point: serve over stdio, or over Streamable HTTP behind OAuth.
+
+    The HTTP module is imported only when asked for, so the stdio path loads nothing new.
+    """
+    transport = transport_from_argv(sys.argv)
+    literature_agent = literature_agent_from_env()
+    if transport == "streamable-http":
+        from virtualcell.mcp import remote
+
+        remote.serve(literature_agent=literature_agent)
+        return
+    build_server(literature_agent=literature_agent).run(transport="stdio")
