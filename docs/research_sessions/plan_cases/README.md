@@ -294,6 +294,51 @@ tested as a new revision beside them:
 - Had E6 failed (R3), the same readings would be kept and marked for re-examination, and only
   those readings.
 
+### B1.1 closure checks (after 8c3f03d)
+
+Three more defects were reproduced through the product path on 8c3f03d
+(`case2_b11_closure_probes.json`) and fixed. The 8c3f03d results above are kept, and the case
+was re-read as `case2_b11_closure_S*_result.json`.
+
+| probe | 8c3f03d | closure |
+|---|---|---|
+| prediction vs vehicle, mapping `versus: vehicle`, reference arm selected by `untreated` | compared (same name on both sides) | `reference_link: declared_only` → every prediction `held_reference`; value and classification kept |
+| one observation used in two pairs | counted as 2 "independent" pairs | `observation_in_more_than_one_pair` → not comparable |
+| the same pair declared twice | counted as 2 | same |
+
+**Counts renamed.** `independent_pairs` is now `declared_pairs` and `used_pairs`. Both count
+pairs, not independent biological replicates. `pair_independence` is always `not_established`,
+because nothing in the input says whether pairs are separate donors or experiments.
+
+**What the closure rule changed in the case.**
+- A named reference is compared only when the reference arm's own conditions carry that name
+  (`structural`).
+- The B1.1 rules name E2's reference "resorufin in medium alone" (the plan's wording), but the
+  synthetic arm's condition is "resorufin alone". The link was the host's declaration.
+- So **S1 and S2's E2 comparisons are now held**. The classified values are kept (S1 decrease
+  on 9 combinations, S2 no change), and so are the host's B1/B1.1 decisions.
+- The S1 keep and S2 revise of H3b rest on a reference correspondence the host declared, not
+  one the code confirmed.
+- E3, E4, E5 and E6 are `structural`. S2's E6 still holds, and R3's failed check still marks
+  only E4 H3a/H3b ATP.
+
+**What an assumption check result means.**
+- holds / does_not_hold is read under the declared rule and the tested readout, arms and time
+  point. It is not a general statement that the assay is free of interference.
+- Predictions that were not marked, such as R3's H1 ATP, E3 and E4 membrane, carry no stated
+  dependency on the assumption, so nothing was propagated to them. That is not a finding that
+  they are unaffected.
+
+**Intended output changes (compatibility).**
+- `replicates_disagree` → `combinations_disagree` when no pairs are declared.
+- `independent_pairs` → `declared_pairs` and `used_pairs`.
+- A change prediction with an unnamed, different or only-declared reference now reads
+  `held_reference` where B1 compared it.
+
+Mappings without `versus` (the B1 inputs) are still held, and a test pins it. The test that
+used to expect `replicates_disagree` still requires the disagreement to be caught; only the
+name changed.
+
 **Not claimed.**
 - These synthetic inputs pass because they were built to exercise each branch. That is not
   evidence of research performance.

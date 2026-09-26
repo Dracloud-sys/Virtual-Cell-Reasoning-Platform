@@ -206,7 +206,8 @@ def test_declared_pairs_are_read_pair_by_pair() -> None:
     row = _row(compare_observations(_report(), [], [_donors()], [_mapping(pairs=_pairs())]))
 
     assert row.pairing == "declared_pairs"
-    assert row.independent_pairs == 3
+    assert row.declared_pairs == 3 and row.used_pairs == 3
+    assert row.pair_independence == "not_established", "donor independence is not in the input"
     assert [p.value for p in row.pairs] == [0.5, 0.5, 0.5]
     assert row.observed == "decrease"
 
@@ -216,7 +217,7 @@ def test_without_pairs_the_combinations_are_not_called_replicates() -> None:
 
     assert row.pairing == "all_combinations"
     assert row.combinations == 9
-    assert row.independent_pairs is None
+    assert row.used_pairs is None and row.declared_pairs is None
     assert "combinations_disagree" in row.reasons
     assert "replicates_disagree" not in row.reasons
 
@@ -233,7 +234,7 @@ def test_a_pair_naming_an_observation_in_the_wrong_arm_is_not_comparable() -> No
 def test_observations_left_out_of_every_pair_are_counted_not_used() -> None:
     row = _row(compare_observations(_report(), [], [_donors()], [_mapping(pairs=_pairs()[:2])]))
 
-    assert row.independent_pairs == 2
+    assert row.used_pairs == 2
     assert row.unpaired_observations == 2
 
 
@@ -332,3 +333,62 @@ def test_an_inconsistent_alone_names_who_was_consistent_and_may_coexist() -> Non
     c = next(o for o in row.by_hypothesis if o.hypothesis_id == "C")
     assert b.outcome == "inconsistent" and b.may_coexist_with == ["A"]
     assert c.may_coexist_with == [], "C is declared mutually exclusive with A"
+
+
+# --- closure checks (B1.1 finish): reproduced through the product path first ---------------------
+
+
+def test_one_observation_in_two_pairs_is_not_comparable_and_inflates_nothing() -> None:
+    pairs = [
+        ObservationPair(treatment_observation_id="D1-c", reference_observation_id="D1-v"),
+        ObservationPair(treatment_observation_id="D1-c", reference_observation_id="D2-v"),
+    ]
+
+    row = _row(compare_observations(_report(), [], [_donors()], [_mapping(pairs=pairs)]))
+
+    assert row.status == "not_comparable"
+    assert "observation_in_more_than_one_pair" in row.reasons
+    assert row.used_pairs is None
+
+
+def test_the_same_pair_declared_twice_is_not_counted_twice() -> None:
+    pairs = _pairs()[:1] * 2
+
+    row = _row(compare_observations(_report(), [], [_donors()], [_mapping(pairs=pairs)]))
+
+    assert row.status == "not_comparable"
+    assert "observation_in_more_than_one_pair" in row.reasons
+
+
+def test_a_named_reference_the_arm_does_not_carry_is_held() -> None:
+    """Prediction vs vehicle, mapping says vehicle, the arm is selected by untreated."""
+    row = _row(
+        compare_observations(
+            _report(), [], [_simple("untreated")], [_mapping(reference={"arm": "untreated"})]
+        )
+    )
+
+    assert row.reference_link == "declared_only"
+    assert row.observed == "decrease", "value and classification kept"
+    assert set(_outcomes(row).values()) == {"held_reference"}
+    assert "untreated" in row.by_hypothesis[0].note
+
+
+def test_a_named_reference_carried_by_the_arm_is_structural() -> None:
+    row = _row(compare_observations(_report(), [], [_simple()], [_mapping()]))
+
+    assert row.reference_link == "structural"
+
+
+def test_a_check_result_is_scoped_and_unmarked_predictions_are_not_called_unaffected() -> None:
+    result = compare_observations(
+        _report(), [], [_simple(), _check_run(60.0)], [_mapping(), _check_mapping()]
+    )
+
+    (review,) = result.assumption_reviews
+    assert "Not a general statement" in review.meaning
+    assert "not a finding that they are unaffected" in review.meaning
+    (check,) = _row(result, "CHK").assumption_outcomes
+    assert check.scope.readout == "standard" and check.scope.versus == "standard alone"
+    limits = " ".join(result.limits)
+    assert "does not mean they are unaffected" in limits

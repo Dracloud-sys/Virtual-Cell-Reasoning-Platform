@@ -137,6 +137,8 @@ class PredictionOutcome(BaseModel):
 
 
 class AssumptionOutcome(BaseModel):
+    """A check read under its declared rule and tested condition; nothing more general."""
+
     model_config = ConfigDict(frozen=True)
 
     assumption: str
@@ -166,6 +168,14 @@ class ReadoutComparison(BaseModel):
     run_ids: list[str] = Field(default_factory=list)
     kind: Literal["state", "change"] | None = None
     versus: str | None = None
+    reference_link: Literal["structural", "declared_only"] | None = Field(
+        default=None,
+        description=(
+            "structural: a condition value of the reference arm is the named reference, as "
+            "written. declared_only: the mapping names it but the arm's conditions do not carry "
+            "it, so change predictions are held. No synonym is inferred."
+        ),
+    )
     status: Status
     reasons: list[str] = Field(default_factory=list)
     observed: str | None = Field(
@@ -179,8 +189,22 @@ class ReadoutComparison(BaseModel):
     reference_values: list[float] = Field(default_factory=list)
     pairing: Pairing | None = None
     pairs: list[PairValue] = Field(default_factory=list)
-    independent_pairs: int | None = Field(
-        default=None, description="Usable declared pairs. None when no pairs were declared."
+    declared_pairs: int | None = Field(
+        default=None, description="Pairs the mapping declares. None when no pairs were declared."
+    )
+    used_pairs: int | None = Field(
+        default=None,
+        description=(
+            "Declared pairs that gave one usable value each. A count of pairs used, not of "
+            "independent biological replicates."
+        ),
+    )
+    pair_independence: Literal["not_established"] | None = Field(
+        default=None,
+        description=(
+            "Whether the pairs are independent donors or experiments. Nothing in the input states "
+            "it, so it is never established here; it is the researcher's to say."
+        ),
     )
     combinations: int | None = Field(
         default=None,
@@ -232,6 +256,14 @@ class AssumptionReview(BaseModel):
             "Every prediction in the plan (experiment:hypothesis:readout) naming this assumption. "
             "Only these; nothing is inferred for predictions that do not name it."
         ),
+    )
+    meaning: str = Field(
+        default=(
+            "Read under the declared rule, on the tested readout, arms and time point only. Not a "
+            "general statement that the assay is free of interference, and not a scientific "
+            "validation. Predictions that do not name this assumption were not marked because no "
+            "dependency is stated; that is not a finding that they are unaffected."
+        )
     )
 
 
@@ -295,8 +327,12 @@ LIMITS: tuple[str, ...] = (
     "detection; the detection limit is the producer's. A zero is not below detection.",
     "Units are compared as written; nothing is converted. The run's method is compared with the "
     "readout's declared assay as written.",
-    "An assumption check marks only the predictions that name that assumption. Interference seen "
-    "on one assay is not carried to another; each readout is read on its own.",
+    "An assumption check holds or does not hold under its declared rule and tested condition "
+    "only. It marks the predictions that name that assumption; the others are left unmarked "
+    "because no dependency is stated, which does not mean they are unaffected. Interference seen "
+    "on one assay is not carried to another.",
+    "A named reference is compared only when the reference arm's own conditions carry that name. "
+    "A name the conditions do not carry is a declaration, and the comparison is held.",
     "The plan is not modified. Keep, revise and hold are the host's proposals and the "
     "researcher's decision.",
 )
@@ -388,6 +424,7 @@ def _compare(
         readout=m.readout,
         measurement_name=m.measurement_name,
         versus=m.versus,
+        reference_link=_reference_link(m),
         rule=m.rule,
         status="not_comparable",
     )
@@ -525,6 +562,7 @@ def _compare(
 
     paired: _Paired = []
     if kind == "change" and m.pairs:
+        _reject_reused_observations(m, row)
         paired = _declared_pairs(m, arms, row)
         named = {p.treatment_observation_id for p in m.pairs}
         named |= {p.reference_observation_id for p in m.pairs}
@@ -582,6 +620,14 @@ def _usable(readings: list, left_out: dict[str, int]) -> tuple[list[float], int,
 
 
 _Paired = list[tuple[PairValue, tuple[float, float] | None]]
+
+
+def _reject_reused_observations(m: ObservationMapping, row: ReadoutComparison) -> None:
+    """An observation may stand in one pair only; reuse would inflate the pair count."""
+    named = [p.treatment_observation_id for p in m.pairs]
+    named += [p.reference_observation_id for p in m.pairs]
+    if len(named) != len(set(named)):
+        _add(row.reasons, "observation_in_more_than_one_pair")
 
 
 def _declared_pairs(
@@ -732,11 +778,13 @@ def _classify_pairs(
     where: str,
 ) -> None:
     row.pairing = "declared_pairs"
+    row.pair_independence = "not_established"
     if row.below_detection:
         row.left_out["below_detection"] = row.below_detection
     usable = [(p, raw) for p, raw in paired if raw is not None]
     unusable = [p for p, raw in paired if raw is None]
-    row.independent_pairs = len(usable)
+    row.declared_pairs = len(paired)
+    row.used_pairs = len(usable)
     row.pairs = [p for p, _ in paired]
     if not usable:
         row.status = "insufficient"
@@ -783,6 +831,13 @@ def _scope(row: ReadoutComparison, m: ObservationMapping) -> ComparisonScope:
     )
 
 
+def _reference_link(m: ObservationMapping) -> Literal["structural", "declared_only"] | None:
+    if m.reference is None or m.versus is None:
+        return None
+    carried = {_norm(v) for v in m.reference.values() if isinstance(v, str)}
+    return "structural" if _norm(m.versus) in carried else "declared_only"
+
+
 def _read(
     expected: str,
     versus: str | None,
@@ -812,6 +867,11 @@ def _read(
             return "held_reference", (
                 f"the prediction is vs {versus!r}; the observation's reference arm stands for "
                 f"{m.versus!r}. Compared only on the same reference."
+            )
+        if _reference_link(m) != "structural":
+            return "held_reference", (
+                f"the mapping names {m.versus!r}, but the reference arm is selected by "
+                f"{m.reference!r}, which does not carry that name. The link is only declared."
             )
     if observed == "indeterminate":
         return "undecided", "between the declared bands"

@@ -516,7 +516,8 @@ Three defects were reproduced through the product path before this change
    every reading against every other, and disagreement among those combinations was reported as
    `replicates_disagree`.
    - `ObservationMapping.pairs` now declares pairs by the runs' own `observation_id`s. Each pair
-     is classified on its own, and `independent_pairs` counts the usable ones.
+     is classified on its own. `declared_pairs` and `used_pairs` count pairs, not independent
+     biological replicates, and `pair_independence` stays `not_established`.
    - Observations no pair names are counted in `unpaired_observations` and not used.
    - Without pairs, `combinations` is reported and is never called a number of replicates
      (`combinations_disagree`).
@@ -537,6 +538,18 @@ hypotheses is built and no mixed effect is guessed.
 The B1 records are kept byte-identical. Re-read with B1.1 code on their original inputs, every
 change comparison is held, because the B1 mappings never named a reference. Re-read as a B1.1
 revision, the classifications are unchanged, and S2's luciferase check is now read.
+
+**Closure checks.**
+- A named reference counts only when the reference arm's own conditions carry it, as written
+  (`reference_link: structural`). A name the conditions do not carry is `declared_only`, and the
+  comparison is held.
+- One observation may stand in one declared pair only.
+- Pair counts are `declared_pairs` and `used_pairs`, and `pair_independence` is never
+  established from the input.
+- An assumption check result is scoped to its rule and tested condition. Unmarked predictions
+  carry no stated dependency, which does not mean they are unaffected.
+- In case 2 this held S1/S2's E2 comparisons: the plan's reference wording is not the synthetic
+  arm's condition value.
 
 Findings 2 and 3 above are addressed by this. Findings 1, 4 and 5 stand. A new limit also stands:
 a check matches an assumption only by its exact wording, and an assumption the plan states in

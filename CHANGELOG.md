@@ -21,6 +21,12 @@ to [Semantic Versioning](https://semver.org/).
   - Every outcome carries its comparison scope. An inconsistent one names consistent,
     non-exclusive hypotheses on the same readout.
   - The B1 case records are preserved, and the case is re-tested as a new revision.
+  - Closure: a named reference counts only when the reference arm's conditions carry it
+    (`reference_link`); an observation may stand in one pair only; pair counts are
+    `declared_pairs` / `used_pairs`, never independent replicates; an assumption check result is
+    scoped to its rule and tested condition. Intended output changes: `combinations_disagree`,
+    `declared_pairs` / `used_pairs`, and `held_reference` where B1 compared on an unconfirmed
+    reference.
 - **Observations read against the plan's predictions (B1).** A new tool on the existing server,
   `compare_research_observations`, takes the same plan fields plus `ExperimentRun` results,
   explicit mappings (readout, arms, time point, unit, decision rule) and, optionally, the host's
