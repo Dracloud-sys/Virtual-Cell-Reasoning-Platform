@@ -1,0 +1,36 @@
+{
+  "question": "Will the reported stiffness threshold for myofibroblast conversion apply to our human dermal fibroblasts on this scaffold?",
+  "goal": "Decide whether to design around the published threshold or measure our own.",
+  "field_of_study": "biomaterials / mechanobiology",
+  "context": {
+    "cell_type": "human dermal fibroblast",
+    "published_system": "rat cardiac fibroblast on polyacrylamide"
+  },
+  "constraints": [
+    "single cell type",
+    "one stiffness series affordable"
+  ],
+  "evidence": [
+    {
+      "id": "lit-1",
+      "kind": "retrieved_source",
+      "statement": "A stiffness threshold near 20 kPa is reported for myofibroblast conversion",
+      "locator": {
+        "article": {
+          "doi": "10.0000/placeholder-not-a-real-paper"
+        },
+        "source_kind": "abstract",
+        "source_text": "PLACEHOLDER SPAN - replace with a real retrieved span before this case is used. Conversion increased above approximately 20 kPa in rat cardiac fibroblasts on polyacrylamide gels."
+      }
+    },
+    {
+      "id": "obs-1",
+      "kind": "user_observation",
+      "statement": "Our scaffold measures roughly 12 kPa by nanoindentation",
+      "measurement_context": "nanoindentation, n=5 positions, one lot, hydrated"
+    }
+  ],
+  "budget": {
+    "max_output_tokens": 4096
+  }
+}

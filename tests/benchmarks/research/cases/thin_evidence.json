@@ -1,0 +1,24 @@
+{
+  "question": "Primary human dermal fibroblasts stop expanding around passage 8 on our new scaffold but not on plastic. Why?",
+  "goal": "Decide what to measure first, given almost nothing has been measured yet.",
+  "field_of_study": "biomaterials / cell culture",
+  "context": {
+    "cell_type": "human dermal fibroblast",
+    "comparison": "scaffold vs tissue-culture plastic"
+  },
+  "constraints": [
+    "no senescence panel has been run",
+    "budget for one experiment before the next review"
+  ],
+  "evidence": [
+    {
+      "id": "obs-1",
+      "kind": "user_observation",
+      "statement": "Expansion slows sharply around passage 8 on scaffold; plastic controls continue",
+      "measurement_context": "cell counts, n=1 scaffold lot, no replicates, not blinded"
+    }
+  ],
+  "budget": {
+    "max_output_tokens": 4096
+  }
+}

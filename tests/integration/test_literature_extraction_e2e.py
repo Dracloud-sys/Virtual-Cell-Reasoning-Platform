@@ -909,3 +909,38 @@ async def test_ingest_creates_no_established_or_causal_edges(jats_xml) -> None:
         RelationType.HAS_RESULT,
     }
     assert all(i.relation not in causal for i in store.all_interactions())
+
+
+# --- a real Europe PMC body carries an external DOCTYPE --------------------------------------
+
+_REAL_DOCTYPE = (
+    '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Archiving and Interchange '
+    'DTD with MathML3 v1.4 20241031//EN" "JATS-archivearticle1-4-mathml3.dtd">\n'
+)
+
+
+def _with_doctype(xml: str, doctype: str) -> str:
+    """Insert a DOCTYPE after the XML declaration, where a real body carries it."""
+    if xml.startswith("<?xml"):
+        end = xml.index("?>") + 2
+        return xml[:end] + "\n" + doctype + xml[end:]
+    return doctype + xml
+
+
+async def test_a_body_with_a_real_external_doctype_is_extracted_as_full_text(jats_xml) -> None:
+    """Every real body used to fall back to the abstract here, because the parser refused
+    any DOCTYPE. The same candidates now come from the full text."""
+    bundle = await _bundle(_FakeProvider(_with_doctype(jats_xml, _REAL_DOCTYPE)))
+
+    assert bundle.documents[0].source_format.value == "jats_xml"
+    assert {m.measurement_name for m in bundle.measurements} == {"TERT", "CDK4"}
+    assert not any("could not parse full text" in w for w in bundle.warnings)
+
+
+async def test_a_body_with_an_internal_subset_still_falls_back_to_the_abstract(jats_xml) -> None:
+    hostile = _with_doctype(jats_xml, '<!DOCTYPE article [<!ENTITY x "smuggled">]>\n')
+
+    bundle = await _bundle(_FakeProvider(hostile))
+
+    assert bundle.documents[0].source_format.value == "abstract"
+    assert any("could not parse full text" in w for w in bundle.warnings)

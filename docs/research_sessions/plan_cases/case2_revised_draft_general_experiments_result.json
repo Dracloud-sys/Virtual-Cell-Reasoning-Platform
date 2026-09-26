@@ -1,0 +1,2447 @@
+{
+ "search_attempts": [
+  {
+   "question": "resazurin reduction assay interference by test compounds cell viability",
+   "attempts": [
+    "ok"
+   ]
+  },
+  {
+   "question": "tetrazolium MTT assay mitochondrial activity does not reflect cell number",
+   "attempts": [
+    "ok"
+   ]
+  },
+  {
+   "question": "oxygen consumption rate normalization to cell number mitochondrial content",
+   "attempts": [
+    "ok"
+   ]
+  }
+ ],
+ "reads": [
+  {
+   "doi": "10.1016/j.namjnl.2026.100126",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1297,
+     "total_chars": 1297,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.3389/ftox.2026.1818582",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1814,
+     "total_chars": 1814,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1155/ijbm/7395612",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 2135,
+     "total_chars": 2135,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1113/jp291588",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 3303,
+     "total_chars": 3303,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1038/s41598-026-46479-w",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1811,
+     "total_chars": 1811,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.21769/bioprotoc.5763",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1978,
+     "total_chars": 1978,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.3389/ftox.2026.1818582",
+   "part": "full_text",
+   "section": "s8-3",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 2660,
+     "total_chars": 2660,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.3389/ftox.2026.1818582",
+   "part": "full_text",
+   "section": "s7-5",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1210,
+     "total_chars": 1210,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1016/j.namjnl.2026.100126",
+   "part": "full_text",
+   "section": "sec0008",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 5716,
+     "total_chars": 5716,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  }
+ ],
+ "check_research_draft": {
+  "scientific_validity_checked": false,
+  "not_checked": [
+   "Whether any hypothesis is biologically plausible for this system.",
+   "Whether the alternatives offered are the ones that actually compete.",
+   "Whether the proposed experiment would separate them, or merely produce data.",
+   "Whether a cited source supports what it is cited for — only that the id exists and carries the kind of label it claims.",
+   "Whether a source named in free text refers to a real publication. Only ids in the submitted evidence list are resolved; a paper named inside a sentence is not.",
+   "Whether the controls, timepoints or measurements are adequate.",
+   "Anything about a graph_findings path. Only ids in the submitted evidence[] are resolved, so a knowledge-graph path cannot be cited here and is out of scope for every check above. Do not re-submit one as a user_observation or a retrieved_source to get it checked: it is neither, and relabelling it would make an unverified traversal look like something someone read."
+  ],
+  "authored_by": "host_llm",
+  "internal_model_calls": 0,
+  "evidence_origins": [
+   {
+    "id": "lit-126b0584c71b",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-3c6767e30e20",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-479e219aad4e",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-5559327e689b",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-86b42ebcd0c4",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-be2c3c428bde",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-c400e3eff71e",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-d1719f786da7",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-d4f08afd7961",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-fd67cab1bedc",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   }
+  ],
+  "findings": [
+   {
+    "code": "no_decision_branches",
+    "where": "experiment:E4",
+    "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+   },
+   {
+    "code": "discriminates_nothing",
+    "where": "experiment:E4",
+    "detail": "names no hypothesis this experiment would tell apart"
+   },
+   {
+    "code": "no_decision_branches",
+    "where": "experiment:E5",
+    "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+   }
+  ],
+  "plan_analysis": {
+   "limits": [
+    "Everything here follows from what the host wrote. Discrimination is computed from the predicted values given, so a wrong prediction produces a wrong separation.",
+    "Two predictions differ only when their values differ. Wording is never compared, and two readouts named differently are treated as different readouts.",
+    "Evidence roles and readings are the host's interpretation. Counting studies says how many papers were cited, not that any of them supports the claim.",
+    "Mechanism links are case candidates. A graph path means the curated graph holds a route between two exactly-matched entities; it says nothing about this case's conditions.",
+    "Nothing here ranks experiments. Which to run first is the host's argument and the researcher's decision.",
+    "Two hypotheses predicting different values on a readout is not a measure of how well the experiment would discriminate them, and says nothing about separating causes acting together: effect size, noise and interference are not modelled.",
+    "A state (present/absent) and a change (increase/decrease/no_change) are different claims and are never compared; neither are two changes stated against different references.",
+    "Prediction traces follow the references the host gave. A connected path is not a verified causal chain."
+   ],
+   "conditions": {
+    "confirmed": [
+     "Resazurin signal decreased after compound exposure",
+     "In vitro fibroblast culture"
+    ],
+    "open": [
+     "Compound class",
+     "Exposure time",
+     "Cell type and source"
+    ],
+    "host_assumptions": [
+     "Whether the compound is coloured, fluorescent or redox-active is unknown"
+    ]
+   },
+   "goal_trace": [
+    {
+     "objective_id": "O1",
+     "statement": "Decide whether the lower signal reflects cytotoxicity before calling the compound cytotoxic",
+     "stated_by": "user",
+     "sub_question_ids": [
+      "Q0",
+      "Q1",
+      "Q2"
+     ],
+     "hypothesis_ids": [
+      "H1",
+      "H2a",
+      "H2b",
+      "H3a",
+      "H3b"
+     ],
+     "experiment_ids": [
+      "E1",
+      "E3",
+      "E4",
+      "E5"
+     ]
+    },
+    {
+     "objective_id": "O2",
+     "statement": "If activity per cell is lower, locate it: mitochondrial content or function",
+     "stated_by": "host",
+     "sub_question_ids": [
+      "Q3"
+     ],
+     "hypothesis_ids": [
+      "H2a",
+      "H2b"
+     ],
+     "experiment_ids": [
+      "E1",
+      "E3",
+      "E4",
+      "E5"
+     ]
+    }
+   ],
+   "unreached_objectives": [],
+   "unanswered_sub_questions": [],
+   "untested_hypotheses": [],
+   "evidence": [
+    {
+     "target_id": "H3b",
+     "role": "supports",
+     "evidence_ids": [
+      "lit-fd67cab1bedc"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H1",
+     "role": "method",
+     "evidence_ids": [
+      "lit-86b42ebcd0c4"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Tetrazolium and resazurin reduction reflect reductive activity rather than cell number: count cells separately."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H2b",
+     "role": "supports",
+     "evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Resazurin is reduced via mitochondrial and other reductases using NAD(P)H-linked capacity."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H3b",
+     "role": "method",
+     "evidence_ids": [
+      "lit-d1719f786da7",
+      "lit-fd67cab1bedc"
+     ],
+     "span_count": 2,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "A cell-free resazurin + material incubation only tests chemical reduction; it does not rule out quenching or adsorption of resorufin.",
+      "Product controls needed: resorufin alone and resorufin + material, no cells."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H3a",
+     "role": "method",
+     "evidence_ids": [
+      "lit-c400e3eff71e"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Coloured, fluorescent or redox-active substances distort readouts; confirm with orthogonal endpoints."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H2b",
+     "role": "scope_limit",
+     "evidence_ids": [
+      "lit-479e219aad4e"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Metabolic readings moved (serum-free) while live/dead and attachment did not: metabolic signal can move without viability."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H2a",
+     "role": "method",
+     "evidence_ids": [
+      "lit-d4f08afd7961"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Normalising respiration to mitochondrial content (citrate synthase) separates content from intrinsic function."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H2a",
+     "role": "scope_limit",
+     "evidence_ids": [
+      "lit-5559327e689b"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Mass fell while respiration was preserved, in human skeletal muscle after bed rest; a different system."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H2b",
+     "role": "method",
+     "evidence_ids": [
+      "lit-be2c3c428bde",
+      "lit-3c6767e30e20"
+     ],
+     "span_count": 2,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Maximal OCR from the standard stress test can be unreliable (17% of assays had maximal < basal).",
+      "About half of basal OCR is not coupled to ATP synthesis; part is non-mitochondrial (same study as lit-be2c3c428bde)."
+     ],
+     "interpretation_by": "host"
+    }
+   ],
+   "same_study_spans": [
+    {
+     "target_id": "H3b",
+     "role": "method",
+     "study": "pmcid:PMC13167221",
+     "evidence_ids": [
+      "lit-d1719f786da7",
+      "lit-fd67cab1bedc"
+     ]
+    },
+    {
+     "target_id": "H2b",
+     "role": "method",
+     "study": "pmcid:PMC13263325",
+     "evidence_ids": [
+      "lit-be2c3c428bde",
+      "lit-3c6767e30e20"
+     ]
+    }
+   ],
+   "mechanism_links": [
+    {
+     "id": "M1",
+     "source": "compound",
+     "relation": "quenches",
+     "target": "resorufin fluorescence",
+     "conditions": [
+      "graphene oxide and carboxylated graphene"
+     ],
+     "hypothesis_ids": [
+      "H3b"
+     ],
+     "grounded_evidence_ids": [
+      "lit-fd67cab1bedc"
+     ],
+     "ungrounded_evidence_ids": [],
+     "gaps": [
+      "not_in_graph"
+     ],
+     "graph": {
+      "status": "endpoint_not_in_graph",
+      "source_entity": null,
+      "target_entity": null,
+      "path": [],
+      "tier": null,
+      "independent_paths": null,
+      "provenance": [],
+      "how_matched": "Each end is matched to a graph entity only by its exact name or alias. A partial or word-level match is not treated as the same entity."
+     },
+     "status": "case_candidate"
+    },
+    {
+     "id": "M2",
+     "source": "NAD(P)H-linked reductases",
+     "relation": "reduces",
+     "target": "resazurin",
+     "conditions": [
+      "viable cells; mitochondrial and other reductases"
+     ],
+     "hypothesis_ids": [
+      "H2b"
+     ],
+     "grounded_evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "ungrounded_evidence_ids": [],
+     "gaps": [
+      "not_in_graph"
+     ],
+     "graph": {
+      "status": "endpoint_not_in_graph",
+      "source_entity": null,
+      "target_entity": null,
+      "path": [],
+      "tier": null,
+      "independent_paths": null,
+      "provenance": [],
+      "how_matched": "Each end is matched to a graph entity only by its exact name or alias. A partial or word-level match is not treated as the same entity."
+     },
+     "status": "case_candidate"
+    },
+    {
+     "id": "M3",
+     "source": "PPARGC1A",
+     "relation": "promotes",
+     "target": "Mitochondrial function",
+     "conditions": [
+      "case fibroblasts (not measured)"
+     ],
+     "hypothesis_ids": [
+      "H2a"
+     ],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "gaps": [
+      "no_evidence",
+      "graph_path_without_case_conditions"
+     ],
+     "graph": {
+      "status": "path_found",
+      "source_entity": "gene:PPARGC1A",
+      "target_entity": "mechanism:mitochondrial_function",
+      "path": [
+       "PPARGC1A -promotes-> Mitochondrial function"
+      ],
+      "tier": "established",
+      "independent_paths": 1,
+      "provenance": [
+       "curated:immortalization_seed"
+      ],
+      "how_matched": "Each end is matched to a graph entity only by its exact name or alias. A partial or word-level match is not treated as the same entity."
+     },
+     "status": "case_candidate"
+    },
+    {
+     "id": "M4",
+     "source": "Senescence (growth arrest)",
+     "relation": "reduces",
+     "target": "cell number",
+     "conditions": [
+      "case fibroblasts (not measured)"
+     ],
+     "hypothesis_ids": [
+      "H1"
+     ],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "gaps": [
+      "no_evidence",
+      "not_in_graph"
+     ],
+     "graph": {
+      "status": "endpoint_not_in_graph",
+      "source_entity": "phenotype:senescence",
+      "target_entity": null,
+      "path": [],
+      "tier": null,
+      "independent_paths": null,
+      "provenance": [],
+      "how_matched": "Each end is matched to a graph entity only by its exact name or alias. A partial or word-level match is not treated as the same entity."
+     },
+     "status": "case_candidate"
+    }
+   ],
+   "experiments": [
+    {
+     "experiment_id": "E1",
+     "hypotheses_with_predictions": [
+      "H1",
+      "H2a",
+      "H2b",
+      "H3a",
+      "H3b"
+     ],
+     "separated_pairs": [],
+     "unseparated_pairs": [
+      {
+       "pair": [
+        "H1",
+        "H2a"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H1",
+        "H2b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H1",
+        "H3a"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H1",
+        "H3b"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H2a",
+        "H2b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2a",
+        "H3a"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H2a",
+        "H3b"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H2b",
+        "H3a"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H2b",
+        "H3b"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H3a",
+        "H3b"
+       ],
+       "reason": "no_shared_predicted_readout"
+      }
+     ],
+     "outcome_table": [
+      {
+       "readout": "fluorescence vs resazurin alone",
+       "by_expected": {
+        "no_change": [
+         "H1",
+         "H2a",
+         "H2b"
+        ]
+       }
+      }
+     ],
+     "controls": [
+      "resazurin in medium alone"
+     ],
+     "readout_exclusions": [],
+     "next_decisions": [
+      {
+       "outcome": "Signal changes without cells",
+       "implication": "Direct chemistry; resazurin cannot be used for this compound."
+      }
+     ],
+     "next_decisions_by": "host"
+    },
+    {
+     "experiment_id": "E3",
+     "hypotheses_with_predictions": [
+      "H1",
+      "H2a",
+      "H2b",
+      "H3a",
+      "H3b"
+     ],
+     "separated_pairs": [
+      {
+       "pair": [
+        "H1",
+        "H2a"
+       ],
+       "readouts": [
+        {
+         "readout": "cell number",
+         "expected": {
+          "H1": "decrease",
+          "H2a": "no_change"
+         }
+        },
+        {
+         "readout": "resazurin signal per cell",
+         "expected": {
+          "H1": "no_change",
+          "H2a": "decrease"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'cell number', a change tells that H1 holds; it cannot rule out H2a, because H2a predicts no change there and both can be true.",
+        "On 'resazurin signal per cell', a change tells that H2a holds; it cannot rule out H1, because H1 predicts no change there and both can be true."
+       ]
+      },
+      {
+       "pair": [
+        "H1",
+        "H2b"
+       ],
+       "readouts": [
+        {
+         "readout": "cell number",
+         "expected": {
+          "H1": "decrease",
+          "H2b": "no_change"
+         }
+        },
+        {
+         "readout": "resazurin signal per cell",
+         "expected": {
+          "H1": "no_change",
+          "H2b": "decrease"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'cell number', a change tells that H1 holds; it cannot rule out H2b, because H2b predicts no change there and both can be true.",
+        "On 'resazurin signal per cell', a change tells that H2b holds; it cannot rule out H1, because H1 predicts no change there and both can be true."
+       ]
+      },
+      {
+       "pair": [
+        "H1",
+        "H3a"
+       ],
+       "readouts": [
+        {
+         "readout": "cell number",
+         "expected": {
+          "H1": "decrease",
+          "H3a": "no_change"
+         }
+        },
+        {
+         "readout": "resazurin signal per cell",
+         "expected": {
+          "H1": "no_change",
+          "H3a": "decrease"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'cell number', a change tells that H1 holds; it cannot rule out H3a, because H3a predicts no change there and both can be true.",
+        "On 'resazurin signal per cell', a change tells that H3a holds; it cannot rule out H1, because H1 predicts no change there and both can be true."
+       ]
+      },
+      {
+       "pair": [
+        "H1",
+        "H3b"
+       ],
+       "readouts": [
+        {
+         "readout": "cell number",
+         "expected": {
+          "H1": "decrease",
+          "H3b": "no_change"
+         }
+        },
+        {
+         "readout": "resazurin signal per cell",
+         "expected": {
+          "H1": "no_change",
+          "H3b": "decrease"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'cell number', a change tells that H1 holds; it cannot rule out H3b, because H3b predicts no change there and both can be true.",
+        "On 'resazurin signal per cell', a change tells that H3b holds; it cannot rule out H1, because H1 predicts no change there and both can be true."
+       ]
+      }
+     ],
+     "unseparated_pairs": [
+      {
+       "pair": [
+        "H2a",
+        "H2b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2a",
+        "H3a"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2a",
+        "H3b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2b",
+        "H3a"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2b",
+        "H3b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H3a",
+        "H3b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      }
+     ],
+     "outcome_table": [
+      {
+       "readout": "cell number",
+       "by_expected": {
+        "decrease": [
+         "H1"
+        ],
+        "no_change": [
+         "H2a",
+         "H2b",
+         "H3a",
+         "H3b"
+        ]
+       }
+      },
+      {
+       "readout": "resazurin signal per cell",
+       "by_expected": {
+        "no_change": [
+         "H1"
+        ],
+        "decrease": [
+         "H2a",
+         "H2b",
+         "H3a",
+         "H3b"
+        ]
+       }
+      }
+     ],
+     "controls": [
+      "vehicle",
+      "cell-number standard curve"
+     ],
+     "readout_exclusions": [],
+     "next_decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "next_decisions_by": "host"
+    },
+    {
+     "experiment_id": "E4",
+     "hypotheses_with_predictions": [
+      "H1",
+      "H2a",
+      "H2b",
+      "H3a",
+      "H3b"
+     ],
+     "separated_pairs": [],
+     "unseparated_pairs": [
+      {
+       "pair": [
+        "H1",
+        "H2a"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H1",
+        "H2b"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H1",
+        "H3a"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H1",
+        "H3b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2a",
+        "H2b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2a",
+        "H3a"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2a",
+        "H3b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2b",
+        "H3a"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2b",
+        "H3b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H3a",
+        "H3b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      }
+     ],
+     "outcome_table": [
+      {
+       "readout": "membrane-compromised fraction",
+       "by_expected": {
+        "no_change": [
+         "H2a",
+         "H2b",
+         "H3a",
+         "H3b"
+        ]
+       }
+      },
+      {
+       "readout": "ATP per cell",
+       "by_expected": {
+        "no_change": [
+         "H1",
+         "H3a",
+         "H3b"
+        ]
+       }
+      }
+     ],
+     "controls": [
+      "vehicle",
+      "lysis control"
+     ],
+     "readout_exclusions": [],
+     "next_decisions": [],
+     "next_decisions_by": "host"
+    },
+    {
+     "experiment_id": "E5",
+     "hypotheses_with_predictions": [
+      "H1",
+      "H2a",
+      "H2b",
+      "H3a",
+      "H3b"
+     ],
+     "separated_pairs": [
+      {
+       "pair": [
+        "H1",
+        "H2a"
+       ],
+       "readouts": [
+        {
+         "readout": "mitochondrial content per cell",
+         "expected": {
+          "H1": "no_change",
+          "H2a": "decrease"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'mitochondrial content per cell', a change tells that H2a holds; it cannot rule out H1, because H1 predicts no change there and both can be true."
+       ]
+      },
+      {
+       "pair": [
+        "H2a",
+        "H2b"
+       ],
+       "readouts": [
+        {
+         "readout": "mitochondrial content per cell",
+         "expected": {
+          "H2a": "decrease",
+          "H2b": "no_change"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'mitochondrial content per cell', a change tells that H2a holds; it cannot rule out H2b, because H2b predicts no change there and both can be true."
+       ]
+      },
+      {
+       "pair": [
+        "H2a",
+        "H3a"
+       ],
+       "readouts": [
+        {
+         "readout": "mitochondrial content per cell",
+         "expected": {
+          "H2a": "decrease",
+          "H3a": "no_change"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'mitochondrial content per cell', a change tells that H2a holds; it cannot rule out H3a, because H3a predicts no change there and both can be true."
+       ]
+      },
+      {
+       "pair": [
+        "H2a",
+        "H3b"
+       ],
+       "readouts": [
+        {
+         "readout": "mitochondrial content per cell",
+         "expected": {
+          "H2a": "decrease",
+          "H3b": "no_change"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'mitochondrial content per cell', a change tells that H2a holds; it cannot rule out H3b, because H3b predicts no change there and both can be true."
+       ]
+      }
+     ],
+     "unseparated_pairs": [
+      {
+       "pair": [
+        "H1",
+        "H2b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H1",
+        "H3a"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H1",
+        "H3b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2b",
+        "H3a"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H2b",
+        "H3b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      },
+      {
+       "pair": [
+        "H3a",
+        "H3b"
+       ],
+       "reason": "same_prediction_on_every_shared_readout"
+      }
+     ],
+     "outcome_table": [
+      {
+       "readout": "mitochondrial content per cell",
+       "by_expected": {
+        "no_change": [
+         "H1",
+         "H2b",
+         "H3a",
+         "H3b"
+        ],
+        "decrease": [
+         "H2a"
+        ]
+       }
+      },
+      {
+       "readout": "OCR per mitochondrial content",
+       "by_expected": {
+        "no_change": [
+         "H1",
+         "H2a",
+         "H3a",
+         "H3b"
+        ]
+       }
+      }
+     ],
+     "controls": [
+      "vehicle",
+      "uncoupler titration"
+     ],
+     "readout_exclusions": [],
+     "next_decisions": [],
+     "next_decisions_by": "host"
+    }
+   ],
+   "pairs_never_separated": [
+    [
+     "H2b",
+     "H3a"
+    ],
+    [
+     "H2b",
+     "H3b"
+    ],
+    [
+     "H3a",
+     "H3b"
+    ]
+   ],
+   "experiments_without_predictions": [],
+   "coverage": [],
+   "pair_selection": [
+    {
+     "pair": [
+      "H1",
+      "H2a"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H1",
+      "H2b"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H1",
+      "H3a"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H1",
+      "H3b"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H2a",
+      "H2b"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H2a",
+      "H3a"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H2a",
+      "H3b"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H2b",
+      "H3a"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H2b",
+      "H3b"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H3a",
+      "H3b"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    }
+   ],
+   "objective_levels": [
+    {
+     "objective_id": "O1",
+     "direct": [
+      "E3",
+      "E4"
+     ],
+     "proxy": [
+      "E1"
+     ],
+     "out_of_scope": [],
+     "reached_without_stated_level": [
+      "E5"
+     ],
+     "directly_measured": true,
+     "judged_by": [
+      "host"
+     ]
+    },
+    {
+     "objective_id": "O2",
+     "direct": [
+      "E5"
+     ],
+     "proxy": [
+      "E4"
+     ],
+     "out_of_scope": [],
+     "reached_without_stated_level": [
+      "E1",
+      "E3"
+     ],
+     "directly_measured": true,
+     "judged_by": [
+      "host"
+     ]
+    }
+   ],
+   "non_discriminating_experiments": [
+    {
+     "experiment_id": "E1",
+     "purposes": [
+      "method_check"
+     ],
+     "note": "Separates no hypothesis pair as written. That is not a defect: an experiment can be needed as a method check, a function check or a baseline."
+    },
+    {
+     "experiment_id": "E4",
+     "purposes": [
+      "function_check",
+      "discriminate"
+     ],
+     "note": "Separates no hypothesis pair as written. That is not a defect: an experiment can be needed as a method check, a function check or a baseline."
+    }
+   ],
+   "prediction_traces": [
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H1",
+     "readout": "fluorescence vs resazurin alone",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "resazurin in medium alone",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "measurement_model",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "without cells, H1 and H2 have nothing to act on"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Signal changes without cells",
+       "implication": "Direct chemistry; resazurin cannot be used for this compound."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H2a",
+     "readout": "fluorescence vs resazurin alone",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "resazurin in medium alone",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "measurement_model",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "without cells, H1 and H2 have nothing to act on"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Signal changes without cells",
+       "implication": "Direct chemistry; resazurin cannot be used for this compound."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H2b",
+     "readout": "fluorescence vs resazurin alone",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "resazurin in medium alone",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "measurement_model",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "without cells, H1 and H2 have nothing to act on"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Signal changes without cells",
+       "implication": "Direct chemistry; resazurin cannot be used for this compound."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H3a",
+     "readout": "fluorescence vs resazurin alone",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "resazurin in medium alone",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-c400e3eff71e"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-c400e3eff71e"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "direction not fixed: a reducing compound raises it, over-reduction or consumption lowers it. The vocabulary cannot say 'changes, direction unknown'.",
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Signal changes without cells",
+       "implication": "Direct chemistry; resazurin cannot be used for this compound."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H3b",
+     "readout": "fluorescence vs resazurin alone",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "resazurin in medium alone",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "measurement_model",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-d1719f786da7"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-d1719f786da7"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "a quencher lowers it only if the stock carries enough resorufin background",
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Signal changes without cells",
+       "implication": "Direct chemistry; resazurin cannot be used for this compound."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H1",
+     "readout": "cell number",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": "fewer cells",
+     "basis": "evidence_observed",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-86b42ebcd0c4"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-86b42ebcd0c4"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2a"
+      ],
+      [
+       "H1",
+       "H2b"
+      ],
+      [
+       "H1",
+       "H3a"
+      ],
+      [
+       "H1",
+       "H3b"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H2a",
+     "readout": "cell number",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "H2 acts per cell, not on number"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2a"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H2b",
+     "readout": "cell number",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "H2 acts per cell, not on number"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2b"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H3a",
+     "readout": "cell number",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "the compound does not interfere with the DNA dye readout"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3a"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H3b",
+     "readout": "cell number",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "the compound does not interfere with the DNA dye readout"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3b"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H1",
+     "readout": "resazurin signal per cell",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "evidence_observed",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-86b42ebcd0c4"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-86b42ebcd0c4"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2a"
+      ],
+      [
+       "H1",
+       "H2b"
+      ],
+      [
+       "H1",
+       "H3a"
+      ],
+      [
+       "H1",
+       "H3b"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H2a",
+     "readout": "resazurin signal per cell",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": "less reductive capacity per cell",
+     "basis": "mechanism_derived",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "mechanism_evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "grounded_evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [
+      {
+       "id": "M2",
+       "gaps": [
+        "not_in_graph"
+       ]
+      }
+     ],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2a"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H2b",
+     "readout": "resazurin signal per cell",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": "less reductase activity per cell",
+     "basis": "mechanism_derived",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "mechanism_evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "grounded_evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [
+      {
+       "id": "M2",
+       "gaps": [
+        "not_in_graph"
+       ]
+      }
+     ],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2b"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H3a",
+     "readout": "resazurin signal per cell",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "measurement_model",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-c400e3eff71e"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-c400e3eff71e"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3a"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H3b",
+     "readout": "resazurin signal per cell",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "measurement_model",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-fd67cab1bedc"
+     ],
+     "mechanism_evidence_ids": [
+      "lit-fd67cab1bedc"
+     ],
+     "grounded_evidence_ids": [
+      "lit-fd67cab1bedc"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [
+      {
+       "id": "M1",
+       "gaps": [
+        "not_in_graph"
+       ]
+      }
+     ],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3b"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell number falls, per-cell signal unchanged",
+       "implication": "Cell loss; confirm with membrane integrity."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H1",
+     "readout": "membrane-compromised fraction",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "increase if cells die, no change if they arrest; H1 covers both",
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H2a",
+     "readout": "membrane-compromised fraction",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "H2 does not kill"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H2b",
+     "readout": "membrane-compromised fraction",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "H2 does not kill"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H3a",
+     "readout": "membrane-compromised fraction",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "the membrane readout is not resorufin-coupled and is not affected by the compound"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H3b",
+     "readout": "membrane-compromised fraction",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "the membrane readout is not resorufin-coupled and is not affected by the compound"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H1",
+     "readout": "ATP per cell",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "dying or arrested cells keep ATP per cell"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H2a",
+     "readout": "ATP per cell",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "decrease only if glycolysis does not compensate; unknown for these cells and medium",
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H2b",
+     "readout": "ATP per cell",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "decrease only if glycolysis does not compensate; unknown for these cells and medium",
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H3a",
+     "readout": "ATP per cell",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "the compound does not affect the luciferase ATP readout"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H3b",
+     "readout": "ATP per cell",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "the compound does not affect the luciferase ATP readout"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H2a",
+     "readout": "mitochondrial content per cell",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": "less mitochondrial content",
+     "basis": "measurement_model",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-d4f08afd7961"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-d4f08afd7961"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2a"
+      ],
+      [
+       "H2a",
+       "H2b"
+      ],
+      [
+       "H2a",
+       "H3a"
+      ],
+      [
+       "H2a",
+       "H3b"
+      ]
+     ],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H2b",
+     "readout": "mitochondrial content per cell",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "measurement_model",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-d4f08afd7961"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-d4f08afd7961"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H2a",
+       "H2b"
+      ]
+     ],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H1",
+     "readout": "mitochondrial content per cell",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "fewer cells, each unchanged"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2a"
+      ]
+     ],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H3a",
+     "readout": "mitochondrial content per cell",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "the compound does not affect the citrate synthase assay"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H2a",
+       "H3a"
+      ]
+     ],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H3b",
+     "readout": "mitochondrial content per cell",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "the compound does not affect the citrate synthase assay"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H2a",
+       "H3b"
+      ]
+     ],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H2a",
+     "readout": "OCR per mitochondrial content",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "measurement_model",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-d4f08afd7961"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-d4f08afd7961"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H2b",
+     "readout": "OCR per mitochondrial content",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "decrease if the lost activity is mitochondrial; no change if it is other reductases",
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H1",
+     "readout": "OCR per mitochondrial content",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "fewer cells, each unchanged"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H3a",
+     "readout": "OCR per mitochondrial content",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "the compound does not affect the oxygen sensor"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H3b",
+     "readout": "OCR per mitochondrial content",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "vehicle",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "the compound does not affect the oxygen sensor"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [],
+     "gaps": []
+    }
+   ],
+   "readout_specs_missing": [],
+   "impact": null,
+   "findings": [],
+   "wrote_to_knowledge_graph": false
+  }
+ }
+}

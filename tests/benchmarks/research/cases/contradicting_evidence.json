@@ -1,0 +1,29 @@
+{
+  "question": "Does our scaffold coating suppress or promote myofibroblast conversion?",
+  "goal": "Resolve a direct contradiction between our own run and a published span.",
+  "field_of_study": "biomaterials / wound repair",
+  "context": {
+    "cell_type": "human dermal fibroblast"
+  },
+  "constraints": [
+    "single cell type",
+    "the two results must be reconciled before scaling up"
+  ],
+  "evidence": [
+    {
+      "id": "obs-1",
+      "kind": "user_observation",
+      "statement": "alpha-SMA positive fraction was lower on coated scaffold than uncoated at day 14",
+      "measurement_context": "immunofluorescence, n=3, coated and uncoated run in the same plate"
+    },
+    {
+      "id": "obs-2",
+      "kind": "user_observation",
+      "statement": "In the repeat run the coated scaffold showed a higher alpha-SMA fraction than uncoated at day 14",
+      "measurement_context": "immunofluorescence, n=3, different scaffold lot, different operator"
+    }
+  ],
+  "budget": {
+    "max_output_tokens": 4096
+  }
+}

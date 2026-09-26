@@ -1,0 +1,247 @@
+{
+ "note": "B1.1 revision of case2_b1_rules.json: each mapping now names the plan reference its reference arm stands for (versus), as written in the predictions. Bounds, arms, units and time points are unchanged. No pairs are declared, because the B1 synthetic observations carry no observation_id. Every number is still synthetic.",
+ "plan": "case2_b11_plan.json",
+ "mappings": [
+  {
+   "key": "E2_resorufin",
+   "experiment_id": "E2",
+   "readout": "resorufin fluorescence",
+   "measurement_name": "resorufin_fluorescence",
+   "unit": "RFU",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 24.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "arm": "resorufin + compound"
+   },
+   "reference": {
+    "arm": "resorufin alone"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+   },
+   "versus": "resorufin in medium alone"
+  },
+  {
+   "key": "E3_cell_number",
+   "experiment_id": "E3",
+   "readout": "cell number",
+   "measurement_name": "cell_number",
+   "unit": "cells/well",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 24.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "arm": "compound"
+   },
+   "reference": {
+    "arm": "vehicle"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+   },
+   "versus": "vehicle"
+  },
+  {
+   "key": "E3_per_cell",
+   "experiment_id": "E3",
+   "readout": "resazurin signal per cell",
+   "measurement_name": "resazurin_per_cell",
+   "unit": "RFU/cell",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 24.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "arm": "compound"
+   },
+   "reference": {
+    "arm": "vehicle"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+   },
+   "versus": "vehicle"
+  },
+  {
+   "key": "E4_membrane",
+   "experiment_id": "E4",
+   "readout": "membrane-compromised fraction",
+   "measurement_name": "membrane_compromised",
+   "unit": "%",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 24.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "arm": "compound"
+   },
+   "reference": {
+    "arm": "vehicle"
+   },
+   "rule": {
+    "comparison": "difference",
+    "increase_at_or_above": 10.0,
+    "decrease_at_or_below": -10.0,
+    "no_change_between": [
+     -5.0,
+     5.0
+    ],
+    "declared_by": "host",
+    "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay. Percentage points."
+   },
+   "versus": "vehicle"
+  },
+  {
+   "key": "E4_atp",
+   "experiment_id": "E4",
+   "readout": "ATP per cell",
+   "measurement_name": "atp_per_cell",
+   "unit": "RLU/cell",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 24.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "arm": "compound"
+   },
+   "reference": {
+    "arm": "vehicle"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+   },
+   "versus": "vehicle"
+  },
+  {
+   "key": "E5_content",
+   "experiment_id": "E5",
+   "readout": "mitochondrial content per cell",
+   "measurement_name": "citrate_synthase_per_cell",
+   "unit": "nmol/min/10^6 cells",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 24.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "arm": "compound"
+   },
+   "reference": {
+    "arm": "vehicle"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+   },
+   "versus": "vehicle"
+  },
+  {
+   "key": "E5_ocr",
+   "experiment_id": "E5",
+   "readout": "OCR per mitochondrial content",
+   "measurement_name": "ocr_per_cs",
+   "unit": "pmol/min per CS unit",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 24.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "arm": "compound"
+   },
+   "reference": {
+    "arm": "vehicle"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+   },
+   "versus": "vehicle"
+  },
+  {
+   "key": "E6_luciferase",
+   "experiment_id": "E6",
+   "readout": "ATP standard luminescence",
+   "measurement_name": "atp_standard_luminescence",
+   "unit": "RLU",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 24.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "arm": "ATP standard + compound"
+   },
+   "reference": {
+    "arm": "ATP standard alone"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+   },
+   "versus": "ATP standard alone"
+  }
+ ],
+ "revises": "case2_b1_rules.json"
+}

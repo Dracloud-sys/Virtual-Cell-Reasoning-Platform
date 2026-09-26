@@ -1,0 +1,1060 @@
+{
+ "search_attempts": [
+  {
+   "question": "resazurin reduction assay interference by test compounds cell viability",
+   "attempts": [
+    "ok"
+   ]
+  },
+  {
+   "question": "tetrazolium MTT assay mitochondrial activity does not reflect cell number",
+   "attempts": [
+    "ok"
+   ]
+  },
+  {
+   "question": "oxygen consumption rate normalization to cell number mitochondrial content",
+   "attempts": [
+    "ok"
+   ]
+  }
+ ],
+ "reads": [
+  {
+   "doi": "10.1016/j.namjnl.2026.100126",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1297,
+     "total_chars": 1297,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.3389/ftox.2026.1818582",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1814,
+     "total_chars": 1814,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1155/ijbm/7395612",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 2135,
+     "total_chars": 2135,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1113/jp291588",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 3303,
+     "total_chars": 3303,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1038/s41598-026-46479-w",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1811,
+     "total_chars": 1811,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.21769/bioprotoc.5763",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1978,
+     "total_chars": 1978,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.3389/ftox.2026.1818582",
+   "part": "full_text",
+   "section": "s8-3",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 2660,
+     "total_chars": 2660,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.3389/ftox.2026.1818582",
+   "part": "full_text",
+   "section": "s7-5",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1210,
+     "total_chars": 1210,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1016/j.namjnl.2026.100126",
+   "part": "full_text",
+   "section": "sec0008",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 5716,
+     "total_chars": 5716,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  }
+ ],
+ "scenario": "S4",
+ "compare_research_observations": {
+  "scientific_validity_checked": false,
+  "not_checked": [
+   "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+   "Whether a consistent result supports the hypothesis over others predicting the same value.",
+   "Whether the runs are what their provenance says they are.",
+   "Whether the plan should change. Keep, revise and hold are the host's proposal."
+  ],
+  "authored_by": "host_llm",
+  "internal_model_calls": 0,
+  "findings": [
+   {
+    "code": "no_decision_branches",
+    "where": "experiment:E4",
+    "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+   },
+   {
+    "code": "discriminates_nothing",
+    "where": "experiment:E4",
+    "detail": "names no hypothesis this experiment would tell apart"
+   },
+   {
+    "code": "no_decision_branches",
+    "where": "experiment:E5",
+    "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+   },
+   {
+    "code": "no_decision_branches",
+    "where": "experiment:E6",
+    "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+   },
+   {
+    "code": "discriminates_nothing",
+    "where": "experiment:E6",
+    "detail": "names no hypothesis this experiment would tell apart"
+   }
+  ],
+  "comparison": {
+   "revision_id": "rev-076f42d8c8dc9384",
+   "prior_plan_sha256": "30a61edd9817ed124d8913ca48daccae362296fc611c59bb08e804cdddb932a5",
+   "observations_sha256": "954b16d135b866684763e75e828682e7deb8f33e54c53426a4286b8e84ee009b",
+   "prior_plan_unchanged": true,
+   "runs_used": [
+    "dev:synthetic-S4-E2",
+    "dev:synthetic-S4-E3-resazurin",
+    "dev:synthetic-S4-E4-atp",
+    "dev:synthetic-S4-E5-cs"
+   ],
+   "runs_collapsed_as_duplicates": [],
+   "comparisons": [
+    {
+     "experiment_id": "E2",
+     "readout": "resorufin fluorescence",
+     "measurement_name": "resorufin_fluorescence",
+     "run_ids": [
+      "dev:synthetic-S4-E2",
+      "dev:synthetic-S4-E3-resazurin",
+      "dev:synthetic-S4-E4-atp",
+      "dev:synthetic-S4-E5-cs"
+     ],
+     "kind": "change",
+     "versus": "resorufin in medium alone",
+     "reference_link": "declared_only",
+     "status": "not_comparable",
+     "reasons": [
+      "unit_mismatch"
+     ],
+     "observed": null,
+     "treatment_values": [
+      55.0,
+      52.0
+     ],
+     "reference_values": [
+      100.0,
+      98.0
+     ],
+     "pairing": null,
+     "pairs": [],
+     "declared_pairs": null,
+     "used_pairs": null,
+     "pair_independence": null,
+     "combinations": null,
+     "unpaired_observations": 0,
+     "pairwise": [],
+     "pairwise_classes": [],
+     "below_detection": 0,
+     "left_out": {},
+     "rule": {
+      "comparison": "ratio",
+      "increase_at_or_above": 1.25,
+      "decrease_at_or_below": 0.8,
+      "no_change_between": [
+       0.9,
+       1.1
+      ],
+      "declared_by": "host",
+      "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+     },
+     "by_hypothesis": [
+      {
+       "hypothesis_id": "H1",
+       "expected": "no_change",
+       "versus": "resorufin in medium alone",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E2",
+        "readout": "resorufin fluorescence",
+        "versus": "resorufin in medium alone",
+        "reference_conditions": {
+         "arm": "resorufin alone"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H2a",
+       "expected": "no_change",
+       "versus": "resorufin in medium alone",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E2",
+        "readout": "resorufin fluorescence",
+        "versus": "resorufin in medium alone",
+        "reference_conditions": {
+         "arm": "resorufin alone"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H2b",
+       "expected": "no_change",
+       "versus": "resorufin in medium alone",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E2",
+        "readout": "resorufin fluorescence",
+        "versus": "resorufin in medium alone",
+        "reference_conditions": {
+         "arm": "resorufin alone"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H3b",
+       "expected": "decrease",
+       "versus": "resorufin in medium alone",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E2",
+        "readout": "resorufin fluorescence",
+        "versus": "resorufin in medium alone",
+        "reference_conditions": {
+         "arm": "resorufin alone"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H3a",
+       "expected": "not_predicted",
+       "versus": "resorufin in medium alone",
+       "outcome": "not_read",
+       "note": "over-reduction of resorufin lowers it; otherwise no change",
+       "scope": {
+        "experiment_id": "E2",
+        "readout": "resorufin fluorescence",
+        "versus": "resorufin in medium alone",
+        "reference_conditions": {
+         "arm": "resorufin alone"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      }
+     ],
+     "assumption_outcomes": []
+    },
+    {
+     "experiment_id": "E3",
+     "readout": "resazurin signal per cell",
+     "measurement_name": "resazurin_per_cell",
+     "run_ids": [
+      "dev:synthetic-S4-E2",
+      "dev:synthetic-S4-E3-resazurin",
+      "dev:synthetic-S4-E4-atp",
+      "dev:synthetic-S4-E5-cs"
+     ],
+     "kind": "change",
+     "versus": "vehicle",
+     "reference_link": "structural",
+     "status": "not_comparable",
+     "reasons": [
+      "no_observations_at_time_point"
+     ],
+     "observed": null,
+     "treatment_values": [
+      0.52,
+      0.55
+     ],
+     "reference_values": [],
+     "pairing": null,
+     "pairs": [],
+     "declared_pairs": null,
+     "used_pairs": null,
+     "pair_independence": null,
+     "combinations": null,
+     "unpaired_observations": 0,
+     "pairwise": [],
+     "pairwise_classes": [],
+     "below_detection": 0,
+     "left_out": {},
+     "rule": {
+      "comparison": "ratio",
+      "increase_at_or_above": 1.25,
+      "decrease_at_or_below": 0.8,
+      "no_change_between": [
+       0.9,
+       1.1
+      ],
+      "declared_by": "host",
+      "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+     },
+     "by_hypothesis": [
+      {
+       "hypothesis_id": "H1",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E3",
+        "readout": "resazurin signal per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H2a",
+       "expected": "decrease",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E3",
+        "readout": "resazurin signal per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H2b",
+       "expected": "decrease",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E3",
+        "readout": "resazurin signal per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H3a",
+       "expected": "decrease",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E3",
+        "readout": "resazurin signal per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H3b",
+       "expected": "decrease",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E3",
+        "readout": "resazurin signal per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      }
+     ],
+     "assumption_outcomes": []
+    },
+    {
+     "experiment_id": "E4",
+     "readout": "ATP per cell",
+     "measurement_name": "atp_per_cell",
+     "run_ids": [
+      "dev:synthetic-S4-E2",
+      "dev:synthetic-S4-E3-resazurin",
+      "dev:synthetic-S4-E4-atp",
+      "dev:synthetic-S4-E5-cs"
+     ],
+     "kind": "change",
+     "versus": "vehicle",
+     "reference_link": "structural",
+     "status": "not_comparable",
+     "reasons": [
+      "all_treatment_readings_left_out"
+     ],
+     "observed": null,
+     "treatment_values": [],
+     "reference_values": [
+      1.0,
+      0.99
+     ],
+     "pairing": null,
+     "pairs": [],
+     "declared_pairs": null,
+     "used_pairs": null,
+     "pair_independence": null,
+     "combinations": null,
+     "unpaired_observations": 0,
+     "pairwise": [],
+     "pairwise_classes": [],
+     "below_detection": 0,
+     "left_out": {
+      "suspect": 2,
+      "bounded": 1
+     },
+     "rule": {
+      "comparison": "ratio",
+      "increase_at_or_above": 1.25,
+      "decrease_at_or_below": 0.8,
+      "no_change_between": [
+       0.9,
+       1.1
+      ],
+      "declared_by": "host",
+      "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+     },
+     "by_hypothesis": [
+      {
+       "hypothesis_id": "H1",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E4",
+        "readout": "ATP per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H2a",
+       "expected": "not_predicted",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "decrease only if glycolysis does not compensate; unknown for these cells and medium",
+       "scope": {
+        "experiment_id": "E4",
+        "readout": "ATP per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H2b",
+       "expected": "not_predicted",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "decrease only if glycolysis does not compensate; unknown for these cells and medium",
+       "scope": {
+        "experiment_id": "E4",
+        "readout": "ATP per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H3a",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E4",
+        "readout": "ATP per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H3b",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E4",
+        "readout": "ATP per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      }
+     ],
+     "assumption_outcomes": []
+    },
+    {
+     "experiment_id": "E5",
+     "readout": "mitochondrial content per cell",
+     "measurement_name": "citrate_synthase_per_cell",
+     "run_ids": [
+      "dev:synthetic-S4-E2",
+      "dev:synthetic-S4-E3-resazurin",
+      "dev:synthetic-S4-E4-atp",
+      "dev:synthetic-S4-E5-cs"
+     ],
+     "kind": "change",
+     "versus": "vehicle",
+     "reference_link": "structural",
+     "status": "not_comparable",
+     "reasons": [
+      "assay_mismatch"
+     ],
+     "observed": null,
+     "treatment_values": [
+      60.0,
+      62.0
+     ],
+     "reference_values": [
+      100.0,
+      98.0
+     ],
+     "pairing": null,
+     "pairs": [],
+     "declared_pairs": null,
+     "used_pairs": null,
+     "pair_independence": null,
+     "combinations": null,
+     "unpaired_observations": 0,
+     "pairwise": [],
+     "pairwise_classes": [],
+     "below_detection": 0,
+     "left_out": {},
+     "rule": {
+      "comparison": "ratio",
+      "increase_at_or_above": 1.25,
+      "decrease_at_or_below": 0.8,
+      "no_change_between": [
+       0.9,
+       1.1
+      ],
+      "declared_by": "host",
+      "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+     },
+     "by_hypothesis": [
+      {
+       "hypothesis_id": "H2a",
+       "expected": "decrease",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E5",
+        "readout": "mitochondrial content per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H2b",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E5",
+        "readout": "mitochondrial content per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H1",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E5",
+        "readout": "mitochondrial content per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H3a",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E5",
+        "readout": "mitochondrial content per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      },
+      {
+       "hypothesis_id": "H3b",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "not comparable",
+       "scope": {
+        "experiment_id": "E5",
+        "readout": "mitochondrial content per cell",
+        "versus": "vehicle",
+        "reference_conditions": {
+         "arm": "vehicle"
+        },
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "pairing": null,
+        "values": 0,
+        "hypothesis_alone": true
+       },
+       "may_coexist_with": [],
+       "assumptions_checked": {},
+       "interpretation": null
+      }
+     ],
+     "assumption_outcomes": []
+    }
+   ],
+   "hypotheses": [
+    {
+     "hypothesis_id": "H1",
+     "consistent": [],
+     "inconsistent": [],
+     "undecided": [],
+     "not_read": [
+      "E2:resorufin fluorescence",
+      "E3:resazurin signal per cell",
+      "E4:ATP per cell",
+      "E5:mitochondrial content per cell"
+     ],
+     "held_reference": [],
+     "to_re_examine": []
+    },
+    {
+     "hypothesis_id": "H2a",
+     "consistent": [],
+     "inconsistent": [],
+     "undecided": [],
+     "not_read": [
+      "E2:resorufin fluorescence",
+      "E3:resazurin signal per cell",
+      "E4:ATP per cell",
+      "E5:mitochondrial content per cell"
+     ],
+     "held_reference": [],
+     "to_re_examine": []
+    },
+    {
+     "hypothesis_id": "H2b",
+     "consistent": [],
+     "inconsistent": [],
+     "undecided": [],
+     "not_read": [
+      "E2:resorufin fluorescence",
+      "E3:resazurin signal per cell",
+      "E4:ATP per cell",
+      "E5:mitochondrial content per cell"
+     ],
+     "held_reference": [],
+     "to_re_examine": []
+    },
+    {
+     "hypothesis_id": "H3a",
+     "consistent": [],
+     "inconsistent": [],
+     "undecided": [],
+     "not_read": [
+      "E2:resorufin fluorescence",
+      "E3:resazurin signal per cell",
+      "E4:ATP per cell",
+      "E5:mitochondrial content per cell"
+     ],
+     "held_reference": [],
+     "to_re_examine": []
+    },
+    {
+     "hypothesis_id": "H3b",
+     "consistent": [],
+     "inconsistent": [],
+     "undecided": [],
+     "not_read": [
+      "E2:resorufin fluorescence",
+      "E3:resazurin signal per cell",
+      "E4:ATP per cell",
+      "E5:mitochondrial content per cell"
+     ],
+     "held_reference": [],
+     "to_re_examine": []
+    }
+   ],
+   "assumption_reviews": [],
+   "re_examine": [],
+   "host_decisions": [
+    {
+     "target_id": "E2",
+     "decision": "hold",
+     "reason": "Treatment arm recorded in AU, reference and rule in RFU. Nothing converts units; re-export in RFU.",
+     "next_experiment_ids": [
+      "E2"
+     ]
+    },
+    {
+     "target_id": "E3",
+     "decision": "hold",
+     "reason": "Vehicle measured at 48 h, compound at 24 h. Add a 24 h vehicle arm.",
+     "next_experiment_ids": [
+      "E3"
+     ]
+    },
+    {
+     "target_id": "E4",
+     "decision": "hold",
+     "reason": "Every compound ATP reading is suspect or a bound. Re-measure.",
+     "next_experiment_ids": [
+      "E4"
+     ]
+    },
+    {
+     "target_id": "E5",
+     "decision": "hold",
+     "reason": "Run method 'absorbance' is not the declared 'DTNB absorbance'. If it was the DTNB assay, the record should say so; the comparison does not guess.",
+     "next_experiment_ids": [
+      "E5"
+     ]
+    }
+   ],
+   "decisions_by": "host",
+   "findings": [],
+   "limits": [
+    "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+    "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+    "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+    "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+    "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+    "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+    "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+    "An assumption check holds or does not hold under its declared rule and tested condition only. It marks the predictions that name that assumption; the others are left unmarked because no dependency is stated, which does not mean they are unaffected. Interference seen on one assay is not carried to another.",
+    "A named reference is compared only when the reference arm's own conditions carry that name. A name the conditions do not carry is a declaration, and the comparison is held.",
+    "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+   ]
+  }
+ }
+}

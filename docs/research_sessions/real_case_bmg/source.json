@@ -1,0 +1,31 @@
+{
+ "dataset": {
+  "title": "cytocompatibility analysis of Ti6Al4V and Ti40Zr10Cu36Pd14 bulk metallic glass",
+  "zenodo_record": 8342247,
+  "doi": "10.5281/zenodo.8342247",
+  "creator": "Sharifikolouei, Elham",
+  "created": "2023-09-13",
+  "license": "CC-BY-4.0",
+  "file": "24 and 48 ORE Alamar blue.xlsx",
+  "url": "https://zenodo.org/api/records/8342247/files/24%20and%2048%20ORE%20Alamar%20blue.xlsx/content",
+  "md5_published_by_zenodo": "0643c31f7edc507389c64fbd1eb8558a",
+  "md5_of_downloaded_copy": "0643c31f7edc507389c64fbd1eb8558a",
+  "sha256_of_downloaded_copy": "5421122c3ff1be3eb53393d3aacdcfbbe5153c2d1b7cb7f3ce8ca0c57394e032",
+  "retrieved": "2026-09-26",
+  "not_committed_because": "The workbook is kept out of the repository: it carries the instrument serial number and a workstation account name in its header. The derived CSV holds only the typed per-well values, their sheet and cell, and the read start time and temperature."
+ },
+ "paper": {
+  "doi": "10.1016/j.mtbio.2022.100378",
+  "pmcid": "PMC9418555",
+  "sections_read_through_read_evidence_source": [
+   "sec2.5.2",
+   "sec2.6.1",
+   "sec2.6.2",
+   "sec2.8",
+   "sec3.3",
+   "sec6"
+  ],
+  "note": "Read in full through the product path; only ids and the host's short readings are committed."
+ },
+ "attribution": "Data: Sharifikolouei E., Zenodo 8342247 (CC-BY-4.0). Transcribed cell by cell into bmg_alamar_tidy.csv by extract.py; values unchanged, labels as written."
+}

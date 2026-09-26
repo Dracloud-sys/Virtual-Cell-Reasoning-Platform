@@ -60,7 +60,17 @@ MCP_PACKAGE = Path(__file__).resolve().parents[2] / "src" / "virtualcell" / "mcp
 REGISTRY = default_registry()
 DOMAINS = REGISTRY.domains()
 DESCRIPTIONS = {domain: REGISTRY.describe(domain) for domain in DOMAINS}
-TOOL_NAMES = ("list_domains", "describe_domain", "reason")
+#: The specialist door, where a registered domain gives a verified verdict.
+VERDICT_TOOLS = ("list_domains", "describe_domain", "reason")
+#: The domainless door. These call no model: the host LLM reasons, this server looks
+#: things up and checks what the host wrote.
+RESEARCH_TOOLS = (
+    "research_evidence",
+    "read_evidence_source",
+    "check_research_draft",
+    "compare_research_observations",
+)
+TOOL_NAMES = VERDICT_TOOLS + RESEARCH_TOOLS
 
 
 # --------------------------------------------------------------------------- #
@@ -168,7 +178,7 @@ def test_no_mcp_module_names_a_registered_domain() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_exactly_the_three_designed_tools_are_registered() -> None:
+def test_exactly_the_designed_tools_are_registered() -> None:
     assert sorted(_tools(_server())) == sorted(TOOL_NAMES)
 
 
@@ -619,3 +629,1491 @@ def test_a_fourth_domain_is_reachable_through_all_three_tools_unchanged() -> Non
         {"domain": _FOURTH, "task": "assess_state", "experiment": {"fictional_readut": "present"}},
     )
     assert typo["unsupported_measurements"] == ["fictional_readut"]
+
+
+# --------------------------------------------------------------------------- #
+# the domainless door: the host reasons, this server looks things up
+#
+# The product this is heading for is a host LLM with VCRP plugged into it, so the
+# reasoner is the caller and these tools must work with no provider, no API key
+# and no domain registration. Every question below runs with the key removed.
+# --------------------------------------------------------------------------- #
+
+import tempfile  # noqa: E402
+from datetime import UTC, datetime  # noqa: E402
+
+from virtualcell.core.contracts import AgentInput, AgentOutput  # noqa: E402
+from virtualcell.literature.contracts import (  # noqa: E402
+    ArticleIdentifier,
+    ArticleRecord,
+    DiscoveryRunStatus,
+    LiteratureEvidenceBundle,
+    LiteratureQuery,
+    ProviderProvenance,
+)
+from virtualcell.mcp import research_payloads  # noqa: E402
+from virtualcell.research.contracts import EvidenceItem  # noqa: E402
+
+ECM_QUESTION = (
+    "For an ECM-based scaffold bridging a dermal defect, does scaffold degradation "
+    "outpace host collagen deposition?"
+)
+
+
+@pytest.fixture(autouse=True)
+def _no_provider_credentials(monkeypatch):
+    """Every question in this block runs with no key. The host is the model."""
+    for name in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"):
+        monkeypatch.delenv(name, raising=False)
+
+
+def _bundle(status: DiscoveryRunStatus, articles: list[ArticleRecord], warnings=()):
+    return LiteratureEvidenceBundle(
+        query=LiteratureQuery(query_text="q"),
+        provider_provenance=ProviderProvenance(
+            provider="stub", query_sent="q", retrieved_at=datetime.now(UTC)
+        ),
+        run_status=status,
+        articles=articles,
+        warnings=list(warnings),
+    )
+
+
+class _StubLiterature:
+    """A literature agent that returns a fixed bundle. No network, no provider."""
+
+    def __init__(self, bundle: LiteratureEvidenceBundle | Exception) -> None:
+        self._bundle = bundle
+
+    async def run(self, inputs: AgentInput) -> AgentOutput:
+        if isinstance(self._bundle, Exception):
+            raise self._bundle
+        return AgentOutput(
+            agent="stub",
+            claims=[],
+            confidence=0.0,
+            notes="",
+            result=self._bundle.model_dump(mode="json"),
+        )
+
+
+_WITH_TEXT = ArticleRecord(
+    identifiers=ArticleIdentifier(doi="10.1000/scaffold-degradation"),
+    title="Scaffold degradation kinetics in dermal repair",
+    abstract="Mass loss reached 60% by day 14 while hydroxyproline accumulation lagged.",
+)
+_WITHOUT_TEXT = ArticleRecord(
+    identifiers=ArticleIdentifier(doi="10.1000/no-abstract"), title="A record with no text"
+)
+
+
+def test_a_question_with_no_registered_domain_reaches_the_research_tools() -> None:
+    """The whole point of this door. No domain, no task, no registry lookup, no key —
+    and the call succeeds rather than refusing the way `reason` would have to.
+    """
+    result = _call(
+        _server(),
+        "research_evidence",
+        {"question": ECM_QUESTION, "context": {"cell_type": "human dermal fibroblast"}},
+    )
+
+    assert result["question"] == ECM_QUESTION
+    assert result["lookups"]
+    assert result["limits"]
+
+
+def test_the_research_tools_work_with_no_domains_registered_at_all() -> None:
+    """Domainless has to mean domainless. If these tools needed even one pack to be
+    present, "no domain required" would be true only by accident of what ships.
+    """
+    empty = _server(registry=DomainRegistry(), store=InMemoryKnowledgeStore())
+
+    evidence = _call(empty, "research_evidence", {"question": ECM_QUESTION})
+    checked = _call(empty, "check_research_draft", {"question": ECM_QUESTION})
+
+    assert evidence["domain_overlap"] == []
+    assert checked["internal_model_calls"] == 0
+
+
+def test_a_failed_lookup_is_never_reported_as_an_absence_of_evidence() -> None:
+    """The distinction that decides whether a host says "nothing is known". "It ran and
+    found nothing", "it could not run", "it was not asked" and "this platform cannot do
+    that" are four answers, and three of them are not evidence of absence.
+    """
+    seen: dict[str, str] = {}
+
+    for kwargs, agent, expected in (
+        ({}, None, "not_requested"),
+        ({"search_literature": True}, None, "not_implemented"),
+        (
+            {"search_literature": True},
+            _StubLiterature(_bundle(DiscoveryRunStatus.ZERO_RESULTS, [])),
+            "no_matches",
+        ),
+        (
+            {"search_literature": True},
+            _StubLiterature(_bundle(DiscoveryRunStatus.PROVIDER_TIMEOUT, [], ["timed out"])),
+            "lookup_failed",
+        ),
+        (
+            {"search_literature": True},
+            _StubLiterature(RuntimeError("socket closed")),
+            "lookup_failed",
+        ),
+    ):
+        result = _call(
+            _server(literature_agent=agent),
+            "research_evidence",
+            {"question": ECM_QUESTION, **kwargs},
+        )
+        status = next(s for s in result["lookups"] if s["source"] == "literature")
+        assert status["status"] == expected, (expected, status)
+        seen[expected] = status["detail"]
+        assert result["evidence"] == []
+
+    # Each non-`ok` outcome says, in its own words, that the silence means nothing.
+    assert "not a statement about what the literature contains" in seen["not_requested"]
+    assert "nothing is implied" in seen["not_implemented"]
+    assert "says nothing about the literature" in seen["lookup_failed"]
+    assert "ran and returned no articles" in seen["no_matches"]
+
+
+def test_a_record_with_no_text_does_not_become_a_citable_span() -> None:
+    """A reference is not a span someone read. Manufacturing a statement for an
+    abstract-less record is exactly the fabricated citation the contracts refuse.
+    """
+    result = _call(
+        _server(
+            literature_agent=_StubLiterature(
+                _bundle(DiscoveryRunStatus.SUCCESS, [_WITH_TEXT, _WITHOUT_TEXT])
+            )
+        ),
+        "research_evidence",
+        {"question": ECM_QUESTION, "search_literature": True},
+    )
+
+    assert len(result["evidence"]) == 1
+    item = EvidenceItem.model_validate(result["evidence"][0])
+    assert item.kind.value == "retrieved_source"
+    assert item.locator is not None and item.locator.source_text
+    assert item.content_hash
+
+
+def test_the_graph_lookup_searches_the_question_word_by_word() -> None:
+    """`KnowledgeStore.search` substring-matches the **whole** query string, so handing it
+    an entire question can only match an entity whose text contains that sentence — never.
+    Passing the question straight through produced a permanent, silent `no_matches`: a
+    lookup that looked like it ran and could not have.
+    """
+    store = InMemoryKnowledgeStore()
+    seed_registered_domains(store)
+
+    assert store.search("Does telomerase activity change senescence?", k=5) == []
+    assert "telomerase" in research_payloads.seed_terms(
+        "Does telomerase activity change senescence?"
+    )
+
+    result = _call(
+        _server(store=store),
+        "research_evidence",
+        {"question": "Does telomerase activity change senescence?"},
+    )
+    status = next(s for s in result["lookups"] if s["source"] == "knowledge_graph")
+    assert status["status"] == "ok"
+    assert result["graph_findings"]
+    assert all(f["matched_term"] for f in result["graph_findings"])
+
+
+def test_a_graph_finding_is_not_offered_as_evidence() -> None:
+    """`EvidenceKind` has five labels and none means "read from this platform's graph". A
+    traversal is not a document span, and widening the enum to fit would cost the labels
+    their meaning — so graph results come back as their own record type.
+    """
+    store = InMemoryKnowledgeStore()
+    seed_registered_domains(store)
+
+    result = _call(_server(store=store), "research_evidence", {"question": "telomerase senescence"})
+
+    assert result["graph_findings"]
+    assert result["evidence"] == []
+    finding = result["graph_findings"][0]
+    assert "kind" not in finding and "locator" not in finding
+    assert "does not say the path answers the question" in finding["how_this_was_found"]
+
+
+def test_the_research_lookup_writes_nothing_to_the_knowledge_graph() -> None:
+    """A research session's material is not permanent knowledge, and a hypothesis raised
+    here is never registered as established. The guarantee is that nothing is even asked
+    for: discovery only, with extract/verify/convert/ingest all left off.
+    """
+    from virtualcell.knowledge.persistence import save_store
+
+    store = InMemoryKnowledgeStore()
+    seed_registered_domains(store)
+
+    def snapshot() -> str:
+        """The whole store, serialised. Stronger than counting: an edge swapped for
+        another of the same kind would keep a count identical."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "graph.json"
+            save_store(store, path)
+            return path.read_text(encoding="utf-8")
+
+    before = snapshot()
+
+    result = _call(
+        _server(
+            store=store,
+            literature_agent=_StubLiterature(_bundle(DiscoveryRunStatus.SUCCESS, [_WITH_TEXT])),
+        ),
+        "research_evidence",
+        {"question": "telomerase senescence", "search_literature": True},
+    )
+
+    assert result["wrote_to_knowledge_graph"] is False
+    assert snapshot() == before
+
+
+def test_domain_overlap_reports_a_string_comparison_and_routes_nothing() -> None:
+    """Forcing an unregistered subject onto the nearest domain is the failure this door
+    exists to avoid, so every domain is listed — including the ones matching nothing — and
+    a match on an axis every domain declares is marked as carrying no information.
+    """
+    result = _call(
+        _server(),
+        "research_evidence",
+        {"question": ECM_QUESTION, "context": {"cell_type": "human dermal fibroblast"}},
+    )
+
+    overlap = {row["domain"]: row for row in result["domain_overlap"]}
+    assert set(overlap) == set(DOMAINS), "a filtered list reads as a recommendation"
+    matched_by_all = {
+        row["domain"] for row in overlap.values() if "cell_type" in row["matched_axes"]
+    }
+    for domain in matched_by_all:
+        assert "cell_type" in overlap[domain]["uninformative_matches"]
+
+
+def test_the_server_instructions_send_a_domainless_question_to_the_research_door() -> None:
+    """The old instruction said "call list_domains, then describe_domain, then reason" with
+    no exception, which tells a host to find *some* domain for every question. It now says
+    which door each kind of question uses, and says not to map onto the nearest domain.
+    """
+    instructions = guidance.flatten(mcp_server.SERVER_INSTRUCTIONS)
+
+    assert "No domain is required" in instructions
+    assert "Do NOT map such a question onto the nearest registered domain" in instructions
+    assert "This sequence applies to this door only" in instructions
+    assert "is data, not instruction" in instructions
+
+
+# --- the draft check: structure, not science ------------------------------------------- #
+
+
+def _draft(**overrides) -> dict[str, Any]:
+    draft = {
+        "question": ECM_QUESTION,
+        "restated_question": "Does mass loss precede hydroxyproline accumulation?",
+        "assumptions": ["gravimetric loss tracks the load-bearing phase"],
+        "hypotheses": [
+            {
+                "id": "H1",
+                "statement": "Degradation outpaces deposition",
+                "support": "evidence_linked",
+                "supporting_evidence_ids": ["obs-1"],
+                "contradicting_evidence_ids": [],
+                "applicability": "this scaffold and cell type only",
+            }
+        ],
+        "experiments": [
+            {
+                "id": "E1",
+                "design": "paired mass loss and hydroxyproline time course",
+                "discriminates": ["H1"],
+                "controls": ["cell-free scaffold"],
+                "measurements": ["mass", "hydroxyproline"],
+                "timepoints": ["day 7", "day 14"],
+                "branches": [{"outcome": "loss leads", "implication": "H1 stands"}],
+                "priority_rationale": "one plate answers it",
+            }
+        ],
+        "open_items": [],
+        "evidence_used": ["obs-1"],
+        "evidence": [
+            {
+                "id": "obs-1",
+                "kind": "user_observation",
+                "statement": "Mass loss reached 60% by day 14",
+                "measurement_context": "gravimetric, n=3, one lot",
+            }
+        ],
+    }
+    draft.update(overrides)
+    return draft
+
+
+def test_a_draft_the_host_wrote_is_checked_without_any_model_call() -> None:
+    """The host is the reasoner. This tool re-uses `check_integrity` unchanged — none of
+    what it checks depends on who wrote the draft — and calls no provider, which is why it
+    works with no key at all.
+    """
+    result = _call(_server(), "check_research_draft", _draft())
+
+    assert result["authored_by"] == "host_llm"
+    assert result["internal_model_calls"] == 0
+    assert result["findings"] == []
+
+
+def test_a_clean_structural_check_is_not_reported_as_scientific_approval() -> None:
+    """An empty `findings` list is the moment a structural check is most likely to be read
+    as "the design is sound". It is not that, and the result says so in its own fields
+    rather than leaving the reader to infer it.
+    """
+    result = _call(_server(), "check_research_draft", _draft())
+
+    assert result["findings"] == []
+    assert result["scientific_validity_checked"] is False
+    assert len(result["not_checked"]) >= 5
+    joined = " ".join(result["not_checked"]).lower()
+    assert "plausible" in joined
+    assert "separate them" in joined
+
+
+def test_a_citation_to_an_id_nobody_supplied_is_still_caught() -> None:
+    """The check that made the research path worth having, working on a host's draft."""
+    draft = _draft()
+    draft["hypotheses"][0]["supporting_evidence_ids"] = ["obs-99"]
+
+    codes = {f["code"] for f in _call(_server(), "check_research_draft", draft)["findings"]}
+
+    assert "unknown_evidence_id" in codes
+    assert "unsupported_evidence_link" in codes
+
+
+def test_what_the_server_retrieved_is_told_apart_from_what_the_host_supplied() -> None:
+    """Verified, not trusted. A fabricated span arriving labelled "retrieved by the server"
+    is exactly what is worth catching, so the classification is made from what this server
+    actually issued — by id **and** content hash, so an issued item that was then edited
+    is reported as edited rather than as either one.
+    """
+    server = _server(
+        literature_agent=_StubLiterature(_bundle(DiscoveryRunStatus.SUCCESS, [_WITH_TEXT]))
+    )
+    retrieved = _call(
+        server, "research_evidence", {"question": ECM_QUESTION, "search_literature": True}
+    )["evidence"][0]
+
+    edited = json.loads(json.dumps(retrieved))
+    edited["id"] = "lit-edited"
+    edited["statement"] = "A conclusion the paper does not draw"
+    edited["content_hash"] = None
+    edited = EvidenceItem.model_validate(edited).model_dump(mode="json")
+    edited["id"] = retrieved["id"]  # same id, different content
+
+    origins = {
+        row["id"]: row["origin"]
+        for row in _call(
+            server,
+            "check_research_draft",
+            _draft(evidence=[retrieved], evidence_used=[retrieved["id"]], hypotheses=[]),
+        )["evidence_origins"]
+    }
+    assert origins[retrieved["id"]] == "server_retrieved"
+
+    origins = {
+        row["id"]: row["origin"]
+        for row in _call(
+            server,
+            "check_research_draft",
+            _draft(evidence=[edited], evidence_used=[], hypotheses=[]),
+        )["evidence_origins"]
+    }
+    assert origins[retrieved["id"]] == "server_retrieved_but_modified"
+
+    origins = {
+        row["id"]: row["origin"]
+        for row in _call(server, "check_research_draft", _draft())["evidence_origins"]
+    }
+    assert origins["obs-1"] == "host_supplied"
+
+
+def test_a_malformed_draft_refuses_with_a_remedy_rather_than_a_traceback() -> None:
+    draft = _draft()
+    draft["hypotheses"][0]["support"] = "definitely_true"
+
+    refusal = _refusal(_server(), "check_research_draft", draft)
+
+    assert refusal.error == "malformed_draft"
+    assert refusal.remedy
+
+
+def test_the_specialist_door_still_refuses_exactly_what_it_always_refused() -> None:
+    """Adding a second door must not open the first one. An unknown domain on `reason` is
+    still a refusal, not a fall-through into exploratory prose.
+    """
+    refusal = _refusal(_server(), "reason", {"domain": "no_such_domain", "task": "anything"})
+
+    assert refusal.error == "unknown_domain"
+
+
+# --------------------------------------------------------------------------- #
+# the startup path a host actually launches, and repeated use within a session
+#
+# Everything below was reproduced against the shipped server at 561a58a before
+# anything was changed.
+# --------------------------------------------------------------------------- #
+
+import anyio  # noqa: E402
+from mcp.client.session import ClientSession  # noqa: E402
+from mcp.shared.memory import create_client_server_memory_streams  # noqa: E402
+
+
+class _SequentialLiterature:
+    """Returns a different article per call, the way two real searches would."""
+
+    def __init__(self, *article_sets: list[ArticleRecord]) -> None:
+        self._sets = list(article_sets)
+        self.calls = 0
+
+    async def run(self, inputs: AgentInput) -> AgentOutput:
+        articles = self._sets[min(self.calls, len(self._sets) - 1)]
+        self.calls += 1
+        return AgentOutput(
+            agent="stub",
+            claims=[],
+            confidence=0.0,
+            notes="",
+            result=_bundle(DiscoveryRunStatus.SUCCESS, articles).model_dump(mode="json"),
+        )
+
+
+_LONG = ArticleRecord(
+    identifiers=ArticleIdentifier(doi="10.1000/long-abstract"),
+    title="A long abstract",
+    abstract="Degradation outpaced deposition. " + "padding " * 120,
+)
+
+
+def _protocol_session(server, exchange):
+    """Drive a real initialize / list_tools / call_tool over the MCP protocol.
+
+    `server.call_tool` in the other questions here bypasses the protocol entirely. That is
+    the right level for most of them, but it cannot catch a tool whose schema the SDK
+    refuses to serialise, or an entry point that builds the server differently from the
+    way a test does — which is exactly the class of defect this block exists for.
+    """
+    result: dict[str, Any] = {}
+
+    async def _run() -> None:
+        low = server._lowlevel_server
+        async with (
+            create_client_server_memory_streams() as (client_streams, server_streams),
+            anyio.create_task_group() as tg,
+        ):
+            tg.start_soon(
+                lambda: low.run(
+                    server_streams[0],
+                    server_streams[1],
+                    low.create_initialization_options(),
+                    raise_exceptions=True,
+                )
+            )
+            async with ClientSession(client_streams[0], client_streams[1]) as session:
+                result.update(await exchange(session))
+            tg.cancel_scope.cancel()
+
+    anyio.run(_run)
+    return result
+
+
+def test_the_process_entry_point_can_start_with_the_search_wired_in(monkeypatch) -> None:
+    """`main()` called `build_server()` with no arguments, so `literature_agent` was always
+    None and the connection config that shipped could only ever answer
+    `search_literature=true` with `not_implemented`. The tool was reachable; the capability
+    was not, and no configuration could change that.
+
+    Off by default, and **enabling it searches nothing on its own** — a request still has
+    to ask.
+    """
+    monkeypatch.delenv("VIRTUALCELL_MCP_LITERATURE", raising=False)
+    monkeypatch.setattr(mcp_server.sys, "argv", ["virtualcell.mcp"])
+    assert mcp_server.literature_agent_from_env() is None
+
+    monkeypatch.setenv("VIRTUALCELL_MCP_LITERATURE", "1")
+    assert mcp_server.literature_agent_from_env() is not None
+
+    monkeypatch.delenv("VIRTUALCELL_MCP_LITERATURE")
+    monkeypatch.setattr(mcp_server.sys, "argv", ["virtualcell.mcp", "--literature"])
+    assert mcp_server.literature_agent_from_env() is not None
+
+
+def test_the_open_world_annotation_matches_what_the_server_can_actually_do() -> None:
+    """A host uses annotations to decide what needs confirming. `open_world_hint` was
+    hard-coded false while the tool could reach the public internet — the annotation
+    saying the opposite of the truth. It is now true exactly when a searcher is wired in,
+    which is exactly when a call can leave the machine.
+    """
+    offline = _tools(_server())["research_evidence"].annotations
+    online = _tools(
+        _server(literature_agent=_StubLiterature(_bundle(DiscoveryRunStatus.SUCCESS, [_WITH_TEXT])))
+    )["research_evidence"].annotations
+
+    assert offline.open_world_hint is False
+    assert online.open_world_hint is True
+    assert offline.read_only_hint is online.read_only_hint is True
+
+
+def test_the_tools_are_reachable_over_the_real_protocol() -> None:
+    """initialize, list_tools and call_tool, through a client session rather than through
+    the server object. `server.call_tool` skips the protocol, so nothing else here would
+    notice a result type the SDK cannot put on the wire.
+    """
+
+    async def exchange(session: ClientSession) -> dict[str, Any]:
+        init = await session.initialize()
+        tools = await session.list_tools()
+        evidence = await session.call_tool(
+            "research_evidence", {"question": "Does p53 drive arrest in ECM culture?"}
+        )
+        draft = await session.call_tool("check_research_draft", _draft())
+        return {
+            "name": init.server_info.name,
+            "instructions": init.instructions or "",
+            "tools": sorted(t.name for t in tools.tools),
+            "evidence": evidence,
+            "draft": draft,
+        }
+
+    out = _protocol_session(_server(), exchange)
+
+    assert out["name"] == mcp_server.SERVER_NAME
+    assert out["tools"] == sorted(TOOL_NAMES)
+    assert "No domain is required" in guidance.flatten(out["instructions"])
+    assert out["evidence"].is_error is False
+    assert out["evidence"].structured_content["question"]
+    assert out["draft"].is_error is False
+    assert out["draft"].structured_content["internal_model_calls"] == 0
+
+
+# --- the draft adapter must not re-introduce what the research path already fixed ------- #
+
+
+def test_a_bare_string_in_the_draft_is_not_split_into_characters() -> None:
+    """Measured on the shipped tool: `"discriminates": "H1"` became `["H", "1"]` and
+    produced two bogus `unknown_hypothesis_id` findings — a defect report invented by the
+    adapter, about hypotheses the host never wrote.
+
+    `validate_report_payload` is reused rather than re-implemented: every check in it is
+    about the payload, not about who wrote it.
+    """
+    draft = _draft(hypotheses=[], experiments=[{"id": "E1", "design": "D", "discriminates": "H1"}])
+
+    refusal = _refusal(_server(), "check_research_draft", draft)
+
+    assert refusal.error == "malformed_draft"
+    assert "discriminates" in refusal.detail
+
+
+def test_an_evidence_id_in_the_draft_is_not_stringified_into_existence() -> None:
+    """`str(1)` is `"1"`, a well-formed id nobody supplied. The shipped adapter coerced it
+    and the integrity check then reported the citation it had just manufactured.
+    """
+    draft = _draft()
+    draft["hypotheses"][0]["supporting_evidence_ids"] = [1]
+
+    refusal = _refusal(_server(), "check_research_draft", draft)
+
+    assert refusal.error == "malformed_draft"
+    assert "supporting_evidence_ids" in refusal.detail
+
+
+def test_a_field_nobody_declared_in_the_draft_is_reported_not_dropped() -> None:
+    """The shipped adapter dropped `certainty` and `citation` with no trace, so a host that
+    attached a fabricated citation was told its draft checked out clean.
+    """
+    draft = _draft()
+    draft["hypotheses"][0]["certainty"] = 0.99
+    draft["hypotheses"][0]["citation"] = "Nature 2020"
+
+    findings = _call(_server(), "check_research_draft", draft)["findings"]
+
+    reported = [f for f in findings if f["code"] == "unexpected_model_field"]
+    joined = " ".join(f["detail"] for f in reported)
+    assert "certainty" in joined and "0.99" in joined
+    assert "citation" in joined and "Nature 2020" in joined
+
+
+def test_the_draft_check_still_imposes_no_minimum_number_of_anything() -> None:
+    """Reusing the validator must not smuggle in a quota. A single hypothesis and a stated
+    hold are both legitimate answers from a host.
+    """
+    result = _call(_server(), "check_research_draft", _draft())
+
+    assert result["findings"] == []
+
+
+# --- two searches in one session -------------------------------------------------------- #
+
+
+def test_two_searches_do_not_collide_on_one_evidence_id() -> None:
+    """Measured on the shipped server: every search numbered from `lit-1`, so the first hit
+    of a second search took the first hit of the first search's id with different text. The
+    ledger's hash was overwritten, and the **unedited** first item then came back classified
+    `server_retrieved_but_modified` — a fabrication warning about material the server itself
+    had handed over.
+
+    Ids are derived from content now, so they collide only when the content is the same.
+    """
+    server = _server(literature_agent=_SequentialLiterature([_WITH_TEXT], [_WITHOUT_TEXT, _LONG]))
+
+    first = _call(server, "research_evidence", {"question": "collagen", "search_literature": True})[
+        "evidence"
+    ]
+    second = _call(
+        server, "research_evidence", {"question": "degradation", "search_literature": True}
+    )["evidence"]
+
+    assert len(first) == len(second) == 1
+    assert first[0]["id"] != second[0]["id"], "two different papers must not share an id"
+
+    origins = {
+        row["id"]: row["origin"]
+        for row in _call(
+            server,
+            "check_research_draft",
+            _draft(
+                hypotheses=[],
+                evidence=first + second,
+                evidence_used=[first[0]["id"], second[0]["id"]],
+            ),
+        )["evidence_origins"]
+    }
+    assert origins == {first[0]["id"]: "server_retrieved", second[0]["id"]: "server_retrieved"}
+
+
+def test_retrieving_the_same_span_twice_yields_one_id_and_stays_unmodified() -> None:
+    """The other half. A content-derived id has to be stable, or a host that re-ran a search
+    would find its earlier citations reported as edited.
+    """
+    server = _server(literature_agent=_SequentialLiterature([_WITH_TEXT], [_WITH_TEXT]))
+
+    first = _call(server, "research_evidence", {"question": "collagen", "search_literature": True})[
+        "evidence"
+    ][0]
+    again = _call(server, "research_evidence", {"question": "collagen", "search_literature": True})[
+        "evidence"
+    ][0]
+
+    assert first == again
+    origin = _call(
+        server,
+        "check_research_draft",
+        _draft(hypotheses=[], evidence=[first], evidence_used=[first["id"]]),
+    )["evidence_origins"][0]
+    assert origin["origin"] == "server_retrieved"
+
+
+# --- is what comes back usable ------------------------------------------------------------ #
+
+
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("ECM scaffold degradation", "ECM"),
+        ("Does p53 or p16 drive arrest?", "p53"),
+        ("Does p53 or p16 drive arrest?", "p16"),
+        ("TERT overexpression", "TERT"),
+    ],
+)
+def test_short_names_survive_tokenisation(question: str, expected: str) -> None:
+    """A flat four-character floor threw away the names this field is mostly made of, so a
+    question about ECM, p53 or p16 could not reach the graph at all.
+    """
+    assert expected in research_payloads.seed_terms(question)
+
+
+def test_a_bare_number_is_not_a_seed() -> None:
+    """`60` in "60% by day 14" would match half the graph and mean nothing. A short token
+    earns its place by mixing letters and digits, or by being a capitalised symbol.
+    """
+    terms = research_payloads.seed_terms("60% mass loss by day 14 in TERT cells")
+
+    assert "TERT" in terms
+    assert "60" not in terms and "14" not in terms
+
+
+def test_a_truncated_span_is_reported_beside_the_evidence_not_inside_it() -> None:
+    """The shipped version appended `" [...]"` to `source_text`, so the span no longer
+    matched the document it claimed to come from and its hash covered a display artefact. A
+    reader pasting that string into the paper would not find it.
+    """
+    result = _call(
+        _server(literature_agent=_StubLiterature(_bundle(DiscoveryRunStatus.SUCCESS, [_LONG]))),
+        "research_evidence",
+        {"question": "degradation", "search_literature": True},
+    )
+
+    item = result["evidence"][0]
+    assert "[...]" not in item["locator"]["source_text"]
+    assert item["id"] in result["truncated_evidence_ids"]
+    assert _LONG.abstract.startswith(item["locator"]["source_text"][:30])
+
+
+def test_the_search_does_not_claim_the_context_narrowed_it() -> None:
+    """`context` is accepted and was passed to the searcher as `{}` — the shape of a filter
+    that does nothing. A tool that takes a species and a cell type invites the assumption
+    that it searched for them, so the status says plainly that it did not.
+    """
+    result = _call(
+        _server(
+            literature_agent=_StubLiterature(_bundle(DiscoveryRunStatus.SUCCESS, [_WITH_TEXT]))
+        ),
+        "research_evidence",
+        {
+            "question": "collagen deposition",
+            "context": {"species": "human", "cell_type": "dermal fibroblast"},
+            "search_literature": True,
+        },
+    )
+
+    detail = next(s for s in result["lookups"] if s["source"] == "literature")["detail"]
+    assert "NOT applied as a filter" in detail
+
+
+def test_the_draft_check_says_graph_findings_are_out_of_its_scope() -> None:
+    """A graph path cannot be cited in a draft: only `evidence[]` ids resolve. Saying so is
+    what stops a host relabelling a traversal as a user_observation to get it checked —
+    which would make an unverified path look like something someone read.
+    """
+    result = _call(_server(), "check_research_draft", _draft())
+
+    scope = " ".join(result["not_checked"])
+    assert "graph_findings" in scope
+    assert "user_observation" in scope and "retrieved_source" in scope
+
+
+# --- the project MCP config a host actually reads ------------------------------------------
+
+
+def test_the_project_mcp_config_names_this_server_and_stays_parseable() -> None:
+    """`.mcp.json` is what a Claude Code host reads at session start. If it drifts from the
+    module it names, the host spawns something that dies and the tools are simply absent —
+    there is no error a user sees, so the failure reads as "these tools do not exist".
+    """
+    config = json.loads((MCP_PACKAGE.parents[2] / ".mcp.json").read_text(encoding="utf-8"))
+
+    server = config["mcpServers"]["virtualcell"]
+    assert server["args"][:2] == ["-m", "virtualcell.mcp"]
+    assert "--literature" in server["args"], (
+        "the committed config enables the searcher; without it every "
+        "search_literature=true answers not_implemented"
+    )
+
+
+def test_the_config_names_an_interpreter_variable_rather_than_a_path() -> None:
+    """An absolute path is wrong on every machine but one, and a relative path assumes the
+    host spawns with the repository as its working directory. Neither is safe to commit, so
+    the config reads `VCRP_PYTHON` and the environment supplies it.
+    """
+    config = json.loads((MCP_PACKAGE.parents[2] / ".mcp.json").read_text(encoding="utf-8"))
+    command = config["mcpServers"]["virtualcell"]["command"]
+
+    assert command == "${VCRP_PYTHON}"
+    assert not command.startswith("/")
+    assert "${PWD}" not in command
+
+
+def test_the_setup_script_installs_what_the_server_needs_and_nothing_it_does_not() -> None:
+    """The MCP research tools call no model. Installing `[llm]` would pull a dependency
+    nothing on this path uses, and would imply an API key is part of the setup.
+    """
+    script = (MCP_PACKAGE.parents[2] / "scripts" / "setup_mcp_env.sh").read_text(encoding="utf-8")
+
+    assert "[mcp]" in script
+    assert "[llm]" not in script.replace("`[llm]` is deliberately NOT installed", "")
+    assert "python3.12" in script
+
+
+# --- the draft contract a host can see without reading this repository ----------------------
+#
+# Measured on the live host: `check_research_draft` published `hypotheses` and `experiments`
+# as bare `object` lists, so the nested names (`support`, `discriminates`, `branches`) were
+# invisible. The host guessed, got `no_decision_branches` / `discriminates_nothing` for fields
+# it had written under other names, and then read `research/contracts.py` to find out. A tool
+# a host can only call correctly by reading the server's source is not published.
+
+from pydantic import TypeAdapter  # noqa: E402
+
+from virtualcell.research.contracts import (  # noqa: E402
+    DecisionBranch,
+    EvidenceKind,
+    Hypothesis,
+    HypothesisSupport,
+    ProposedExperiment,
+)
+
+
+def _published_schema(tool: str) -> dict[str, Any]:
+    """The inputSchema as it arrives over the protocol, not as the server object holds it."""
+
+    async def exchange(session: ClientSession) -> dict[str, Any]:
+        await session.initialize()
+        listed = await session.list_tools()
+        return {t.name: t.input_schema for t in listed.tools}
+
+    return _protocol_session(_server(), exchange)[tool]
+
+
+def _items(param: dict[str, Any]) -> dict[str, Any]:
+    """The item schema of an optional list parameter."""
+    branch = next(b for b in param.get("anyOf", [param]) if b.get("type") == "array")
+    return branch["items"]
+
+
+def _refs(node: Any) -> list[str]:
+    if isinstance(node, dict):
+        return [v for k, v in node.items() if k == "$ref"] + [
+            r for v in node.values() for r in _refs(v)
+        ]
+    if isinstance(node, list):
+        return [r for v in node for r in _refs(v)]
+    return []
+
+
+def test_the_draft_schema_publishes_every_nested_field_from_the_contract() -> None:
+    """Names, required fields and allowed values come from the contract models themselves,
+    so this compares against those models and never against a literal list of names — a
+    field added to `Hypothesis` must appear in the schema with no edit here or in the server.
+    """
+    schema = _published_schema("check_research_draft")
+    props = schema["properties"]
+
+    hypothesis = _items(props["hypotheses"])
+    assert set(hypothesis["properties"]) == set(Hypothesis.model_fields)
+    assert set(hypothesis["required"]) == {
+        name for name, field in Hypothesis.model_fields.items() if field.is_required()
+    }
+    assert set(hypothesis["properties"]["support"]["enum"]) == {s.value for s in HypothesisSupport}
+    assert hypothesis["additionalProperties"] is False
+
+    experiment = _items(props["experiments"])
+    assert set(experiment["properties"]) == set(ProposedExperiment.model_fields)
+    branch = experiment["properties"]["branches"]["items"]
+    assert set(branch["properties"]) == set(DecisionBranch.model_fields)
+    assert set(branch["required"]) == {"outcome", "implication"}
+
+    evidence = _items(props["evidence"])
+    assert set(evidence["properties"]["kind"]["enum"]) == {k.value for k in EvidenceKind}
+    assert "locator" in evidence["properties"]
+
+
+def test_the_published_schema_is_self_contained() -> None:
+    """A `$ref` into a `$defs` block that sits under a nested property does not resolve from
+    the schema root, and a host cannot follow what it cannot resolve."""
+    assert _refs(_published_schema("check_research_draft")) == []
+
+
+def _fill(schema: dict[str, Any], hypothesis_ids: list[str]) -> Any:
+    """Build a value from nothing but a published schema, the way a host has to."""
+    kind = schema.get("type")
+    if "enum" in schema:
+        return schema["enum"][0]
+    if "anyOf" in schema:
+        return _fill(next(b for b in schema["anyOf"] if b.get("type") != "null"), hypothesis_ids)
+    if kind == "object":
+        return {
+            name: (list(hypothesis_ids) if name == "discriminates" else _fill(sub, hypothesis_ids))
+            for name, sub in schema.get("properties", {}).items()
+        }
+    if kind == "array":
+        return [_fill(schema["items"], hypothesis_ids)]
+    return "text"
+
+
+def test_a_draft_built_only_from_the_published_schema_is_read_in_full() -> None:
+    """The acceptance test for the schema: fill every published field from the schema alone
+    and nothing is reported as undeclared, and no field the checker looks for is missing.
+    Validation itself is not re-implemented: the same `validate_report_payload` runs."""
+    props = _published_schema("check_research_draft")["properties"]
+    hypothesis = _fill(_items(props["hypotheses"]), [])
+    hypothesis.update(supporting_evidence_ids=[], contradicting_evidence_ids=[])
+    hypothesis["support"] = HypothesisSupport.UNVERIFIED_CANDIDATE.value
+    experiment = _fill(_items(props["experiments"]), [hypothesis["id"]])
+
+    result = _call(
+        _server(),
+        "check_research_draft",
+        {"question": ECM_QUESTION, "hypotheses": [hypothesis], "experiments": [experiment]},
+    )
+
+    codes = {f["code"] for f in result["findings"]}
+    assert not codes & {"unexpected_model_field", "no_decision_branches", "discriminates_nothing"}
+
+
+def test_the_schema_does_not_replace_the_checker() -> None:
+    """Publishing the contract must not move validation into the SDK. An undeclared key is
+    still a finding quoted back to the host, not a protocol error that hides it."""
+    draft = _draft()
+    draft["hypotheses"][0]["certainty"] = 0.99
+
+    result = _call(_server(), "check_research_draft", draft)
+
+    assert any(f["code"] == "unexpected_model_field" for f in result["findings"])
+
+
+def test_the_schema_is_derived_not_restated() -> None:
+    """One source: the server publishes exactly what `TypeAdapter` makes of the contract."""
+    derived = research_payloads.contract_schema(list[Hypothesis])
+    assert _refs(derived) == []
+    assert set(derived["items"]["properties"]) == set(
+        TypeAdapter(Hypothesis).json_schema()["properties"]
+    )
+
+
+# --- reading past the first 400 characters ------------------------------------------------
+#
+# Measured on the live host: all 23 spans came back cut at 400 characters, and there was no
+# way to read the rest. The bundle held the whole abstract; the adapter discarded it.
+
+_PARAGRAPH = (
+    "Methods: scaffolds were seeded and cultured. Results: mass loss was 40 percent at day "
+    "fourteen, and new matrix was detected by immunostaining at the interface. "
+)
+_LONG_ABSTRACT = ArticleRecord(
+    identifiers=ArticleIdentifier(doi="10.1000/long-read", pmcid="PMC0000001"),
+    title="A long abstract with methods and results",
+    abstract=_PARAGRAPH * 12,
+    is_open_access=True,
+    has_full_text=True,
+)
+
+_JATS = """<?xml version="1.0"?>
+<article><front><article-meta><abstract><p>Short.</p></abstract>
+<permissions><license xmlns:xlink="http://www.w3.org/1999/xlink"
+ xlink:href="https://creativecommons.org/licenses/by/4.0/"/></permissions>
+</article-meta></front>
+<body>
+<sec id="s1"><title>Methods</title><p>Scaffolds were crosslinked and seeded.</p></sec>
+<sec id="s2"><title>Results</title><p>Infiltration depth rose to 300 um by day 21.</p></sec>
+</body></article>"""
+
+
+class _Provider:
+    """The provider seam the discovery agent already exposes, with no network."""
+
+    def __init__(self, xml: str | Exception | None) -> None:
+        self._xml = xml
+        self.calls = 0
+
+    def fetch_open_full_text(self, identifier: ArticleIdentifier) -> str | None:
+        self.calls += 1
+        if isinstance(self._xml, Exception):
+            raise self._xml
+        return self._xml
+
+
+class _ReadableLiterature(_StubLiterature):
+    def __init__(self, record: ArticleRecord, xml: str | Exception | None = _JATS) -> None:
+        super().__init__(_bundle(DiscoveryRunStatus.SUCCESS, [record]))
+        self.provider = _Provider(xml)
+
+
+def _searched(record: ArticleRecord = _LONG_ABSTRACT, xml: str | Exception | None = _JATS):
+    server = _server(literature_agent=_ReadableLiterature(record, xml))
+    found = _call(
+        server, "research_evidence", {"question": "degradation", "search_literature": True}
+    )
+    return server, found["evidence"][0], found
+
+
+def test_a_truncated_abstract_can_be_read_to_its_end() -> None:
+    server, first, found = _searched()
+    assert first["id"] in found["truncated_evidence_ids"]
+
+    result = _call(server, "read_evidence_source", {"evidence_id": first["id"]})
+
+    assert result["status"] == "ok"
+    assert result["reached_end"] is True
+    joined = " ".join(item["locator"]["source_text"] for item in result["evidence"])
+    assert joined == " ".join(_LONG_ABSTRACT.abstract.split())
+    assert all(item["locator"]["source_kind"] == "abstract" for item in result["evidence"])
+
+
+def test_reading_on_issues_new_ids_and_never_rewrites_the_first() -> None:
+    """Each continuation is its own span with its own content-derived id. The id the host
+    already cited keeps meaning exactly what it meant, and every piece checks out as
+    retrieved by this server."""
+    server, first, _ = _searched()
+    read = _call(server, "read_evidence_source", {"evidence_id": first["id"]})["evidence"]
+
+    assert first["id"] not in {item["id"] for item in read}
+    origins = _call(
+        server,
+        "check_research_draft",
+        _draft(hypotheses=[], evidence=[first, *read], evidence_used=[]),
+    )["evidence_origins"]
+    assert {row["origin"] for row in origins} == {"server_retrieved"}
+
+
+def test_a_long_read_says_where_it_stopped(monkeypatch) -> None:
+    """A read that stops early says so and says where to resume. "I read the paper" from a
+    host that got the first page is the overclaim this tool exists to prevent."""
+    monkeypatch.setattr(research_payloads, "_READ_BUDGET", 500)
+    server, first, _ = _searched()
+
+    part = _call(server, "read_evidence_source", {"evidence_id": first["id"]})
+    assert part["reached_end"] is False
+    assert part["next_offset"] >= part["span_end"]
+
+    rest = _call(
+        server,
+        "read_evidence_source",
+        {"evidence_id": first["id"], "offset": part["next_offset"]},
+    )
+    assert rest["span_start"] == part["next_offset"]
+    pieces = [i["locator"]["source_text"] for i in part["evidence"] + rest["evidence"]]
+    assert " ".join(pieces) == " ".join(_LONG_ABSTRACT.abstract.split())[: rest["span_end"]]
+
+
+def test_an_id_this_server_never_issued_cannot_be_read() -> None:
+    server, _, _ = _searched()
+
+    result = _call(server, "read_evidence_source", {"evidence_id": "lit-invented"})
+
+    assert result["status"] == "not_issued"
+    assert result["evidence"] == []
+
+
+def test_open_access_full_text_is_listed_then_read_one_section_at_a_time() -> None:
+    server, first, _ = _searched()
+
+    listing = _call(
+        server, "read_evidence_source", {"evidence_id": first["id"], "part": "full_text"}
+    )
+    assert listing["status"] == "ok"
+    assert [s["title"] for s in listing["sections"]] == ["Methods", "Results"]
+    assert listing["evidence"] == []
+    assert listing["license"]
+
+    section = _call(
+        server,
+        "read_evidence_source",
+        {"evidence_id": first["id"], "part": "full_text", "section": "Results"},
+    )
+    (item,) = section["evidence"]
+    assert item["locator"]["source_kind"] == "section"
+    assert item["locator"]["section_title"] == "Results"
+    assert "300 um" in item["locator"]["source_text"]
+
+
+def test_no_open_access_text_is_not_reported_as_nothing_there() -> None:
+    closed = _LONG_ABSTRACT.model_copy(update={"is_open_access": False, "has_full_text": False})
+    server, first, _ = _searched(closed)
+
+    result = _call(
+        server, "read_evidence_source", {"evidence_id": first["id"], "part": "full_text"}
+    )
+
+    assert result["status"] == "not_available"
+    assert "says nothing about" in result["detail"]
+
+
+def test_a_failed_full_text_fetch_is_a_failed_lookup() -> None:
+    from virtualcell.literature.providers.base import ProviderError
+
+    server, first, _ = _searched(xml=ProviderError("europe_pmc returned HTTP 503"))
+
+    result = _call(
+        server, "read_evidence_source", {"evidence_id": first["id"], "part": "full_text"}
+    )
+
+    assert result["status"] == "lookup_failed"
+    assert result["evidence"] == []
+
+
+# --- full-text status: the provider's own contract decides, not a message string -----------
+#
+# `fetch_open_full_text` returns XML, returns None when the provider holds no open body (a
+# 404 at the correct endpoint), or raises ProviderError / ProviderTimeoutError. The read tool
+# reported None as `lookup_failed`; None is `not_available`, and an empty 200 body or XML that
+# will not parse is a fetch that did not produce a document, so `lookup_failed`.
+
+
+def _full_text(xml: str | Exception | None, section: str | None = None) -> dict[str, Any]:
+    server, first, _ = _searched(xml=xml)
+    arguments: dict[str, Any] = {"evidence_id": first["id"], "part": "full_text"}
+    if section is not None:
+        arguments["section"] = section
+    return _call(server, "read_evidence_source", arguments)
+
+
+def test_no_open_body_from_the_provider_is_not_available() -> None:
+    result = _full_text(None)
+
+    assert result["status"] == "not_available"
+    assert result["evidence"] == []
+    assert "says nothing about" in result["detail"]
+
+
+def test_an_empty_body_is_a_failed_fetch_not_an_absence() -> None:
+    result = _full_text("")
+
+    assert result["status"] == "lookup_failed"
+    assert result["evidence"] == []
+
+
+def test_a_body_that_will_not_parse_is_a_failed_fetch() -> None:
+    result = _full_text("<article><body><sec>unclosed")
+
+    assert result["status"] == "lookup_failed"
+
+
+def test_a_timeout_is_a_failed_fetch() -> None:
+    from virtualcell.literature.providers.base import ProviderTimeoutError
+
+    result = _full_text(ProviderTimeoutError("europe_pmc request timed out"))
+
+    assert result["status"] == "lookup_failed"
+
+
+def test_a_missing_section_is_that_section_not_the_body() -> None:
+    result = _full_text(_JATS, section="Supplementary Methods")
+
+    assert result["status"] == "not_available"
+    assert "Supplementary Methods" in result["detail"]
+    assert [s["title"] for s in result["sections"]] == ["Methods", "Results"]
+
+
+class _RoutedTransport:
+    """Answers only the real Europe PMC full-text URL; anything else is a 404, as live."""
+
+    def __init__(self, url: str, body: str) -> None:
+        self._url, self._body = url, body
+        self.calls: list[str] = []
+
+    def get(self, url: str, *, headers=None, timeout: float = 10.0):
+        from virtualcell.literature.providers.base import HttpResponse
+
+        self.calls.append(url)
+        if url == self._url:
+            return HttpResponse(status_code=200, text=self._body)
+        return HttpResponse(status_code=404, text="")
+
+
+def test_the_real_provider_reaches_the_body_through_the_read_tool() -> None:
+    """End to end with the shipped provider, not a stub that answers any URL: the section
+    list comes back only if the provider asks for the one URL that serves the body."""
+    from virtualcell.literature.providers.europe_pmc import EuropePmcProvider
+
+    transport = _RoutedTransport(
+        "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC0000001/fullTextXML", _JATS
+    )
+    literature = _ReadableLiterature(_LONG_ABSTRACT)
+    literature.provider = EuropePmcProvider(transport, retries=0)
+    server = _server(literature_agent=literature)
+    first = _call(
+        server, "research_evidence", {"question": "degradation", "search_literature": True}
+    )["evidence"][0]
+
+    listing = _call(
+        server, "read_evidence_source", {"evidence_id": first["id"], "part": "full_text"}
+    )
+
+    assert transport.calls == [
+        "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC0000001/fullTextXML"
+    ]
+    assert listing["status"] == "ok"
+    assert [s["title"] for s in listing["sections"]] == ["Methods", "Results"]
+
+
+# --- a real-shaped body: external DOCTYPE, through the shipped provider and parser -----------
+
+_REAL_SHAPED_JATS = (
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Archiving and Interchange '
+    'DTD with MathML3 v1.4 20241031//EN" "JATS-archivearticle1-4-mathml3.dtd">\n'
+    '<article xmlns:xlink="http://www.w3.org/1999/xlink"><front><article-meta>'
+    '<permissions><license xlink:href="https://creativecommons.org/licenses/by/4.0/"/>'
+    "</permissions></article-meta></front><body>"
+    '<sec id="sec1"><title>Results</title><p>Explants synthesised type I collagen.</p></sec>'
+    '<sec id="sec7"><title>Discussion</title><p>Fully processed collagen was primarily '
+    "detected within constructs &#8212; the media contained primarily proforms.</p></sec>"
+    "</body></article>"
+)
+_BODY_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC0000001/fullTextXML"
+
+
+def _real_provider_server(body: str):
+    from virtualcell.literature.providers.europe_pmc import EuropePmcProvider
+
+    literature = _ReadableLiterature(_LONG_ABSTRACT)
+    literature.provider = EuropePmcProvider(_RoutedTransport(_BODY_URL, body), retries=0)
+    server = _server(literature_agent=literature)
+    first = _call(
+        server, "research_evidence", {"question": "degradation", "search_literature": True}
+    )["evidence"][0]
+    return server, first
+
+
+def test_a_real_shaped_body_lists_and_reads_a_section_by_its_returned_id() -> None:
+    server, first = _real_provider_server(_REAL_SHAPED_JATS)
+
+    listing = _call(
+        server, "read_evidence_source", {"evidence_id": first["id"], "part": "full_text"}
+    )
+    assert listing["status"] == "ok"
+    discussion = next(s for s in listing["sections"] if s["title"] == "Discussion")
+    assert discussion["section_id"] == "sec7"
+
+    read = _call(
+        server,
+        "read_evidence_source",
+        {"evidence_id": first["id"], "part": "full_text", "section": discussion["section_id"]},
+    )
+    (item,) = read["evidence"]
+    assert read["reached_end"] is True
+    assert item["locator"]["source_kind"] == "section"
+    assert item["locator"]["section_title"] == "Discussion"
+    assert item["locator"]["article"]["pmcid"] == "PMC0000001"
+    assert "— the media contained primarily proforms" in item["locator"]["source_text"]
+
+
+def test_a_hostile_body_through_the_real_provider_is_a_failed_lookup() -> None:
+    hostile = _REAL_SHAPED_JATS.replace(
+        '"JATS-archivearticle1-4-mathml3.dtd">', '"JATS.dtd" [<!ENTITY x "smuggled">]>'
+    )
+    server, first = _real_provider_server(hostile)
+
+    result = _call(
+        server, "read_evidence_source", {"evidence_id": first["id"], "part": "full_text"}
+    )
+
+    assert result["status"] == "lookup_failed"
+    assert result["evidence"] == []
+
+
+# --- the plan around the hypotheses, over the tool ------------------------------------------
+
+from virtualcell.research.contracts import (  # noqa: E402
+    EvidenceLink,
+    EvidenceRole,
+    Expectation,
+    MechanismLink,
+    Objective,
+    Prediction,
+    SubQuestion,
+)
+
+
+def test_the_plan_records_are_published_from_their_contracts() -> None:
+    props = _published_schema("check_research_draft")["properties"]
+
+    for name, model in (
+        ("objectives", Objective),
+        ("sub_questions", SubQuestion),
+        ("evidence_links", EvidenceLink),
+        ("mechanism_links", MechanismLink),
+    ):
+        assert set(_items(props[name])["properties"]) == set(model.model_fields), name
+    assert set(_items(props["evidence_links"])["properties"]["role"]["enum"]) == {
+        r.value for r in EvidenceRole
+    }
+    prediction = _items(props["experiments"])["properties"]["predictions"]["items"]
+    assert set(prediction["properties"]) == set(Prediction.model_fields)
+    assert set(prediction["properties"]["expected"]["enum"]) == {e.value for e in Expectation}
+    assert _refs(_published_schema("check_research_draft")) == []
+
+
+def test_the_draft_check_returns_the_plan_analysis_over_the_tool() -> None:
+    draft = _draft(
+        objectives=[
+            {"id": "O1", "statement": "keep the goal", "stated_by": "user"},
+            {"id": "O2", "statement": "an objective nothing tests", "stated_by": "user"},
+        ],
+        sub_questions=[{"id": "Q1", "question": "which holds?", "objective_ids": ["O1"]}],
+        confirmed_conditions=["in vitro"],
+        open_conditions=["cell type"],
+        mechanism_links=[
+            {
+                "id": "M1",
+                "source": "PPARGC1A",
+                "relation": "promotes",
+                "target": "Mitochondrial function",
+                "conditions": ["case cells"],
+                "hypothesis_ids": ["H1"],
+            }
+        ],
+    )
+    draft["hypotheses"][0]["sub_question_ids"] = ["Q1"]
+    draft["hypotheses"].append(
+        {"id": "H2", "statement": "an alternative", "support": "unverified_candidate"}
+    )
+    draft["experiments"][0]["predictions"] = [
+        {"hypothesis_id": "H1", "readout": "mass", "expected": "decrease"},
+        {"hypothesis_id": "H2", "readout": "mass", "expected": "no_change"},
+    ]
+
+    plan = _call(_server(), "check_research_draft", draft)["plan_analysis"]
+
+    assert plan["unreached_objectives"] == ["O2"]
+    assert plan["conditions"]["open"] == ["cell type"]
+    assert plan["mechanism_links"][0]["graph"]["status"] == "path_found"
+    (exp,) = plan["experiments"]
+    assert [p["pair"] for p in exp["separated_pairs"]] == [["H1", "H2"]]
+    assert plan["wrote_to_knowledge_graph"] is False
+
+
+def test_a_malformed_plan_record_refuses_with_its_path() -> None:
+    refusal = _refusal(
+        _server(),
+        "check_research_draft",
+        _draft(objectives=[{"id": "O1", "statement": "g", "stated_by": "somebody"}]),
+    )
+
+    assert refusal.error == "malformed_draft"
+    assert "stated_by" in refusal.detail
+
+
+def test_the_fields_added_for_traces_travel_through_the_draft_check() -> None:
+    draft = _draft()
+    draft["hypotheses"].append(
+        {
+            "id": "H2",
+            "statement": "an alternative",
+            "support": "unverified_candidate",
+            "alternative_to": ["H1"],
+        }
+    )
+    draft["experiments"][0].update(
+        readouts=[{"name": "mass", "assay": "gravimetry", "unit": "mg"}],
+        purposes=["discriminate"],
+        objective_coverage=[{"objective_id": "O1", "level": "proxy"}],
+        predictions=[
+            {
+                "hypothesis_id": "H1",
+                "readout": "mass",
+                "expected": "decrease",
+                "versus": "acellular",
+                "basis": "evidence_observed",
+                "evidence_ids": ["obs-1"],
+            },
+        ],
+    )
+    draft["objectives"] = [{"id": "O1", "statement": "g", "stated_by": "user"}]
+
+    result = _call(
+        _server(),
+        "check_research_draft",
+        {**draft, "what_if": {"remove_evidence_ids": ["obs-1"]}},
+    )
+
+    codes = {f["code"] for f in result["findings"]}
+    assert "unexpected_model_field" not in codes
+    plan = result["plan_analysis"]
+    (level,) = plan["objective_levels"]
+    assert level["proxy"] == [draft["experiments"][0]["id"]]
+    assert {tuple(s["pair"]): s["reason"] for s in plan["pair_selection"]}[("H1", "H2")] == (
+        "declared_alternative"
+    )
+    assert plan["readout_specs_missing"][0]["readout"] == "mass"
+    assert [a["hypothesis_id"] for a in plan["impact"]["affected_predictions"]] == ["H1"]
+
+
+def test_the_observation_records_are_published_from_their_contracts() -> None:
+    from virtualcell.core.experiment import ExperimentRun
+    from virtualcell.research.contracts import HostDecision, ObservationMapping
+
+    props = _published_schema("compare_research_observations")["properties"]
+
+    for name, model in (
+        ("runs", ExperimentRun),
+        ("mappings", ObservationMapping),
+        ("decisions", HostDecision),
+    ):
+        assert set(_items(props[name])["properties"]) == set(model.model_fields), name
+    assert _refs(_published_schema("compare_research_observations")) == []
+    assert "what_if" in _published_schema("check_research_draft")["properties"]
+
+
+def test_observations_are_read_against_the_plan_over_the_tool() -> None:
+    draft = _draft()
+    exp = draft["experiments"][0]
+    draft["hypotheses"].append(
+        {"id": "H2", "statement": "an alternative", "support": "unverified_candidate"}
+    )
+    exp["predictions"] = [
+        {"hypothesis_id": "H1", "readout": "mass", "expected": "decrease", "versus": "acellular"},
+        {"hypothesis_id": "H2", "readout": "mass", "expected": "no_change", "versus": "acellular"},
+    ]
+
+    def obs(arm: str, value: float) -> dict[str, Any]:
+        return {
+            "time_point": {"kind": "elapsed_time", "value": 7, "unit": "day"},
+            "conditions": {"arm": arm},
+            "measurements": [{"name": "mass", "value": value, "unit": "mg"}],
+        }
+
+    run = {
+        "schema_version": "1.0",
+        "run_id": "dev:synthetic-1",
+        "provenance": {"origin_kind": "experiment", "acquisition_mode": "manual"},
+        "observations": [obs("cells", 6.0), obs("acellular", 10.0)],
+    }
+    mapping = {
+        "experiment_id": exp["id"],
+        "readout": "mass",
+        "measurement_name": "mass",
+        "unit": "mg",
+        "treatment": {"arm": "cells"},
+        "reference": {"arm": "acellular"},
+        "versus": "acellular",
+        "rule": {
+            "comparison": "ratio",
+            "decrease_at_or_below": 0.8,
+            "no_change_between": [0.9, 1.1],
+            "declared_by": "researcher",
+            "basis": "synthetic",
+        },
+    }
+
+    result = _call(
+        _server(),
+        "compare_research_observations",
+        {
+            "question": draft["question"],
+            "hypotheses": draft["hypotheses"],
+            "experiments": draft["experiments"],
+            "evidence": draft["evidence"],
+            "runs": [run],
+            "mappings": [mapping],
+            "decisions": [{"target_id": "H2", "decision": "revise", "reason": "one readout"}],
+        },
+    )
+
+    assert result["scientific_validity_checked"] is False
+    assert result["internal_model_calls"] == 0
+    (row,) = result["comparison"]["comparisons"]
+    assert row["observed"] == "decrease"
+    assert {o["hypothesis_id"]: o["outcome"] for o in row["by_hypothesis"]} == {
+        "H1": "consistent",
+        "H2": "inconsistent",
+    }
+    assert result["comparison"]["decisions_by"] == "host"
+    assert result["comparison"]["prior_plan_unchanged"] is True
+
+    unnamed = {k: v for k, v in mapping.items() if k != "versus"}
+    held = _call(
+        _server(),
+        "compare_research_observations",
+        {
+            "question": draft["question"],
+            "hypotheses": draft["hypotheses"],
+            "experiments": draft["experiments"],
+            "evidence": draft["evidence"],
+            "runs": [run],
+            "mappings": [unnamed],
+        },
+    )
+    (row,) = held["comparison"]["comparisons"]
+    assert row["observed"] == "decrease", "classified and kept"
+    assert {o["outcome"] for o in row["by_hypothesis"]} == {"held_reference"}

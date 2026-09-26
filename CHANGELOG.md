@@ -7,6 +7,95 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **C1: one public quantitative dataset from raw file to next experiment**
+  (`docs/research_sessions/real_case_bmg/`, Zenodo 8342247, CC-BY-4.0). The workbook was
+  transcribed cell by cell with provenance, ingested through the existing `DatasetSpec`, and read
+  against a post-hoc plan. BMG vs Ti6Al4V was not classified at 24 or 48 h (combinations
+  disagree), and the background assumption was not established. The host held every
+  hypothesis and proposed record checks plus two experiments.
+  - `ObservationMapping.reference_correspondence` links a plan reference to an observed group
+    whose label differs, without editing the data. It is compared only when structural or
+    accepted by a researcher; a host proposal is held and shows `if_accepted`.
+  - Fixed: tables ingested through `DatasetSpec` always read as `assay_mismatch`, because
+    ingestion writes its import procedure into measurement provenance. An imported measurement's
+    assay is now the run's.
+- **B1.1: observations compared on the same reference, by declared pairs, with assumption
+  checks.**
+  - `ObservationMapping.versus` names the plan reference a reference arm stands for. A change
+    prediction on any other or unnamed reference is `held_reference`, with its value kept.
+  - `ObservationMapping.pairs` declares treatment/reference pairs by `observation_id`, read pair
+    by pair. Without pairs, the treatment × reference combinations are reported as
+    `combinations` and are never counted as replicates (`combinations_disagree` replaces
+    `replicates_disagree` there).
+  - `ProposedExperiment.assumption_checks` lets a readout test a measurement assumption without
+    a hypothesis. When a check does not hold, every prediction naming the assumption is marked
+    `re_examine`, its raw outcome kept, and nothing propagates to other assays.
+  - Every outcome carries its comparison scope. An inconsistent one names consistent,
+    non-exclusive hypotheses on the same readout.
+  - The B1 case records are preserved, and the case is re-tested as a new revision.
+  - Closure: a named reference counts only when the reference arm's conditions carry it
+    (`reference_link`); an observation may stand in one pair only; pair counts are
+    `declared_pairs` / `used_pairs`, never independent replicates; an assumption check result is
+    scoped to its rule and tested condition. Intended output changes: `combinations_disagree`,
+    `declared_pairs` / `used_pairs`, and `held_reference` where B1 compared on an unconfirmed
+    reference.
+- **Observations read against the plan's predictions (B1).** A new tool on the existing server,
+  `compare_research_observations`, takes the same plan fields plus `ExperimentRun` results,
+  explicit mappings (readout, arms, time point, unit, decision rule) and, optionally, the host's
+  keep/revise/hold. Comparability is checked before any value is read (assay as declared, unit,
+  time point, arms, quality flags and bounds). A change is classified only by a declared rule,
+  pairing by pairing, with no mean or statistic. Each prediction reads consistent, inconsistent,
+  undecided or not read, and an inconsistent one names what it rested on and which other
+  predictions share it. The plan is never modified; the result is a revision naming the plan by
+  hash. No storage.
+- **Predictions traced to their basis.** `Prediction` gains a reference (`versus`), condition,
+  biological expectation, basis (evidence observed / mechanism-derived / measurement model /
+  assumption), evidence and mechanism-link ids, assumptions and what is unresolved.
+  `ProposedExperiment` gains `readouts` (how each is measured), `purposes` and
+  `objective_coverage` (direct / proxy / out of scope, the host's judgement). `Hypothesis` gains
+  `alternative_to`. `plan_analysis` adds per-prediction traces, pair selection with reasons,
+  readout exclusions (state vs change, different references), objective levels, missing readout
+  fields, experiments that separate nothing listed with their purpose, and a `what_if` impact
+  that flips nothing.
+- **Stage A comparisons corrected.** A state and a change are no longer compared, and neither
+  are two changes against different references. Case 2's matrix was reviewed cell by cell: its
+  earlier finding that general-answer experiments never separate quenching (H3b) from lower
+  mitochondrial content or function (H2a/H2b) is withdrawn as stated. H3b is separated from H2a
+  only under an assumption about the citrate synthase assay, and still not from H2b. See
+  `docs/research_sessions/plan_cases/case2_matrix_review.md`.
+- **A research plan the draft check can follow from goal to experiment.** `check_research_draft`
+  accepts, optionally, the researcher's objectives, confirmed and open conditions, sub-questions,
+  evidence roles (supports / contradicts / method / scope_limit), case-local mechanism links and,
+  per experiment, each hypothesis's predicted value per readout. `plan_analysis` reports objectives
+  no experiment reaches, evidence counted by study rather than span, mechanism links lacking evidence
+  or conditions and whether the graph holds a path (read-only), and which hypothesis pairs each
+  experiment's predicted values separate, with coexistence caveats and the pairs no candidate
+  separates. Values are compared, never wording; nothing is scored or ranked. The fields are added
+  to the existing `Hypothesis`, `ProposedExperiment` and `ResearchReport` and published from them;
+  no new tool, domain pack or provider. Two development cases in `docs/research_sessions/plan_cases/`.
+- **The same MCP tools over Streamable HTTP, behind OAuth, for one person.** A Claude custom
+  connector reaches its server from Anthropic's cloud, which stdio cannot serve.
+  `python -m virtualcell.mcp --transport streamable-http` serves the unchanged `build_server()`
+  statelessly on `/mcp`, publishes protected resource metadata, answers `401` with
+  `WWW-Authenticate: resource_metadata=...`, and accepts only an RS256 JWT whose issuer,
+  audience (the exact server URL), expiry and scope verify **and** whose `sub` is the one
+  configured person. Missing settings stop the process before it binds. One worker, stated,
+  because the issued-evidence record is per process; a restart empties it, reads back as
+  `not_issued` / `host_supplied`, and a re-search re-issues the same id. stdio stays the
+  default and `.mcp.json` is untouched. New `[mcp-http]` extra and `docker/mcp.Dockerfile`
+  (non-root, no `[llm]`); `docker/Dockerfile` unchanged. Render Free + Auth0 Free procedure in
+  `docs/remote_mcp.md`. **Nothing is deployed**: a real Auth0 login, a public address and a
+  registered connector have not been exercised.
+- **`read_evidence_source`: read past the 400-character excerpt.** A live host session got 23
+  spans, all cut at 400 characters, and no way to read methods or results. The new tool reads
+  the rest of an issued abstract, or one section of an open-access body through the existing
+  provider and JATS parser, as new evidence items with their own ids; the id read from is never
+  rewritten, and `reached_end`/`next_offset` say whether the text was read to its end.
+- **`check_research_draft` publishes its nested contract.** `hypotheses`, `experiments` and
+  `evidence` were published as bare objects, and the host had to read `research/contracts.py`
+  to learn `support`, `discriminates` and `branches`. The input schema is now generated from
+  the contract models (refs inlined); validation is unchanged and still reports undeclared keys
+  as findings.
 - **A literature survey, because one paper cannot establish what a field does.**
   The external evaluation's first finding read *"not one of the five papers reports γH2AX"* -
   which is n=1, repeated five times. Each case was bounded by whatever that one paper happened
@@ -119,6 +208,30 @@ to [Semantic Versioning](https://semver.org/).
   before Finding 1 is acted on.
 
 ### Fixed
+- **A real JATS body could not be parsed.** `parse_jats` refused any `<!DOCTYPE` by regex, and
+  every Europe PMC body begins with an external DOCTYPE, so every real open-access body failed
+  to parse; no fixture carried one. The policy is now decided from expat's own declaration
+  events, not the text: an external PUBLIC/SYSTEM DOCTYPE with no internal subset is accepted
+  and never followed (parameter-entity parsing NEVER; no handler fetches anything). Still
+  refused, as `JatsParseError`: an internal subset (even `[]`), entity/unparsed-entity/notation
+  declarations (general or parameter), external entity references, and any entity the document
+  does not define — which expat would otherwise *skip* silently under an external DOCTYPE.
+  Declaration-like text inside comments or CDATA is no longer mistaken for a declaration.
+  Standard library only; no dependency added. Tests cover a real-shaped fixture, the refused
+  constructs, and file/socket access instrumented during the parse (none occurs).
+- **Open-access full text was never reached.** `EuropePmcProvider.fetch_open_full_text`
+  requested `…/rest/PMC/{pmcid}/fullTextXML`, which answers 404 for articles that do have an
+  open body; the endpoint is `…/rest/{pmcid}/fullTextXML` (the PMCID keeps its `PMC` prefix).
+  Every open-access body therefore read as unavailable, on `read_evidence_source` and on the
+  discovery agent's extraction path. Tests now assert the exact URL requested, and an end-to-end
+  test drives the shipped provider through the read tool with a transport that answers only
+  that URL.
+- **`read_evidence_source` separates "no open body" from "the fetch failed".** It reported the
+  provider's `None` as `lookup_failed`. The status now follows the provider's contract, not a
+  message string: `None` (no PMCID, or a 404 at the correct endpoint) → `not_available`;
+  `ProviderError`/timeout, an empty 200 body, or XML that will not parse → `lookup_failed`; a
+  body without the requested section → `not_available` for that section. `not_available` says
+  nothing about whether the paper or a body elsewhere exists.
 - **Provenance now reaches the traversal boundary, and independence uses it.**
   The previous entry closed the double-count from re-entered edges and recorded its own limit:
   edge-disjointness is a *proxy* for independence, and two distinct edges read out of one paper

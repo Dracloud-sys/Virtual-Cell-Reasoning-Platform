@@ -222,6 +222,60 @@ def _literature_agent():
     return LiteratureDiscoveryAgent()
 
 
+def _cmd_research(args: argparse.Namespace) -> int:
+    """Investigate an open research question — no domain, no pack, no registry.
+
+    Distinct exit codes, because the failures mean different things and a caller that
+    cannot tell them apart will retry the wrong one: 1 is a bad request, 3 is no model
+    provider (nothing ran), 4 is a provider that ran and failed, and 5 is a report that
+    was produced but carries integrity findings.
+
+    5 exists because a script that checks only the exit code would otherwise read "cites
+    evidence that does not exist" as an ordinary success. The report is still printed —
+    the findings are information about it, not a reason to withhold it.
+    """
+    import json
+
+    from pydantic import ValidationError
+
+    from virtualcell.research import (
+        BackendCallFailed,
+        BackendUnavailable,
+        ResearchRequest,
+        ResearchService,
+    )
+    from virtualcell.research.render import render_report_text
+
+    try:
+        payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"could not read input: {exc}")
+        return 1
+    try:
+        request = ResearchRequest.model_validate(payload)
+    except ValidationError as exc:
+        print(f"invalid research request: {exc}")
+        return 1
+
+    try:
+        report = ResearchService().investigate(request)
+    except BackendUnavailable as exc:
+        print(f"no research was performed: {exc}")
+        return 3
+    except BackendCallFailed as exc:
+        print(f"the research call failed: {exc}")
+        return 4
+
+    exit_code = 5 if report.integrity else 0
+
+    if args.format == "json":
+        print(report.model_dump_json(indent=2))
+        return exit_code
+
+    print(render_report_text(report))
+    return exit_code
+
+
 def _cmd_query(args: argparse.Namespace) -> int:
     """Run a domain-neutral platform query — the same service the API uses."""
     import asyncio
@@ -641,6 +695,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_query.add_argument("--format", choices=["json", "text"], default="json")
     p_query.add_argument("--load", help="merge the seed onto an existing saved graph JSON")
     p_query.set_defaults(func=_cmd_query)
+
+    p_research = sub.add_parser(
+        "research",
+        help="investigate an open research question (no domain required)",
+    )
+    p_research.add_argument("--input", required=True, help="path to a JSON ResearchRequest")
+    p_research.add_argument("--format", choices=["json", "text"], default="text")
+    p_research.set_defaults(func=_cmd_research)
 
     p_lit = sub.add_parser("literature", help="external literature discovery")
     lit_sub = p_lit.add_subparsers(dest="literature_command", required=True)

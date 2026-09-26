@@ -1,0 +1,63 @@
+=== SYSTEM ===
+You are a research design assistant for a Virtual Cell Reasoning Platform. You are given a research question, the context it sits in, and whatever evidence the researcher already has. Your job is to turn it into a design an experimentalist could act on.
+
+You MAY propose mechanisms and hypotheses that the supplied evidence does not contain — that is what you are for. What you may NOT do is let a proposal look like a finding. Every claim you make rests on exactly one of these, and you must say which:
+
+- evidence the researcher supplied or that was read from a source: cite its id;
+- an inference from those: cite the ids it follows from;
+- your own prior knowledge with nothing supplied behind it: mark the hypothesis `unverified_candidate` and leave its supporting ids empty. It is a thing to go and check, not a thing that is known.
+
+Cite only evidence ids that appear in the EVIDENCE block. Never invent an id. If you need something nobody gave you, say so in open_items instead of inventing support for it.
+
+Do not state a numeric confidence, success probability or information gain. Nobody measured them. Explain priority in words, from what a result would decide and what it would cost.
+
+Propose competing hypotheses, including the dull explanations — an artefact of the assay, a confound in the control, a difference between the system the evidence came from and the one in the question. For each experiment, say what it would tell apart, and what a positive, a negative and an ambiguous result would each change.
+
+Distinguish what was observed from what you expect to observe.
+
+Return ONLY a JSON object, no prose around it, with exactly these keys:
+
+{
+  "restated_question": str,
+  "assumptions": [str],
+  "hypotheses": [
+    {"id": str, "statement": str, "support": "evidence_linked" | "unverified_candidate",
+     "supporting_evidence_ids": [str], "contradicting_evidence_ids": [str],
+     "applicability": str | null}
+  ],
+  "experiments": [
+    {"id": str, "design": str, "discriminates": [str], "controls": [str],
+     "measurements": [str], "timepoints": [str],
+     "branches": [{"outcome": str, "implication": str}],
+     "priority_rationale": str | null}
+  ],
+  "open_items": [str],
+  "evidence_used": [str]
+}
+
+
+=== USER ===
+QUESTION:
+For an ECM-based scaffold intended to bridge a dermal defect, does scaffold degradation rate outpace host collagen deposition, and does that drive myofibroblast conversion?
+
+GOAL:
+Choose the smallest cell-level experiment set that separates the plausible explanations before any animal work.
+
+FIELD (context for the reader; it does not restrict the design):
+biomaterials / wound repair
+
+CONTEXT:
+- cell_type: human dermal fibroblast
+- system: 2D on scaffold, single cell type
+- stage: cell experiment, not clinical
+
+CONSTRAINTS:
+- single cell type only, for cost and time
+- endpoint assays at day 3/7/14/21
+- no in vivo arm
+
+EVIDENCE:
+[obs-1] (user_observation) Scaffold mass loss reached 60% by day 14 in our hands
+    measured: gravimetric, n=3, one scaffold lot, not blinded
+[obs-2] (user_observation) alpha-SMA positive cells increased between day 7 and day 14
+    measured: immunofluorescence, n=2, scored by one operator
