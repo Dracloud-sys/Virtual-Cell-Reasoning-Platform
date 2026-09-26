@@ -36,6 +36,7 @@ from virtualcell.research.backend import (
 )
 from virtualcell.research.contracts import (
     GROUNDED_KINDS,
+    AssumptionCheck,
     DecisionBranch,
     EvidenceItem,
     ExperimentPurpose,
@@ -409,6 +410,11 @@ def validate_report_payload(
                     ObjectiveCoverage,
                     obj.get("objective_coverage", []),
                     f"{where}.objective_coverage",
+                ),
+                "assumption_checks": _records(
+                    AssumptionCheck,
+                    obj.get("assumption_checks", []),
+                    f"{where}.assumption_checks",
                 ),
             }
         )

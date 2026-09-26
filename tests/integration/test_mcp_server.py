@@ -2066,6 +2066,7 @@ def test_observations_are_read_against_the_plan_over_the_tool() -> None:
         "unit": "mg",
         "treatment": {"arm": "cells"},
         "reference": {"arm": "acellular"},
+        "versus": "acellular",
         "rule": {
             "comparison": "ratio",
             "decrease_at_or_below": 0.8,
@@ -2099,3 +2100,20 @@ def test_observations_are_read_against_the_plan_over_the_tool() -> None:
     }
     assert result["comparison"]["decisions_by"] == "host"
     assert result["comparison"]["prior_plan_unchanged"] is True
+
+    unnamed = {k: v for k, v in mapping.items() if k != "versus"}
+    held = _call(
+        _server(),
+        "compare_research_observations",
+        {
+            "question": draft["question"],
+            "hypotheses": draft["hypotheses"],
+            "experiments": draft["experiments"],
+            "evidence": draft["evidence"],
+            "runs": [run],
+            "mappings": [unnamed],
+        },
+    )
+    (row,) = held["comparison"]["comparisons"]
+    assert row["observed"] == "decrease", "classified and kept"
+    assert {o["outcome"] for o in row["by_hypothesis"]} == {"held_reference"}

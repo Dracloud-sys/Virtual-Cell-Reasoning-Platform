@@ -502,8 +502,48 @@ targets that name nothing in the plan are findings.
 5. **Assays, conditions and units are matched as written.** "absorbance" is not "DTNB
    absorbance". This is deliberate, and it is visible in S4.
 
+### B1.1: the same reference, declared pairs, and assumption checks
+
+Three defects were reproduced through the product path before this change
+(`docs/research_sessions/plan_cases/case2_b11_reproductions.json`):
+
+1. **References were never compared.** `Prediction.versus` was checked only for being present.
+   A reference arm of untreated wells was read against predictions "vs vehicle" and compared.
+   `ObservationMapping.versus` now names the plan reference the reference arm stands for,
+   compared as written. When it is missing or different, the prediction is `held_reference`,
+   while the classified value is kept.
+2. **Every combination was read, not the declared pairs.** `product(treatment, reference)` set
+   every reading against every other, and disagreement among those combinations was reported as
+   `replicates_disagree`.
+   - `ObservationMapping.pairs` now declares pairs by the runs' own `observation_id`s. Each pair
+     is classified on its own, and `independent_pairs` counts the usable ones.
+   - Observations no pair names are counted in `unpaired_observations` and not used.
+   - Without pairs, `combinations` is reported and is never called a number of replicates
+     (`combinations_disagree`).
+3. **An assumption check could not be read.** `ProposedExperiment.assumption_checks`
+   (`AssumptionCheck`) states what a readout shows if a named assumption holds. No hypothesis is
+   invented for it. A check is read like a prediction, giving holds / does_not_hold / undecided
+   / not_read / held_reference.
+   - `assumption_reviews` lists every prediction naming the assumption.
+   - When a check does not hold, each dependent outcome keeps its raw comparison and is marked
+     `interpretation: re_examine`.
+   - Predictions that do not name the assumption are untouched.
+
+Every outcome now carries a `scope`: readout, reference, time point, pairing, number of values,
+and `hypothesis_alone`. An inconsistent outcome names the hypotheses consistent on the same
+readout that are not declared mutually exclusive (`may_coexist_with`). No combination of
+hypotheses is built and no mixed effect is guessed.
+
+The B1 records are kept byte-identical. Re-read with B1.1 code on their original inputs, every
+change comparison is held, because the B1 mappings never named a reference. Re-read as a B1.1
+revision, the classifications are unchanged, and S2's luciferase check is now read.
+
+Findings 2 and 3 above are addressed by this. Findings 1, 4 and 5 stand. A new limit also stands:
+a check matches an assumption only by its exact wording, and an assumption the plan states in
+other words is a finding, not a match.
+
 Deliberately still not built: file input, saving and resuming a session, statistics, unit
-conversion, and any automatic update of a prediction.
+conversion, synonym handling, study-level withdrawal, and any automatic update of a prediction.
 
 ### What has and has not been exercised
 

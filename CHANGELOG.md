@@ -7,6 +7,20 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **B1.1: observations compared on the same reference, by declared pairs, with assumption
+  checks.**
+  - `ObservationMapping.versus` names the plan reference a reference arm stands for. A change
+    prediction on any other or unnamed reference is `held_reference`, with its value kept.
+  - `ObservationMapping.pairs` declares treatment/reference pairs by `observation_id`, read pair
+    by pair. Without pairs, the treatment × reference combinations are reported as
+    `combinations` and are never counted as replicates (`combinations_disagree` replaces
+    `replicates_disagree` there).
+  - `ProposedExperiment.assumption_checks` lets a readout test a measurement assumption without
+    a hypothesis. When a check does not hold, every prediction naming the assumption is marked
+    `re_examine`, its raw outcome kept, and nothing propagates to other assays.
+  - Every outcome carries its comparison scope. An inconsistent one names consistent,
+    non-exclusive hypotheses on the same readout.
+  - The B1 case records are preserved, and the case is re-tested as a new revision.
 - **Observations read against the plan's predictions (B1).** A new tool on the existing server,
   `compare_research_observations`, takes the same plan fields plus `ExperimentRun` results,
   explicit mappings (readout, arms, time point, unit, decision rule) and, optionally, the host's

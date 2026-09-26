@@ -470,6 +470,26 @@ class DecisionBranch(BaseModel):
     implication: str
 
 
+class AssumptionCheck(BaseModel):
+    """What an experiment testing a measurement assumption expects if the assumption holds.
+
+    Not a hypothesis prediction: a cell-free interference control tests whether an assay can be
+    read, not which biological explanation holds. Inventing a hypothesis to carry it would put a
+    fake alternative into every pair comparison.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    assumption: str = Field(
+        description="The assumption, written exactly as the predictions that rest on it state it."
+    )
+    readout: str = Field(description="Should name one of the experiment's measurements.")
+    expected_if_holds: Expectation
+    versus: str | None = Field(
+        default=None, description="For a change: the reference, as in Prediction.versus."
+    )
+
+
 class ProposedExperiment(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -504,6 +524,13 @@ class ProposedExperiment(BaseModel):
         description=(
             "What each hypothesis predicts for each readout if it holds. Discrimination is "
             "computed from these values, never from wording."
+        ),
+    )
+    assumption_checks: list[AssumptionCheck] = Field(
+        default_factory=list,
+        description=(
+            "Readouts that test a measurement assumption rather than a hypothesis. Observations "
+            "of them are read against the assumption and marked on every prediction resting on it."
         ),
     )
 
@@ -632,6 +659,15 @@ class DecisionRule(BaseModel):
     basis: str = Field(description="Why these bounds; where they come from.")
 
 
+class ObservationPair(BaseModel):
+    """A treatment observation and the reference observation it is paired with (e.g. one donor)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    treatment_observation_id: str
+    reference_observation_id: str
+
+
 class ObservationMapping(BaseModel):
     """Which observations stand for one predicted readout, and how to read them."""
 
@@ -656,6 +692,21 @@ class ObservationMapping(BaseModel):
     reference: dict[str, Any] | None = Field(
         default=None,
         description="Condition values of the reference arm. Required for change predictions.",
+    )
+    versus: str | None = Field(
+        default=None,
+        description=(
+            "Which plan reference the reference arm stands for, compared as written with each "
+            "prediction's `versus`. Without it, or when they differ, change predictions are held."
+        ),
+    )
+    pairs: list[ObservationPair] = Field(
+        default_factory=list,
+        description=(
+            "Declared treatment/reference pairs by observation_id. Without them every treatment "
+            "reading is set against every reference reading, and those combinations are not "
+            "independent replicates."
+        ),
     )
     rule: DecisionRule | None = None
 

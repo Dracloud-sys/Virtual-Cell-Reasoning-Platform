@@ -176,11 +176,21 @@ readout's assay, the unit, the time point and the arms. Bounded, suspect, exclud
 above-detection readings are left out and counted. Below detection reads as absent for a state;
 a zero is not below detection.
 
+Name in each mapping's `versus` which plan reference its reference arm stands for. A change
+prediction is compared only on the reference it names, as written; otherwise it is held
+(`held_reference`) and the classified value is kept.
+
 A change is classified only by the rule you declare. No rule, no classification: no threshold,
-mean or test statistic is invented. Each treatment/reference pairing is classified on its own,
-and replicates count only when every pairing agrees. 'Consistent' means the result equals the
-predicted value; it does not show the hypothesis holds. Interference on one assay is not carried
-to another.
+mean or test statistic is invented. Declare `pairs` (treatment and reference observation_id, e.g.
+one donor) and each pair is classified on its own; without pairs every treatment reading meets
+every reference reading, and those combinations are not independent replicates. 'Consistent'
+means the result equals the predicted value; it does not show the hypothesis holds, and an
+inconsistent outcome is for that hypothesis alone.
+
+A readout that tests a measurement assumption goes in the experiment's `assumption_checks`, not
+in a made-up hypothesis. If the check does not hold, every prediction naming that assumption is
+marked `re_examine`, its raw comparison kept. Interference on one assay is not carried to
+another.
 
 The plan is not modified: the result is a revision naming the plan it read by hash. Send
 `decisions` (keep, revise or hold, with a reason) as your proposal; they are recorded as yours
@@ -236,4 +246,8 @@ REQUIRED_PHRASES: tuple[tuple[str, str], ...] = (
     ("compare_research_observations", "it does not show the hypothesis holds"),
     ("compare_research_observations", "The plan is not modified"),
     ("compare_research_observations", "recorded as yours"),
+    ("compare_research_observations", "compared only on the reference it names"),
+    ("compare_research_observations", "not independent replicates"),
+    ("compare_research_observations", "not in a made-up hypothesis"),
+    ("compare_research_observations", "Interference on one assay is not carried"),
 )

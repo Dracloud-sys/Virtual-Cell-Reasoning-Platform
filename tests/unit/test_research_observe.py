@@ -126,6 +126,7 @@ def _mapping(**kw) -> ObservationMapping:
         "time_point": {"kind": "elapsed_time", "value": 1.0, "unit": "day"},
         "treatment": {"arm": "compound"},
         "reference": {"arm": "vehicle"},
+        "versus": "vehicle",
         "rule": RULE,
     }
     base.update(kw)
@@ -167,7 +168,7 @@ def test_replicates_that_disagree_are_not_averaged_into_a_verdict() -> None:
     row = _only(compare_observations(_report(), [], [run], [_mapping()]))
 
     assert row.status == "insufficient"
-    assert "replicates_disagree" in row.reasons
+    assert "combinations_disagree" in row.reasons
 
 
 def test_a_value_between_declared_bands_is_indeterminate() -> None:

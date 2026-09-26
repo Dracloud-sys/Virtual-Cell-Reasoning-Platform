@@ -302,6 +302,10 @@ class PredictionTrace(BaseModel):
     mechanism_links: list[MechanismRef] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
     unresolved: str | None = None
+    checked_by: list[str] = Field(
+        default_factory=list,
+        description="Assumption checks (experiment:readout) testing this prediction's assumptions.",
+    )
     separates: list[list[str]] = Field(
         default_factory=list,
         description="Pairs whose predicted values differ on this readout in this experiment.",
@@ -431,6 +435,7 @@ def analyze_plan(
     experiments = [_discriminate(exp, report, findings) for exp in report.experiments]
 
     traces = _traces(report, by_id, mechanisms, experiments, findings)
+    findings.extend(assumption_check_findings(report))
     return PlanAnalysis(
         pair_selection=_pair_selection(report),
         objective_levels=_objective_levels(report, trace, findings),
@@ -1158,6 +1163,12 @@ def _traces(report, by_id, mechanisms, experiments, findings) -> list[Prediction
                     separates=separates,
                     decisions=list(exp.branches),
                     gaps=gaps,
+                    checked_by=[
+                        f"{e.id}:{c.readout}"
+                        for e in report.experiments
+                        for c in e.assumption_checks
+                        if _norm(c.assumption) in {_norm(a) for a in p.assumptions}
+                    ],
                 )
             )
     return out
@@ -1203,3 +1214,37 @@ def _impact(report: ResearchReport, what_if: WhatIf) -> Impact:
         affected_hypotheses=hypotheses,
         affected_experiments=list(dict.fromkeys(a.experiment_id for a in predictions)),
     )
+
+
+def assumption_check_findings(report: ResearchReport) -> list[PlanFinding]:
+    """An assumption check must name an assumption the plan states, written the same way.
+
+    Matched as written (case and spacing aside), never by synonym: a check of an assumption no
+    prediction names would mark nothing, silently.
+    """
+    stated = {_norm(a) for e in report.experiments for p in e.predictions for a in p.assumptions}
+    stated |= {_norm(a) for a in report.assumptions}
+    out: list[PlanFinding] = []
+    for e in report.experiments:
+        measured = {_norm(x) for x in e.measurements} | {_norm(r.name) for r in e.readouts}
+        for c in e.assumption_checks:
+            if _norm(c.assumption) not in stated:
+                out.append(
+                    PlanFinding(
+                        code="assumption_check_names_no_assumption",
+                        where=f"experiment:{e.id}:{c.readout}",
+                        detail=(
+                            f"checks {c.assumption!r}, which no prediction or plan assumption "
+                            "states in these words; nothing would be marked by it."
+                        ),
+                    )
+                )
+            if measured and _norm(c.readout) not in measured:
+                out.append(
+                    PlanFinding(
+                        code="assumption_check_readout_not_measured",
+                        where=f"experiment:{e.id}:{c.readout}",
+                        detail="names a readout that is not among the experiment's measurements.",
+                    )
+                )
+    return out

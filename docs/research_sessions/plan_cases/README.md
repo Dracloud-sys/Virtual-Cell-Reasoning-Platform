@@ -254,10 +254,57 @@ not make was S1's H2 "inconsistent": the host held H2 because it can coexist wit
 - The B1 scenarios were designed by the same host who wrote the rules, so they test that the
   comparison does what it says, not that it helps with real data.
 
+## B1.1: same reference, declared pairs, assumption checks
+
+The B1 plan, rules, observations and decisions above are **kept byte-identical**. B1.1 is
+tested as a new revision beside them:
+- `case2_b11_plan.json` is the revised plan plus E6's assumption check, and nothing else.
+- `case2_b11_rules.json` is the B1 rules plus each mapping's `versus`.
+- `case2_b11_decisions.json` is the B1 decisions with one S2 item revised.
+
+**Every value is still synthetic.**
+
+**Three defects, reproduced through the product path before any change**
+(`case2_b11_reproductions.json`, key `before`):
+
+| | input | before (d9facb3) | after, same inputs | after, B1.1 revision |
+|---|---|---|---|---|
+| R1 | predictions "vs vehicle", reference arm = untreated wells, same direction | compared; H1 "inconsistent" and listed to re-examine | value kept (decrease); every prediction `held_reference` | the mapping honestly names `untreated`: still held, plus a finding that it differs from the readout spec's reference |
+| R2 | three donors, ratio 0.5 within each donor | 9 combinations (0.125–2.0), reported as `replicates_disagree` | `combinations_disagree`, `combinations: 9`, no replicate count | declared pairs: 3 independent pairs, all 0.5, decrease |
+| R3 | ATP per cell unchanged; luciferase standard suppressed to ~0.6 with compound | E6 unreadable (`unknown_readout`); H3a/H3b ATP "consistent" | same, because the plan declares no check | E6 read as a check: **does_not_hold**. E4 H3a/H3b ATP kept as "consistent" (raw) but marked `re_examine`. H1's ATP cell, E3 and E4 membrane are **not** marked: they do not name the assumption |
+
+**The B1 scenarios re-read.**
+- **With the original inputs**, every change comparison in S1–S3 is `held_reference`. The B1
+  results had been compared without the reference ever being confirmed. By construction, the
+  synthetic arms were the plan's references, so no B1 outcome was wrong. But nothing checked
+  that, and R1 shows what would have happened otherwise.
+- **With the B1.1 revision** the classifications are identical to B1, with three additions:
+  - every outcome carries its scope (readout, reference, time point, pairing, number of
+    values, "this hypothesis alone");
+  - inconsistent outcomes name who was consistent on the same readout and may coexist. For
+    example, S1 H2a/H2b on E2 name H3b;
+  - **S2's E6 is read**, and it holds (4 combinations, 0.98–1.00).
+
+**The interpretation that changed because of an assumption check.**
+- In B1, S2's ATP cells for H3a/H3b rested on an unchecked assumption. The host held that
+  assumption and read E6 by hand.
+- In B1.1 the comparison reads E6 itself. The ATP readings are marked as resting on a checked
+  assumption (`assumptions_checked: holds`), and the host's decision on that assumption moves
+  from hold to keep, for this concentration only.
+- Had E6 failed (R3), the same readings would be kept and marked for re-examination, and only
+  those readings.
+
+**Not claimed.**
+- These synthetic inputs pass because they were built to exercise each branch. That is not
+  evidence of research performance.
+- Matching references and assumptions as written (case and spacing aside) is deliberate. A
+  synonym is not recognised.
+
 ## Not done
 
 - File input, saving and resuming a session, statistics, and unit conversion.
-- A place in the plan for an experiment that checks an assumption (finding 2).
+- ~~A place in the plan for an experiment that checks an assumption (finding 2)~~: done in B1.1
+  (`assumption_checks`).
 - Study-level withdrawal (finding 4).
 - Independent evaluation of design or update quality.
 
