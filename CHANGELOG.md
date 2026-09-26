@@ -7,6 +7,18 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **C1: one public quantitative dataset from raw file to next experiment**
+  (`docs/research_sessions/real_case_bmg/`, Zenodo 8342247, CC-BY-4.0). The workbook was
+  transcribed cell by cell with provenance, ingested through the existing `DatasetSpec`, and read
+  against a post-hoc plan. BMG vs Ti6Al4V was not classified at 24 or 48 h (combinations
+  disagree), and the background assumption was not established. The host held every
+  hypothesis and proposed record checks plus two experiments.
+  - `ObservationMapping.reference_correspondence` links a plan reference to an observed group
+    whose label differs, without editing the data. It is compared only when structural or
+    accepted by a researcher; a host proposal is held and shows `if_accepted`.
+  - Fixed: tables ingested through `DatasetSpec` always read as `assay_mismatch`, because
+    ingestion writes its import procedure into measurement provenance. An imported measurement's
+    assay is now the run's.
 - **B1.1: observations compared on the same reference, by declared pairs, with assumption
   checks.**
   - `ObservationMapping.versus` names the plan reference a reference arm stands for. A change

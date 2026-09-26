@@ -555,6 +555,18 @@ Findings 2 and 3 above are addressed by this. Findings 1, 4 and 5 stand. A new l
 a check matches an assumption only by its exact wording, and an assumption the plan states in
 other words is a finding, not a match.
 
+### C1: one public dataset through the whole path
+
+`docs/research_sessions/real_case_bmg/` runs Zenodo 8342247 (alamarBlue, fibroblasts on BMG vs
+Ti6Al4V) from the raw file to a proposed next experiment, through the existing `DatasetSpec`
+ingestion and the tools. It exposed two product gaps:
+
+1. **Ingested tables all read as `assay_mismatch`.** Ingestion stamps each measurement with its
+   import procedure. An imported measurement's assay is now the run's.
+2. **Real group labels never spell the plan's reference.** `ReferenceCorrespondence` records
+   the link explicitly, with its basis and who stated or accepted it. Only `structural` and
+   `researcher_accepted` links are compared; `host_proposed` is held, showing `if_accepted`.
+
 Deliberately still not built: file input, saving and resuming a session, statistics, unit
 conversion, synonym handling, study-level withdrawal, and any automatic update of a prediction.
 

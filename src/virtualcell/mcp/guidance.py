@@ -178,7 +178,10 @@ a zero is not below detection.
 
 Name in each mapping's `versus` which plan reference its reference arm stands for. A change
 prediction is compared only on the reference it names, as written; otherwise it is held
-(`held_reference`) and the classified value is kept.
+(`held_reference`) and the classified value is kept. Never rename the data's own group labels to
+match the plan: when they differ, add a `reference_correspondence` saying which observed group is
+the plan's reference, on what basis, and who stated it. A host's proposal is held (with what it
+would give, `if_accepted`) until a researcher states or accepts it.
 
 A change is classified only by the rule you declare. No rule, no classification: no threshold,
 mean or test statistic is invented. Declare `pairs` (treatment and reference observation_id, e.g.
@@ -247,6 +250,8 @@ REQUIRED_PHRASES: tuple[tuple[str, str], ...] = (
     ("compare_research_observations", "The plan is not modified"),
     ("compare_research_observations", "recorded as yours"),
     ("compare_research_observations", "compared only on the reference it names"),
+    ("compare_research_observations", "Never rename the data's own group labels"),
+    ("compare_research_observations", "A host's proposal is held"),
     ("compare_research_observations", "not independent replicates"),
     ("compare_research_observations", "not in a made-up hypothesis"),
     ("compare_research_observations", "Interference on one assay is not carried"),

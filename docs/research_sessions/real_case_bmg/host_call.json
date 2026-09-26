@@ -1,0 +1,7 @@
+{
+ "date": "2026-09-26",
+ "tool": "mcp__virtualcell__compare_research_observations (the connected Claude Code host)",
+ "payload": "E1 48 h: 9 real observations (TI-BMG, TI-CTL), rule and host-proposed reference_correspondence as in rules_and_mappings.json",
+ "result": "refused: malformed_draft, 'reference_correspondence: Extra inputs are not permitted'",
+ "meaning": "The host's server predates this change (it also lacks the closure fix of 19f89cb). The product path was exercised in-process through build_server(); the host was not reconnected or restarted (out of scope)."
+}

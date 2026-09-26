@@ -659,6 +659,32 @@ class DecisionRule(BaseModel):
     basis: str = Field(description="Why these bounds; where they come from.")
 
 
+class ReferenceCorrespondence(BaseModel):
+    """Which observed group stands for a plan reference, on what basis, and who says so.
+
+    Real data keeps its own group labels, and they are never edited to match the plan. This
+    record connects the two explicitly. It is a statement, not a check: a host's proposal is
+    held until a researcher states or accepts it, and a record naming another group, another
+    reference or another experiment conflicts with the mapping it sits on.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    plan_reference: str = Field(
+        description="The reference as the plan writes it (Prediction.versus)."
+    )
+    observed_conditions: dict[str, Any] = Field(
+        description="Condition values that select the group in the data, exactly as recorded."
+    )
+    applies_to: list[str] = Field(
+        default_factory=list,
+        description="Experiment ids this correspondence is stated for. Empty means none named.",
+    )
+    basis: str = Field(description="Why this group is that reference: the record it rests on.")
+    stated_by: Literal["host", "researcher"]
+    accepted_by: Literal["researcher"] | None = None
+
+
 class ObservationPair(BaseModel):
     """A treatment observation and the reference observation it is paired with (e.g. one donor)."""
 
@@ -698,6 +724,13 @@ class ObservationMapping(BaseModel):
         description=(
             "Which plan reference the reference arm stands for, compared as written with each "
             "prediction's `versus`. Without it, or when they differ, change predictions are held."
+        ),
+    )
+    reference_correspondence: ReferenceCorrespondence | None = Field(
+        default=None,
+        description=(
+            "When the reference arm's own labels do not carry the plan's reference name: the "
+            "explicit record connecting them. Compared only if a researcher stated or accepted it."
         ),
     )
     pairs: list[ObservationPair] = Field(

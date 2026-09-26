@@ -1,0 +1,73 @@
+{
+ "inputs_sha256": {
+  "bmg_alamar_tidy.csv": "18990f8037a6b170712b460db9dfa7496282894a7e304cbe778c695cfa3db60d",
+  "dataset_spec.json": "bfe9a5ac20469058739d5ca288a45b6bf26f21000c62eb7d665ca1077122e24a",
+  "plan.json": "1df6ac799a9829436b526301023081f8f9442a0b7b103128675f1a0c922e64a4",
+  "rules_and_mappings.json": "f98c87f0bb5fe3c6764a3f8a7b8d091f4210c8e230d7dfdabd46c6acc51e346d"
+ },
+ "decisions_sha256": "710f22bbdc99999cb983e7cf2faa0d452213a8dd45cc207e2a238a2b6cc62b50",
+ "ingestion": {
+  "status": "success",
+  "runs": [
+   "zenodo:zenodo-8342247-alamarblue"
+  ],
+  "observations": 28,
+  "rejected_rows": [],
+  "qc_qualities": [
+   "valid"
+  ]
+ },
+ "paper_reads": [
+  {
+   "status": "ok",
+   "span_start": 0,
+   "span_end": 1944,
+   "total_chars": 1944,
+   "reached_end": true,
+   "section": "sec2.5.2"
+  },
+  {
+   "status": "ok",
+   "span_start": 0,
+   "span_end": 409,
+   "total_chars": 409,
+   "reached_end": true,
+   "section": "sec2.6.1"
+  },
+  {
+   "status": "ok",
+   "span_start": 0,
+   "span_end": 695,
+   "total_chars": 695,
+   "reached_end": true,
+   "section": "sec2.6.2"
+  },
+  {
+   "status": "ok",
+   "span_start": 0,
+   "span_end": 404,
+   "total_chars": 404,
+   "reached_end": true,
+   "section": "sec2.8"
+  },
+  {
+   "status": "ok",
+   "span_start": 0,
+   "span_end": 2943,
+   "total_chars": 2943,
+   "reached_end": true,
+   "section": "sec3.3"
+  },
+  {
+   "status": "ok",
+   "span_start": 0,
+   "span_end": 138,
+   "total_chars": 138,
+   "reached_end": true,
+   "section": "sec6"
+  }
+ ],
+ "revision_id": "rev-f504a3f151e819d6",
+ "prior_plan_sha256": "7ec6aba95c01533810559d7aeb2468792a6d5d4cae9ca6c13966e00b2dd20523",
+ "observations_sha256": "95e7729401a9d144d99d9c8e97fff052ff9acabdd87268aef55247905745bd51"
+}

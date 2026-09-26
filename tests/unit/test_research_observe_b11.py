@@ -33,6 +33,8 @@ from virtualcell.research.contracts import (
     ObservationPair,
     Prediction,
     ProposedExperiment,
+    ReadoutSpec,
+    ReferenceCorrespondence,
     ResearchProvenance,
     ResearchReport,
 )
@@ -392,3 +394,118 @@ def test_a_check_result_is_scoped_and_unmarked_predictions_are_not_called_unaffe
     assert check.scope.readout == "standard" and check.scope.versus == "standard alone"
     limits = " ".join(result.limits)
     assert "does not mean they are unaffected" in limits
+
+
+# --- C1: an explicit correspondence between a plan reference and an observed group -------------
+#
+# Real data keeps its own group labels ("TI-CTL"); the plan names its reference ("Ti6Al4V"). The
+# raw label is never edited to match. A correspondence record says which observed group stands for
+# which plan reference, on what basis, and who stated or confirmed it. Only a structural match or a
+# researcher's statement lets the comparison through; a host's proposal is held.
+
+
+def _correspondence(**kw) -> ReferenceCorrespondence:
+    base = {
+        "plan_reference": "vehicle",
+        "observed_conditions": {"arm": "untreated"},
+        "applies_to": ["E"],
+        "basis": "lab notebook: untreated wells received vehicle",
+        "stated_by": "host",
+    }
+    base.update(kw)
+    return ReferenceCorrespondence(**base)
+
+
+def _labelled(correspondence):
+    return compare_observations(
+        _report(),
+        [],
+        [_simple("untreated")],
+        [_mapping(reference={"arm": "untreated"}, reference_correspondence=correspondence)],
+    )
+
+
+def test_a_host_proposed_correspondence_is_held_and_says_what_it_would_give() -> None:
+    row = _row(_labelled(_correspondence()))
+
+    assert row.reference_link == "host_proposed"
+    assert set(_outcomes(row).values()) == {"held_reference"}
+    assert {o.hypothesis_id: o.if_accepted for o in row.by_hypothesis} == {
+        "A": "consistent",
+        "B": "inconsistent",
+    }
+
+
+def test_a_researcher_accepted_correspondence_is_compared() -> None:
+    row = _row(_labelled(_correspondence(accepted_by="researcher")))
+
+    assert row.reference_link == "researcher_accepted"
+    assert _outcomes(row) == {"A": "consistent", "B": "inconsistent"}
+    assert all(o.if_accepted is None for o in row.by_hypothesis)
+
+
+def test_a_correspondence_for_another_group_conflicts_and_is_held() -> None:
+    row = _row(_labelled(_correspondence(observed_conditions={"arm": "vehicle"})))
+
+    assert row.reference_link == "conflicting"
+    assert set(_outcomes(row).values()) == {"held_reference"}
+    assert all(o.if_accepted is None for o in row.by_hypothesis)
+
+
+def test_a_correspondence_for_another_reference_or_experiment_conflicts() -> None:
+    other_reference = _row(_labelled(_correspondence(plan_reference="baseline")))
+    other_experiment = _row(_labelled(_correspondence(applies_to=["E9"])))
+
+    assert other_reference.reference_link == "conflicting"
+    assert other_experiment.reference_link == "conflicting"
+
+
+def test_a_bare_name_without_a_record_stays_declared_only() -> None:
+    row = _row(
+        compare_observations(
+            _report(), [], [_simple("untreated")], [_mapping(reference={"arm": "untreated"})]
+        )
+    )
+
+    assert row.reference_link == "declared_only"
+    assert all(o.if_accepted is None for o in row.by_hypothesis)
+
+
+def test_a_table_ingested_under_a_datasetspec_is_read_against_its_declared_assay() -> None:
+    """Found on real data (C1): ingestion stamps each measurement's provenance.method with the
+    import procedure, so every ingested run read as assay_mismatch. An imported measurement's
+    method names how it was imported; the assay is the run's, declared in the spec."""
+    from virtualcell.ingestion import DatasetSpec, ingest_table
+    from virtualcell.ingestion.contracts import RawTable
+
+    spec = DatasetSpec.model_validate(
+        {
+            "spec_version": "1.0",
+            "dataset_id": "t",
+            "method": "fluorescence",
+            "columns": [
+                {"header": "arm", "role": "condition"},
+                {
+                    "header": "day",
+                    "role": "time_axis",
+                    "time_axis": "elapsed_time",
+                    "time_unit": "day",
+                },
+                {"header": "signal", "role": "measurement", "value_type": "numeric", "unit": "RFU"},
+            ],
+        }
+    )
+    table = RawTable(
+        source_name="t.csv",
+        headers=["arm", "day", "signal"],
+        rows=[["compound", "1", "50"], ["vehicle", "1", "100"]],
+    )
+    (run,) = ingest_table(table, spec).runs
+    report = _report(
+        readouts=[ReadoutSpec(name="signal", assay="fluorescence", unit="RFU")],
+    )
+
+    row = _row(compare_observations(report, [], [run], [_mapping()]))
+
+    assert "assay_mismatch" not in row.reasons
+    assert row.status == "compared"

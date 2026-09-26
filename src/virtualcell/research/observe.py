@@ -41,6 +41,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
 from virtualcell.core.experiment import (
+    AcquisitionMode,
     ExperimentRun,
     MeasurementQuality,
     TimePoint,
@@ -55,6 +56,7 @@ from virtualcell.research.contracts import (
     ObservationMapping,
     Prediction,
     ProposedExperiment,
+    ReferenceCorrespondence,
     ResearchReport,
     expectation_kind,
 )
@@ -64,6 +66,11 @@ Status = Literal["compared", "insufficient", "not_comparable"]
 Outcome = Literal["consistent", "inconsistent", "undecided", "not_read", "held_reference"]
 CheckOutcome = Literal["holds", "does_not_hold", "undecided", "not_read", "held_reference"]
 Pairing = Literal["declared_pairs", "all_combinations"]
+ReferenceLink = Literal[
+    "structural", "researcher_accepted", "host_proposed", "conflicting", "declared_only"
+]
+#: Links on which a change prediction may be compared.
+_COMPARABLE_LINKS = {"structural", "researcher_accepted"}
 
 _TIME_POINT = TypeAdapter(TimePoint)
 
@@ -115,6 +122,13 @@ class PredictionOutcome(BaseModel):
     outcome: Outcome
     note: str | None = None
     scope: ComparisonScope | None = None
+    if_accepted: Literal["consistent", "inconsistent", "undecided"] | None = Field(
+        default=None,
+        description=(
+            "Only for a host-proposed reference correspondence: what the outcome would be if a "
+            "researcher accepted it. Not an outcome; counted nowhere."
+        ),
+    )
     may_coexist_with: list[str] = Field(
         default_factory=list,
         description=(
@@ -146,6 +160,7 @@ class AssumptionOutcome(BaseModel):
     versus: str | None = None
     outcome: CheckOutcome
     note: str | None = None
+    if_accepted: Literal["holds", "does_not_hold", "undecided"] | None = None
     scope: ComparisonScope | None = None
 
 
@@ -168,14 +183,17 @@ class ReadoutComparison(BaseModel):
     run_ids: list[str] = Field(default_factory=list)
     kind: Literal["state", "change"] | None = None
     versus: str | None = None
-    reference_link: Literal["structural", "declared_only"] | None = Field(
+    reference_link: ReferenceLink | None = Field(
         default=None,
         description=(
             "structural: a condition value of the reference arm is the named reference, as "
-            "written. declared_only: the mapping names it but the arm's conditions do not carry "
-            "it, so change predictions are held. No synonym is inferred."
+            "written (checked by code). researcher_accepted: an explicit correspondence a "
+            "researcher stated or accepted. host_proposed: one the host proposed, held. "
+            "conflicting: the correspondence names another group, reference or experiment, held. "
+            "declared_only: a bare name with no record, held. No synonym is inferred."
         ),
     )
+    reference_correspondence: ReferenceCorrespondence | None = None
     status: Status
     reasons: list[str] = Field(default_factory=list)
     observed: str | None = Field(
@@ -425,6 +443,7 @@ def _compare(
         measurement_name=m.measurement_name,
         versus=m.versus,
         reference_link=_reference_link(m),
+        reference_correspondence=m.reference_correspondence,
         rule=m.rule,
         status="not_comparable",
     )
@@ -513,11 +532,16 @@ def _compare(
                 continue
             if (is_t or is_r) and spec and spec.assay:
                 # A measurement's own provenance wins over the run's, as it does everywhere a
-                # run is read; only readings that would be used are checked.
+                # run is read; only readings that would be used are checked. An *imported*
+                # measurement's method names how it was imported (the tabular ingestion writes
+                # its import procedure there), so its assay is the run's, declared in the spec.
                 for reading in readings:
+                    own = reading.provenance
                     method = (
-                        reading.provenance.method
-                        if reading.provenance and reading.provenance.method
+                        own.method
+                        if own
+                        and own.method
+                        and own.acquisition_mode is not AcquisitionMode.IMPORTED
                         else run.provenance.method
                     )
                     if method is None:
@@ -831,11 +855,24 @@ def _scope(row: ReadoutComparison, m: ObservationMapping) -> ComparisonScope:
     )
 
 
-def _reference_link(m: ObservationMapping) -> Literal["structural", "declared_only"] | None:
+def _reference_link(m: ObservationMapping) -> ReferenceLink | None:
     if m.reference is None or m.versus is None:
         return None
     carried = {_norm(v) for v in m.reference.values() if isinstance(v, str)}
-    return "structural" if _norm(m.versus) in carried else "declared_only"
+    if _norm(m.versus) in carried:
+        return "structural"
+    c = m.reference_correspondence
+    if c is None:
+        return "declared_only"
+    if (
+        _norm(c.plan_reference) != _norm(m.versus)
+        or c.observed_conditions != m.reference
+        or m.experiment_id not in c.applies_to
+    ):
+        return "conflicting"
+    if c.stated_by == "researcher" or c.accepted_by == "researcher":
+        return "researcher_accepted"
+    return "host_proposed"
 
 
 def _read(
@@ -868,14 +905,38 @@ def _read(
                 f"the prediction is vs {versus!r}; the observation's reference arm stands for "
                 f"{m.versus!r}. Compared only on the same reference."
             )
-        if _reference_link(m) != "structural":
-            return "held_reference", (
-                f"the mapping names {m.versus!r}, but the reference arm is selected by "
-                f"{m.reference!r}, which does not carry that name. The link is only declared."
-            )
+        link = _reference_link(m)
+        if link not in _COMPARABLE_LINKS:
+            return "held_reference", {
+                "declared_only": (
+                    f"the mapping names {m.versus!r}, but the reference arm is selected by "
+                    f"{m.reference!r}, which does not carry that name. The link is only declared."
+                ),
+                "host_proposed": (
+                    f"{m.reference!r} stands for {m.versus!r} on the host's proposal only; held "
+                    "until a researcher accepts the correspondence."
+                ),
+                "conflicting": (
+                    "the correspondence record names another group, reference or experiment than "
+                    "this mapping; held."
+                ),
+            }[link]
     if observed == "indeterminate":
         return "undecided", "between the declared bands"
     return ("match" if observed == expected else "mismatch"), None
+
+
+def _if_accepted(
+    expected: str, versus: str | None, kind: str, observed: str | None, m: ObservationMapping
+) -> str | None:
+    """match / mismatch / undecided a host-proposed correspondence would give, else None."""
+    if _reference_link(m) != "host_proposed" or observed is None or kind != "change":
+        return None
+    if expectation_kind(expected) != kind or not versus or _norm(versus) != _norm(m.versus or ""):
+        return None
+    if observed == "indeterminate":
+        return "undecided"
+    return "match" if observed == expected else "mismatch"
 
 
 def _read_all(
@@ -900,6 +961,10 @@ def _read_all(
                 outcome=outcome,
                 note=note,
                 scope=scope,
+                if_accepted={"match": "consistent", "mismatch": "inconsistent"}.get(
+                    would := _if_accepted(p.expected.value, p.versus, kind, observed, m) or "",
+                    would or None,
+                ),
             )
         )
     row.by_hypothesis = outcomes
@@ -915,6 +980,11 @@ def _read_all(
                 outcome=outcome,
                 note=note,
                 scope=scope,
+                if_accepted={"match": "holds", "mismatch": "does_not_hold"}.get(
+                    would := _if_accepted(c.expected_if_holds.value, c.versus, kind, observed, m)
+                    or "",
+                    would or None,
+                ),
             )
         )
     row.assumption_outcomes = assumption_outcomes

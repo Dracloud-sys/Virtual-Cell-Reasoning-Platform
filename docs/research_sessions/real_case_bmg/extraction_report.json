@@ -1,0 +1,63 @@
+{
+ "source_file": "bmg_alamar.xlsx",
+ "source_md5": "0643c31f7edc507389c64fbd1eb8558a",
+ "source_sha256": "5421122c3ff1be3eb53393d3aacdcfbbe5153c2d1b7cb7f3ce8ca0c57394e032",
+ "tidy_csv": "bmg_alamar_tidy.csv",
+ "tidy_csv_sha256": "18990f8037a6b170712b460db9dfa7496282894a7e304cbe778c695cfa3db60d",
+ "rows": 28,
+ "per_group": {
+  "24 h TI-CTL": 4,
+  "24 h TI-BMG": 5,
+  "24 h POLY": 3,
+  "24 h AB": 2,
+  "48 h TI-CTL": 4,
+  "48 h TI-BMG": 5,
+  "48 h POLY": 3,
+  "48 h AB": 2
+ },
+ "duplicate_48h_check": {
+  "TI-CTL": {
+   "24 hours sheet copy": [
+    1595,
+    1894,
+    2105,
+    2695
+   ],
+   "48 hours sheet (used)": [
+    1595,
+    1894,
+    2105,
+    2695
+   ]
+  },
+  "TI-BMG": {
+   "24 hours sheet copy": [
+    3610,
+    4625,
+    3968,
+    3579,
+    2495
+   ],
+   "48 hours sheet (used)": [
+    3610,
+    4625,
+    3968,
+    3579,
+    2495
+   ]
+  },
+  "POLY": {
+   "24 hours sheet copy": [
+    5678,
+    5509,
+    4835
+   ],
+   "48 hours sheet (used)": [
+    5678,
+    5509,
+    4835
+   ]
+  }
+ },
+ "not_read": "formula cells (author's means, SDs, '% Viability'); instrument header rows"
+}
