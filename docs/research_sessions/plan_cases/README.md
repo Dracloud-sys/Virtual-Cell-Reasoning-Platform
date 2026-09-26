@@ -339,6 +339,11 @@ Mappings without `versus` (the B1 inputs) are still held, and a test pins it. Th
 used to expect `replicates_disagree` still requires the disagreement to be caught; only the
 name changed.
 
+**Host call (one synthetic case, `case2_b11_host_call.json`).**
+- The connected host server answered from the **8c3f03d build**, not 19f89cb.
+- On it, closure probe B still compares: a reference named "vehicle" over an untreated arm.
+- The fix reaches the host only after a server restart, which was not done.
+
 **Not claimed.**
 - These synthetic inputs pass because they were built to exercise each branch. That is not
   evidence of research performance.
