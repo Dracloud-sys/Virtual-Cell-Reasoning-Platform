@@ -43,6 +43,8 @@ def sha(path: Path) -> str:
 def main() -> None:
     out = Path(sys.argv[1])
     decisions = json.loads(Path(sys.argv[2]).read_text()) if len(sys.argv) > 2 else []
+    if isinstance(decisions, dict):  # a revision file: {"revises", "note", "decisions"}
+        decisions = decisions["decisions"]
     server = build_server(literature_agent=default_literature_agent())
 
     def call(tool, args):

@@ -1,0 +1,170 @@
+{
+ "independent_summaries": [
+  {
+   "mapping": "E1_main_24h",
+   "arm": "treatment",
+   "group": "TI-BMG",
+   "observation_ids": [
+    "bmg_alamar_tidy.csv:row4",
+    "bmg_alamar_tidy.csv:row5",
+    "bmg_alamar_tidy.csv:row6",
+    "bmg_alamar_tidy.csv:row7",
+    "bmg_alamar_tidy.csv:row8"
+   ],
+   "recorded": 5,
+   "values": [
+    2805.0,
+    3052.0,
+    2905.0,
+    3012.0,
+    2343.0
+   ],
+   "median": 2905.0,
+   "minimum": 2343.0,
+   "maximum": 3052.0
+  },
+  {
+   "mapping": "E1_main_24h",
+   "arm": "reference",
+   "group": "TI-CTL",
+   "observation_ids": [
+    "bmg_alamar_tidy.csv:row0",
+    "bmg_alamar_tidy.csv:row1",
+    "bmg_alamar_tidy.csv:row2",
+    "bmg_alamar_tidy.csv:row3"
+   ],
+   "recorded": 4,
+   "values": [
+    1641.0,
+    2307.0,
+    2491.0,
+    2393.0
+   ],
+   "median": 2350.0,
+   "minimum": 1641.0,
+   "maximum": 2491.0
+  },
+  {
+   "mapping": "E1_background_24h",
+   "arm": "treatment",
+   "group": "TI-CTL",
+   "observation_ids": [
+    "bmg_alamar_tidy.csv:row0",
+    "bmg_alamar_tidy.csv:row1",
+    "bmg_alamar_tidy.csv:row2",
+    "bmg_alamar_tidy.csv:row3"
+   ],
+   "recorded": 4,
+   "values": [
+    1641.0,
+    2307.0,
+    2491.0,
+    2393.0
+   ],
+   "median": 2350.0,
+   "minimum": 1641.0,
+   "maximum": 2491.0
+  },
+  {
+   "mapping": "E1_background_24h",
+   "arm": "reference",
+   "group": "AB",
+   "observation_ids": [
+    "bmg_alamar_tidy.csv:row12",
+    "bmg_alamar_tidy.csv:row13"
+   ],
+   "recorded": 2,
+   "values": [
+    1743.0,
+    1756.0
+   ],
+   "median": 1749.5,
+   "minimum": 1743.0,
+   "maximum": 1756.0
+  },
+  {
+   "mapping": "E1_main_48h",
+   "arm": "treatment",
+   "group": "TI-BMG",
+   "observation_ids": [
+    "bmg_alamar_tidy.csv:row18",
+    "bmg_alamar_tidy.csv:row19",
+    "bmg_alamar_tidy.csv:row20",
+    "bmg_alamar_tidy.csv:row21",
+    "bmg_alamar_tidy.csv:row22"
+   ],
+   "recorded": 5,
+   "values": [
+    3610.0,
+    4625.0,
+    3968.0,
+    3579.0,
+    2495.0
+   ],
+   "median": 3610.0,
+   "minimum": 2495.0,
+   "maximum": 4625.0
+  },
+  {
+   "mapping": "E1_main_48h",
+   "arm": "reference",
+   "group": "TI-CTL",
+   "observation_ids": [
+    "bmg_alamar_tidy.csv:row14",
+    "bmg_alamar_tidy.csv:row15",
+    "bmg_alamar_tidy.csv:row16",
+    "bmg_alamar_tidy.csv:row17"
+   ],
+   "recorded": 4,
+   "values": [
+    1595.0,
+    1894.0,
+    2105.0,
+    2695.0
+   ],
+   "median": 1999.5,
+   "minimum": 1595.0,
+   "maximum": 2695.0
+  },
+  {
+   "mapping": "E1_background_48h",
+   "arm": "treatment",
+   "group": "TI-CTL",
+   "observation_ids": [
+    "bmg_alamar_tidy.csv:row14",
+    "bmg_alamar_tidy.csv:row15",
+    "bmg_alamar_tidy.csv:row16",
+    "bmg_alamar_tidy.csv:row17"
+   ],
+   "recorded": 4,
+   "values": [
+    1595.0,
+    1894.0,
+    2105.0,
+    2695.0
+   ],
+   "median": 1999.5,
+   "minimum": 1595.0,
+   "maximum": 2695.0
+  },
+  {
+   "mapping": "E1_background_48h",
+   "arm": "reference",
+   "group": "AB",
+   "observation_ids": [
+    "bmg_alamar_tidy.csv:row26",
+    "bmg_alamar_tidy.csv:row27"
+   ],
+   "recorded": 2,
+   "values": [
+    1581.0,
+    1624.0
+   ],
+   "median": 1602.5,
+   "minimum": 1581.0,
+   "maximum": 1624.0
+  }
+ ],
+ "mismatches": [],
+ "result": "agree"
+}

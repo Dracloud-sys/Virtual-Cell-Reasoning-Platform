@@ -36,6 +36,7 @@ import hashlib
 import json
 from collections import Counter
 from itertools import product
+from statistics import median
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
@@ -174,6 +175,27 @@ class PairValue(BaseModel):
     note: str | None = None
 
 
+class ArmSummary(BaseModel):
+    """What was recorded in one arm, described; not a judgement and not a statistic.
+
+    `recorded` counts readings, not independent biological replicates. Median, minimum and
+    maximum describe the usable point estimates only; a below-detection, bounded, suspect,
+    excluded or missing reading is counted where it was left, never turned into a number.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    observation_ids: list[str | None] = Field(default_factory=list)
+    recorded: int = 0
+    used: int = 0
+    values: list[float] = Field(default_factory=list)
+    median: float | None = None
+    minimum: float | None = None
+    maximum: float | None = None
+    below_detection: int = 0
+    left_out: dict[str, int] = Field(default_factory=dict)
+
+
 class ReadoutComparison(BaseModel):
     """One mapping: which readings were used, what they show under the rule, and per hypothesis."""
 
@@ -243,6 +265,15 @@ class ReadoutComparison(BaseModel):
     left_out: dict[str, int] = Field(
         default_factory=dict, description="Readings not used, counted by why."
     )
+    pairwise_class_counts: dict[str, int] = Field(
+        default_factory=dict,
+        description=(
+            "How many classified values fell in each class. A count of combinations or pairs, "
+            "not of replicates, and not a probability or a strength of evidence."
+        ),
+    )
+    treatment_summary: ArmSummary | None = None
+    reference_summary: ArmSummary | None = None
     rule: DecisionRule | None = None
     by_hypothesis: list[PredictionOutcome] = Field(default_factory=list)
     assumption_outcomes: list[AssumptionOutcome] = Field(default_factory=list)
@@ -512,6 +543,8 @@ def _compare(
 
     treatment: list = []
     reference: list = []
+    t_ids: list[str | None] = []
+    r_ids: list[str | None] = []
     #: observation_id -> ("t" | "r", readings), for declared pairs. Ids are the runs' own.
     arms: dict[str, tuple[str, list]] = {}
     unidentified = 0
@@ -557,8 +590,10 @@ def _compare(
                     arms[obs.observation_id] = ("t" if is_t else "r", readings)
             if is_t:
                 treatment.extend(readings)
+                t_ids.append(obs.observation_id)
             elif is_r:
                 reference.extend(readings)
+                r_ids.append(obs.observation_id)
 
     if not treatment:
         row.reasons.append(
@@ -572,6 +607,8 @@ def _compare(
         if unit is not None and reading.unit != unit:
             _add(row.reasons, "unit_mismatch")
 
+    row.treatment_summary = _summarise(t_ids, treatment)
+    row.reference_summary = _summarise(r_ids, reference) if m.reference is not None else None
     t_values, t_below, t_zero = _usable(treatment, row.left_out)
     r_values, r_below, _r_zero = _usable(reference, row.left_out)
     row.below_detection = t_below + r_below
@@ -613,6 +650,22 @@ def _compare(
 def _add(reasons: list[str], reason: str) -> None:
     if reason not in reasons:
         reasons.append(reason)
+
+
+def _summarise(ids: list[str | None], readings: list) -> ArmSummary:
+    left_out: dict[str, int] = {}
+    values, below, _ = _usable(readings, left_out)
+    return ArmSummary(
+        observation_ids=ids,
+        recorded=len(readings),
+        used=len(values),
+        values=values,
+        median=median(values) if values else None,
+        minimum=min(values) if values else None,
+        maximum=max(values) if values else None,
+        below_detection=below,
+        left_out=left_out,
+    )
 
 
 def _usable(readings: list, left_out: dict[str, int]) -> tuple[list[float], int, int]:
@@ -743,6 +796,7 @@ def _classify_values(
         overlap = overlap or len(bands) > 1
         classes.append(bands[0] if len(bands) == 1 else "indeterminate")
     row.pairwise_classes = classes
+    row.pairwise_class_counts = dict(Counter(classes))
     if overlap:
         findings.append(
             PlanFinding(

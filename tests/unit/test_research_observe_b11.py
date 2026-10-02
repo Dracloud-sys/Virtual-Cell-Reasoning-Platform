@@ -509,3 +509,46 @@ def test_a_table_ingested_under_a_datasetspec_is_read_against_its_declared_assay
 
     assert "assay_mismatch" not in row.reasons
     assert row.status == "compared"
+
+
+# --- C1 r2: a description of what was read, kept apart from the classification -------------------
+
+
+def test_each_arm_is_described_whatever_the_classification() -> None:
+    """Values from C1's 24 h wells; the expected numbers were computed separately."""
+    arms = [
+        ({"arm": "compound"}, v, f"t{i}")
+        for i, v in enumerate([2805.0, 3052.0, 2905.0, 3012.0, 2343.0])
+    ]
+    arms += [
+        ({"arm": "vehicle"}, v, f"r{i}") for i, v in enumerate([1641.0, 2307.0, 2491.0, 2393.0])
+    ]
+
+    row = _row(compare_observations(_report(), [], [_run(arms)], [_mapping()]))
+
+    assert row.status == "insufficient" and "combinations_disagree" in row.reasons
+    t, r = row.treatment_summary, row.reference_summary
+    assert t.observation_ids == ["t0", "t1", "t2", "t3", "t4"]
+    assert t.recorded == 5 and t.used == 5
+    assert (t.median, t.minimum, t.maximum) == (2905.0, 2343.0, 3052.0)
+    assert (r.median, r.minimum, r.maximum) == (2350.0, 1641.0, 2491.0)
+    assert row.pairwise_class_counts == {"increase": 10, "indeterminate": 7, "no_change": 3}
+
+
+def test_left_out_readings_are_counted_in_the_description_not_replaced() -> None:
+    run = _run(
+        [
+            ({"arm": "compound"}, 50.0, "a"),
+            ({"arm": "vehicle"}, 100.0, "b"),
+        ]
+    )
+    run.observations[0].measurements.append(
+        Measurement(name="signal", value=None, unit="RFU", quality="below_detection")
+    )
+
+    row = _row(compare_observations(_report(), [], [run], [_mapping()]))
+
+    t = row.treatment_summary
+    assert t.recorded == 2 and t.used == 1 and t.values == [50.0]
+    assert t.below_detection == 1
+    assert t.median == 50.0, "a below-detection reading is not turned into a number"

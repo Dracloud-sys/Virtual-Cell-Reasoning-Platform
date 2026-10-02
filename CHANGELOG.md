@@ -7,6 +7,14 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **C1 revision 2: a description of each arm beside the classification.** Every comparison row
+  now carries `treatment_summary` / `reference_summary`: observation ids, readings recorded and
+  used, values, median, minimum, maximum, below-detection and left-out counts. It also carries
+  `pairwise_class_counts`, a count of combinations that is not replicates and not a probability.
+  No statistic, no background subtraction, no imputation. The C1 record gains the four layers
+  (observed, rule result, conditional interpretation, next action) and three corrections to
+  its own earlier text (24 h class counts; the background relation per time point; the H_more
+  reason). No judgement changed (`results_r2/descriptive_check.json`).
 - **C1: one public quantitative dataset from raw file to next experiment**
   (`docs/research_sessions/real_case_bmg/`, Zenodo 8342247, CC-BY-4.0). The workbook was
   transcribed cell by cell with provenance, ingested through the existing `DatasetSpec`, and read
