@@ -185,6 +185,10 @@ No new measurement is added beyond E2 and E3.
 - **H_more reason:** both non-increase 48 h combinations involve BMG well S8. No Ti6Al4V well
   decides it.
 
+**Host.** On 2026-10-02 the connected host's `compare_research_observations` schema still had
+no `reference_correspondence`, so it still serves an older build. It was not called for
+revision 2. Revision 2 ran on the product path in-process.
+
 **Scope of input.** For this one file, the explicit extraction (`extract.py`) and the ingestion
 through `DatasetSpec` are **done**. Interpreting an arbitrary workbook automatically, or
 generalising the input step, is **not implemented**.
