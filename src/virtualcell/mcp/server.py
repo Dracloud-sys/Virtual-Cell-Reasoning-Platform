@@ -43,7 +43,7 @@ from mcp.server import MCPServer
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
-from pydantic import ValidationError, WithJsonSchema
+from pydantic import Field, ValidationError, WithJsonSchema
 
 from virtualcell.core.experiment import ExperimentRun
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
@@ -511,6 +511,16 @@ def build_server(
         evidence_links: _EvidenceLinksParam = None,
         mechanism_links: _MechanismLinksParam = None,
         what_if: _WhatIfParam = None,
+        view: Annotated[
+            Literal["full", "compact"],
+            Field(
+                description=(
+                    "full (default): every finding and the whole plan analysis. compact: "
+                    "findings grouped by cause with every location kept, the plan analysis "
+                    "without per-trace detail, and a list of what was left out."
+                )
+            ),
+        ] = "full",
     ) -> research_payloads.DraftCheckResult:
         items = _evidence_items(evidence)
         try:
@@ -532,6 +542,7 @@ def build_server(
                 mechanism_links=mechanism_links,
                 store=store,
                 what_if=what_if,
+                view=view,
             )
         except (ValueError, ValidationError, ResearchBackendError) as exc:
             # `validate_report_payload` raises the research path's own typed failure, whose

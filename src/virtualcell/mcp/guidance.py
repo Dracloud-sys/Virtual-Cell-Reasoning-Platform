@@ -160,6 +160,14 @@ and the decision it feeds. A connected path is not a verified causal chain. Send
 (evidence ids to withdraw, conditions that change) to see which predictions, links and
 experiments depend on them; a withdrawn source never reverses a prediction.
 
+A full result on a large plan runs to hundreds of KB. Send `view: "compact"` to get the
+findings grouped by cause (`finding_groups`, input problems first, every location and value
+kept, a finding that follows from another nested under it), the trace gaps among them, what
+could not be computed (`not_computed`), and the plan analysis without per-trace detail
+(`plan_summary`); `omitted` says what was left out. Call again with `view: "full"` for it.
+`not_computed` is not a pass, and a compact result has no flat `findings` list - read
+`finding_count` and `finding_groups`, not an empty list.
+
 `authored_by` is `host_llm` and `internal_model_calls` is 0. This draft is your work, and
 the result must not be reported as this platform's reasoning.\
 """

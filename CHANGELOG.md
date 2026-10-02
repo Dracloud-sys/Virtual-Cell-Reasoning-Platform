@@ -7,6 +7,27 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`check_research_draft` costs less to use, with the same analysis**
+  (`docs/research_sessions/eval1_persistence/`).
+  - Measured on a real host draft: one input mistake (`"H1 vs H4"` pair strings in
+    `discriminates`) returned 39 reference findings plus 39 findings derived from them, listed
+    twice. The three predictions with an unstated assumption were only inside the 337 KB
+    `plan_analysis`.
+  - `discriminates` and `supporting_evidence_ids` now describe their shape in the published
+    schema. The server does not split pair strings or fill in evidence ids.
+  - Findings carry `field`, `value`, `case` and `caused_by` where they apply.
+  - `unsupported_evidence_link` now tells three cases apart: support present only in
+    `evidence_links` (an input mismatch); only method, contradicts or scope_limit links; and
+    nothing grounded. None promotes an id.
+  - New in both views:
+    - `finding_groups`: input problems first, every location kept, derived findings nested and
+      counted, prediction-trace gaps included;
+    - `not_computed`.
+  - Opt-in `view: "compact"` gives `plan_summary` and `omitted`. On the recorded drafts it
+    returns 27 KB instead of 337 KB and 19 KB instead of 313 KB. The default `full` view keeps
+    every existing field, and the plan analysis and what-if impact are unchanged.
+  - The A/B evaluation records, the replay measurements and a one-revision usability trial are
+    stored with checksums. The trial ran on the local product path, not the deployed host.
 - **C1 revision 2: a description of each arm beside the classification.** Every comparison row
   now carries `treatment_summary` / `reference_summary`: observation ids, readings recorded and
   used, values, median, minimum, maximum, below-detection and left-out counts. It also carries

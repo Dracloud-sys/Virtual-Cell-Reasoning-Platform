@@ -57,6 +57,13 @@ class PlanFinding(BaseModel):
     code: str
     where: str
     detail: str
+    #: The submitted field and value the finding is about, when it is about one.
+    field: str | None = None
+    value: str | None = None
+    #: The code of an input finding this one follows from. Set when the finding cannot hold
+    #: on its own: a value that is not a hypothesis id can have no prediction, so saying so
+    #: again is a consequence of that one input mistake, not a second defect.
+    caused_by: str | None = None
 
 
 class Conditions(BaseModel):
@@ -827,6 +834,8 @@ def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimina
                     code="unknown_hypothesis_id",
                     where=f"experiment:{exp.id}",
                     detail=f"predicts for {p.hypothesis_id!r}, which is not a hypothesis here.",
+                    field="experiments[].predictions[].hypothesis_id",
+                    value=p.hypothesis_id,
                 )
             )
             continue
@@ -860,7 +869,13 @@ def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimina
                     detail=(
                         f"says it tells {hid!r} apart but gives no prediction for it, so what "
                         "it separates cannot be computed."
+                        if hid in known
+                        else f"says it tells {hid!r} apart; that is not a hypothesis id, so no "
+                        "prediction can name it and nothing is computed for it."
                     ),
+                    field="experiments[].discriminates",
+                    value=hid,
+                    caused_by=None if hid in known else "unknown_hypothesis_id",
                 )
             )
 

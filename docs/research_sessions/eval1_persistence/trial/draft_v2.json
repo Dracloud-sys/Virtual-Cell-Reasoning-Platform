@@ -1,0 +1,3516 @@
+{
+ "question": "세포에 가한 처리를 중단한 뒤에도 표현형 변화가 지속된다. 잔류 처리물질, 세포 간 신호, 지속적인 세포 상태 변화 등의 가능한 설명을 구분하기 위한 실험을 설계하라.",
+ "restated_question": "After a 48-72 h TGF-beta1 pulse (2-5 ng/mL) and washout, primary human fibroblasts still show alpha-SMA stress fibres and contractility days later. Which experiments separate the possible maintainers - residual exogenous ligand, matrix-derived latent ligand, cell-to-cell signalling, a cell-intrinsic chromatin/TF state, mechanical self-reinforcement, senescence, population composition change, and measurement artefact - without assuming one of them and without assuming they exclude each other?",
+ "objectives": [
+  {
+   "id": "O1",
+   "statement": "Decide whether the persisting phenotype requires ongoing TGF-beta receptor input after washout.",
+   "stated_by": "host"
+  },
+  {
+   "id": "O2",
+   "statement": "If input is required, identify its source: carried-over exogenous ligand, matrix latent TGF-beta, or cell-secreted factors.",
+   "stated_by": "host"
+  },
+  {
+   "id": "O3",
+   "statement": "Test cell-intrinsic routes: chromatin/TF memory, senescence, and mechanical self-reinforcement including substrate stiffness.",
+   "stated_by": "host"
+  },
+  {
+   "id": "O4",
+   "statement": "Determine whether persistence is a per-cell state change or a change in population composition.",
+   "stated_by": "host"
+  },
+  {
+   "id": "O5",
+   "statement": "Establish that the readouts measure what they are taken to measure: ligand detection limit, blocker efficacy, alpha-SMA protein turnover.",
+   "stated_by": "host"
+  },
+  {
+   "id": "O6",
+   "statement": "Determine which interventions reverse the phenotype and on what timescale.",
+   "stated_by": "host"
+  }
+ ],
+ "sub_questions": [
+  {
+   "id": "SQ1",
+   "question": "Does the persisting phenotype require continued TGF-beta receptor signalling after washout?",
+   "objective_ids": [
+    "O1",
+    "O6"
+   ]
+  },
+  {
+   "id": "SQ2",
+   "question": "If a ligand still acts, is it exogenous carryover, matrix latent TGF-beta, or newly secreted?",
+   "objective_ids": [
+    "O2"
+   ]
+  },
+  {
+   "id": "SQ3",
+   "question": "Is a transferable soluble factor sufficient to activate naive cells?",
+   "objective_ids": [
+    "O2"
+   ]
+  },
+  {
+   "id": "SQ4",
+   "question": "Is the state cell-autonomous and held by chromatin or a TF circuit?",
+   "objective_ids": [
+    "O3",
+    "O6"
+   ]
+  },
+  {
+   "id": "SQ5",
+   "question": "Does maintenance require the stiff substrate and active cytoskeletal tension?",
+   "objective_ids": [
+    "O3",
+    "O6"
+   ]
+  },
+  {
+   "id": "SQ6",
+   "question": "Is senescence part of the persisting phenotype?",
+   "objective_ids": [
+    "O3"
+   ]
+  },
+  {
+   "id": "SQ7",
+   "question": "Is persistence a property of individual cells or of the population?",
+   "objective_ids": [
+    "O4"
+   ]
+  },
+  {
+   "id": "SQ8",
+   "question": "Could the apparent persistence be produced by the measurement itself?",
+   "objective_ids": [
+    "O5"
+   ]
+  }
+ ],
+ "assumptions": [
+  "Host assumption, not user-confirmed: primary human fibroblasts, dermal or lung, on tissue-culture plastic unless an arm changes the substrate.",
+  "Host assumption: recombinant TGF-beta1 2-5 ng/mL for 48-72 h, then washout into TGF-beta1-free medium.",
+  "Host assumption: the phenotype is read as alpha-SMA in stress fibres plus contractility, days after washout.",
+  "Donor, passage, serum level, substrate stiffness and the exact day after washout are not fixed and must be recorded as variables.",
+  "No source in this pack measures residual exogenous TGF-beta1 after washout or how long it lasts; every residual-ligand expectation here is assumption, not pack evidence.",
+  "No source in this pack tests paracrine transfer after washout; the cell-to-cell predictions rest on mechanism analogy.",
+  "Cross-species and cross-cell-type sources (rat cardiac fibroblasts, valvular interstitial cells, CAFs, MSCs) are candidate mechanisms, not evidence about human fibroblasts.",
+  "Assumption to be tested, not granted: the pan-TGF-beta neutralising antibody and the TGF-beta-RI kinase inhibitor fully block acute TGF-beta1 signalling at the doses used.",
+  "Assumption to be tested, not granted: the medium TGF-beta1 assay detects carried-over ligand at the concentrations that would matter biologically.",
+  "Assumption to be tested, not granted: alpha-SMA protein turnover is fast enough that a day-5 signal reflects ongoing expression rather than protein made during treatment."
+ ],
+ "open_conditions": [
+  "Which fibroblast source and which donor/passage.",
+  "Serum level during and after washout, which changes latent TGF-beta supply and adsorption.",
+  "Substrate stiffness, which the pack shows can determine contractility on its own.",
+  "The exact day after washout at which persistence is scored."
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "Residual exogenous TGF-beta1, carried over in medium or adsorbed to plastic, deposited ECM, serum proteins or the cells, keeps signalling after washout and contributes to maintenance.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "SQ1",
+    "SQ2"
+   ],
+   "alternative_to": [
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "H7",
+    "H8"
+   ],
+   "applicability": "No source in this pack measures residual exogenous ligand, so this hypothesis is carried on assumption only."
+  },
+  {
+   "id": "H2",
+   "statement": "The treated cells secrete factors, autocrine TGF-beta1 or other mediators including a senescence secretome, that sustain the phenotype and can act on neighbouring cells.",
+   "support": "evidence_linked",
+   "sub_question_ids": [
+    "SQ1",
+    "SQ2",
+    "SQ3"
+   ],
+   "alternative_to": [
+    "H1",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "H7",
+    "H8"
+   ],
+   "applicability": "Autocrine TGF-beta1 loops are shown in patient ILD fibroblasts, not in normal fibroblasts after a pulse.",
+   "supporting_evidence_ids": [
+    "lit-13f07d427fef",
+    "lit-90bac4ae80b3",
+    "lit-91332fe8e2a5"
+   ]
+  },
+  {
+   "id": "H3",
+   "statement": "Latent TGF-beta in the cell-deposited matrix is activated locally after washout and sustains signalling with no new exogenous ligand.",
+   "support": "evidence_linked",
+   "sub_question_ids": [
+    "SQ1",
+    "SQ2"
+   ],
+   "alternative_to": [
+    "H1",
+    "H2",
+    "H4",
+    "H5",
+    "H6",
+    "H7",
+    "H8"
+   ],
+   "applicability": "Shown in diseased Dupuytren palmar fibroblasts, and not in a washout design.",
+   "supporting_evidence_ids": [
+    "lit-8ccc91bd45f9",
+    "lit-d4c2a13f46ee"
+   ]
+  },
+  {
+   "id": "H4",
+   "statement": "The cells hold a stable intrinsic state, chromatin accessibility plus a TF circuit, that maintains the phenotype without ongoing receptor input.",
+   "support": "evidence_linked",
+   "sub_question_ids": [
+    "SQ1",
+    "SQ4"
+   ],
+   "alternative_to": [
+    "H1",
+    "H2",
+    "H3",
+    "H5",
+    "H6",
+    "H7",
+    "H8"
+   ],
+   "applicability": "Shown in CAFs and MSCs with stiffness as the inducer, not in human fibroblasts after a TGF-beta1 pulse.",
+   "supporting_evidence_ids": [
+    "lit-4003fcca2815",
+    "lit-13f07d427fef",
+    "lit-21c2cde4f3dc",
+    "lit-de72b3cfc53c",
+    "lit-31f9da012da1"
+   ]
+  },
+  {
+   "id": "H5",
+   "statement": "Mechanical self-reinforcement maintains the phenotype: stiff plastic plus assembled stress fibres keep tension high and tension keeps alpha-SMA high, independently of TGF-beta.",
+   "support": "evidence_linked",
+   "sub_question_ids": [
+    "SQ1",
+    "SQ5"
+   ],
+   "alternative_to": [
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H6",
+    "H7",
+    "H8"
+   ],
+   "applicability": "Supported in valvular interstitial cell micro-tissues and in fibroblasts where stiffness overruled TGF-beta stimulation.",
+   "supporting_evidence_ids": [
+    "lit-b1bf272184af",
+    "lit-b0c020392ab5",
+    "lit-87a281f303a5",
+    "lit-086e187e2c2d"
+   ]
+  },
+  {
+   "id": "H6",
+   "statement": "The pulse drove part of the population into senescence, so the persisting phenotype is a stable arrested state with its own secretome rather than a reversible differentiation state.",
+   "support": "evidence_linked",
+   "sub_question_ids": [
+    "SQ1",
+    "SQ6"
+   ],
+   "alternative_to": [
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H7",
+    "H8"
+   ],
+   "applicability": "Shown in neonatal rat cardiac fibroblasts after 7 days, at a dose the abstract prints garbled.",
+   "supporting_evidence_ids": [
+    "lit-e62f54ed4087",
+    "lit-90bac4ae80b3"
+   ]
+  },
+  {
+   "id": "H7",
+   "statement": "Population composition changed: the pulse enriched an already alpha-SMA-competent, non-proliferating subpopulation, so the culture looks persistent without any cell holding a memory.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "SQ1",
+    "SQ7"
+   ],
+   "alternative_to": [
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "H8"
+   ],
+   "applicability": "Prompted by the pack's near-absent proliferation of TGF-beta1-induced myofibroblasts; no pack source tests selection."
+  },
+  {
+   "id": "H8",
+   "statement": "Nothing is being maintained: the day-3-to-5 signal is the measurement - slowly turning over alpha-SMA protein and stress fibres made during treatment, plus cohort and confluence drift.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "SQ1",
+    "SQ8"
+   ],
+   "alternative_to": [
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "H7"
+   ],
+   "mutually_exclusive_with": [
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "H7"
+   ],
+   "applicability": "Stated in the strong form - the whole apparent persistence is measurement - which is what makes it exclusive of the others."
+  }
+ ],
+ "evidence_links": [
+  {
+   "evidence_id": "lit-04139c6d6982",
+   "target_id": "H1",
+   "role": "method",
+   "reading": "Establishes the induction leg: TGF-beta1 on plastic gives alpha-SMA-positive, near-non-proliferating myofibroblasts with 4-fold gel contraction."
+  },
+  {
+   "evidence_id": "lit-4003fcca2815",
+   "target_id": "H4",
+   "role": "supports",
+   "reading": "Host reading: receptor-kinase blockade did not dedifferentiate the TGF-beta1-induced state despite maintained stress."
+  },
+  {
+   "evidence_id": "lit-4003fcca2815",
+   "target_id": "H1",
+   "role": "contradicts",
+   "reading": "Host reading: if residual ligand maintained the state, receptor blockade should have reversed it; in that system it did not."
+  },
+  {
+   "evidence_id": "lit-4003fcca2815",
+   "target_id": "ML3",
+   "role": "supports",
+   "reading": "Strain release depolymerised stress fibres in both myofibroblast types, so a fibre readout can fall for purely mechanical reasons."
+  },
+  {
+   "evidence_id": "lit-04139c6d6982",
+   "target_id": "H7",
+   "role": "supports",
+   "reading": "Host reading: near-absent proliferation means treated and untreated cultures do not stay comparable in composition over days."
+  },
+  {
+   "evidence_id": "lit-b1bf272184af",
+   "target_id": "H5",
+   "role": "supports",
+   "reading": "A 1-day mechanical stimulus left forces still rising after boundary stiffness returned to baseline; only complete release lowered alpha-SMA."
+  },
+  {
+   "evidence_id": "lit-b0c020392ab5",
+   "target_id": "H5",
+   "role": "supports",
+   "reading": "The authors' summary: temporary stiffening causes irreversible activation, and the size of the tension drop controls apoptosis."
+  },
+  {
+   "evidence_id": "lit-0f512e20b35a",
+   "target_id": "ML4",
+   "role": "method",
+   "reading": "Magnetic posts both measure and set tension, which is why this plan quantifies traction instead of inferring it from alpha-SMA."
+  },
+  {
+   "evidence_id": "lit-b1bf272184af",
+   "target_id": "H4",
+   "role": "scope_limit",
+   "reading": "Valvular interstitial cells, fibrin micro-tissues, mechanical stimulus: it cannot say whether a TGF-beta1 pulse leaves an intrinsic state."
+  },
+  {
+   "evidence_id": "lit-13f07d427fef",
+   "target_id": "H4",
+   "role": "supports",
+   "reading": "A documented route from prolonged matrix sensing to persistent activation through nuclear architecture and chromatin."
+  },
+  {
+   "evidence_id": "lit-21c2cde4f3dc",
+   "target_id": "H4",
+   "role": "supports",
+   "reading": "Blocking beta1 integrin or mDia2 prevents persistence and HDAC inhibition rescues it; this is why an HDAC arm is included."
+  },
+  {
+   "evidence_id": "lit-13f07d427fef",
+   "target_id": "H2",
+   "role": "supports",
+   "reading": "The named trigger is stiff ECM plus stiffness-dependent secreted factors, so secreted factors are part of a documented persistence route."
+  },
+  {
+   "evidence_id": "lit-13f07d427fef",
+   "target_id": "H4",
+   "role": "scope_limit",
+   "reading": "Cancer-associated fibroblasts with a stiffness trigger; normal fibroblasts after a TGF-beta1 pulse are a different case."
+  },
+  {
+   "evidence_id": "lit-de72b3cfc53c",
+   "target_id": "H4",
+   "role": "supports",
+   "reading": "Paired RNA-seq and ATAC-seq showing myofibroblast traits retained after the inducing stiffness is removed."
+  },
+  {
+   "evidence_id": "lit-31f9da012da1",
+   "target_id": "H4",
+   "role": "supports",
+   "reading": "GATA6 named as the keeper of myofibroblast memory after a switch to soft, which is why GATA6 is a readout here."
+  },
+  {
+   "evidence_id": "lit-de72b3cfc53c",
+   "target_id": "H4",
+   "role": "scope_limit",
+   "reading": "Mesenchymal stromal cells primed by stiffness, not fibroblasts pulsed with TGF-beta1."
+  },
+  {
+   "evidence_id": "lit-e62f54ed4087",
+   "target_id": "H6",
+   "role": "supports",
+   "reading": "Sets out that TGF-beta1 is both a differentiation and a senescence stimulus, making senescence a candidate beyond the three named."
+  },
+  {
+   "evidence_id": "lit-90bac4ae80b3",
+   "target_id": "H6",
+   "role": "supports",
+   "reading": "Source of the marker panel and senolytic arms: p15/p16, p21, SA-beta-gal, Ki-67, p-Rb, navitoclax and D+Q."
+  },
+  {
+   "evidence_id": "lit-90bac4ae80b3",
+   "target_id": "H2",
+   "role": "supports",
+   "reading": "Host reading: the SASP-like secretion is a concrete cell-to-cell signalling candidate a medium transfer would pick up."
+  },
+  {
+   "evidence_id": "lit-e62f54ed4087",
+   "target_id": "H6",
+   "role": "scope_limit",
+   "reading": "Neonatal rat cells, 7 days, dose printed garbled: neither dose nor duration transfers to a 48-72 h human pulse."
+  },
+  {
+   "evidence_id": "lit-8ccc91bd45f9",
+   "target_id": "H3",
+   "role": "supports",
+   "reading": "LAP-TGF-beta and LTBP-1 up with plasmin down describes a matrix store of latent ligand needing no new exogenous ligand."
+  },
+  {
+   "evidence_id": "lit-d4c2a13f46ee",
+   "target_id": "H3",
+   "role": "supports",
+   "reading": "Exogenous plasmin and caveolin-1 rescue each inhibited alpha-SMA, so release and signal degradation are both manipulable."
+  },
+  {
+   "evidence_id": "lit-8ccc91bd45f9",
+   "target_id": "H3",
+   "role": "scope_limit",
+   "reading": "Diseased palmar fibroblasts, no washout design, and no measurement of residual exogenous ligand."
+  },
+  {
+   "evidence_id": "lit-91332fe8e2a5",
+   "target_id": "H2",
+   "role": "supports",
+   "reading": "A named autocrine TGF-beta1 loop in fibroblasts: a precedent for a culture making its own maintaining ligand."
+  },
+  {
+   "evidence_id": "lit-ea0d3890720d",
+   "target_id": "H2",
+   "role": "method",
+   "reading": "HGF interfering with TGF-beta1 signalling gives an orthogonal pharmacological handle on the autocrine leg."
+  },
+  {
+   "evidence_id": "lit-91332fe8e2a5",
+   "target_id": "H2",
+   "role": "scope_limit",
+   "reading": "Patient ILD fibroblasts, already fibrotic; a normal fibroblast after a pulse need not run the same loop."
+  },
+  {
+   "evidence_id": "lit-87a281f303a5",
+   "target_id": "H5",
+   "role": "supports",
+   "reading": "Stiffness called deterministic for fibroblast phenotype, even overruling TGF-beta stimulation, by traction force microscopy."
+  },
+  {
+   "evidence_id": "lit-086e187e2c2d",
+   "target_id": "H5",
+   "role": "supports",
+   "reading": "Closing claim that tissue stiffness is a key mechanobiological regulator of fibroblast behaviour."
+  },
+  {
+   "evidence_id": "lit-87a281f303a5",
+   "target_id": "H8",
+   "role": "supports",
+   "reading": "Host reading: if stiffness alone holds a contractile phenotype, a plastic culture can look persistent with no memory of treatment."
+  },
+  {
+   "evidence_id": "lit-87a281f303a5",
+   "target_id": "H5",
+   "role": "scope_limit",
+   "reading": "Neither the fibroblast type nor the stiffness range is stated, so the soft-gel stiffness chosen here is an assumption."
+  }
+ ],
+ "mechanism_links": [
+  {
+   "id": "ML1",
+   "source": "exogenous TGF-beta1",
+   "relation": "induces_via_TGF-beta-RI_to_alpha-SMA-positive_non-proliferating_myofibroblast",
+   "target": "alpha-SMA stress fibres",
+   "evidence_ids": [
+    "lit-04139c6d6982"
+   ],
+   "hypothesis_ids": [
+    "H1",
+    "H3",
+    "H2"
+   ],
+   "conditions": [
+    "adult rat cardiac fibroblasts",
+    "plastic substratum providing mechanical stress"
+   ]
+  },
+  {
+   "id": "ML2",
+   "source": "TGF-beta-RI kinase inhibition (SD-208)",
+   "relation": "does_not_reverse",
+   "target": "TGF-beta1-induced non-proliferating myofibroblast state",
+   "evidence_ids": [
+    "lit-4003fcca2815"
+   ],
+   "hypothesis_ids": [
+    "H4",
+    "H1"
+   ],
+   "conditions": [
+    "adult rat cardiac fibroblasts",
+    "maintained mechanical stress on plastic"
+   ]
+  },
+  {
+   "id": "ML3",
+   "source": "mechanical strain release (unrestrained 3-D collagen)",
+   "relation": "depolymerises",
+   "target": "alpha-SMA stress fibres",
+   "evidence_ids": [
+    "lit-4003fcca2815"
+   ],
+   "hypothesis_ids": [
+    "H5"
+   ],
+   "conditions": [
+    "2-day unrestrained 3-D collagen cultures",
+    "rat cardiac p-MyoFb and non-p-MyoFb"
+   ]
+  },
+  {
+   "id": "ML4",
+   "source": "temporary (1 day) increase in boundary stiffness/force generation",
+   "relation": "sustains_after_stimulus_removal",
+   "target": "myofibroblast contractile force and alpha-SMA",
+   "evidence_ids": [
+    "lit-b1bf272184af",
+    "lit-b0c020392ab5"
+   ],
+   "hypothesis_ids": [
+    "H5",
+    "H4"
+   ],
+   "conditions": [
+    "valvular interstitial cells in fibrin micro-tissues between magnetic posts",
+    "mechanical stimulus, not TGF-beta1"
+   ]
+  },
+  {
+   "id": "ML5",
+   "source": "beta1 integrin and mDia2 dependent lamin-chromatin remodeling",
+   "relation": "is_required_for",
+   "target": "persistent myofibroblast activation",
+   "evidence_ids": [
+    "lit-13f07d427fef",
+    "lit-21c2cde4f3dc"
+   ],
+   "hypothesis_ids": [
+    "H4",
+    "H5"
+   ],
+   "conditions": [
+    "human cancer-associated fibroblasts",
+    "prolonged stiff ECM plus stiffness-dependent secreted factors as the trigger"
+   ]
+  },
+  {
+   "id": "ML6",
+   "source": "SALL1-GATA6 transcription-factor circuit",
+   "relation": "keeps",
+   "target": "stiff-induced myofibroblast memory after switch to soft",
+   "evidence_ids": [
+    "lit-de72b3cfc53c",
+    "lit-31f9da012da1"
+   ],
+   "hypothesis_ids": [
+    "H4"
+   ],
+   "conditions": [
+    "mesenchymal stromal cells, not fibroblasts",
+    "stiffness priming, not a TGF-beta1 pulse"
+   ]
+  },
+  {
+   "id": "ML7",
+   "source": "TGF-beta1 exposure",
+   "relation": "co-induces",
+   "target": "senescence (p15/p16, p21, SA-beta-gal up; Ki-67, p-Rb down) with SASP-like secretion",
+   "evidence_ids": [
+    "lit-e62f54ed4087",
+    "lit-90bac4ae80b3"
+   ],
+   "hypothesis_ids": [
+    "H6",
+    "H2",
+    "H7"
+   ],
+   "conditions": [
+    "neonatal rat cardiac fibroblasts",
+    "7 days of exposure"
+   ]
+  },
+  {
+   "id": "ML8",
+   "source": "matrix-bound latent TGF-beta (LAP-TGF-beta/LTBP-1) with low plasmin and low caveolin-1",
+   "relation": "sustains_signalling_without_new_exogenous_ligand",
+   "target": "alpha-SMA expression / myofibroblastogenesis",
+   "evidence_ids": [
+    "lit-8ccc91bd45f9",
+    "lit-d4c2a13f46ee"
+   ],
+   "hypothesis_ids": [
+    "H3"
+   ],
+   "conditions": [
+    "Dupuytren disease palmar fibroblasts",
+    "not a washout experiment"
+   ]
+  },
+  {
+   "id": "ML9",
+   "source": "autocrine TGF-beta1 signalling",
+   "relation": "self-sustains_and_upregulates_Met/CD44v6",
+   "target": "collagen-1 and alpha-SMA expression (inhibited by HGF)",
+   "evidence_ids": [
+    "lit-91332fe8e2a5",
+    "lit-ea0d3890720d"
+   ],
+   "hypothesis_ids": [
+    "H2"
+   ],
+   "conditions": [
+    "interstitial lung disease patient fibroblasts",
+    "supported by ILD tissue and bleomycin mouse immunostaining"
+   ]
+  },
+  {
+   "id": "ML10",
+   "source": "environmental substrate stiffness",
+   "relation": "determines_independently_of_TGF-beta",
+   "target": "fibroblast contractility, morphology and migration",
+   "evidence_ids": [
+    "lit-87a281f303a5",
+    "lit-086e187e2c2d"
+   ],
+   "hypothesis_ids": [
+    "H5",
+    "H8"
+   ],
+   "conditions": [
+    "fibroblast identity and stiffness range not stated in the abstract",
+    "morphometry, traction force microscopy, single-cell migration"
+   ]
+  },
+  {
+   "id": "ML11",
+   "source": "exogenous TGF-beta1 adsorbed to plastic, deposited ECM, serum proteins or the cell surface during the 48-72 h pulse",
+   "relation": "is_released_back_and_keeps_signalling_after_washout",
+   "target": "nuclear pSmad2 and alpha-SMA after washout",
+   "hypothesis_ids": [
+    "H1"
+   ],
+   "conditions": [
+    "primary human fibroblasts on tissue-culture plastic",
+    "2-5 ng/mL for 48-72 h then washout",
+    "carries no evidence id on purpose: no source in this pack measures it"
+   ]
+  },
+  {
+   "id": "ML12",
+   "source": "near-absent proliferation of TGF-beta1-induced myofibroblasts",
+   "relation": "shifts_population_composition_over_days",
+   "target": "fraction of alpha-SMA-positive cells after washout",
+   "evidence_ids": [
+    "lit-04139c6d6982"
+   ],
+   "hypothesis_ids": [
+    "H7",
+    "H8"
+   ],
+   "conditions": [
+    "observed in rat cardiac fibroblasts",
+    "extrapolated here to a human fibroblast washout culture - an inference, not a result"
+   ]
+  }
+ ],
+ "experiments": [
+  {
+   "id": "E1",
+   "design": "PRIORITY. Washout quality, ligand measurement and blockade-timing in one plate layout. Primary human fibroblasts (3 donors, passage 3-5, matched seeding density, 1% serum from 24 h before the pulse) are treated with recombinant TGF-beta1 5 ng/mL for 72 h, then washed out (3 x PBS rinse, then 2 full medium changes 2 h apart, then fresh TGF-beta1-free medium). Arms carried from the moment of washout: (a) vehicle; (b) pan-TGF-beta neutralising antibody 1D11 10 ug/mL continuous, with isotype IgG control; (c) TGF-beta-RI kinase inhibitor SB431542 10 uM continuous, with DMSO control; (d) SB431542 added only from day 3 (delayed-block arm); (e) never-treated cells handled identically; (f) CELL-FREE wells pulsed and washed exactly like (a) with no cells, to measure what the plastic and the medium alone give back; (g) naive cells challenged acutely with 5 ng/mL TGF-beta1 in the presence of each blocker, as the blocker-efficacy control; (h) medium spiked with 10 pg/mL TGF-beta1 as assay spike-recovery. Medium is sampled at 6 h, day 1, day 3 and day 5 after washout; cells are fixed at day 1, 3 and 5.",
+   "purposes": [
+    "discriminate",
+    "method_check",
+    "baseline"
+   ],
+   "measurements": [
+    "active_TGFb1_in_CM",
+    "pSmad2_nuclear",
+    "aSMA_stress_fibre_fraction"
+   ],
+   "readouts": [
+    {
+     "name": "active_TGFb1_in_CM",
+     "target": "active (and, after acid activation, total) TGF-beta1 in the medium",
+     "assay": "TGF-beta1 ELISA on native and acid-activated medium, plus an MLEC PAI-1-luciferase bioassay as the activity read",
+     "compartment": "conditioned medium",
+     "timepoint": "6 h, day 1, day 3, day 5 after washout",
+     "unit": "pg/mL",
+     "normalization": "per mL of medium and per 10^5 cells at harvest",
+     "reference": "fresh TGF-beta1-free medium, and the cell-free pulsed-and-washed wells (arm f)"
+    },
+    {
+     "name": "pSmad2_nuclear",
+     "target": "nuclear phospho-Smad2 as the proximal receptor-signalling read",
+     "assay": "immunofluorescence, nuclear mean intensity per cell",
+     "compartment": "nucleus",
+     "timepoint": "day 1, day 3, day 5 after washout",
+     "unit": "arbitrary fluorescence units per nucleus",
+     "normalization": "per-nucleus intensity, >=300 cells per well, background from secondary-only wells",
+     "reference": "never-treated cells harvested the same day (arm e)"
+    },
+    {
+     "name": "aSMA_stress_fibre_fraction",
+     "target": "fraction of cells with alpha-SMA incorporated into stress fibres (not total alpha-SMA)",
+     "assay": "immunofluorescence with phalloidin co-stain; a cell counts positive with >=3 alpha-SMA-decorated fibres crossing the nucleus",
+     "compartment": "cytoskeleton",
+     "timepoint": "day 5 after washout (day 1 and 3 also collected)",
+     "unit": "percent of cells",
+     "normalization": "per field cell count, >=300 cells per well, blinded scoring",
+     "reference": "never-treated cells the same day (arm e)"
+    }
+   ],
+   "controls": [
+    "Never-treated cells handled through the identical rinse/medium-change schedule.",
+    "Vehicle control matching the TGF-beta1 carrier (4 mM HCl / 0.1% BSA).",
+    "Cell-free wells pulsed and washed identically - the control that makes residual-ligand a measured quantity rather than an assumption.",
+    "Isotype IgG for 1D11 and DMSO for SB431542, at matched concentration and schedule."
+   ],
+   "timepoints": [
+    "6 h after washout",
+    "day 1 after washout",
+    "day 3 after washout",
+    "day 5 after washout"
+   ],
+   "discriminates": [
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "H7",
+    "H8"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O1",
+     "level": "direct",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O2",
+     "level": "direct",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O3",
+     "level": "out_of_scope",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O5",
+     "level": "direct",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O6",
+     "level": "proxy",
+     "judged_by": "host"
+    }
+   ],
+   "assumption_checks": [
+    {
+     "assumption": "Assumption to be tested, not granted: the pan-TGF-beta neutralising antibody and the TGF-beta-RI kinase inhibitor fully block acute TGF-beta1 signalling at the doses used.",
+     "readout": "pSmad2_nuclear",
+     "expected_if_holds": "absent"
+    },
+    {
+     "assumption": "Assumption to be tested, not granted: the medium TGF-beta1 assay detects carried-over ligand at the concentrations that would matter biologically.",
+     "readout": "active_TGFb1_in_CM",
+     "expected_if_holds": "present"
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H1",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "present",
+     "condition": "arm f (cell-free, pulsed+washed), d1 and d3",
+     "basis": "assumption",
+     "mechanism_link_ids": [
+      "ML11"
+     ],
+     "assumptions": [
+      "No source in this pack measures residual exogenous TGF-beta1 after washout; this prediction rests on general adsorption behaviour, not on pack evidence."
+     ],
+     "unresolved": "How much desorbs and for how long is unknown; if the measured value sits below the spike-recovery limit the arm is uninformative rather than negative."
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "absent",
+     "condition": "arm f (cell-free, pulsed+washed), d1 and d3",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "absent",
+     "condition": "arm f (cell-free, pulsed+washed), d1 and d3",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-8ccc91bd45f9"
+     ],
+     "mechanism_link_ids": [
+      "ML8"
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "absent",
+     "condition": "arm f (cell-free, pulsed+washed), d1 and d3",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-4003fcca2815"
+     ],
+     "mechanism_link_ids": [
+      "ML2"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "absent",
+     "condition": "arm f (cell-free, pulsed+washed), d1 and d3",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-87a281f303a5"
+     ],
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "absent",
+     "condition": "arm f (cell-free, pulsed+washed), d1 and d3",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "absent",
+     "condition": "arm f (cell-free, pulsed+washed), d1 and d3",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "absent",
+     "condition": "arm f (cell-free, pulsed+washed), d1 and d3",
+     "basis": "measurement_model",
+     "assumptions": [
+      "The artefact hypothesis asserts nothing is being maintained, so it predicts no maintaining ligand anywhere."
+     ]
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "no_change",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm f (cell-free), d3",
+     "basis": "assumption",
+     "mechanism_link_ids": [
+      "ML11"
+     ],
+     "assumptions": [
+      "Cells neither consume nor add ligand appreciably - itself questionable, since receptor-mediated uptake would make this decrease."
+     ],
+     "unresolved": "Receptor-mediated clearance could make H1 read as a decrease; a receptor-blocked arm is the tie-break."
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "increase",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm f (cell-free), d3",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5",
+      "lit-ea0d3890720d"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ],
+     "assumptions": [
+      "The autocrine loop described in ILD fibroblasts can run in normal human fibroblasts after a pulse."
+     ],
+     "unresolved": "An autocrine loop could be non-TGF-beta; then this readout stays flat and E2 with 1D11 is what decides."
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "increase",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm f (cell-free), d3",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-8ccc91bd45f9",
+      "lit-d4c2a13f46ee"
+     ],
+     "mechanism_link_ids": [
+      "ML8"
+     ],
+     "assumptions": [
+      "Activation of the matrix latent pool releases enough ligand into the medium to be detected rather than being consumed locally at the cell surface."
+     ],
+     "unresolved": "Strictly pericellular activation would not show in the medium; a cell-surface pSmad2 gradient or an LAP/LTBP-1 stain is the fallback read."
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "no_change",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm f (cell-free), d3",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-4003fcca2815"
+     ],
+     "mechanism_link_ids": [
+      "ML2",
+      "ML6"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "no_change",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm f (cell-free), d3",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-87a281f303a5"
+     ],
+     "mechanism_link_ids": [
+      "ML10"
+     ],
+     "unresolved": "High tension can itself activate latent TGF-beta; then H5 and H3 would look alike here."
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "increase",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm f (cell-free), d3",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "assumptions": [
+      "The SASP reported after 7 days in rat cardiac fibroblasts also raises secreted TGF-beta1 here, which that abstract does not state."
+     ],
+     "unresolved": "The cytokines named there are IL-1beta, IL-6, IL-5, IL-10 - not TGF-beta1; so IL-6 in E2 is the better senescence-secretome read."
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "no_change",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm f (cell-free), d3",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "active_TGFb1_in_CM",
+     "expected": "no_change",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm f (cell-free), d3",
+     "basis": "measurement_model"
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "pSmad2_nuclear",
+     "expected": "increase",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm e (never-treated), same day",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-04139c6d6982"
+     ],
+     "mechanism_link_ids": [
+      "ML1",
+      "ML11"
+     ],
+     "assumptions": [
+      "Residual ligand is above the receptor's effective threshold at day 3."
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "pSmad2_nuclear",
+     "expected": "increase",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm e (never-treated), same day",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ],
+     "unresolved": "Only if the autocrine mediator is a TGF-beta family ligand."
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "pSmad2_nuclear",
+     "expected": "increase",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm e (never-treated), same day",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-d4c2a13f46ee"
+     ],
+     "mechanism_link_ids": [
+      "ML8"
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "pSmad2_nuclear",
+     "expected": "no_change",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm e (never-treated), same day",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-4003fcca2815",
+      "lit-de72b3cfc53c"
+     ],
+     "mechanism_link_ids": [
+      "ML2",
+      "ML6"
+     ],
+     "assumptions": [
+      "A chromatin/TF-held state does not require continuing Smad2 phosphorylation."
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "pSmad2_nuclear",
+     "expected": "no_change",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm e (never-treated), same day",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-87a281f303a5"
+     ],
+     "mechanism_link_ids": [
+      "ML10",
+      "ML4"
+     ],
+     "unresolved": "If tension activates latent TGF-beta, H5 would also raise pSmad2 and this readout stops separating H5 from H3."
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "pSmad2_nuclear",
+     "expected": "not_predicted",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm e (never-treated), same day",
+     "basis": "unstated",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "unresolved": "The senescence source names no TGF-beta1 in its SASP panel, so it supports no direction here; the senescence markers in E6 carry this hypothesis instead."
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "pSmad2_nuclear",
+     "expected": "no_change",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm e (never-treated), same day",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ],
+     "assumptions": [
+      "A selected subpopulation is alpha-SMA-competent without ongoing signalling."
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "pSmad2_nuclear",
+     "expected": "no_change",
+     "condition": "arm a (vehicle, cells), d3",
+     "versus": "arm e (never-treated), same day",
+     "basis": "measurement_model"
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "decrease",
+     "condition": "arm c (SB431542 continuous), d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-04139c6d6982"
+     ],
+     "mechanism_link_ids": [
+      "ML1",
+      "ML11"
+     ],
+     "assumptions": [
+      "Blocking the receptor removes the only maintaining input."
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "decrease",
+     "condition": "arm c (SB431542 continuous), d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5",
+      "lit-ea0d3890720d"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ],
+     "unresolved": "A non-TGF-beta autocrine mediator would leave this flat; that outcome moves H2 toward the E2 blocker arms rather than refuting it."
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "decrease",
+     "condition": "arm c (SB431542 continuous), d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-d4c2a13f46ee"
+     ],
+     "mechanism_link_ids": [
+      "ML8"
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "no_change",
+     "condition": "arm c (SB431542 continuous), d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-4003fcca2815"
+     ],
+     "mechanism_link_ids": [
+      "ML2",
+      "ML5",
+      "ML6"
+     ],
+     "assumptions": [
+      "The rat cardiac result that SD-208 did not dedifferentiate the TGF-beta1-induced state transfers to human fibroblasts - a cross-species assumption, not a fact."
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "no_change",
+     "condition": "arm c (SB431542 continuous), d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-87a281f303a5",
+      "lit-b0c020392ab5"
+     ],
+     "mechanism_link_ids": [
+      "ML10",
+      "ML4"
+     ]
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "no_change",
+     "condition": "arm c (SB431542 continuous), d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "assumptions": [
+      "A senescent arrested state is not undone by receptor blockade."
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "no_change",
+     "condition": "arm c (SB431542 continuous), d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "no_change",
+     "condition": "arm c (SB431542 continuous), d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "measurement_model",
+     "assumptions": [
+      "Leftover protein is indifferent to what the receptor is doing."
+     ]
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "decrease",
+     "condition": "arm b (1D11 continuous), d5",
+     "versus": "isotype IgG, d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML11"
+     ],
+     "assumptions": [
+      "A neutralising antibody reaches ligand that is adsorbed to the plastic and to deposited ECM, not only free ligand in the medium."
+     ],
+     "unresolved": "If matrix-sequestered ligand is inaccessible to antibody, a flat result does not refute H1; the SB431542 arm is then the one to read."
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "decrease",
+     "condition": "arm b (1D11 continuous), d5",
+     "versus": "isotype IgG, d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "decrease",
+     "condition": "arm b (1D11 continuous), d5",
+     "versus": "isotype IgG, d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-8ccc91bd45f9"
+     ],
+     "mechanism_link_ids": [
+      "ML8"
+     ],
+     "unresolved": "Pericellular activation can outrun an antibody in the bulk medium."
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "no_change",
+     "condition": "arm b (1D11 continuous), d5",
+     "versus": "isotype IgG, d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-4003fcca2815"
+     ],
+     "mechanism_link_ids": [
+      "ML2"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "no_change",
+     "condition": "arm b (1D11 continuous), d5",
+     "versus": "isotype IgG, d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-87a281f303a5"
+     ],
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "no_change",
+     "condition": "arm b (1D11 continuous), d5",
+     "versus": "isotype IgG, d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "no_change",
+     "condition": "arm b (1D11 continuous), d5",
+     "versus": "isotype IgG, d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "aSMA_stress_fibre_fraction",
+     "expected": "no_change",
+     "condition": "arm b (1D11 continuous), d5",
+     "versus": "isotype IgG, d5",
+     "basis": "measurement_model"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Measurable active TGF-beta1 in the cell-free pulsed-and-washed wells, above the spike-recovery limit, at day 1 or later.",
+     "implication": "Residual exogenous ligand (H1) is live and must be designed out before anything else is interpreted: switch to a longer washout, serum-free rinses, fresh plates, or carry the cell-free value as a subtraction in every later experiment."
+    },
+    {
+     "outcome": "Cell-free wells at the detection floor, but medium from cells carries active TGF-beta1 above never-treated.",
+     "implication": "The maintaining ligand is cell- or matrix-derived (H2/H3), not carryover; E2 and the plasmin/LTBP arms become the next step and H1 drops in priority."
+    },
+    {
+     "outcome": "Continuous receptor blockade from washout leaves alpha-SMA stress fibres and contraction unchanged.",
+     "implication": "No ligand route (H1, H2, H3) is necessary for maintenance; the plan moves to H4/H5/H6/H7 and E4-E6 lead. This would mirror the rat cardiac result for the TGF-beta1-induced state, in a human system."
+    }
+   ],
+   "priority_rationale": "It is first because it is the only experiment that measures the washout itself rather than assuming it, and because the pack contains no source that measures residual exogenous TGF-beta1 - the weakest link in every later interpretation. It also carries both measurement-assumption checks, and its result reorders everything after it: if residual ligand or ongoing receptor signalling is present, the intrinsic-state experiments would be run on a culture that is still being driven."
+  },
+  {
+   "id": "E2",
+   "design": "Conditioned-medium transfer and co-culture, to test whether anything the treated cells release is sufficient to install or maintain the phenotype in naive cells. Donor cells: pulsed and washed as in E1. Conditioned medium is collected over 24 h windows ending at day 3 and day 5 after washout, centrifuged and sterile-filtered, then applied to naive fibroblasts (same donor and passage) for 72 h, with and without 1D11 10 ug/mL. Parallel arms: transwell co-culture of washed-out cells above naive reporter cells (no contact), and direct mixed co-culture with the naive population pre-labelled (CellTracker or a lentiviral marker) so donor and recipient can be scored apart. Control media: CM from never-treated cells collected on the same schedule, and medium conditioned in cell-free pulsed-and-washed wells, which carries carryover ligand but no cell product.",
+   "purposes": [
+    "discriminate"
+   ],
+   "measurements": [
+    "aSMA_in_naive_recipient",
+    "IL6_in_donor_CM",
+    "aSMA_in_labelled_naive_cocultured_cells"
+   ],
+   "readouts": [
+    {
+     "name": "aSMA_in_naive_recipient",
+     "target": "alpha-SMA stress-fibre fraction in naive recipient cells",
+     "assay": "immunofluorescence, same positivity rule as E1",
+     "compartment": "cytoskeleton",
+     "timepoint": "72 h of CM exposure",
+     "unit": "percent of cells",
+     "normalization": ">=300 cells per well, blinded scoring",
+     "reference": "naive cells in CM from never-treated donors"
+    },
+    {
+     "name": "IL6_in_donor_CM",
+     "target": "IL-6 as a senescence-secretome marker in the same medium",
+     "assay": "multiplex immunoassay",
+     "compartment": "conditioned medium",
+     "timepoint": "24 h collection windows ending day 3 and day 5",
+     "unit": "pg/mL",
+     "normalization": "per 10^5 donor cells",
+     "reference": "CM from never-treated donors"
+    },
+    {
+     "name": "aSMA_in_labelled_naive_cocultured_cells",
+     "target": "alpha-SMA stress fibres in labelled naive cells sharing a dish with washed-out cells",
+     "assay": "immunofluorescence gated on the cell-tracker label",
+     "compartment": "cytoskeleton",
+     "timepoint": "72 h of co-culture",
+     "unit": "percent of labelled cells",
+     "normalization": "label-gated, >=200 labelled cells per well",
+     "reference": "labelled naive cells co-cultured with never-treated cells"
+    }
+   ],
+   "controls": [
+    "CM from never-treated donor cells, collected on the same schedule and of the same age.",
+    "CM from cell-free pulsed-and-washed wells - separates 'the medium carries carryover ligand' from 'the cells secrete something'.",
+    "Isotype IgG alongside 1D11, and a 1D11 efficacy arm against a known TGF-beta1 spike.",
+    "Recipient cells from the same donor and passage as the donors, plated at matched density."
+   ],
+   "timepoints": [
+    "donor day 3 and day 5 collection windows",
+    "72 h of recipient exposure"
+   ],
+   "discriminates": [
+    "H2",
+    "H4",
+    "H5",
+    "H7",
+    "H8",
+    "H6"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O2",
+     "level": "direct",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O1",
+     "level": "proxy",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O3",
+     "level": "proxy",
+     "judged_by": "host"
+    }
+   ],
+   "assumption_checks": [
+    {
+     "assumption": "Assumption to be tested, not granted: the pan-TGF-beta neutralising antibody and the TGF-beta-RI kinase inhibitor fully block acute TGF-beta1 signalling at the doses used.",
+     "readout": "aSMA_in_naive_recipient",
+     "expected_if_holds": "no_change",
+     "versus": "never-treated CM + 5 ng/mL TGF-beta1 spike + 1D11"
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H1",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM d3-5, no blocker",
+     "versus": "cell-free carryover medium",
+     "basis": "assumption",
+     "mechanism_link_ids": [
+      "ML11"
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "increase",
+     "condition": "donor CM d3-5, no blocker",
+     "versus": "cell-free carryover medium",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5",
+      "lit-13f07d427fef"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ],
+     "assumptions": [
+      "A secreted maintaining factor is present at a concentration that also works on naive cells."
+     ],
+     "unresolved": "Sufficiency in naive cells does not prove the same factor maintains the donors; the necessity arm is E1(b)."
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM d3-5, no blocker",
+     "versus": "cell-free carryover medium",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-8ccc91bd45f9"
+     ],
+     "mechanism_link_ids": [
+      "ML8"
+     ],
+     "assumptions": [
+      "Matrix-activated ligand acts pericellularly and does not travel in filtered medium."
+     ],
+     "unresolved": "If activation releases soluble ligand, H3 reads like H2 here; the matrix-transfer arm (decellularised donor matrix reseeded with naive cells) is what would separate them and is not in this experiment."
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM d3-5, no blocker",
+     "versus": "cell-free carryover medium",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-de72b3cfc53c"
+     ],
+     "mechanism_link_ids": [
+      "ML6"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM d3-5, no blocker",
+     "versus": "cell-free carryover medium",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-87a281f303a5"
+     ],
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "increase",
+     "condition": "donor CM d3-5, no blocker",
+     "versus": "cell-free carryover medium",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "assumptions": [
+      "A SASP-like secretome is present here as it was after 7 days in rat cardiac fibroblasts, and is enough to activate naive cells."
+     ],
+     "unresolved": "Whether a SASP alone drives alpha-SMA stress fibres in human fibroblasts is not shown by any source in this pack."
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM d3-5, no blocker",
+     "versus": "cell-free carryover medium",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM d3-5, no blocker",
+     "versus": "cell-free carryover medium",
+     "basis": "measurement_model"
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "decrease",
+     "condition": "donor CM + 1D11",
+     "versus": "donor CM + isotype",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ],
+     "assumptions": [
+      "The secreted maintaining factor is a TGF-beta family ligand."
+     ],
+     "unresolved": "If the mediator is not TGF-beta, H2 predicts no_change here and this arm stops separating H2 from H6; the IL-6 readout and a receptor-panel screen would be the follow-up."
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM + 1D11",
+     "versus": "donor CM + isotype",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "assumptions": [
+      "The SASP cytokines named in the source (IL-1beta, IL-6, IL-5, IL-10) are not neutralised by an anti-TGF-beta antibody."
+     ]
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "decrease",
+     "condition": "donor CM + 1D11",
+     "versus": "donor CM + isotype",
+     "basis": "assumption",
+     "mechanism_link_ids": [
+      "ML11"
+     ],
+     "assumptions": [
+      "Any carryover ligand that travels in the medium is accessible to the antibody."
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "not_predicted",
+     "condition": "donor CM + 1D11",
+     "versus": "donor CM + isotype",
+     "basis": "unstated",
+     "mechanism_link_ids": [
+      "ML8"
+     ],
+     "unresolved": "H3 predicts little transfer at all, so a blocker effect on a near-floor signal is undefined; the matrix-transfer arm decides H3, not this one."
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM + 1D11",
+     "versus": "donor CM + isotype",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-31f9da012da1"
+     ],
+     "mechanism_link_ids": [
+      "ML6"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM + 1D11",
+     "versus": "donor CM + isotype",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-87a281f303a5"
+     ],
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM + 1D11",
+     "versus": "donor CM + isotype",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "aSMA_in_naive_recipient",
+     "expected": "no_change",
+     "condition": "donor CM + 1D11",
+     "versus": "donor CM + isotype",
+     "basis": "measurement_model"
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "IL6_in_donor_CM",
+     "expected": "increase",
+     "condition": "donor CM d3-5",
+     "versus": "never-treated donor CM",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "assumptions": [
+      "A 48-72 h human pulse produces the secretome reported after a 7-day rat exposure."
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "IL6_in_donor_CM",
+     "expected": "increase",
+     "condition": "donor CM d3-5",
+     "versus": "never-treated donor CM",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-13f07d427fef"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ],
+     "unresolved": "IL-6 rising is compatible with both an autocrine programme and senescence, so this readout alone does not separate H2 from H6."
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "IL6_in_donor_CM",
+     "expected": "no_change",
+     "condition": "donor CM d3-5",
+     "versus": "never-treated donor CM",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML11"
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "IL6_in_donor_CM",
+     "expected": "no_change",
+     "condition": "donor CM d3-5",
+     "versus": "never-treated donor CM",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML8"
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "IL6_in_donor_CM",
+     "expected": "no_change",
+     "condition": "donor CM d3-5",
+     "versus": "never-treated donor CM",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML6"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "IL6_in_donor_CM",
+     "expected": "no_change",
+     "condition": "donor CM d3-5",
+     "versus": "never-treated donor CM",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "IL6_in_donor_CM",
+     "expected": "not_predicted",
+     "condition": "donor CM d3-5",
+     "versus": "never-treated donor CM",
+     "basis": "unstated",
+     "mechanism_link_ids": [
+      "ML12"
+     ],
+     "unresolved": "Depends entirely on what the enriched subpopulation secretes, which is unknown here."
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "IL6_in_donor_CM",
+     "expected": "no_change",
+     "condition": "donor CM d3-5",
+     "versus": "never-treated donor CM",
+     "basis": "measurement_model"
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "aSMA_in_labelled_naive_cocultured_cells",
+     "expected": "increase",
+     "condition": "mixed co-culture, 72 h",
+     "versus": "labelled naive with never-treated cells",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "aSMA_in_labelled_naive_cocultured_cells",
+     "expected": "increase",
+     "condition": "mixed co-culture, 72 h",
+     "versus": "labelled naive with never-treated cells",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-d4c2a13f46ee"
+     ],
+     "mechanism_link_ids": [
+      "ML8"
+     ],
+     "assumptions": [
+      "In contact co-culture a naive cell can reach the donor-deposited matrix and its latent pool - which is exactly why contact co-culture cannot separate H3 from H2."
+     ]
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "aSMA_in_labelled_naive_cocultured_cells",
+     "expected": "increase",
+     "condition": "mixed co-culture, 72 h",
+     "versus": "labelled naive with never-treated cells",
+     "basis": "assumption",
+     "mechanism_link_ids": [
+      "ML11"
+     ],
+     "assumptions": [
+      "Carryover ligand on the donor plate reaches the added naive cells."
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "aSMA_in_labelled_naive_cocultured_cells",
+     "expected": "no_change",
+     "condition": "mixed co-culture, 72 h",
+     "versus": "labelled naive with never-treated cells",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-31f9da012da1"
+     ],
+     "mechanism_link_ids": [
+      "ML6"
+     ],
+     "assumptions": [
+      "An intrinsic state is not communicable."
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "aSMA_in_labelled_naive_cocultured_cells",
+     "expected": "no_change",
+     "condition": "mixed co-culture, 72 h",
+     "versus": "labelled naive with never-treated cells",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-87a281f303a5"
+     ],
+     "mechanism_link_ids": [
+      "ML10"
+     ],
+     "assumptions": [
+      "Both co-cultures sit on the same substrate, so mechanics are matched."
+     ]
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "aSMA_in_labelled_naive_cocultured_cells",
+     "expected": "increase",
+     "condition": "mixed co-culture, 72 h",
+     "versus": "labelled naive with never-treated cells",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "aSMA_in_labelled_naive_cocultured_cells",
+     "expected": "no_change",
+     "condition": "mixed co-culture, 72 h",
+     "versus": "labelled naive with never-treated cells",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "aSMA_in_labelled_naive_cocultured_cells",
+     "expected": "no_change",
+     "condition": "mixed co-culture, 72 h",
+     "versus": "labelled naive with never-treated cells",
+     "basis": "measurement_model"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Donor CM activates naive cells and 1D11 blocks that activation, while cell-free carryover medium does not.",
+     "implication": "A cell-made TGF-beta-family ligand is sufficient to act on neighbours (H2 live). It still has to be shown necessary in the donors - read E1 arm (b)."
+    },
+    {
+     "outcome": "Donor CM activates naive cells and 1D11 does not block it, with IL-6 raised.",
+     "implication": "A non-TGF-beta soluble mediator is at work; H2 survives in a different form and overlaps with H6. Follow with cytokine depletion or receptor blockade, not with more TGF-beta reagents."
+    },
+    {
+     "outcome": "Neither CM nor co-culture moves naive cells.",
+     "implication": "Cell-to-cell signalling is not sufficient. H2 is not thereby excluded as a contributor in the donors, but it stops being the leading explanation and the intrinsic/mechanical arms take priority."
+    }
+   ],
+   "priority_rationale": "Second: it is the only arm that tests the 'cell-to-cell signalling' explanation named in the question, and the pack contains no source that tests paracrine transfer after washout, so this is an evidence gap being filled rather than a result being confirmed."
+  },
+  {
+   "id": "E3",
+   "design": "Cell-autonomy by dilution and clonal replating. At day 2 after washout, cells are trypsinised; half receive a brief low-pH glycine wash (pH 3, 2 min, then neutralised) to strip surface-bound ligand, half a mock wash. Cells are replated into fresh, never-exposed plates at clonal density (50 cells/cm2) and, in parallel, at normal density, in TGF-beta1-free medium, and cultured 5 more days. This dilutes soluble factors and separates the cells from their own deposited matrix and their original plastic, while keeping substrate stiffness constant. A cycloheximide chase (10 ug/mL, 24 h, from day 4 after washout, in a separate well set) tests how much of the alpha-SMA signal is protein already made.",
+   "purposes": [
+    "discriminate",
+    "method_check"
+   ],
+   "measurements": [
+    "aSMA_per_cell_after_replating",
+    "clonal_bimodality"
+   ],
+   "readouts": [
+    {
+     "name": "aSMA_per_cell_after_replating",
+     "target": "alpha-SMA stress-fibre content per cell after dilution onto fresh plastic",
+     "assay": "immunofluorescence, integrated per-cell alpha-SMA in fibres",
+     "compartment": "cytoskeleton",
+     "timepoint": "5 days after replating (day 7 after washout)",
+     "unit": "arbitrary units per cell",
+     "normalization": "per cell, matched exposure, >=200 cells per condition",
+     "reference": "the same cells replated at normal density on the same day"
+    },
+    {
+     "name": "clonal_bimodality",
+     "target": "whether alpha-SMA positivity distributes as two clonal populations or one shifted population",
+     "assay": "per-clone scoring of >=40 clones, distribution tested for bimodality",
+     "compartment": "population structure",
+     "timepoint": "5 days after clonal replating",
+     "unit": "present/absent bimodal distribution",
+     "normalization": "clones of >=8 cells only",
+     "reference": "never-treated cells cloned in parallel"
+    }
+   ],
+   "controls": [
+    "Never-treated cells replated identically at both densities.",
+    "Cells replated immediately after the pulse (day 0) as the upper bound of what replating preserves.",
+    "Mock low-pH wash alongside the acid wash, to separate ligand stripping from wash damage.",
+    "Plating efficiency and clone-size recorded, since a non-proliferating myofibroblast will be under-represented among clones - a sampling bias that must be reported, not corrected away."
+   ],
+   "timepoints": [
+    "day 2 after washout (replating)",
+    "day 7 after washout (scoring)",
+    "24 h cycloheximide chase from day 4"
+   ],
+   "discriminates": [
+    "H4",
+    "H7",
+    "H1",
+    "H2",
+    "H8"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O4",
+     "level": "direct",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O1",
+     "level": "proxy",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O5",
+     "level": "direct",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O3",
+     "level": "proxy",
+     "judged_by": "host"
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H1",
+     "readout": "aSMA_per_cell_after_replating",
+     "expected": "decrease",
+     "condition": "clonal density, fresh plate, acid wash",
+     "versus": "same cells, normal density",
+     "basis": "assumption",
+     "mechanism_link_ids": [
+      "ML11"
+     ],
+     "assumptions": [
+      "Fresh plastic plus an acid wash removes most adsorbed and surface-bound ligand."
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "aSMA_per_cell_after_replating",
+     "expected": "decrease",
+     "condition": "clonal density, fresh plate, acid wash",
+     "versus": "same cells, normal density",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ],
+     "assumptions": [
+      "An autocrine/paracrine loop is concentration-dependent and breaks at clonal density."
+     ],
+     "unresolved": "A strictly cell-autonomous autocrine loop would survive dilution and read like H4."
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "aSMA_per_cell_after_replating",
+     "expected": "decrease",
+     "condition": "clonal density, fresh plate, acid wash",
+     "versus": "same cells, normal density",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-8ccc91bd45f9"
+     ],
+     "mechanism_link_ids": [
+      "ML8"
+     ],
+     "assumptions": [
+      "Replating leaves the old matrix latent pool behind."
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "aSMA_per_cell_after_replating",
+     "expected": "no_change",
+     "condition": "clonal density, fresh plate, acid wash",
+     "versus": "same cells, normal density",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-de72b3cfc53c",
+      "lit-31f9da012da1"
+     ],
+     "mechanism_link_ids": [
+      "ML6",
+      "ML5"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "aSMA_per_cell_after_replating",
+     "expected": "no_change",
+     "condition": "clonal density, fresh plate, acid wash",
+     "versus": "same cells, normal density",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-87a281f303a5"
+     ],
+     "mechanism_link_ids": [
+      "ML10"
+     ],
+     "assumptions": [
+      "Substrate stiffness is unchanged by replating onto the same kind of plastic."
+     ]
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "aSMA_per_cell_after_replating",
+     "expected": "no_change",
+     "condition": "clonal density, fresh plate, acid wash",
+     "versus": "same cells, normal density",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-e62f54ed4087"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "unresolved": "Senescent cells attach and spread poorly after replating, which can look like a decrease for technical reasons."
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "aSMA_per_cell_after_replating",
+     "expected": "no_change",
+     "condition": "clonal density, fresh plate, acid wash",
+     "versus": "same cells, normal density",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ],
+     "assumptions": [
+      "Per-cell content in the enriched subpopulation is unchanged; what changes is the mixture."
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "aSMA_per_cell_after_replating",
+     "expected": "decrease",
+     "condition": "clonal density, fresh plate, acid wash",
+     "versus": "same cells, normal density",
+     "basis": "measurement_model",
+     "assumptions": [
+      "Leftover protein is diluted by the divisions needed to form a clone."
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "clonal_bimodality",
+     "expected": "present",
+     "condition": "clonal replating, 5 d",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-04139c6d6982"
+     ],
+     "mechanism_link_ids": [
+      "ML12"
+     ],
+     "assumptions": [
+      "Selection of a competent subpopulation shows up as two clone classes, not one shifted distribution."
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "clonal_bimodality",
+     "expected": "absent",
+     "condition": "clonal replating, 5 d",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-de72b3cfc53c"
+     ],
+     "mechanism_link_ids": [
+      "ML6"
+     ],
+     "assumptions": [
+      "A state installed in most treated cells shifts the whole distribution."
+     ],
+     "unresolved": "Partial penetrance of a memory state would also look bimodal; clone-level ATAC or a GATA6 reporter would be needed to tell those apart."
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "clonal_bimodality",
+     "expected": "present",
+     "condition": "clonal replating, 5 d",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "assumptions": [
+      "Only part of the population becomes senescent, and arrested cells form no clones at all."
+     ],
+     "unresolved": "H6 and H7 give the same value here; E6 markers are what separate them."
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "clonal_bimodality",
+     "expected": "absent",
+     "condition": "clonal replating, 5 d",
+     "basis": "assumption",
+     "mechanism_link_ids": [
+      "ML11"
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "clonal_bimodality",
+     "expected": "absent",
+     "condition": "clonal replating, 5 d",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML9"
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "clonal_bimodality",
+     "expected": "absent",
+     "condition": "clonal replating, 5 d",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML8"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "clonal_bimodality",
+     "expected": "absent",
+     "condition": "clonal replating, 5 d",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "clonal_bimodality",
+     "expected": "absent",
+     "condition": "clonal replating, 5 d",
+     "basis": "measurement_model"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Per-cell alpha-SMA survives clonal dilution onto fresh plates, with a unimodal distribution.",
+     "implication": "The state travels with the cell and is not held by a soluble factor or by the old plate: H4 is the leading explanation, H1/H2/H3 lose their main route, H7 is weakened."
+    },
+    {
+     "outcome": "Per-cell alpha-SMA collapses on dilution.",
+     "implication": "Something extracellular and density-dependent was holding it - H1, H2 or H3 - and the intrinsic-memory reading cannot be sustained in this form."
+    },
+    {
+     "outcome": "Clear bimodality with a non-clonogenic alpha-SMA-high fraction.",
+     "implication": "Population composition is doing part of the work (H7), and probably overlaps with senescence (H6): read E6 before claiming memory."
+    }
+   ],
+   "priority_rationale": "Third: it is cheap, needs no new reagents, and it is the only arm that puts the population-composition explanation and the protein-turnover artefact on the table before expensive sequencing is committed."
+  },
+  {
+   "id": "E4",
+   "design": "Substrate and tension dependence. At day 2 after washout, cells are replated onto fibronectin-coated polyacrylamide gels of 1-2 kPa (soft, skin-like), 20-30 kPa (stiff) and onto plastic, and in parallel into free-floating (unrestrained) and restrained 3-D collagen gels. Drug arms on each substrate: Y-27632 10 uM, blebbistatin 10 uM as an orthogonal contractility block, and vehicle. Scored 3 and 5 days after transfer.",
+   "purposes": [
+    "discriminate",
+    "function_check"
+   ],
+   "measurements": [
+    "aSMA_on_substrate",
+    "GATA6_protein"
+   ],
+   "readouts": [
+    {
+     "name": "aSMA_on_substrate",
+     "target": "alpha-SMA stress-fibre fraction as a function of substrate stiffness",
+     "assay": "immunofluorescence, same positivity rule as E1",
+     "compartment": "cytoskeleton",
+     "timepoint": "3 and 5 days after transfer",
+     "unit": "percent of cells",
+     "normalization": ">=300 cells per gel, blinded",
+     "reference": "the same cells on plastic at the same timepoint"
+    },
+    {
+     "name": "GATA6_protein",
+     "target": "GATA6, named in the pack as a keeper of myofibroblast memory after a switch to soft",
+     "assay": "immunofluorescence nuclear intensity and Western blot",
+     "compartment": "nucleus",
+     "timepoint": "5 days after transfer to soft",
+     "unit": "arbitrary units per nucleus",
+     "normalization": "per nucleus; loading control for blot",
+     "reference": "never-treated cells on the same soft gel"
+    }
+   ],
+   "controls": [
+    "Never-treated cells on each substrate, carried through the same replating.",
+    "Gel stiffness verified by indentation on each batch, and matched fibronectin coating density across stiffnesses.",
+    "Restrained vs unrestrained collagen gels run side by side, since strain release alone depolymerises stress fibres.",
+    "Vehicle (DMSO) for Y-27632 and blebbistatin; blebbistatin photobleaching precautions."
+   ],
+   "timepoints": [
+    "day 2 after washout (transfer)",
+    "3 days after transfer",
+    "5 days after transfer"
+   ],
+   "discriminates": [
+    "H5",
+    "H4",
+    "H3",
+    "H1",
+    "H2",
+    "H8"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O3",
+     "level": "direct",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O6",
+     "level": "direct",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O1",
+     "level": "out_of_scope",
+     "judged_by": "host"
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H5",
+     "readout": "aSMA_on_substrate",
+     "expected": "decrease",
+     "condition": "soft 1-2 kPa gel, d5",
+     "versus": "same cells on plastic, d5",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-87a281f303a5",
+      "lit-b1bf272184af"
+     ],
+     "mechanism_link_ids": [
+      "ML10",
+      "ML4"
+     ],
+     "assumptions": [
+      "1-2 kPa is a large enough drop; the pack's valvular-cell result says a twofold drop was not enough, so a modest softening could read as no_change for the wrong reason."
+     ],
+     "unresolved": "The pack gives no stiffness range for the fibroblast result, so the chosen gel stiffness is an assumption."
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "aSMA_on_substrate",
+     "expected": "no_change",
+     "condition": "soft 1-2 kPa gel, d5",
+     "versus": "same cells on plastic, d5",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-de72b3cfc53c",
+      "lit-31f9da012da1"
+     ],
+     "mechanism_link_ids": [
+      "ML6"
+     ],
+     "assumptions": [
+      "The MSC mechanical-memory result - traits retained after a switch to soft - transfers to TGF-beta1-pulsed human fibroblasts."
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "aSMA_on_substrate",
+     "expected": "decrease",
+     "condition": "soft 1-2 kPa gel, d5",
+     "versus": "same cells on plastic, d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-8ccc91bd45f9"
+     ],
+     "mechanism_link_ids": [
+      "ML8"
+     ],
+     "assumptions": [
+      "Transfer leaves the deposited latent-TGF-beta pool behind, and low tension also lowers integrin-mediated latent activation."
+     ],
+     "unresolved": "H3 and H5 give the same value here; the plasmin / latency-complex arms and the matrix-transfer arm are what separate them."
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "aSMA_on_substrate",
+     "expected": "no_change",
+     "condition": "soft 1-2 kPa gel, d5",
+     "versus": "same cells on plastic, d5",
+     "basis": "assumption",
+     "mechanism_link_ids": [
+      "ML11"
+     ],
+     "assumptions": [
+      "Ligand carried on the cells themselves is indifferent to the substrate underneath."
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "aSMA_on_substrate",
+     "expected": "no_change",
+     "condition": "soft 1-2 kPa gel, d5",
+     "versus": "same cells on plastic, d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ],
+     "unresolved": "Secretion itself can be stiffness-dependent, in which case H2 falls on soft too and this readout stops separating H2 from H5."
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "aSMA_on_substrate",
+     "expected": "no_change",
+     "condition": "soft 1-2 kPa gel, d5",
+     "versus": "same cells on plastic, d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-e62f54ed4087"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "assumptions": [
+      "A senescent arrest does not reverse with softening."
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "aSMA_on_substrate",
+     "expected": "no_change",
+     "condition": "soft 1-2 kPa gel, d5",
+     "versus": "same cells on plastic, d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "aSMA_on_substrate",
+     "expected": "decrease",
+     "condition": "soft 1-2 kPa gel, d5",
+     "versus": "same cells on plastic, d5",
+     "basis": "measurement_model",
+     "evidence_ids": [
+      "lit-87a281f303a5"
+     ],
+     "mechanism_link_ids": [
+      "ML10"
+     ],
+     "assumptions": [
+      "If the plastic alone was producing the 'persistent' picture, softening removes it in treated and never-treated cells alike - which is why the never-treated arm on each substrate is the one that makes this readable."
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "GATA6_protein",
+     "expected": "no_change",
+     "condition": "soft gel, d5",
+     "versus": "never-treated on same soft gel",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "GATA6_protein",
+     "expected": "increase",
+     "condition": "soft gel, d5",
+     "versus": "never-treated on same soft gel",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-31f9da012da1",
+      "lit-de72b3cfc53c"
+     ],
+     "mechanism_link_ids": [
+      "ML6"
+     ],
+     "assumptions": [
+      "GATA6 marks memory in TGF-beta1-pulsed human fibroblasts as it does in stiffness-primed MSCs - a transfer across both cell type and inducer."
+     ],
+     "unresolved": "If GATA6 is flat while alpha-SMA persists on soft, H4 survives but not through this circuit; the ATAC readout in E5 is then the one that carries it."
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "GATA6_protein",
+     "expected": "no_change",
+     "condition": "soft gel, d5",
+     "versus": "never-treated on same soft gel",
+     "basis": "assumption",
+     "mechanism_link_ids": [
+      "ML11"
+     ],
+     "assumptions": [
+      "Ligand carried on the cells themselves is indifferent to the substrate underneath."
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "GATA6_protein",
+     "expected": "not_predicted",
+     "condition": "soft gel, d5",
+     "versus": "never-treated on same soft gel",
+     "basis": "unstated",
+     "mechanism_link_ids": [
+      "ML9"
+     ],
+     "unresolved": "Nothing in the pack links an autocrine loop to GATA6 either way."
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "GATA6_protein",
+     "expected": "not_predicted",
+     "condition": "soft gel, d5",
+     "versus": "never-treated on same soft gel",
+     "basis": "unstated",
+     "mechanism_link_ids": [
+      "ML8"
+     ],
+     "unresolved": "Same gap as H2."
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "GATA6_protein",
+     "expected": "not_predicted",
+     "condition": "soft gel, d5",
+     "versus": "never-treated on same soft gel",
+     "basis": "unstated",
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "unresolved": "No source here connects senescence to GATA6."
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "GATA6_protein",
+     "expected": "not_predicted",
+     "condition": "soft gel, d5",
+     "versus": "never-treated on same soft gel",
+     "basis": "unstated",
+     "mechanism_link_ids": [
+      "ML12"
+     ],
+     "unresolved": "Would depend on the selected subpopulation's identity."
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "GATA6_protein",
+     "expected": "no_change",
+     "condition": "soft gel, d5",
+     "versus": "never-treated on same soft gel",
+     "basis": "measurement_model"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "alpha-SMA and traction persist on soft gel, with GATA6 raised.",
+     "implication": "A cell-intrinsic memory survives removal of the mechanical input (H4), and the stiff-plastic confound is ruled out as the sole maintainer. Go to E5 for the chromatin leg."
+    },
+    {
+     "outcome": "alpha-SMA falls to never-treated levels on soft gel.",
+     "implication": "The stiff substrate was a necessary maintainer (H5), and the persistence seen on plastic is at least partly a property of the culture surface, not of the TGF-beta1 pulse. Any 'persistent state' claim measured only on plastic has to be withdrawn or restated."
+    },
+    {
+     "outcome": "Long-term unrestrained 3-D culture reverses the phenotype but short-term strain release only depolymerises fibres.",
+     "implication": "Fibre depolymerisation and true dedifferentiation are different endpoints - as the pack's rat study separates them - so the readout, not the biology, decides what 'reversal' means here. Report both."
+    }
+   ],
+   "priority_rationale": "Fourth by order, but the single most important confound-remover: the pack says plainly that substrate stiffness can determine fibroblast contractility independently of TGF-beta, and the whole experiment lives on stiff plastic."
+  },
+  {
+   "id": "E5",
+   "design": "Chromatin and transcription-factor memory. At day 5 after washout, treated and never-treated cells (and cells from the continuous SB431542 arm of E1) are profiled by ATAC-seq and RNA-seq. Pharmacological arms from day 1 to day 5: HDAC inhibitor (trichostatin A 100 nM or vorinostat 1 uM), a beta1-integrin function-blocking antibody, and an mDia2/formin inhibitor, each with its own control, following the two pathways the pack names for persistent activation.",
+   "purposes": [
+    "discriminate",
+    "method_check"
+   ],
+   "measurements": [
+    "ACTA2_accessibility_under_receptor_block",
+    "aSMA_after_HDACi"
+   ],
+   "readouts": [
+    {
+     "name": "ACTA2_accessibility_under_receptor_block",
+     "target": "the same accessibility, when receptor signalling has been blocked throughout",
+     "assay": "ATAC-seq",
+     "compartment": "nucleus",
+     "timepoint": "day 5 after washout",
+     "unit": "normalised ATAC signal at the locus",
+     "normalization": "as above",
+     "reference": "vehicle washout arm at day 5"
+    },
+    {
+     "name": "aSMA_after_HDACi",
+     "target": "alpha-SMA stress-fibre fraction after histone-deacetylase inhibition",
+     "assay": "immunofluorescence, same positivity rule as E1",
+     "compartment": "cytoskeleton",
+     "timepoint": "day 5 after washout, after 4 days of inhibitor",
+     "unit": "percent of cells",
+     "normalization": ">=300 cells, viability-matched",
+     "reference": "vehicle washout arm at day 5"
+    }
+   ],
+   "controls": [
+    "Never-treated cells profiled in the same batch, same library prep.",
+    "Cells from the continuous receptor-block arm, so accessibility can be read with and without ongoing signalling.",
+    "Vehicle and isotype controls for each inhibitor, and a viability/apoptosis readout, since HDAC inhibition and formin inhibition are both toxic at the margin.",
+    "Spike-in normalisation for ATAC, and at least three donors, since accessibility differences between donors are large."
+   ],
+   "timepoints": [
+    "day 1 to day 5 inhibitor exposure",
+    "day 5 after washout (profiling)"
+   ],
+   "discriminates": [
+    "H4",
+    "H8",
+    "H1",
+    "H2",
+    "H3"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O3",
+     "level": "direct",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O1",
+     "level": "proxy",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O4",
+     "level": "out_of_scope",
+     "judged_by": "host"
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H4",
+     "readout": "ACTA2_accessibility_under_receptor_block",
+     "expected": "no_change",
+     "condition": "SB431542 continuous, d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-4003fcca2815",
+      "lit-21c2cde4f3dc"
+     ],
+     "mechanism_link_ids": [
+      "ML2",
+      "ML5"
+     ]
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "ACTA2_accessibility_under_receptor_block",
+     "expected": "decrease",
+     "condition": "SB431542 continuous, d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML11"
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "ACTA2_accessibility_under_receptor_block",
+     "expected": "decrease",
+     "condition": "SB431542 continuous, d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-91332fe8e2a5"
+     ],
+     "mechanism_link_ids": [
+      "ML9"
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "ACTA2_accessibility_under_receptor_block",
+     "expected": "decrease",
+     "condition": "SB431542 continuous, d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-d4c2a13f46ee"
+     ],
+     "mechanism_link_ids": [
+      "ML8"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "ACTA2_accessibility_under_receptor_block",
+     "expected": "no_change",
+     "condition": "SB431542 continuous, d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-87a281f303a5"
+     ],
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "ACTA2_accessibility_under_receptor_block",
+     "expected": "no_change",
+     "condition": "SB431542 continuous, d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-e62f54ed4087"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "ACTA2_accessibility_under_receptor_block",
+     "expected": "no_change",
+     "condition": "SB431542 continuous, d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "ACTA2_accessibility_under_receptor_block",
+     "expected": "no_change",
+     "condition": "SB431542 continuous, d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "measurement_model"
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "aSMA_after_HDACi",
+     "expected": "decrease",
+     "condition": "HDACi d1-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "assumption",
+     "evidence_ids": [
+      "lit-21c2cde4f3dc"
+     ],
+     "mechanism_link_ids": [
+      "ML5"
+     ],
+     "assumptions": [
+      "DIRECTION IS AN INFERENCE, NOT THE SOURCE'S RESULT: the pack's CAF study used HDAC inhibition to RESCUE persistence when upstream pathways were blocked, not to erase it. Predicting a decrease here extrapolates that dynamic chromatin modification is required for maintenance."
+     ],
+     "unresolved": "If HDAC inhibition raises rather than lowers alpha-SMA, that matches the source's rescue direction and the prediction, not the hypothesis, was wrong; the beta1-integrin and formin arms are the cleaner test of the same mechanism."
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "aSMA_after_HDACi",
+     "expected": "no_change",
+     "condition": "HDACi d1-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML11"
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "aSMA_after_HDACi",
+     "expected": "no_change",
+     "condition": "HDACi d1-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML9"
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "aSMA_after_HDACi",
+     "expected": "no_change",
+     "condition": "HDACi d1-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML8"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "aSMA_after_HDACi",
+     "expected": "not_predicted",
+     "condition": "HDACi d1-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "unstated",
+     "evidence_ids": [
+      "lit-21c2cde4f3dc"
+     ],
+     "mechanism_link_ids": [
+      "ML5"
+     ],
+     "unresolved": "The pack places chromatin modification downstream of mechanosensing, so an HDAC inhibitor could cut either way for a mechanically maintained state."
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "aSMA_after_HDACi",
+     "expected": "not_predicted",
+     "condition": "HDACi d1-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "unstated",
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "unresolved": "HDAC inhibition has its own effects on senescence that the pack does not cover."
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "aSMA_after_HDACi",
+     "expected": "no_change",
+     "condition": "HDACi d1-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "aSMA_after_HDACi",
+     "expected": "no_change",
+     "condition": "HDACi d1-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "measurement_model"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Accessibility at myofibroblast loci stays raised under continuous receptor blockade.",
+     "implication": "A ligand-independent chromatin state is present (H4), and the ligand hypotheses cannot be the whole story even if some residual ligand exists."
+    },
+    {
+     "outcome": "Accessibility collapses under receptor blockade while alpha-SMA protein does not.",
+     "implication": "The protein readout is lagging the state - which supports the turnover artefact (H8) for the alpha-SMA endpoint specifically, and means contractility and mRNA should lead the interpretation."
+    },
+    {
+     "outcome": "beta1-integrin or formin blockade prevents the persistent state, and HDAC inhibition restores it.",
+     "implication": "The CAF route reproduces in human fibroblasts after a TGF-beta1 pulse - a finding worth recording as a cross-system extension rather than folding into the washout question."
+    }
+   ],
+   "priority_rationale": "Fifth: expensive, and only interpretable once E1 has settled whether the cells are still being driven. Run after the blockade result is in hand."
+  },
+  {
+   "id": "E6",
+   "design": "Senescence panel and senolytic test, scored on the same washed-out cultures. At day 5 after washout: SA-beta-gal at pH 6.0, p16 and p21 by immunofluorescence and Western blot, Ki-67 and p-Rb, and IL-6 in medium - all co-stained with alpha-SMA so it can be said whether the alpha-SMA-high cells are the arrested ones. Senolytic arms from day 3 to day 5: navitoclax 1-2.5 uM, or dasatinib 100 nM + quercetin 10 uM, each with vehicle and with a never-treated senolytic arm for toxicity.",
+   "purposes": [
+    "discriminate",
+    "baseline"
+   ],
+   "measurements": [
+    "SA_b_gal_fraction",
+    "aSMA_SAbgal_colocalisation",
+    "aSMA_after_senolytic"
+   ],
+   "readouts": [
+    {
+     "name": "SA_b_gal_fraction",
+     "target": "senescence-associated beta-galactosidase activity",
+     "assay": "SA-beta-gal cytochemistry at pH 6.0, scored per cell",
+     "compartment": "lysosome/cytoplasm",
+     "timepoint": "day 5 after washout",
+     "unit": "percent of cells",
+     "normalization": ">=300 cells, fixed staining time, pH verified",
+     "reference": "never-treated cells the same day"
+    },
+    {
+     "name": "aSMA_SAbgal_colocalisation",
+     "target": "whether the alpha-SMA-high cells and the senescent cells are the same cells",
+     "assay": "sequential SA-beta-gal cytochemistry then alpha-SMA immunofluorescence on the same field",
+     "compartment": "single cell",
+     "timepoint": "day 5 after washout",
+     "unit": "percent of alpha-SMA-high cells that are SA-beta-gal positive",
+     "normalization": "per field, paired imaging",
+     "reference": "expectation under independence, computed from the two single-marker frequencies"
+    },
+    {
+     "name": "aSMA_after_senolytic",
+     "target": "alpha-SMA stress-fibre fraction among surviving cells after senolytic treatment",
+     "assay": "immunofluorescence, same positivity rule as E1, with a parallel viability count",
+     "compartment": "cytoskeleton",
+     "timepoint": "day 5 after washout, after 48 h of senolytic",
+     "unit": "percent of surviving cells",
+     "normalization": "scored on surviving cells and also as absolute alpha-SMA-positive cells per well, since a senolytic changes the denominator",
+     "reference": "vehicle washout arm at day 5"
+    }
+   ],
+   "controls": [
+    "Never-treated cells for every marker, same day and same staining batch.",
+    "Never-treated cells given the senolytic, to separate senolysis from general toxicity.",
+    "Absolute cell counts alongside every percentage, because killing cells changes percentages without changing any cell's state.",
+    "pH-verified SA-beta-gal buffer and a confluence-matched plate, since over-confluence raises SA-beta-gal on its own."
+   ],
+   "timepoints": [
+    "day 3 to day 5 senolytic exposure",
+    "day 5 after washout (scoring)"
+   ],
+   "discriminates": [
+    "H6",
+    "H4",
+    "H5",
+    "H1",
+    "H2",
+    "H8",
+    "H7"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O3",
+     "level": "direct",
+     "judged_by": "host"
+    },
+    {
+     "objective_id": "O4",
+     "level": "proxy",
+     "judged_by": "host"
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H6",
+     "readout": "SA_b_gal_fraction",
+     "expected": "increase",
+     "condition": "arm a (vehicle), d5",
+     "versus": "never-treated, d5",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-90bac4ae80b3",
+      "lit-e62f54ed4087"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "assumptions": [
+      "A 48-72 h pulse at 2-5 ng/mL does what 7 days at a garbled dose did in neonatal rat cardiac fibroblasts - a transfer across species, age and exposure length."
+     ],
+     "unresolved": "If SA-beta-gal is flat, that does not exclude senescence at a later timepoint; a day-10 arm would be needed."
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "SA_b_gal_fraction",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "never-treated, d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML11"
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "SA_b_gal_fraction",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "never-treated, d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML9"
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "SA_b_gal_fraction",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "never-treated, d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML8"
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "SA_b_gal_fraction",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "never-treated, d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-de72b3cfc53c"
+     ],
+     "mechanism_link_ids": [
+      "ML6"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "SA_b_gal_fraction",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "never-treated, d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "SA_b_gal_fraction",
+     "expected": "increase",
+     "condition": "arm a (vehicle), d5",
+     "versus": "never-treated, d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-04139c6d6982"
+     ],
+     "mechanism_link_ids": [
+      "ML12",
+      "ML7"
+     ],
+     "assumptions": [
+      "If the enriched subpopulation is the arrested one, arrest markers rise with it even though no cell changed state."
+     ],
+     "unresolved": "H6 and H7 agree here; only the colocalisation and clonal readouts separate them."
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "SA_b_gal_fraction",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "never-treated, d5",
+     "basis": "measurement_model"
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "aSMA_SAbgal_colocalisation",
+     "expected": "increase",
+     "condition": "arm a (vehicle), d5",
+     "versus": "chance overlap",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "assumptions": [
+      "Differentiation and senescence happen in the same cells, as the source's title claims for its system."
+     ]
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "aSMA_SAbgal_colocalisation",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "chance overlap",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ],
+     "assumptions": [
+      "Selection enriches two independent traits, so the overlap stays at chance."
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "aSMA_SAbgal_colocalisation",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "chance overlap",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML6"
+     ]
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "aSMA_SAbgal_colocalisation",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "chance overlap",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML11"
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "aSMA_SAbgal_colocalisation",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "chance overlap",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML9"
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "aSMA_SAbgal_colocalisation",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "chance overlap",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML8"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "aSMA_SAbgal_colocalisation",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "chance overlap",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "aSMA_SAbgal_colocalisation",
+     "expected": "no_change",
+     "condition": "arm a (vehicle), d5",
+     "versus": "chance overlap",
+     "basis": "measurement_model"
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "aSMA_after_senolytic",
+     "expected": "decrease",
+     "condition": "senolytic d3-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-90bac4ae80b3"
+     ],
+     "mechanism_link_ids": [
+      "ML7"
+     ],
+     "assumptions": [
+      "The senolytics reduce the SA-beta-gal-positive fraction here as they did in the source, and the alpha-SMA-high cells are among them."
+     ],
+     "unresolved": "The source reports reduced viability as well, so a drop in alpha-SMA-positive cells per well could be plain toxicity; the never-treated senolytic arm is what makes this readable."
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "aSMA_after_senolytic",
+     "expected": "decrease",
+     "condition": "senolytic d3-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML12"
+     ],
+     "assumptions": [
+      "If the persisting cells are the arrested ones, removing them removes the phenotype whether or not they are senescent."
+     ],
+     "unresolved": "H6 and H7 agree again; the colocalisation and clone readouts, not this one, separate them."
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "aSMA_after_senolytic",
+     "expected": "no_change",
+     "condition": "senolytic d3-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML11"
+     ]
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "aSMA_after_senolytic",
+     "expected": "no_change",
+     "condition": "senolytic d3-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML9"
+     ]
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "aSMA_after_senolytic",
+     "expected": "no_change",
+     "condition": "senolytic d3-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML8"
+     ]
+    },
+    {
+     "hypothesis_id": "H4",
+     "readout": "aSMA_after_senolytic",
+     "expected": "no_change",
+     "condition": "senolytic d3-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-31f9da012da1"
+     ],
+     "mechanism_link_ids": [
+      "ML6"
+     ]
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "aSMA_after_senolytic",
+     "expected": "no_change",
+     "condition": "senolytic d3-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "mechanism_derived",
+     "mechanism_link_ids": [
+      "ML10"
+     ]
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "aSMA_after_senolytic",
+     "expected": "no_change",
+     "condition": "senolytic d3-d5",
+     "versus": "arm a (vehicle), d5",
+     "basis": "measurement_model"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "SA-beta-gal and p21 up, Ki-67 down, and the alpha-SMA-high cells are the SA-beta-gal-positive ones.",
+     "implication": "The persisting phenotype is substantially a senescent state (H6). 'Reversibility' is then the wrong frame and clearance, not dedifferentiation, is the relevant intervention."
+    },
+    {
+     "outcome": "Senescence markers up but not colocalised with alpha-SMA.",
+     "implication": "Two separate subpopulations coexist; the persistence question has to be asked of the alpha-SMA-high cells specifically, with sorting before any further assay."
+    },
+    {
+     "outcome": "Senolytic removes alpha-SMA-positive cells and also kills never-treated cells.",
+     "implication": "Toxicity, not senolysis; report the absolute counts and do not read the percentage."
+    }
+   ],
+   "priority_rationale": "Sixth, but cheap and run alongside E1 on sister wells: it is the explanation the question did not name, and leaving it out would make every 'persistent state' reading ambiguous."
+  }
+ ],
+ "evidence": [
+  {
+   "id": "lit-04139c6d6982",
+   "kind": "retrieved_source",
+   "statement": "Reversible and irreversible differentiation of cardiac fibroblasts.",
+   "locator": {
+    "article": {
+     "doi": "10.1093/cvr/cvt338",
+     "pmid": "24368833",
+     "pmcid": "PMC3928002",
+     "provider_id": "24368833"
+    },
+    "source_kind": "abstract",
+    "source_text": "<h4>Aims</h4>Differentiation of cardiac fibroblasts (Fbs) into myofibroblasts (MyoFbs) is responsible for connective tissue build-up in myocardial remodelling. We examined MyoFb differentiation and reversibility.<h4>Methods and results</h4>Adult rat cardiac Fbs were cultured on a plastic substratum providing mechanical stress, with conditions to obtain different levels of Fb differentiation. Fb spontaneously differentiated to proliferating MyoFb (p-MyoFb) with stress fibre formation decorated with alpha-smooth muscle actin (α-SMA). Transforming growth factor-β1 (TGF-β1) promoted differentiation into α-SMA-positive MyoFb showing near the absence of proliferation, i.e. non-p-MyoFb. SD-208, a TGF-β-receptor-I (TGF-β-RI) kinase blocker, inhibited p-MyoFb differentiation as shown by stress fibre absence, low α-SMA expression, and high proliferation levels. Fb seeded in collagen matrices induced no contraction, whereas p-MyoFb and non-p-MyoFb induced 2.5- and four-fold contraction. Fb produced little collagen but high levels of interleukin-10. Non-p-MyoFb had high collagen production and high monocyte chemoattractant protein-1 and tissue inhibitor of metalloproteinases-1 levels.",
+    "source_text_hash": "aea3e34cbceb838785b5a03bebb0696f8d750e3d74d1c548a7f99ef23f9807d7"
+   },
+   "content_hash": "04139c6d698207218a01392405cb6031f5c7f3be75b11083e5c5e5f3444e604d"
+  },
+  {
+   "id": "lit-4003fcca2815",
+   "kind": "retrieved_source",
+   "statement": "Reversible and irreversible differentiation of cardiac fibroblasts.",
+   "locator": {
+    "article": {
+     "doi": "10.1093/cvr/cvt338",
+     "pmid": "24368833",
+     "pmcid": "PMC3928002",
+     "provider_id": "24368833"
+    },
+    "source_kind": "abstract",
+    "source_text": "Transcriptome analysis indicated differential activation of gene networks related to differentiation of MyoFb (e.g. paxilin and PAK) and reduced proliferation of non-p-MyoFb (e.g. cyclins and cell cycle regulation). Dedifferentiation of p-MyoFb with stress fibre de-polymerization, but not of non-p-MyoFb, was induced by SD-208 despite maintained stress. Stress fibre de-polymerization could also be induced by mechanical strain release in p-MyoFb and non-p-MyoFb (2-day cultures in unrestrained 3-D collagen matrices). Only p-MyoFb showed true dedifferentiation after long-term 3-D cultures.<h4>Conclusions</h4>Fb, p-MyoFb, and non-p-MyoFb have a distinct gene expression, ultrastructural, and functional profile. Both reduction in mechanical strain and TGF-β-RI kinase inhibition can reverse p-MyoFb differentiation but not non-p-MyoFb.",
+    "source_text_hash": "0b604e2483a9f1c6ee271fcc939751d0d77702b82b2bae627942a9a1645786e3"
+   },
+   "content_hash": "4003fcca2815741c5d0b6d51ce03f875ff092ba60d7778084d74685a51fcb4ac"
+  },
+  {
+   "id": "lit-0f512e20b35a",
+   "kind": "retrieved_source",
+   "statement": "Myofibroblast persistence with real-time changes in boundary stiffness.",
+   "locator": {
+    "article": {
+     "doi": "10.1016/j.actbio.2015.12.031",
+     "pmid": "26712600",
+     "pmcid": "PMC4754153",
+     "provider_id": "26712600"
+    },
+    "source_kind": "abstract",
+    "source_text": "Myofibroblasts are critical for connective tissue remodeling and wound healing since they can close wound beds and shape tissues rapidly by generating high traction forces and secreting abundant extracellular matrix proteins and matrix metalloproteinases. However, their presence in excessive numbers is associated with fibrotic and calcific diseases and tissue thickening in engineered tissues. While activation of the myofibroblast phenotype has been studied extensively, whether myofibroblasts are \"cleared\" by phenotypic reversal or by apoptosis remains controversial. The goal of this work is to test the hypothesis that mechanical inhibition of myofibroblast force generation leads to de-differentiation or apoptosis depending upon the magnitude of the decrease in tension. To test this hypothesis, we cultured valvular interstitial cells (VICs) in fibrin micro-tissues suspended between flexible posts and dynamically altered the ability of the cells to generate tension by altering boundary stiffness via magnetic forces applied to posts. The flexible posts capped with magnetic beads enable the measurement and modulation of tension generated by the cells within the tissue. As expected, the",
+    "source_text_hash": "e29e39b582b767856f67fb27251519cea3cc6da6d0c3c6038f2eb4ffc1a6effc"
+   },
+   "content_hash": "0f512e20b35a69e894e7378088f416556c9d05b9c6411d95fbc7bdc50e281442"
+  },
+  {
+   "id": "lit-b1bf272184af",
+   "kind": "retrieved_source",
+   "statement": "Myofibroblast persistence with real-time changes in boundary stiffness.",
+   "locator": {
+    "article": {
+     "doi": "10.1016/j.actbio.2015.12.031",
+     "pmid": "26712600",
+     "pmcid": "PMC4754153",
+     "provider_id": "26712600"
+    },
+    "source_kind": "abstract",
+    "source_text": "cell-generated forces were elevated with dynamically increased boundary (post) stiffness, yet surprisingly, the forces continued to increase following dynamic reduction of boundary stiffness back to baseline levels. Increased apoptosis and reduced α-SMA staining were observed with complete freeing of the tissues from the posts but not upon removal of the magnet, resulting in a twofold decrease in post stiffness. Together, these data indicate that an increase in myofibroblast force generation, even if modest and temporary (1 day), can have lasting effects on myofibroblast persistence in tissues, and that a significant reduction in the ability of the cells to generate tension is required to trigger dedifferentiation and/or apoptosis. The ability to dedifferentiate myofibroblasts to a quiescent phenotype and to control the percentage of apoptosis would be of great benefit for therapeutic and tissue engineering applications.<h4>Statement of significance</h4>Myofibroblasts play an important role in tissue remodeling and wound healing. However, excessive activation of this phenotype is associated with fibrotic diseases and scar formation. Being able to dedifferentiate these cells or",
+    "source_text_hash": "4a829cac716fa5b8b9692f530d23b808edd1e923e39c084fca0f29ad92ce3001"
+   },
+   "content_hash": "b1bf272184af9cd304da96356ebacc8efcee4e4b64109ab8988d4a0c45e35318"
+  },
+  {
+   "id": "lit-b0c020392ab5",
+   "kind": "retrieved_source",
+   "statement": "Myofibroblast persistence with real-time changes in boundary stiffness.",
+   "locator": {
+    "article": {
+     "doi": "10.1016/j.actbio.2015.12.031",
+     "pmid": "26712600",
+     "pmcid": "PMC4754153",
+     "provider_id": "26712600"
+    },
+    "source_kind": "abstract",
+    "source_text": "controlling their clearance with apoptosis (programmed cell death) would be beneficial. It is known that releasing rigid tissue boundaries trigger apoptosis, while reducing the substrate stiffness can cause myofibroblast dedifferentiation. However, the mechanical tension was not quantified in any of the studies. Here we used micro-cantilever posts at tissue boundaries to measure tension and to regulate boundary stiffness in real time by pulling posts with magnets. We show that temporary stiffening of boundary causes irreversible myofibroblast activation and the magnitude of tension drop controls apoptosis.",
+    "source_text_hash": "c7f7e29167f30530f31e3c540d9404e49bb3fc9f6eb375c77b7e2679bf9807f2"
+   },
+   "content_hash": "b0c020392ab50f89939c0005c12502409515b211a0b63c39fb10ad1711ae06b0"
+  },
+  {
+   "id": "lit-13f07d427fef",
+   "kind": "retrieved_source",
+   "statement": "ECM-Stiffness Mediated Persistent Fibroblast Activation Requires Integrin and Formin Dependent Chromatin Remodeling.",
+   "locator": {
+    "article": {
+     "doi": "10.1002/advs.202517631",
+     "pmid": "41915876",
+     "pmcid": "PMC13285145",
+     "provider_id": "41915876"
+    },
+    "source_kind": "abstract",
+    "source_text": "Transient activation of fibroblasts into contractile myofibroblasts is essential for extracellular matrix (ECM) production and remodeling during wound healing and tissue regeneration. While ECM-dependent mechanisms mediating transient activation is well studied, how fibroblasts switch from transient to a persistently activated state and drive fibrosis and aberrant tissue repair in diseases such as cancer is less understood. Here, we show that human cancer-associated fibroblasts (CAFs) switch from transient to persistently activated states upon prolonged exposure to stiff ECMs and stiffness-dependent secreted factors. This switch is accompanied by activation of ECM-stiffness-dependent mechanotransduction pathways and changes in the nuclear architecture and its association with chromatin. Mechanistically, we identify two pathways required for this switch- ECM ligand binding and activation of β1 integrins smoothens the nuclear lamina during prolonged exposure and reduces lamin-chromatin contacts while in parallel, exposure to the stiff ECM activates the formin mammalian Diaphanous-related formin 2 (mDia2) and independent of alterations in the nuclear architecture alters",
+    "source_text_hash": "727b394d76109b27c07525344fec3c452547fde4d957b0ddfa7b26390aed02a7"
+   },
+   "content_hash": "13f07d427fefe98d5fb8928aa58df628cf84f5083e5074f3d24254e539d45f98"
+  },
+  {
+   "id": "lit-21c2cde4f3dc",
+   "kind": "retrieved_source",
+   "statement": "ECM-Stiffness Mediated Persistent Fibroblast Activation Requires Integrin and Formin Dependent Chromatin Remodeling.",
+   "locator": {
+    "article": {
+     "doi": "10.1002/advs.202517631",
+     "pmid": "41915876",
+     "pmcid": "PMC13285145",
+     "provider_id": "41915876"
+    },
+    "source_kind": "abstract",
+    "source_text": "lamin-chromatin coupling, likely through its role in assembling nuclear actin. Importantly, we find that blocking either pathway prevents persistent myofibroblast activation, which is rescued by inhibition of histone deacetylases, indicating that dynamic chromatin modifications act downstream of these ECM-dependent pathways to maintain the persistently activated state. These findings link integrin-based ECM sensing to chromatin remodeling and fibroblast memory, with implications for stromal plasticity in the tumor microenvironment.",
+    "source_text_hash": "2eac6dc3f4d0f84a863361ff89164930648d8089a79bf489dba6cf00a92dc182"
+   },
+   "content_hash": "21c2cde4f3dc465eb276266d581cd42d5edcd78ac2b40d89049a6405ab503fc9"
+  },
+  {
+   "id": "lit-de72b3cfc53c",
+   "kind": "retrieved_source",
+   "statement": "A Circuit of Mechanically Regulated Transcription Factors Balances Regenerative and Fibrotic Memory of Mesenchymal Stromal Cells.",
+   "locator": {
+    "article": {
+     "doi": "10.1002/advs.202522056",
+     "pmid": "42017357",
+     "pmcid": "PMC13334640",
+     "provider_id": "42017357"
+    },
+    "source_kind": "abstract",
+    "source_text": "Therapeutic mesenchymal stromal cells (MSCs) promote healing in severe injuries like skin burns. However, expansion on stiff culture surfaces activates MSCs into scar-promoting myofibroblasts. We previously introduced 'mechanical memory' to describe how MSCs primed on scar-stiff surfaces retain myofibroblast traits even after switching to softer, skin-like surfaces. Now, we identify mechanisms and factors that suppress myofibroblast activation during priming in soft cultures. These 'soft memory' factors are poised to preserve MSC regenerative features while preventing fibrogenesis. Mechanically primed MSCs were compared via RNA- and ATAC-sequencing to co-analyze gene transcription and chromatin accessibility. Highly accessible promoters of genes upregulated after soft priming, which retained this pattern after transitioning to stiff surfaces, were enriched for HOXA11 transcription factor binding motifs. Knocking down HOXA11 increased osteogenic gene expression in soft-primed MSCs and reduced anti-fibrotic factors, including the transcription factor SALL1, which suppresses pro-fibrotic genes like Postn, Col8a1, Grem2, Thbs1, Thbs2, and Gata6. We identify GATA6 as a keeper of",
+    "source_text_hash": "82ec73524e6e9f341bf09d594283ca8fd6c7e1d42ea0c0bc7d9527b80a8b08aa"
+   },
+   "content_hash": "de72b3cfc53cfdcfcf063c43357a1abb31a3e0480b1c569ec117db436d273b8c"
+  },
+  {
+   "id": "lit-31f9da012da1",
+   "kind": "retrieved_source",
+   "statement": "A Circuit of Mechanically Regulated Transcription Factors Balances Regenerative and Fibrotic Memory of Mesenchymal Stromal Cells.",
+   "locator": {
+    "article": {
+     "doi": "10.1002/advs.202522056",
+     "pmid": "42017357",
+     "pmcid": "PMC13334640",
+     "provider_id": "42017357"
+    },
+    "source_kind": "abstract",
+    "source_text": "stiff-induced myofibroblast memory after switching to soft surfaces. Manipulating the SALL1-GATA6 circuit yielded therapeutic MSCs that suppressed fibrosis in a hypertrophic skin-scarring animal model. Therefore, controlling myofibroblast memory could improve MSC-based organ repair therapies.",
+    "source_text_hash": "889ca4426c2d751389ed1f315a24e3a130bc6307637614293113e2ae29fb344c"
+   },
+   "content_hash": "31f9da012da16ab10d281cb4631a8a22c2da61ac2b9962a53fb2e4661e903141"
+  },
+  {
+   "id": "lit-e62f54ed4087",
+   "kind": "retrieved_source",
+   "statement": "Simultaneous induction of differentiation and senescence in cardiac fibroblasts by TGF-β1: effects of senotherapeutics drugs.",
+   "locator": {
+    "article": {
+     "doi": "10.3389/fphar.2026.1877172",
+     "pmid": "42666534",
+     "pmcid": "PMC13522493",
+     "provider_id": "42666534"
+    },
+    "source_kind": "abstract",
+    "source_text": "<h4>Introduction</h4>Aging is a major risk factor for cardiovascular diseases (CVD), partly due to the accumulation of senescent cells. Senescence is characterized by irreversible cell cycle arrest and the acquisition of a senescence associated secretory phenotype (SASP), which promotes inflammation and tissue remodeling, thereby contributing to cardiac dysfunction. Cardiac fibroblasts (CFs), key regulators of cardiac repair, differentiate into myofibroblasts (CMFs) in response to pathological stimuli such as mechanical stiffness and TGF-β1. CMFs secrete abundant extracellular matrix (ECM) proteins, and while their senescence may transiently restrict fibrosis in acute cardiac injury, persistent senescence promotes chronic remodeling through SASP activity. Given that TGF-β1 is a central mediator of CF-to-CMF differentiation and can induce senescence in various cell lines, we investigated whether it simultaneously triggers both processes in neonatal rat CFs, and whether the senotherapeutics Navitoclax and Dasatinib + Quercetin modulate the viability of senescent CMFs.<h4>Methods</h4>CF from neonatal rats were incubated in DMEM-F12 (10% FBS), and treated with TGF-β1 (10 46 ng/mL, 7",
+    "source_text_hash": "591b9b9e6f4d4f206649c41cfb8a08e8dd1643909c60b322ab07fb599a0d9c2a"
+   },
+   "content_hash": "e62f54ed40873799b5f69e6847a393dd9432994b1598533146295c90e65c222d"
+  },
+  {
+   "id": "lit-90bac4ae80b3",
+   "kind": "retrieved_source",
+   "statement": "Simultaneous induction of differentiation and senescence in cardiac fibroblasts by TGF-β1: effects of senotherapeutics drugs.",
+   "locator": {
+    "article": {
+     "doi": "10.3389/fphar.2026.1877172",
+     "pmid": "42666534",
+     "pmcid": "PMC13522493",
+     "provider_id": "42666534"
+    },
+    "source_kind": "abstract",
+    "source_text": "days). Proteins were analyzed by Western blot and immunocytochemistry. Cytokines were analyzed by Milliplex. After 7 days cells were treated with senolytics drugs.<h4>Results</h4>CFs treated with TGF-β1 exhibited senescence markers (p15-p16, p21), increased SA-β-gal activity, and reduced Ki-67 and p-Rb expression. CMFs displayed enhanced secretion of IL-1β, IL-6, IL-5, and IL-10, together with elevated collagen and VCAM-1 levels, indicating a pro-fibrotic and low-grade inflammatory phenotype. Treatment with Navitoclax or Dasatinib + Quercetin decreased cell viability and reduced the proportion of SA-β-gal -positive cells.<h4>Conclusion</h4>TGF-β1 simultaneously promotes CF differentiation into CMFs and induces senescence, resulting in a sustained pro-fibrotic and inflammatory phenotype. Senotherapeutics treatment attenuates senescent CMFs, supporting its potential as a therapeutic strategy to mitigate cardiac fibrosis.",
+    "source_text_hash": "c4a2672053d05ab087ae3e78dc214b234976b8f0688c976e08c9ea3adbfe92a0"
+   },
+   "content_hash": "90bac4ae80b3eddc67e591a247b865c6104e4eac4a0f9b7e8672839cc8ef20b4"
+  },
+  {
+   "id": "lit-8ccc91bd45f9",
+   "kind": "retrieved_source",
+   "statement": "Dupuytren's Disease Is Mediated by Insufficient TGF-β1 Release and Degradation.",
+   "locator": {
+    "article": {
+     "doi": "10.3390/ijms242015097",
+     "pmid": "37894778",
+     "pmcid": "PMC10606262",
+     "provider_id": "37894778"
+    },
+    "source_kind": "abstract",
+    "source_text": "Dupuytren's disease (DD) is a fibroproliferative disorder affecting the palmar fascia, causing functional restrictions of the hand and thereby limiting patients' daily lives. The disturbed and excessive myofibroblastogenesis, causing DD, is mainly induced by transforming growth factor (TGF)-β1. But, the extent to which impaired TGF-β1 release or TGF-β signal degradation is involved in pathologically altered myofibroblastogenesis in DD has been barely examined. Therefore, the complex in which TGF-β1 is secreted in the extracellular matrix to elicit its biological activity, and proteins such as plasmin, integrins, and matrix metalloproteinases (MMPs), which are involved in the TGF-β1 activation, were herein analyzed in DD-fibroblasts (DD-FBs). Additionally, TGF-β signal degradation via caveolin-1 was examined with 5-fluoruracil (5-FU) in detail. Gene expression analysis was performed via Western blot, PCR, and immunofluorescence analyses. As a surrogate parameter for disturbed myofibroblastogenesis, 𝛼-smooth-muscle-actin (𝛼-SMA) expression was evaluated. It was demonstrated that latency-associated peptide (LAP)-TGF-β and latent TGF-β-binding protein (LTBP)-1 involved in TGF-β-complex",
+    "source_text_hash": "24cd5b2e813ffc955a91b92b2686c7b19b02694fe024c7da947cf2a7dc8da912"
+   },
+   "content_hash": "8ccc91bd45f9c598eefef8fbe3e80a18fce8938db1abaf7a67a99256229f5abd"
+  },
+  {
+   "id": "lit-d4c2a13f46ee",
+   "kind": "retrieved_source",
+   "statement": "Dupuytren's Disease Is Mediated by Insufficient TGF-β1 Release and Degradation.",
+   "locator": {
+    "article": {
+     "doi": "10.3390/ijms242015097",
+     "pmid": "37894778",
+     "pmcid": "PMC10606262",
+     "provider_id": "37894778"
+    },
+    "source_kind": "abstract",
+    "source_text": "building were significantly upregulated in DD. Plasmin a serinprotease responsible for the TGF-β release was significantly downregulated. The application of exogenous plasmin was able to inhibit disturbed myofibroblastogenesis, as measured via 𝛼-SMA expression. Furthermore, a reduced TGF-β1 degradation was also involved in the pathological phenotype of DD, because caveolin-1 expression was significantly downregulated, and if rescued, myofibroblastogenesis was also inhibited. Therefore, our study demonstrates that a deficient release and degradation of TGF-β1 are important players in the pathological phenotype of DD and should be addressed in future research studies to improve DD therapy or other related fibrotic conditions.",
+    "source_text_hash": "80222d0c78e61f658cccb4c244fcf238489b20b79435072ae467b2fbb1f0225c"
+   },
+   "content_hash": "d4c2a13f46ee56126028b01d5bbe1f1e8b1d065aac51db1bc903d56129d8206e"
+  },
+  {
+   "id": "lit-91332fe8e2a5",
+   "kind": "retrieved_source",
+   "statement": "Overexpression of c-Met and CD44v6 receptors contributes to autocrine TGF-β1 signaling in interstitial lung disease.",
+   "locator": {
+    "article": {
+     "doi": "10.1074/jbc.m113.505065",
+     "pmid": "24324260",
+     "pmcid": "PMC3953297",
+     "provider_id": "24324260"
+    },
+    "source_kind": "abstract",
+    "source_text": "The hepatocyte growth factor (HGF) and the HGF receptor Met pathway are important in the pathogenesis of interstitial lung disease (ILD). Alternatively spliced isoforms of CD44 containing variable exon 6 (CD44v6) and its ligand hyaluronan (HA) alter cellular function in response to interaction between CD44v6 and HGF. TGF-β1 is the crucial cytokine that induces fibrotic action in ILD fibroblasts (ILDFbs). We have identified an autocrine TGF-β1 signaling that up-regulates both Met and CD44v6 mRNA and protein expression. Western blot analysis, flow cytometry, and immunostaining revealed that CD44v6 and Met colocalize in fibroblasts and in tissue sections from ILD patients and in lungs of bleomycin-treated mice. Interestingly, cell proliferation induced by TGF-β1 is mediated through Met and CD44v6. Further, cell proliferation mediated by TGF-β1/CD44v6 is ERK-dependent. In contrast, action of Met on ILDFb proliferation does not require ERK but does require p38(MAPK). ILDFbs were sorted into CD44v6(+)/Met(+) and CD44v6(-)/Met(+) subpopulations. HGF inhibited TGF-β1-stimulated collagen-1 and α-smooth muscle cell actin expression in both of these subpopulations by interfering with TGF-β1",
+    "source_text_hash": "264762e94eb3a43388e3fae78d84756172dd2ab04e403515f7681a9d68bc494f"
+   },
+   "content_hash": "91332fe8e2a5535bfe8fdfa51aef4b4590e355c462c7d8dfa0e8652259b92f70"
+  },
+  {
+   "id": "lit-ea0d3890720d",
+   "kind": "retrieved_source",
+   "statement": "Overexpression of c-Met and CD44v6 receptors contributes to autocrine TGF-β1 signaling in interstitial lung disease.",
+   "locator": {
+    "article": {
+     "doi": "10.1074/jbc.m113.505065",
+     "pmid": "24324260",
+     "pmcid": "PMC3953297",
+     "provider_id": "24324260"
+    },
+    "source_kind": "abstract",
+    "source_text": "signaling. HGF alone markedly stimulated CD44v6 expression, which in turn regulated collagen-1 synthesis. Our data with primary lung fibroblast cultures with respect to collagen-1, CD44v6, and Met expressions were supported by immunostaining of lung sections from bleomycin-treated mice and from ILD patients. These results define the relationships between CD44v6, Met, and autocrine TGF-β1 signaling and the potential modulating influence of HGF on TGF-β1-induced CD44v6-dependent fibroblast function in ILD fibrosis.",
+    "source_text_hash": "e61b295efcd6a7c6b3009f11daf84bf9760e59e76fc816e64f5018191968dadb"
+   },
+   "content_hash": "ea0d3890720d8436691cf8e0aadf8c614e106e1c72877682d567cc22a989d44d"
+  },
+  {
+   "id": "lit-87a281f303a5",
+   "kind": "retrieved_source",
+   "statement": "Substrate stiffness modulates phenotype-dependent fibroblast contractility and migration independent of TGF-&lt;i&gt;β&lt;/i&gt; stimulation.",
+   "locator": {
+    "article": {
+     "doi": "10.1016/j.mbm.2025.100158",
+     "pmid": "41113512",
+     "pmcid": "PMC12529497",
+     "provider_id": "41113512"
+    },
+    "source_kind": "abstract",
+    "source_text": "During wound healing, fibroblasts undergo radical processes that impact their phenotype and behavior. They are activated, recruited to the injury site, assume a contractile phenotype, and secrete extracellular matrix proteins to orchestrate tissue repair. Thus, fibroblast responses require dynamic changes in cytoskeleton assembly and organization, adhesion morphology, and force generation. At the same time, fibroblasts experience changes in environmental stiffness during tissue wounding and healing. Although cells are generally known to use their adhesion-contraction machinery to sense microenvironmental stiffness, little is known about how stiffness affects the fibroblast phenotypical transition and behavior in wound healing. Here we demonstrate that stiffness plays a deterministic role in determining fibroblast phenotype, surprisingly even overruling the classical TGF-<i>β</i>-mediated stimulation. By combining morphometric analysis, traction force microscopy, and single-cell migration analysis, we show that environmental stiffness primes the cytoskeletal and mechanical responses of fibroblasts, strongly modulating their morphology, force generation, and migration behavior. Our",
+    "source_text_hash": "c95f73ead9b102054d016f928e8720dc15bb4fe68ae18e7b253783b02e3f419b"
+   },
+   "content_hash": "87a281f303a5b81fdbfe2b35dcb5566fc0b077aa233e1cfd089e7cd7bb5d02ec"
+  },
+  {
+   "id": "lit-086e187e2c2d",
+   "kind": "retrieved_source",
+   "statement": "Substrate stiffness modulates phenotype-dependent fibroblast contractility and migration independent of TGF-&lt;i&gt;β&lt;/i&gt; stimulation.",
+   "locator": {
+    "article": {
+     "doi": "10.1016/j.mbm.2025.100158",
+     "pmid": "41113512",
+     "pmcid": "PMC12529497",
+     "provider_id": "41113512"
+    },
+    "source_kind": "abstract",
+    "source_text": "study, therefore, points to the importance of tissue stiffness as a key mechanobiological regulator of fibroblast behavior, thus serving as a potential target for controlling tissue repair.",
+    "source_text_hash": "89a276a825cc8dfaf8205347439f3602290f7bc0955c300375f50a07704a66bc"
+   },
+   "content_hash": "086e187e2c2d1767c1c38b555987e4f9acd748cb04e3634edea1d8a0b2eb119d"
+  }
+ ],
+ "what_if": {
+  "remove_evidence_ids": [
+   "lit-4003fcca2815"
+  ]
+ }
+}

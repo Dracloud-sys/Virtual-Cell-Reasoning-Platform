@@ -39,6 +39,7 @@ from virtualcell.research.contracts import (
     AssumptionCheck,
     DecisionBranch,
     EvidenceItem,
+    EvidenceRole,
     ExperimentPurpose,
     Hypothesis,
     HypothesisSupport,
@@ -496,6 +497,55 @@ def _duplicate_ids(ids: list[str], noun: str, findings: list[IntegrityFinding]) 
         seen.add(ident)
 
 
+def _unsupported(
+    hypothesis_id: str, where: str, report: ResearchReport, grounded: set[str]
+) -> IntegrityFinding:
+    """An evidence-linked hypothesis citing nothing grounded, told apart by what *is* linked.
+
+    Three situations share this code and need different answers. The draft may already link
+    grounded evidence to the hypothesis as support in ``evidence_links`` and simply not list
+    it in ``supporting_evidence_ids`` — an input inconsistency. It may link only method,
+    contradicting or scope-limiting evidence, which is not support. Or nothing grounded is
+    linked at all. None of them promotes an id into support: the hypothesis stays an
+    unverified candidate on this session's evidence until the host lists what supports it.
+    """
+    links = [
+        link
+        for link in report.evidence_links
+        if link.target_id == hypothesis_id and link.evidence_id in grounded
+    ]
+    supports = sorted({link.evidence_id for link in links if link.role is EvidenceRole.SUPPORTS})
+    if supports:
+        case = "supports_link_not_in_supporting_ids"
+        detail = (
+            "claims to be evidence-linked and evidence_links names grounded support for it "
+            f"({', '.join(supports)}), but supporting_evidence_ids lists none of it. The two "
+            "fields disagree; list the ids that support it there. Until then it is an "
+            "unverified candidate on this session's evidence."
+        )
+    elif links:
+        roles = sorted({link.role.value for link in links})
+        case = "only_non_supporting_links"
+        detail = (
+            "claims to be evidence-linked, but the grounded evidence linked to it is only "
+            f"{', '.join(roles)}, none of it support. On this session's evidence it is an "
+            "unverified candidate."
+        )
+    else:
+        case = "no_grounded_support"
+        detail = (
+            "claims to be evidence-linked, but nothing it cites is a user observation or a "
+            "span read from a source. On this session's evidence it is an unverified candidate."
+        )
+    return IntegrityFinding(
+        code="unsupported_evidence_link",
+        detail=detail,
+        where=where,
+        field="hypotheses[].supporting_evidence_ids",
+        case=case,
+    )
+
+
 def check_integrity(request: ResearchRequest, report: ResearchReport) -> list[IntegrityFinding]:
     """Everything about a report that code can check without judging the biology.
 
@@ -570,17 +620,7 @@ def check_integrity(request: ResearchRequest, report: ResearchReport) -> list[In
         unknown(hypothesis.contradicting_evidence_ids, where)
         cited_grounded = grounded.intersection(hypothesis.supporting_evidence_ids)
         if hypothesis.support is HypothesisSupport.EVIDENCE_LINKED and not cited_grounded:
-            findings.append(
-                IntegrityFinding(
-                    code="unsupported_evidence_link",
-                    detail=(
-                        "claims to be evidence-linked, but nothing it cites is a user "
-                        "observation or a span read from a source. On this session's "
-                        "evidence it is an unverified candidate."
-                    ),
-                    where=where,
-                )
-            )
+            findings.append(_unsupported(hypothesis.id, where, report, grounded))
         if hypothesis.support is HypothesisSupport.UNVERIFIED_CANDIDATE and cited_grounded:
             findings.append(
                 IntegrityFinding(
@@ -602,8 +642,14 @@ def check_integrity(request: ResearchRequest, report: ResearchReport) -> list[In
                 findings.append(
                     IntegrityFinding(
                         code="unknown_hypothesis_id",
-                        detail=f"says it discriminates {ref!r}, which is not a hypothesis here",
+                        detail=(
+                            f"says it discriminates {ref!r}, which is not a hypothesis here. "
+                            "discriminates takes hypothesis ids, one per entry, e.g. "
+                            '["H1", "H4"].'
+                        ),
                         where=where,
+                        field="experiments[].discriminates",
+                        value=ref,
                     )
                 )
         if not experiment.branches:

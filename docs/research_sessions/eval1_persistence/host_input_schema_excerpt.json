@@ -1,0 +1,14 @@
+{
+  "what": "The two check_research_draft input fields this work changes, as the connected host saw them on 2026-10-02, before any change here.",
+  "how_obtained": "Transcribed from the tool schema the host's MCP client loaded in this session (deferred-tool schema). Not fetched from the server's source. The full published schema was not saved byte for byte; only these two fields are recorded.",
+  "host_saw": {
+    "experiments[].discriminates": {"items": {"type": "string"}, "title": "Discriminates", "type": "array"},
+    "hypotheses[].supporting_evidence_ids": {"items": {"type": "string"}, "title": "Supporting Evidence Ids", "type": "array"}
+  },
+  "local_build_at_621bf3d": {
+    "experiments[].discriminates": {"items": {"type": "string"}, "title": "Discriminates", "type": "array"},
+    "hypotheses[].supporting_evidence_ids": {"items": {"type": "string"}, "title": "Supporting Evidence Ids", "type": "array"}
+  },
+  "same": true,
+  "note": "Neither field carried a description, so nothing in the schema said that discriminates takes hypothesis ids rather than pair strings, or that evidence_links is not read in place of supporting_evidence_ids. The host's schema also showed reference_correspondence on compare_research_observations, so the host build was newer than the one recorded as running during the evaluation; the fields above did not differ."
+}

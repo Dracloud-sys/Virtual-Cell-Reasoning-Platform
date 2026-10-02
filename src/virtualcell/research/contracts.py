@@ -430,7 +430,15 @@ class Hypothesis(BaseModel):
     id: str
     statement: str
     support: HypothesisSupport
-    supporting_evidence_ids: list[str] = Field(default_factory=list)
+    supporting_evidence_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Ids from evidence[] that support this hypothesis. support=evidence_linked needs at "
+            "least one user_observation or retrieved_source here. An evidence_links entry is "
+            "not read in place of this field: list an id here only if it supports the claim."
+        ),
+        examples=[["lit-0123456789ab"]],
+    )
     contradicting_evidence_ids: list[str] = Field(default_factory=list)
     #: Where this is expected to hold, and where the evidence behind it came from instead —
     #: a different species, cell type or model system is the commonest way a mechanism is
@@ -497,7 +505,16 @@ class ProposedExperiment(BaseModel):
     design: str
     #: Which hypotheses this would tell apart. An experiment that separates nothing is
     #: reported as such rather than dressed up.
-    discriminates: list[str] = Field(default_factory=list)
+    discriminates: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Ids from hypotheses[].id that this experiment is meant to tell apart, one id per "
+            "entry. Not a pair string such as 'H1 vs H4' and not a sentence: a value that is "
+            "not a hypothesis id is reported as unknown_hypothesis_id and nothing is computed "
+            "from it. Which pairs are actually separated is computed from predictions."
+        ),
+        examples=[["H1", "H4"]],
+    )
     controls: list[str] = Field(default_factory=list)
     measurements: list[str] = Field(default_factory=list)
     timepoints: list[str] = Field(default_factory=list)
@@ -555,6 +572,12 @@ class IntegrityFinding(BaseModel):
     code: str
     detail: str
     where: str
+    #: The submitted field and value the finding is about, when it is about one. They let a
+    #: reader group one input mistake repeated across a draft without parsing ``detail``.
+    field: str | None = None
+    value: str | None = None
+    #: Which of several distinct situations one code covers (see the code's own detail).
+    case: str | None = None
 
 
 class ResearchProvenance(BaseModel):

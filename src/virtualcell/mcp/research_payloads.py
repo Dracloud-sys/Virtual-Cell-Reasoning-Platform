@@ -32,7 +32,7 @@ what this server actually issued.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
@@ -43,6 +43,15 @@ from virtualcell.literature.contracts import (
     DiscoveryRunStatus,
     SourceKind,
     SourceLocator,
+)
+from virtualcell.mcp.draft_digest import (
+    FULL_VIEW,
+    OMITTED,
+    FindingGroup,
+    PlanSummary,
+    group_findings,
+    not_computed,
+    summarize_plan,
 )
 from virtualcell.platform.domains import DomainRegistry
 from virtualcell.research.contracts import (
@@ -250,10 +259,35 @@ class DraftCheckResult(BaseModel):
     )
     evidence_origins: list[EvidenceOrigin] = Field(default_factory=list)
 
+    view: Literal["full", "compact"] = Field(
+        default="full",
+        description="Which reading this is. compact leaves detail out and lists what, in omitted.",
+    )
+
     # 3. what code did find
-    findings: list[dict[str, str]] = Field(
+    finding_count: int = Field(default=0, description="Every finding, before grouping.")
+    finding_groups: list[FindingGroup] = Field(
         default_factory=list,
-        description="Structural and citation defects, each with a code, where and detail.",
+        description=(
+            "The findings grouped by code, field and cause, input problems first, plus the "
+            "prediction-trace gaps. Every occurrence is kept; a finding that follows from "
+            "another is nested under it in `derived`, counted, not repeated."
+        ),
+    )
+    not_computed: list[str] = Field(
+        default_factory=list,
+        description=(
+            "What the analysis could not compute and why. Not computed is not passed, and "
+            "it is not the same as no findings."
+        ),
+    )
+    findings: list[dict[str, str]] | None = Field(
+        default_factory=list,
+        description=(
+            "Structural and citation defects, each with a code, where and detail, and a "
+            "field, value, case or caused_by when they apply. null in the compact view, "
+            "where finding_groups holds every one."
+        ),
     )
 
     # 4. what follows from the plan, by code
@@ -262,8 +296,17 @@ class DraftCheckResult(BaseModel):
         description=(
             "Goal trace, evidence counted by study, mechanism-link gaps and graph check, and "
             "which hypothesis pairs each experiment's predicted values separate. Computed from "
-            "what was submitted; it judges no biology and ranks nothing."
+            "what was submitted; it judges no biology and ranks nothing. null in the compact "
+            "view, which carries plan_summary instead."
         ),
+    )
+    plan_summary: PlanSummary | None = Field(
+        default=None,
+        description="The compact view's plan analysis, without per-readout and per-trace detail.",
+    )
+    omitted: list[str] = Field(
+        default_factory=list,
+        description="What the compact view left out, and how to read it.",
     )
 
 
@@ -540,6 +583,7 @@ def draft_check(
     mechanism_links: list[dict[str, Any]] | None = None,
     store: Any = None,
     what_if: dict[str, Any] | None = None,
+    view: Literal["full", "compact"] = "full",
 ) -> DraftCheckResult:
     """Validate the draft, then assemble it, then check it. In that order.
 
@@ -579,13 +623,34 @@ def draft_check(
     )
     scenario = WhatIf.model_validate(what_if) if what_if is not None else None
     plan = analyze_plan(report, evidence, store=store, what_if=scenario)
-    return DraftCheckResult(
-        not_checked=list(NOT_CHECKED),
-        evidence_origins=origins,
-        findings=[{"code": f.code, "where": f.where, "detail": f.detail} for f in findings]
-        + [{"code": f.code, "where": f.where, "detail": f.detail} for f in plan.findings],
-        plan_analysis=plan,
-    )
+    flat = [_finding(f) for f in findings] + [_finding(f) for f in plan.findings]
+    groups = group_findings(flat, plan)
+    common = {
+        "not_checked": list(NOT_CHECKED),
+        "evidence_origins": origins,
+        "view": view,
+        "finding_count": len(flat),
+        "finding_groups": groups,
+        "not_computed": not_computed(plan, groups, what_if=scenario is not None),
+    }
+    if view == "compact":
+        return DraftCheckResult(
+            **common,
+            findings=None,
+            plan_summary=summarize_plan(plan),
+            omitted=[*OMITTED, FULL_VIEW],
+        )
+    return DraftCheckResult(**common, findings=flat, plan_analysis=plan)
+
+
+def _finding(finding: Any) -> dict[str, str]:
+    """A finding as the flat list carries it: the three keys always, the rest when set."""
+    out = {"code": finding.code, "where": finding.where, "detail": finding.detail}
+    for key in ("field", "value", "case", "caused_by"):
+        value = getattr(finding, key, None)
+        if value is not None:
+            out[key] = value
+    return out
 
 
 def assemble_draft(
