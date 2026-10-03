@@ -214,6 +214,25 @@ def flatten(text: str) -> str:
     return " ".join(text.split())
 
 
+CHECK_RESEARCH_DRAFT_FILE = """\
+Check a draft you already saved as a JSON file, instead of writing it out as arguments.
+Exactly the same check as check_research_draft: the file is parsed and handed to it, so the
+validation, findings, plan analysis and evidence classification are identical. Reading a
+file does not make any evidence in it server-retrieved; spans are classified against what
+this server issued, as always.
+
+Send the path relative to the draft directory this server was started with, and the file's
+SHA-256. The bytes hashed are the bytes parsed; a different hash, a path outside the
+directory (links followed), a non-.json or non-regular file, or more than 2 MB is refused
+and nothing is checked. The file holds one JSON object with check_research_draft's
+arguments (question, hypotheses, experiments, evidence, what_if, ...), without `view`.
+`view` defaults to "compact" here. The server never writes the file: to revise, write a new
+file (edit only the fields you change) and check that one.
+
+Available only on this local stdio server when its operator configured a draft directory.
+It is not an upload: a path names a file on the machine running this server.\
+"""
+
 #: Rules that must survive any future rewording of the descriptions above. A test
 #: asserts each one is still present in the shipped tool description, so a
 #: well-meant edit cannot quietly drop a safety rule.

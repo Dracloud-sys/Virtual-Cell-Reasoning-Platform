@@ -7,6 +7,21 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`check_research_draft_file`: check a draft by file on the local stdio server.**
+  - A real host wrote a 130 KB draft out as tool arguments to check it, and again after a
+    two-field fix (353,823 tokens for the trial context).
+  - The new tool takes `path`, `sha256` and `view` (default `"compact"`). It reads a `.json` file of
+    at most 2 MB, with links resolved, inside the directory named by
+    `VIRTUALCELL_MCP_DRAFT_DIR`.
+  - It refuses a hash mismatch and parses the bytes it hashed.
+  - It calls the inline `check_research_draft` through the server and adds `input_file`. It never
+    writes the file, and it classifies no evidence as retrieved.
+  - It is registered only on stdio with the variable set; the HTTP transport never passes a
+    directory.
+  - Over a real MCP stdio session, checking the recorded first draft and the host's own revision
+    sent 117 B of arguments per call. The replies match the real-host replies apart from
+    `input_file`.
+  - A Claude Code host has not used it yet.
 - **`check_research_draft` costs less to use, with the same analysis**
   (`docs/research_sessions/eval1_persistence/`).
   - Measured on a real host draft: one input mistake (`"H1 vs H4"` pair strings in

@@ -150,3 +150,82 @@ verification of this change has been done.
   question and told the host nothing.
 - The full view is still large: the decision-branch copy in each trace is kept for
   compatibility.
+
+## Real-host compact trial (`host_trial/`, 2026-10-03)
+
+**Host.** The connected `virtualcell` server was the local stdio process Claude Code starts from
+`.mcp.json`. Its editable install ran this repository's `src/` at `d6d2b05`, and the process
+started after that commit, so no restart was made.
+
+**Trial.** A fresh subagent context was given the published tool and the stored first draft
+(`records/condition_B_payload_1.json`, sha256 `d44100e2…`). It called the real host tool twice,
+both times with `view: "compact"`:
+
+- **Call 1:** `finding_count` 83, with three groups:
+  - `unknown_hypothesis_id` ×39 (input), with `discrimination_claimed_without_predictions` ×39
+    nested under it;
+  - `unsupported_evidence_link` ×5 (input);
+  - `assumption_without_stated_assumptions` ×3 (review).
+- **One revision** (`revise.py` → `draft_v2.json`, sha256 `c336741b…`):
+  - it split the pair strings into ids itself;
+  - it copied `supports` links into `supporting_evidence_ids`;
+  - it changed nothing else.
+- **Call 2:** `finding_count` 0. The 3 assumption items remain as a review group, and the trial
+  added no assumption text.
+- **Unchanged across both calls:**
+  - all evidence was `host_supplied`;
+  - `scientific_validity_checked` was false;
+  - what-if impact was H4, H1 / E1, E5.
+
+**Before the two server calls**, the client rejected one attempt: "could not be parsed as JSON".
+The draft had been wrapped in a single field the schema does not declare, and this rejection never
+reached the server.
+
+**Cost.** The agent read the compact replies directly, with no parsing script. The harness reported
+353,823 tokens, 26 tool calls and 1,617 s for the trial context. That total is not split into
+input, output and cache, and is not billing. Most of it was the model writing the ~130 KB draft out
+as tool arguments, three times.
+
+**Files.**
+- `SHA256SUMS.as_run` holds the files as the session left them. That includes two intermediate
+  slices of the draft the agent wrote (`evidence.min.json`, `experiments.min.json`), which are not
+  committed.
+- `SHA256SUMS` holds the committed copies. Only `revise.py` differs: its absolute paths were made
+  relative, and `zip(..., strict=True)` was added for lint. It reproduces `draft_v2.json` byte for
+  byte.
+
+## Checking a draft by file (`file_input_trial/`)
+
+**No existing path.** This host exposes no programmatic MCP call (no REPL tool), so nothing
+existing could pass a file to the tool.
+
+**`check_research_draft_file(path, sha256, view="compact")` was added.** It is registered only when
+the stdio server starts with `VIRTUALCELL_MCP_DRAFT_DIR` set; the HTTP transport never passes a
+directory. Behaviour:
+- it reads a regular `.json` file of at most 2 MB, resolved with links followed, inside that
+  directory;
+- it hashes the bytes it read, refuses a mismatch, and parses those same bytes;
+- it calls the inline `check_research_draft` through the server, so argument validation, findings,
+  plan analysis and evidence classification are the inline tool's;
+- it returns that result plus `input_file` (path, sha256, bytes);
+- it never writes the file;
+- reading the file does not make its evidence server-retrieved.
+
+**Trial over a real MCP stdio session.** The client was a script, not the Claude Code host, against
+a fresh `python -m virtualcell.mcp` with the variable set (`run_stdio_trial.py`, `run.json`). It
+checked v1 and the host's own v2 by reference, both with `view: "compact"`:
+
+| | arguments sent | bytes the server read from file | structured reply | text block | time |
+|---|---|---|---|---|---|
+| v1 | 117 B | 130,050 B | 27,147 B | 46,907 chars | 0.25 s |
+| v2 | 117 B | 130,365 B | 21,001 B | 38,073 chars | 0.03 s |
+
+Compared with the real-host replies for the same drafts, these fields are identical on both calls:
+- `finding_count`, `finding_groups`, `not_computed`, `plan_summary` (including what-if impact),
+  `omitted`;
+- `evidence_origins` (all `host_supplied`), `not_checked` and `scientific_validity_checked`.
+
+The only addition is `input_file`.
+
+**Not done:** a Claude Code host using the file tool. The running host server was started without
+the variable, and a session cannot gain it without an environment change and an MCP reconnect.

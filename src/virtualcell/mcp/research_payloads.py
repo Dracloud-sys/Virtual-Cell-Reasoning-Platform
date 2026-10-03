@@ -53,6 +53,7 @@ from virtualcell.mcp.draft_digest import (
     not_computed,
     summarize_plan,
 )
+from virtualcell.mcp.draft_file import DraftInput
 from virtualcell.platform.domains import DomainRegistry
 from virtualcell.research.contracts import (
     DecisionBranch,
@@ -307,6 +308,10 @@ class DraftCheckResult(BaseModel):
     omitted: list[str] = Field(
         default_factory=list,
         description="What the compact view left out, and how to read it.",
+    )
+    input_file: DraftInput | None = Field(
+        default=None,
+        description="Set by check_research_draft_file: the file checked and its SHA-256.",
     )
 
 

@@ -1,0 +1,32 @@
+{
+ "tools": [
+  "check_research_draft",
+  "check_research_draft_file",
+  "compare_research_observations",
+  "describe_domain",
+  "list_domains",
+  "read_evidence_source",
+  "reason",
+  "research_evidence"
+ ],
+ "calls": [
+  {
+   "file": "draft_v1.json",
+   "is_error": false,
+   "argument_bytes": 117,
+   "file_bytes_read_by_server": 130050,
+   "structured_bytes": 27147,
+   "text_block_chars": 46907,
+   "seconds": 0.247
+  },
+  {
+   "file": "draft_v2.json",
+   "is_error": false,
+   "argument_bytes": 117,
+   "file_bytes_read_by_server": 130365,
+   "structured_bytes": 21001,
+   "text_block_chars": 38073,
+   "seconds": 0.034
+  }
+ ]
+}

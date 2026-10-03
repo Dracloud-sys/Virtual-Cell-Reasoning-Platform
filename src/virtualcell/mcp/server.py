@@ -36,7 +36,9 @@ instead, carrying a parseable :class:`~virtualcell.mcp.payloads.ToolRefusal`.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import sys
+from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from mcp.server import MCPServer
@@ -49,7 +51,7 @@ from virtualcell.core.experiment import ExperimentRun
 from virtualcell.knowledge.backends.memory import InMemoryKnowledgeStore
 from virtualcell.knowledge.store import KnowledgeStore
 from virtualcell.literature.contracts import ArticleRecord, SourceKind
-from virtualcell.mcp import guidance, research_payloads
+from virtualcell.mcp import draft_file, guidance, research_payloads
 from virtualcell.mcp.payloads import (
     DescribeDomainResult,
     ListDomainsResult,
@@ -177,6 +179,7 @@ def build_server(
     literature_agent: object | None = None,
     auth: AuthSettings | None = None,
     token_verifier: Any = None,
+    draft_dir: Path | None = None,
 ) -> MCPServer:
     """Build the MCP server over a registry and a seeded knowledge store.
 
@@ -186,6 +189,10 @@ def build_server(
     `auth` and `token_verifier` are passed to the SDK untouched and only matter to the HTTP
     transport (:mod:`virtualcell.mcp.remote`). The tools do not see them: whoever the caller
     is, the six tools are the same six tools.
+
+    `draft_dir` adds `check_research_draft_file`, which checks a draft the host already wrote
+    to a file in that directory (:mod:`virtualcell.mcp.draft_file`). Only `main()` passes it,
+    on stdio and only when the operator sets the variable; the HTTP transport never does.
     """
     registry = registry if registry is not None else default_registry()
     if store is None:
@@ -550,6 +557,46 @@ def build_server(
             # re-implemented, so its error type comes along; the refusal carries the detail.
             raise _malformed_draft(exc) from exc
 
+    if draft_dir is not None:
+        root = draft_dir.resolve()
+
+        @server.tool(
+            name="check_research_draft_file",
+            description=guidance.CHECK_RESEARCH_DRAFT_FILE,
+            annotations=_READ_ONLY,
+        )
+        async def _check_research_draft_file(
+            path: Annotated[
+                str, Field(description="A .json file, relative to the configured draft directory.")
+            ],
+            sha256: Annotated[
+                str, Field(description="The SHA-256 (hex) of the file you mean to check.")
+            ],
+            view: Annotated[
+                Literal["full", "compact"],
+                Field(description="As in check_research_draft. compact unless asked otherwise."),
+            ] = "compact",
+        ) -> research_payloads.DraftCheckResult:
+            try:
+                draft, read = draft_file.read_draft_file(root, path, sha256)
+            except draft_file.DraftFileRefused as refused:
+                raise _refuse(refused.error, refused.detail, refused.remedy) from refused
+            allowed = set(inspect.signature(_check_research_draft).parameters) - {"view"}
+            extra = sorted(set(draft) - allowed)
+            if extra:
+                raise _refuse(
+                    "malformed_draft_file",
+                    f"{read.path!r} has keys check_research_draft does not take: {extra}.",
+                    "Keep only check_research_draft's arguments in the file, without view.",
+                )
+            # The inline tool, called through the server: the same argument validation, the
+            # same checks and the same evidence classification. Only the transport differs.
+            result = await server.call_tool("check_research_draft", {**draft, "view": view})
+            if result.is_error:
+                raise ToolError(" ".join(getattr(c, "text", "") for c in result.content))
+            checked = research_payloads.DraftCheckResult.model_validate(result.structured_content)
+            return checked.model_copy(update={"input_file": read})
+
     @server.tool(
         name="compare_research_observations",
         description=guidance.COMPARE_RESEARCH_OBSERVATIONS,
@@ -837,4 +884,6 @@ def main() -> None:
 
         remote.serve(literature_agent=literature_agent)
         return
-    build_server(literature_agent=literature_agent).run(transport="stdio")
+    build_server(literature_agent=literature_agent, draft_dir=draft_file.draft_dir_from_env()).run(
+        transport="stdio"
+    )
