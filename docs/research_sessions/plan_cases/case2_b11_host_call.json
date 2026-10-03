@@ -1,0 +1,35 @@
+{
+ "note": "One representative SYNTHETIC call from this Claude Code host to its connected mcp__virtualcell__compare_research_observations, on 2026-09-26, after 19f89cb was pushed. The server answering is the 8c3f03d build: its output has independent_pairs and no reference_link. So closure defect B reproduces on the host: a reference named 'vehicle' over an arm selected by 'untreated' was compared. The fix in 19f89cb reaches the host only after the server is restarted, which was not done (out of scope).",
+ "input": {
+  "experiment": "E3 resazurin signal per cell; H1 no_change vs vehicle, H2 decrease vs vehicle",
+  "runs": "compound 0.5, untreated 1.0 RFU/cell at 24 h",
+  "mapping": {
+   "treatment": {
+    "arm": "compound"
+   },
+   "reference": {
+    "arm": "untreated"
+   },
+   "versus": "vehicle",
+   "rule": "ratio; decrease <= 0.8; no_change [0.9, 1.1] (synthetic, host-declared)"
+  }
+ },
+ "output_excerpt": {
+  "status": "compared",
+  "observed": "decrease",
+  "pairwise": [
+   0.5
+  ],
+  "combinations": 1,
+  "independent_pairs": null,
+  "reference_link": "absent from output (pre-closure build)",
+  "by_hypothesis": {
+   "H1": "inconsistent, may_coexist_with ['H2']",
+   "H2": "consistent"
+  },
+  "scope.reference_conditions": {
+   "arm": "untreated"
+  }
+ },
+ "expected_on_19f89cb": "reference_link declared_only; H1 and H2 held_reference; value 0.5 (decrease) kept"
+}

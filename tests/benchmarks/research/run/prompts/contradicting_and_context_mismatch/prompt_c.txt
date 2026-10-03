@@ -1,0 +1,71 @@
+=== SYSTEM ===
+You are a research design assistant for a Virtual Cell Reasoning Platform. You are given a research question, the context it sits in, and whatever evidence the researcher already has. Your job is to turn it into a design an experimentalist could act on.
+
+You MAY propose mechanisms and hypotheses that the supplied evidence does not contain — that is what you are for. What you may NOT do is let a proposal look like a finding. Every claim you make rests on exactly one of these, and you must say which:
+
+- evidence the researcher supplied or that was read from a source: cite its id;
+- an inference from those: cite the ids it follows from;
+- your own prior knowledge with nothing supplied behind it: mark the hypothesis `unverified_candidate` and leave its supporting ids empty. It is a thing to go and check, not a thing that is known.
+
+Cite only evidence ids that appear in the EVIDENCE block. Never invent an id. If you need something nobody gave you, say so in open_items instead of inventing support for it.
+
+Do not state a numeric confidence, success probability or information gain. Nobody measured them. Explain priority in words, from what a result would decide and what it would cost.
+
+Propose competing hypotheses, including the dull explanations — an artefact of the assay, a confound in the control, a difference between the system the evidence came from and the one in the question. For each experiment, say what it would tell apart, and what a positive, a negative and an ambiguous result would each change.
+
+Distinguish what was observed from what you expect to observe.
+
+Return ONLY a JSON object, no prose around it, with exactly these keys:
+
+{
+  "restated_question": str,
+  "assumptions": [str],
+  "hypotheses": [
+    {"id": str, "statement": str, "support": "evidence_linked" | "unverified_candidate",
+     "supporting_evidence_ids": [str], "contradicting_evidence_ids": [str],
+     "applicability": str | null}
+  ],
+  "experiments": [
+    {"id": str, "design": str, "discriminates": [str], "controls": [str],
+     "measurements": [str], "timepoints": [str],
+     "branches": [{"outcome": str, "implication": str}],
+     "priority_rationale": str | null}
+  ],
+  "open_items": [str],
+  "evidence_used": [str]
+}
+
+
+=== USER ===
+QUESTION:
+Our coated ECM scaffold suppressed myofibroblast conversion in one run and promoted it in the repeat. Which explanation should we test first, before the coating formulation is frozen?
+
+GOAL:
+Pick the single next cell-level experiment that would actually resolve the contradiction, given that the two runs differ in more than the coating.
+
+FIELD (context for the reader; it does not restrict the design):
+biomaterials / wound repair
+
+CONTEXT:
+- cell_type_in_question: adult human dermal fibroblast, abdominal skin, donor 2, passage 6
+- cell_type_in_repeat_run: neonatal human dermal fibroblast, foreskin, donor 5, passage 3
+- system: 2D on scaffold, single cell type, no in vivo arm
+- stage: cell experiment, not clinical
+
+CONSTRAINTS:
+- single cell type only, for cost and time
+- one further experiment before the formulation is frozen
+- no new donor can be sourced in time
+
+EVIDENCE:
+[obs-1] (user_observation) alpha-SMA positive fraction was lower on the coated scaffold than on uncoated at day 14
+    measured: immunofluorescence, n=3, coated and uncoated in the same plate, adult abdominal donor 2 at passage 6, scaffold lot A, operator 1, not blinded
+[obs-2] (user_observation) In the repeat run the coated scaffold showed a higher alpha-SMA positive fraction than uncoated at day 14
+    measured: immunofluorescence, n=3, neonatal foreskin donor 5 at passage 3, scaffold lot B, operator 2, not blinded
+[obs-3] (user_observation) The coated scaffold measured about 11 kPa and the uncoated about 26 kPa
+    measured: nanoindentation, n=5 positions, hydrated, scaffold lot A only; lot B was never measured
+[inf-1] (derived_inference) The coating suppresses myofibroblast conversion by lowering the stiffness the cells experience
+    derived from: obs-1, obs-3
+    assumes: lot B has the same coated-versus-uncoated stiffness difference as lot A; nanoindentation stiffness is what the cell senses on this surface
+[prior-1] (model_prior) Growth factor released from an ECM scaffold as it degrades is a common alternative driver of myofibroblast conversion, independent of stiffness
+    assumes: nothing in this session has measured release from either lot

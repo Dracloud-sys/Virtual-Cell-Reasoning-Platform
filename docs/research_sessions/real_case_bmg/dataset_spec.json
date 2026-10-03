@@ -1,0 +1,50 @@
+{
+ "spec_version": "1.0",
+ "dataset_id": "zenodo-8342247-alamarblue",
+ "run_namespace": "zenodo",
+ "source_format": "csv",
+ "method": "alamarBlue fluorescence top reading, Ex 530 nm / Em 590 nm, gain 80, Tecan Spark",
+ "conditions": {
+  "cells": "human gingival fibroblasts (PromoCell), 2000 per 3 mm specimen"
+ },
+ "columns": [
+  {
+   "header": "source_sheet",
+   "role": "condition",
+   "name": "source_sheet"
+  },
+  {
+   "header": "source_cell",
+   "role": "condition",
+   "name": "source_cell"
+  },
+  {
+   "header": "group_label",
+   "role": "condition",
+   "name": "group"
+  },
+  {
+   "header": "culture_hours",
+   "role": "time_axis",
+   "time_axis": "elapsed_time",
+   "time_unit": "hour"
+  },
+  {
+   "header": "rfu",
+   "role": "measurement",
+   "name": "alamarblue_rfu",
+   "value_type": "numeric",
+   "unit": "RFU"
+  },
+  {
+   "header": "read_started",
+   "role": "condition",
+   "name": "read_started"
+  },
+  {
+   "header": "read_temperature_c",
+   "role": "condition",
+   "name": "read_temperature_c"
+  }
+ ]
+}

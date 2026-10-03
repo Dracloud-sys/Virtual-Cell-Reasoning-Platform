@@ -722,3 +722,208 @@ def test_discover_returns_relevance_ranked_bundle() -> None:
     bundle = discover(_query(), EuropePmcProvider(transport))
     assert [r.article.pmid for r in bundle.relevance] == ["1", "2"]  # ranked high-first
     assert bundle.claims == [] and bundle.measurements == []  # discovery only
+
+
+# --- an incomplete response is not a zero-result search ------------------------------------
+#
+# Measured against the live Europe PMC API before any of this was written:
+#
+#   a real zero-hit query      -> {"version":"6.9","hitCount":0,...,"resultList":{"result":[]}}
+#                                 192 bytes, 6 of 6 attempts
+#   ANY query, intermittently  -> {"version":"6.9"}
+#                                 17 bytes, HTTP 200, identical headers, 3-4 of 10 attempts,
+#                                 including for a query with 43,683 hits
+#
+# `data.get("resultList", {})` read the second as an empty result list, so the run was
+# reported `zero_results` and reached a caller as "the search ran and returned no articles".
+
+#: The body the live API actually returns when nothing matched. Not hand-written: copied
+#: from a real response to `"zzqqxx_no_such_term_98765"`.
+_REAL_ZERO_BODY = json.dumps(
+    {
+        "version": "6.9",
+        "hitCount": 0,
+        "request": {
+            "queryString": '"zzqqxx_no_such_term_98765"',
+            "resultType": "core",
+            "cursorMark": "*",
+            "pageSize": 25,
+            "sort": "",
+            "synonym": False,
+        },
+        "resultList": {"result": []},
+    }
+)
+
+#: The body the live API intermittently returns instead of an answer, verbatim.
+_INCOMPLETE_BODY = json.dumps({"version": "6.9"})
+
+
+def test_a_genuine_zero_result_search_is_still_a_zero_result_search() -> None:
+    """The half that must not regress. A real zero carries the whole envelope, so the
+    stricter check has to pass it through untouched — otherwise every honest "nothing
+    matched" becomes a reported failure, which is the opposite error and just as wrong.
+    """
+    transport = _FakeTransport([HttpResponse(status_code=200, text=_REAL_ZERO_BODY)])
+
+    result = EuropePmcProvider(transport).search(_query())
+
+    assert result.articles == []
+    assert result.provenance.hit_count == 0
+    assert result.warnings == []
+
+
+def test_a_response_with_no_envelope_is_a_failure_not_an_empty_result() -> None:
+    """The defect. `{"version": "6.9"}` carries no hitCount and no resultList, so nothing
+    in it says the search found nothing — it says the search did not answer.
+    """
+    transport = _FakeTransport([HttpResponse(status_code=200, text=_INCOMPLETE_BODY)])
+
+    with pytest.raises(ProviderError, match="hitCount"):
+        EuropePmcProvider(transport).search(_query())
+
+
+@pytest.mark.parametrize(
+    ("body", "match"),
+    [
+        (json.dumps({"resultList": {"result": []}}), "hitCount"),
+        (json.dumps({"hitCount": None, "resultList": {"result": []}}), "hitCount"),
+        (json.dumps({"hitCount": "0", "resultList": {"result": []}}), "hitCount"),
+        (json.dumps({"hitCount": True, "resultList": {"result": []}}), "hitCount"),
+        (json.dumps({"hitCount": 0}), "no resultList"),
+        (json.dumps({"hitCount": 0, "resultList": {}}), "no result field"),
+        (json.dumps({"hitCount": 0, "resultList": {"result": None}}), "was not a list"),
+    ],
+    ids=[
+        "hitCount-absent",
+        "hitCount-null",
+        "hitCount-string",
+        "hitCount-bool",
+        "resultList-absent",
+        "result-absent",
+        "result-null",
+    ],
+)
+def test_one_missing_or_mistyped_envelope_field_is_enough_to_fail(body: str, match: str) -> None:
+    """Not only the both-absent case. Half an envelope is not a result either, and a
+    `hitCount` of `"0"` or `True` is not a count — `bool` is a subclass of `int`, so the
+    obvious isinstance check would have accepted `True` as zero hits.
+    """
+    transport = _FakeTransport([HttpResponse(status_code=200, text=body)])
+
+    with pytest.raises(ProviderError, match=match):
+        EuropePmcProvider(transport).search(_query())
+
+
+def test_an_incomplete_page_after_a_good_one_is_still_a_failure() -> None:
+    """An incomplete envelope is incomplete wherever it lands. Page two coming back empty
+    *inside a valid envelope* is how pagination ends; page two coming back with no envelope
+    is the same defect as page one, and silently keeping page one's articles would report a
+    truncated result set as a complete one.
+    """
+    transport = _FakeTransport(
+        [
+            _page([_result()], hit_count=99, next_cursor="C2"),
+            HttpResponse(status_code=200, text=_INCOMPLETE_BODY),
+        ]
+    )
+
+    with pytest.raises(ProviderError, match="hitCount"):
+        EuropePmcProvider(transport, max_pages=3).search(_query())
+
+
+def test_a_valid_empty_last_page_ends_pagination_without_failing() -> None:
+    """The case the one above must not be confused with."""
+    transport = _FakeTransport([_page([_result()], hit_count=1, next_cursor="C2"), _EMPTY_PAGE])
+
+    result = EuropePmcProvider(transport, max_pages=3).search(_query())
+
+    assert len(result.articles) == 1
+    assert result.warnings == []
+
+
+def test_the_agent_turns_an_incomplete_response_into_lookup_failed_not_zero_results() -> None:
+    """End of the chain, through the existing path: ProviderError -> PROVIDER_ERROR ->
+    the MCP tool's `lookup_failed`. No new status and no new provider — the route already
+    existed, and the response was being handed to the wrong branch of it.
+    """
+    import asyncio
+
+    from virtualcell.agents.literature_discovery.agent import LiteratureDiscoveryAgent
+    from virtualcell.core.contracts import AgentInput
+    from virtualcell.literature.contracts import DiscoveryRunStatus, LiteratureEvidenceBundle
+
+    incomplete = LiteratureDiscoveryAgent(
+        provider=EuropePmcProvider(
+            _FakeTransport([HttpResponse(status_code=200, text=_INCOMPLETE_BODY)])
+        )
+    )
+    genuine = LiteratureDiscoveryAgent(
+        provider=EuropePmcProvider(
+            _FakeTransport([HttpResponse(status_code=200, text=_REAL_ZERO_BODY)])
+        )
+    )
+
+    failed = LiteratureEvidenceBundle.model_validate(
+        asyncio.run(incomplete.run(AgentInput(query="collagen scaffold degradation"))).result
+    )
+    empty = LiteratureEvidenceBundle.model_validate(
+        asyncio.run(genuine.run(AgentInput(query="zzqqxx_no_such_term_98765"))).result
+    )
+
+    assert failed.run_status is DiscoveryRunStatus.PROVIDER_ERROR
+    assert failed.run_status.is_failure
+    assert empty.run_status is DiscoveryRunStatus.ZERO_RESULTS
+    assert not empty.run_status.is_failure
+
+    from virtualcell.mcp.research_payloads import literature_status
+
+    assert literature_status(failed).status == "lookup_failed"
+    assert literature_status(empty).status == "no_matches"
+
+
+# --- the open full-text endpoint ---------------------------------------------
+#
+# Measured live on 2026-09-24: `…/rest/PMC/PMC12128996/fullTextXML` answered 404 and
+# `…/rest/PMC12128996/fullTextXML` answered 200 with the article body. The provider built the
+# first, so every open-access body read as "not openly available". A fake transport that
+# answers any URL cannot catch that, so these assert the exact URL requested.
+
+_FULL_TEXT_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12128996/fullTextXML"
+
+
+def test_full_text_is_requested_from_the_pmcid_path_not_a_pmc_segment() -> None:
+    transport = _FakeTransport([HttpResponse(status_code=200, text="<article/>")])
+
+    xml = EuropePmcProvider(transport).fetch_open_full_text(ArticleIdentifier(pmcid="PMC12128996"))
+
+    assert transport.calls == [_FULL_TEXT_URL]
+    assert "/PMC/" not in transport.calls[0]
+    assert xml == "<article/>"
+
+
+def test_a_404_at_the_correct_endpoint_is_none() -> None:
+    """None keeps its contract: the provider holds no open body for this id."""
+    transport = _FakeTransport([HttpResponse(status_code=404, text="")])
+
+    assert (
+        EuropePmcProvider(transport).fetch_open_full_text(ArticleIdentifier(pmcid="PMC12128996"))
+        is None
+    )
+    assert transport.calls == [_FULL_TEXT_URL]
+
+
+def test_an_empty_200_body_is_not_turned_into_none() -> None:
+    """An empty 200 is not "not openly available"; the caller must see it as what it is."""
+    transport = _FakeTransport([HttpResponse(status_code=200, text="")])
+
+    assert EuropePmcProvider(transport).fetch_open_full_text(ArticleIdentifier(pmcid="PMC1")) == ""
+
+
+def test_a_server_error_on_the_full_text_endpoint_raises() -> None:
+    transport = _FakeTransport([HttpResponse(status_code=500, text="")])
+
+    with pytest.raises(ProviderError):
+        EuropePmcProvider(transport, retries=0).fetch_open_full_text(
+            ArticleIdentifier(pmcid="PMC1")
+        )

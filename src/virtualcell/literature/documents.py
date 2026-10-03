@@ -5,9 +5,12 @@ typed :class:`ArticleDocument` that later extraction can anchor candidates to.
 
 Safety posture — this parses untrusted third-party XML:
 
-* **No entity expansion, no external references.** Entity declarations and external
-  entity references are refused outright, so neither a billion-laughs bomb nor an
-  external/network reference can be resolved.
+* **No entity expansion, no external references.** An external DOCTYPE with no internal
+  subset — the shape Europe PMC serves every body with — is accepted and never followed.
+  An internal subset (even ``[]``), any entity or notation declaration, any external
+  entity reference and any entity the document does not itself define are refused, so
+  neither a billion-laughs bomb nor an external/network/file reference can be resolved,
+  and no undefined entity is silently dropped.
 * **Bounded.** The raw XML size and the number of sections/tables/rows/cells are all
   capped; exceeding a bound is a typed error or a recorded warning, never unbounded work.
 * **Typed failure.** Malformed XML raises :class:`JatsParseError`. That is kept
@@ -20,9 +23,9 @@ Safety posture — this parses untrusted third-party XML:
 from __future__ import annotations
 
 import hashlib
-import re
 from datetime import UTC, datetime
-from xml.etree import ElementTree  # noqa: S405 - entity constructs refused before parsing
+from xml.etree import ElementTree  # noqa: S405 - declarations checked by _check_declarations
+from xml.parsers import expat
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -134,17 +137,60 @@ def content_hash(text: str) -> str:
 # --- hardened parsing --------------------------------------------------------
 
 
-# Any DTD/entity declaration is refused before parsing. This is what makes parsing
-# safe: ElementTree never fetches external resources, so the remaining risks are
-# internal entity expansion (billion laughs) and entity-smuggled content — both of
-# which require a declaration. Numeric character references (&#177;) are unaffected,
-# and an undeclared entity reference simply fails as malformed XML.
-_FORBIDDEN_DECLARATION = re.compile(r"<!\s*(DOCTYPE|ENTITY)\b", re.IGNORECASE)
+# What is refused is decided from the parser's own declaration events, not by searching the
+# text: a regex refused every DOCTYPE — including the external one on every real Europe PMC
+# body — and could not tell a declaration from the same characters inside a comment or CDATA.
+#
+# expat performs no I/O of its own: an external DTD or entity is only ever read if a handler
+# fetches it, and parameter-entity parsing is set to NEVER so the external subset is not even
+# requested. The handlers below refuse rather than fetch. ElementTree then builds the tree from
+# a document already known to declare nothing.
 
 
-def _reject_entity_constructs(xml_text: str) -> None:
-    if _FORBIDDEN_DECLARATION.search(xml_text):
-        raise JatsParseError("XML DOCTYPE/ENTITY declarations are not allowed")
+class _Refused(Exception):
+    """A declaration or reference the policy does not accept."""
+
+
+def _refuse(reason: str):
+    def handler(*_args: object) -> None:
+        raise _Refused(reason)
+
+    return handler
+
+
+def _check_declarations(xml_text: str) -> None:
+    """Refuse every construct that could expand, smuggle or fetch content.
+
+    Accepted: no DOCTYPE, or an external PUBLIC/SYSTEM DOCTYPE with no internal subset;
+    the five predefined entities; numeric character references.
+
+    Refused: an internal subset, even an empty ``[]``; entity, unparsed-entity and notation
+    declarations (general or parameter); any external entity reference; and any entity the
+    document does not define. The last matters under an external DOCTYPE: expat cannot know
+    whether the unread DTD defines the name, so it *skips* the reference and the text would
+    silently lose it.
+    """
+
+    def doctype(_name: str, _system_id: str | None, _public_id: str | None, subset: int) -> None:
+        if subset:
+            raise _Refused("an internal DTD subset is not allowed")
+
+    parser = expat.ParserCreate()
+    parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_NEVER)
+    parser.StartDoctypeDeclHandler = doctype
+    parser.EntityDeclHandler = _refuse("entity declarations are not allowed")
+    parser.UnparsedEntityDeclHandler = _refuse("unparsed entity declarations are not allowed")
+    parser.NotationDeclHandler = _refuse("notation declarations are not allowed")
+    parser.ExternalEntityRefHandler = _refuse("external entity references are not resolved")
+    parser.SkippedEntityHandler = _refuse(
+        "the document uses an entity it does not define; it is not resolved or dropped"
+    )
+    try:
+        parser.Parse(xml_text, True)
+    except _Refused as exc:
+        raise JatsParseError(f"refused XML construct: {exc}") from None
+    except expat.ExpatError as exc:
+        raise JatsParseError(f"malformed JATS XML: {exc}") from exc
 
 
 def _text(element) -> str:
@@ -220,17 +266,18 @@ def parse_jats(
 ) -> ArticleDocument:
     """Parse open-access JATS XML into an :class:`ArticleDocument`.
 
-    Raises :class:`JatsParseError` for malformed/oversized/entity-bearing XML. A
+    Raises :class:`JatsParseError` for malformed, oversized or refused XML (see
+    :func:`_check_declarations`). A
     well-formed document with no ``<body>`` is *not* an error — it yields an empty
     section list plus a warning.
     """
     limits = limits or JatsLimits()
     if len(xml_text.encode("utf-8")) > limits.max_bytes:
         raise JatsParseError(f"XML exceeds the {limits.max_bytes}-byte limit")
-    _reject_entity_constructs(xml_text)
+    _check_declarations(xml_text)
 
     try:
-        root = ElementTree.fromstring(xml_text)  # noqa: S314 - entities refused above
+        root = ElementTree.fromstring(xml_text)  # noqa: S314 - declarations refused above
     except ElementTree.ParseError as exc:
         raise JatsParseError(f"malformed JATS XML: {exc}") from exc
 

@@ -1,0 +1,167 @@
+{
+ "note": "B1.1 revision of case2_b1_decisions.json, written after reading the B1.1 comparison. Only S2's luciferase item changes; every other decision is carried over unchanged. The host's proposals; the researcher decides. Every observation is synthetic.",
+ "S1": [
+  {
+   "target_id": "H3b",
+   "decision": "keep",
+   "reason": "Product control fell (every pairing 0.51-0.58, decrease under the synthetic rule) and per-cell resazurin fell as H3b predicts. Consistent, not shown: H2 may act as well.",
+   "next_experiment_ids": []
+  },
+  {
+   "target_id": "E3:resazurin signal per cell",
+   "decision": "revise",
+   "reason": "With the product quenched, per-cell resazurin cannot be read biologically for this compound. It stays in the record, not in the argument.",
+   "next_experiment_ids": [
+    "E4",
+    "E6"
+   ]
+  },
+  {
+   "target_id": "H1",
+   "decision": "revise",
+   "reason": "Cell number flat on every pairing at 24 h. Restate H1 as a later-time question rather than an explanation of this fall.",
+   "next_experiment_ids": []
+  },
+  {
+   "target_id": "H2a",
+   "decision": "hold",
+   "reason": "E2 reads 'inconsistent' for H2a only because its prediction there is 'H2a alone gives no cell-free decrease'; that is not evidence against H2a coexisting with H3b. Resazurin can no longer test it.",
+   "next_experiment_ids": [
+    "E6",
+    "E4",
+    "E5"
+   ]
+  },
+  {
+   "target_id": "H2b",
+   "decision": "hold",
+   "reason": "As for H2a.",
+   "next_experiment_ids": [
+    "E6",
+    "E4",
+    "E5"
+   ]
+  },
+  {
+   "target_id": "H3a",
+   "decision": "hold",
+   "reason": "E1 was not run, and H3a has no direction on cell-free readouts.",
+   "next_experiment_ids": [
+    "E1"
+   ]
+  }
+ ],
+ "S2": [
+  {
+   "target_id": "H3b",
+   "decision": "revise",
+   "reason": "Product control unchanged on every pairing (0.95-1.03). Quenching does not account for this fall at this concentration.",
+   "next_experiment_ids": []
+  },
+  {
+   "target_id": "H1",
+   "decision": "revise",
+   "reason": "Cell number flat on every pairing.",
+   "next_experiment_ids": []
+  },
+  {
+   "target_id": "H2a",
+   "decision": "hold",
+   "reason": "Per-cell decrease is what H2a predicts, and also H2b and H3a. ATP was not predicted for H2. E5 content separates H2a from H2b.",
+   "next_experiment_ids": [
+    "E5"
+   ]
+  },
+  {
+   "target_id": "H2b",
+   "decision": "hold",
+   "reason": "As for H2a; its OCR cell stays unresolved because H2b covers non-mitochondrial reductases too.",
+   "next_experiment_ids": [
+    "E5"
+   ]
+  },
+  {
+   "target_id": "the compound does not affect the luciferase ATP readout",
+   "decision": "keep",
+   "reason": "E6 is now read as an assumption check: holds on all 4 treatment x standard combinations (0.98-1.00, no_change under the synthetic rule). Four combinations of two readings per arm, not four replicates. The ATP readings for H3a/H3b rest on a checked assumption for this concentration only.",
+   "next_experiment_ids": []
+  },
+  {
+   "target_id": "H3a",
+   "decision": "hold",
+   "reason": "E1 not run.",
+   "next_experiment_ids": [
+    "E1"
+   ]
+  }
+ ],
+ "S3": [
+  {
+   "target_id": "H3b",
+   "decision": "hold",
+   "reason": "Product-control pairings split (0.60, 0.61, 0.98, 0.99, 0.75, 0.76). No rule says how many replicates must agree, and none is invented here: repeat E2.",
+   "next_experiment_ids": [
+    "E2"
+   ]
+  },
+  {
+   "target_id": "H1",
+   "decision": "hold",
+   "reason": "Cell number reads unchanged, but on two readings per arm, and per-cell signal is between bands. Not enough to revise.",
+   "next_experiment_ids": [
+    "E3"
+   ]
+  },
+  {
+   "target_id": "H2a",
+   "decision": "hold",
+   "reason": "Per-cell ratio 0.85 lies between the declared bands.",
+   "next_experiment_ids": [
+    "E3"
+   ]
+  },
+  {
+   "target_id": "H2b",
+   "decision": "hold",
+   "reason": "As for H2a.",
+   "next_experiment_ids": [
+    "E3"
+   ]
+  }
+ ],
+ "S4": [
+  {
+   "target_id": "E2",
+   "decision": "hold",
+   "reason": "Treatment arm recorded in AU, reference and rule in RFU. Nothing converts units; re-export in RFU.",
+   "next_experiment_ids": [
+    "E2"
+   ]
+  },
+  {
+   "target_id": "E3",
+   "decision": "hold",
+   "reason": "Vehicle measured at 48 h, compound at 24 h. Add a 24 h vehicle arm.",
+   "next_experiment_ids": [
+    "E3"
+   ]
+  },
+  {
+   "target_id": "E4",
+   "decision": "hold",
+   "reason": "Every compound ATP reading is suspect or a bound. Re-measure.",
+   "next_experiment_ids": [
+    "E4"
+   ]
+  },
+  {
+   "target_id": "E5",
+   "decision": "hold",
+   "reason": "Run method 'absorbance' is not the declared 'DTNB absorbance'. If it was the DTNB assay, the record should say so; the comparison does not guess.",
+   "next_experiment_ids": [
+    "E5"
+   ]
+  }
+ ],
+ "revises": "case2_b1_decisions.json"
+}

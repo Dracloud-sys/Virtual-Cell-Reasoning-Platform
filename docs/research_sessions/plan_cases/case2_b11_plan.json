@@ -1,0 +1,1310 @@
+{
+ "question": "A compound lowers the resazurin (alamarBlue) signal of a fibroblast culture. Is it fewer cells, less metabolic activity per cell, or assay interference?",
+ "restated_question": "In vitro, which measurements tell apart cell loss, lower per-cell reductive capacity (mitochondrial content or function) and direct interference with resazurin or resorufin as causes of a lower resazurin signal after compound exposure?",
+ "objectives": [
+  {
+   "id": "O1",
+   "statement": "Decide whether the lower signal reflects cytotoxicity before calling the compound cytotoxic",
+   "stated_by": "user"
+  },
+  {
+   "id": "O2",
+   "statement": "If activity per cell is lower, locate it: mitochondrial content or function",
+   "stated_by": "host"
+  }
+ ],
+ "confirmed_conditions": [
+  "Resazurin signal decreased after compound exposure",
+  "In vitro fibroblast culture"
+ ],
+ "open_conditions": [
+  "Compound class",
+  "Exposure time",
+  "Cell type and source"
+ ],
+ "assumptions": [
+  "Whether the compound is coloured, fluorescent or redox-active is unknown"
+ ],
+ "sub_questions": [
+  {
+   "id": "Q0",
+   "question": "What causes the lower resazurin signal?",
+   "objective_ids": [
+    "O1"
+   ]
+  },
+  {
+   "id": "Q1",
+   "question": "Is the decrease an assay artefact?",
+   "objective_ids": [
+    "O1"
+   ]
+  },
+  {
+   "id": "Q2",
+   "question": "Fewer cells, or less activity per cell?",
+   "objective_ids": [
+    "O1"
+   ]
+  },
+  {
+   "id": "Q3",
+   "question": "If less per cell: less mitochondrial content or lower function per mitochondrion?",
+   "objective_ids": [
+    "O2"
+   ]
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "Fewer cells (death or arrest) account for the lower signal.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q0",
+    "Q2"
+   ]
+  },
+  {
+   "id": "H2a",
+   "statement": "Less mitochondrial content per cell lowers reductive capacity.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q0",
+    "Q2",
+    "Q3"
+   ]
+  },
+  {
+   "id": "H2b",
+   "statement": "Lower reductive or respiratory function per mitochondrion (or of other reductases) lowers the signal.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q0",
+    "Q2",
+    "Q3"
+   ]
+  },
+  {
+   "id": "H3a",
+   "statement": "The compound reacts with resazurin/resorufin chemistry directly, without cells.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q0",
+    "Q1"
+   ]
+  },
+  {
+   "id": "H3b",
+   "statement": "The compound quenches or adsorbs resorufin, lowering measured fluorescence.",
+   "support": "evidence_linked",
+   "sub_question_ids": [
+    "Q0",
+    "Q1"
+   ],
+   "supporting_evidence_ids": [
+    "lit-fd67cab1bedc"
+   ],
+   "applicability": "Source: graphene oxide and carboxylated graphene; other compound classes untested."
+  }
+ ],
+ "evidence_links": [
+  {
+   "evidence_id": "lit-86b42ebcd0c4",
+   "target_id": "H1",
+   "role": "method",
+   "reading": "Tetrazolium and resazurin reduction reflect reductive activity rather than cell number: count cells separately."
+  },
+  {
+   "evidence_id": "lit-126b0584c71b",
+   "target_id": "H2b",
+   "role": "supports",
+   "reading": "Resazurin is reduced via mitochondrial and other reductases using NAD(P)H-linked capacity."
+  },
+  {
+   "evidence_id": "lit-d1719f786da7",
+   "target_id": "H3b",
+   "role": "method",
+   "reading": "A cell-free resazurin + material incubation only tests chemical reduction; it does not rule out quenching or adsorption of resorufin."
+  },
+  {
+   "evidence_id": "lit-fd67cab1bedc",
+   "target_id": "H3b",
+   "role": "method",
+   "reading": "Product controls needed: resorufin alone and resorufin + material, no cells."
+  },
+  {
+   "evidence_id": "lit-c400e3eff71e",
+   "target_id": "H3a",
+   "role": "method",
+   "reading": "Coloured, fluorescent or redox-active substances distort readouts; confirm with orthogonal endpoints."
+  },
+  {
+   "evidence_id": "lit-479e219aad4e",
+   "target_id": "H2b",
+   "role": "scope_limit",
+   "reading": "Metabolic readings moved (serum-free) while live/dead and attachment did not: metabolic signal can move without viability."
+  },
+  {
+   "evidence_id": "lit-d4f08afd7961",
+   "target_id": "H2a",
+   "role": "method",
+   "reading": "Normalising respiration to mitochondrial content (citrate synthase) separates content from intrinsic function."
+  },
+  {
+   "evidence_id": "lit-5559327e689b",
+   "target_id": "H2a",
+   "role": "scope_limit",
+   "reading": "Mass fell while respiration was preserved, in human skeletal muscle after bed rest; a different system."
+  },
+  {
+   "evidence_id": "lit-be2c3c428bde",
+   "target_id": "H2b",
+   "role": "method",
+   "reading": "Maximal OCR from the standard stress test can be unreliable (17% of assays had maximal < basal)."
+  },
+  {
+   "evidence_id": "lit-3c6767e30e20",
+   "target_id": "H2b",
+   "role": "method",
+   "reading": "About half of basal OCR is not coupled to ATP synthesis; part is non-mitochondrial (same study as lit-be2c3c428bde)."
+  }
+ ],
+ "mechanism_links": [
+  {
+   "id": "M1",
+   "source": "compound",
+   "relation": "quenches",
+   "target": "resorufin fluorescence",
+   "evidence_ids": [
+    "lit-fd67cab1bedc"
+   ],
+   "conditions": [
+    "graphene oxide and carboxylated graphene"
+   ],
+   "hypothesis_ids": [
+    "H3b"
+   ]
+  },
+  {
+   "id": "M2",
+   "source": "NAD(P)H-linked reductases",
+   "relation": "reduces",
+   "target": "resazurin",
+   "evidence_ids": [
+    "lit-126b0584c71b"
+   ],
+   "conditions": [
+    "viable cells; mitochondrial and other reductases"
+   ],
+   "hypothesis_ids": [
+    "H2b"
+   ]
+  },
+  {
+   "id": "M3",
+   "source": "PPARGC1A",
+   "relation": "promotes",
+   "target": "Mitochondrial function",
+   "conditions": [
+    "case fibroblasts (not measured)"
+   ],
+   "hypothesis_ids": [
+    "H2a"
+   ]
+  },
+  {
+   "id": "M4",
+   "source": "Senescence (growth arrest)",
+   "relation": "reduces",
+   "target": "cell number",
+   "conditions": [
+    "case fibroblasts (not measured)"
+   ],
+   "hypothesis_ids": [
+    "H1"
+   ]
+  }
+ ],
+ "open_items": [
+  "Compound class decides how likely interference is; not assumed.",
+  "H3a's direction on cell-free readouts is not fixed by the hypothesis.",
+  "H2b is a disjunction (mitochondrial or other reductases); OCR reads only one branch."
+ ],
+ "experiments": [
+  {
+   "id": "E1",
+   "design": "Cell-free control: resazurin + compound, no cells, read against resazurin alone.",
+   "controls": [
+    "resazurin in medium alone"
+   ],
+   "measurements": [
+    "fluorescence vs resazurin alone"
+   ],
+   "readouts": [
+    {
+     "name": "fluorescence vs resazurin alone",
+     "target": "resorufin",
+     "assay": "fluorescence plate reader",
+     "compartment": "medium, no cells",
+     "timepoint": "end of the exposure that lowered the signal (exposure time is an open condition)",
+     "reference": "resazurin in medium alone",
+     "normalization": "none",
+     "unit": "RFU"
+    }
+   ],
+   "purposes": [
+    "method_check"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O1",
+     "level": "proxy",
+     "note": "tests an artefact route, not cytotoxicity"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Signal changes without cells",
+     "implication": "Direct chemistry; resazurin cannot be used for this compound."
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H1",
+     "readout": "fluorescence vs resazurin alone",
+     "expected": "no_change",
+     "versus": "resazurin in medium alone",
+     "basis": "measurement_model",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "without cells, H1 and H2 have nothing to act on"
+     ]
+    },
+    {
+     "hypothesis_id": "H2a",
+     "readout": "fluorescence vs resazurin alone",
+     "expected": "no_change",
+     "versus": "resazurin in medium alone",
+     "basis": "measurement_model",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "without cells, H1 and H2 have nothing to act on"
+     ]
+    },
+    {
+     "hypothesis_id": "H2b",
+     "readout": "fluorescence vs resazurin alone",
+     "expected": "no_change",
+     "versus": "resazurin in medium alone",
+     "basis": "measurement_model",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "without cells, H1 and H2 have nothing to act on"
+     ]
+    },
+    {
+     "hypothesis_id": "H3a",
+     "readout": "fluorescence vs resazurin alone",
+     "expected": "not_predicted",
+     "versus": "resazurin in medium alone",
+     "basis": "assumption",
+     "evidence_ids": [
+      "lit-c400e3eff71e"
+     ],
+     "mechanism_link_ids": [],
+     "assumptions": [],
+     "unresolved": "direction not fixed: a reducing compound raises it, over-reduction or consumption lowers it. The vocabulary cannot say 'changes, direction unknown'."
+    },
+    {
+     "hypothesis_id": "H3b",
+     "readout": "fluorescence vs resazurin alone",
+     "expected": "not_predicted",
+     "versus": "resazurin in medium alone",
+     "basis": "measurement_model",
+     "evidence_ids": [
+      "lit-d1719f786da7"
+     ],
+     "mechanism_link_ids": [],
+     "assumptions": [],
+     "unresolved": "a quencher lowers it only if the stock carries enough resorufin background"
+    }
+   ],
+   "discriminates": [
+    "H3a"
+   ]
+  },
+  {
+   "id": "E2",
+   "design": "Product control: resorufin alone and resorufin + compound, no cells.",
+   "controls": [
+    "resorufin in medium alone"
+   ],
+   "measurements": [
+    "resorufin fluorescence"
+   ],
+   "readouts": [
+    {
+     "name": "resorufin fluorescence",
+     "target": "resorufin",
+     "assay": "fluorescence plate reader",
+     "compartment": "medium, no cells",
+     "timepoint": "end of the exposure that lowered the signal (exposure time is an open condition)",
+     "reference": "resorufin in medium alone",
+     "normalization": "none",
+     "unit": "RFU"
+    }
+   ],
+   "purposes": [
+    "method_check",
+    "discriminate"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O1",
+     "level": "proxy",
+     "note": "tests an artefact route, not cytotoxicity"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Resorufin fluorescence falls with compound, no cells",
+     "implication": "Quenching/adsorption: correct or abandon the readout before any biological claim."
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H1",
+     "readout": "resorufin fluorescence",
+     "expected": "no_change",
+     "versus": "resorufin in medium alone",
+     "basis": "measurement_model",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "without cells, H1 and H2 have nothing to act on"
+     ]
+    },
+    {
+     "hypothesis_id": "H2a",
+     "readout": "resorufin fluorescence",
+     "expected": "no_change",
+     "versus": "resorufin in medium alone",
+     "basis": "measurement_model",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "without cells, H1 and H2 have nothing to act on"
+     ]
+    },
+    {
+     "hypothesis_id": "H2b",
+     "readout": "resorufin fluorescence",
+     "expected": "no_change",
+     "versus": "resorufin in medium alone",
+     "basis": "measurement_model",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "without cells, H1 and H2 have nothing to act on"
+     ]
+    },
+    {
+     "hypothesis_id": "H3b",
+     "readout": "resorufin fluorescence",
+     "expected": "decrease",
+     "versus": "resorufin in medium alone",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-fd67cab1bedc",
+      "lit-d1719f786da7"
+     ],
+     "mechanism_link_ids": [
+      "M1"
+     ],
+     "assumptions": [
+      "what was seen for graphene materials applies to this compound class"
+     ],
+     "biological_expectation": "less resorufin fluorescence reaches the detector"
+    },
+    {
+     "hypothesis_id": "H3a",
+     "readout": "resorufin fluorescence",
+     "expected": "not_predicted",
+     "versus": "resorufin in medium alone",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [],
+     "unresolved": "over-reduction of resorufin lowers it; otherwise no change"
+    }
+   ],
+   "discriminates": [
+    "H3b"
+   ]
+  },
+  {
+   "id": "E3",
+   "design": "Same-well cell count (DNA) with resazurin; signal expressed per cell.",
+   "controls": [
+    "vehicle",
+    "cell-number standard curve"
+   ],
+   "measurements": [
+    "cell number",
+    "resazurin signal per cell"
+   ],
+   "readouts": [
+    {
+     "name": "cell number",
+     "target": "DNA",
+     "assay": "DNA-binding dye fluorescence",
+     "compartment": "whole well, lysed",
+     "timepoint": "end of the exposure that lowered the signal (exposure time is an open condition)",
+     "reference": "vehicle",
+     "normalization": "standard curve",
+     "unit": "cells/well"
+    },
+    {
+     "name": "resazurin signal per cell",
+     "target": "resorufin",
+     "assay": "fluorescence plate reader",
+     "compartment": "medium over cells",
+     "timepoint": "end of the exposure that lowered the signal (exposure time is an open condition)",
+     "reference": "vehicle",
+     "normalization": "per cell (DNA)",
+     "unit": "RFU/cell"
+    }
+   ],
+   "purposes": [
+    "discriminate"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O1",
+     "level": "direct"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Cell number falls, per-cell signal unchanged",
+     "implication": "Cell loss; confirm with membrane integrity."
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H1",
+     "readout": "cell number",
+     "expected": "decrease",
+     "versus": "vehicle",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-86b42ebcd0c4"
+     ],
+     "mechanism_link_ids": [],
+     "assumptions": [],
+     "biological_expectation": "fewer cells"
+    },
+    {
+     "hypothesis_id": "H2a",
+     "readout": "cell number",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "H2 acts per cell, not on number"
+     ]
+    },
+    {
+     "hypothesis_id": "H2b",
+     "readout": "cell number",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "H2 acts per cell, not on number"
+     ]
+    },
+    {
+     "hypothesis_id": "H3a",
+     "readout": "cell number",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "the compound does not interfere with the DNA dye readout"
+     ]
+    },
+    {
+     "hypothesis_id": "H3b",
+     "readout": "cell number",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "the compound does not interfere with the DNA dye readout"
+     ]
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "resazurin signal per cell",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-86b42ebcd0c4"
+     ],
+     "mechanism_link_ids": [],
+     "assumptions": []
+    },
+    {
+     "hypothesis_id": "H2a",
+     "readout": "resazurin signal per cell",
+     "expected": "decrease",
+     "versus": "vehicle",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "mechanism_link_ids": [
+      "M2"
+     ],
+     "assumptions": [],
+     "biological_expectation": "less reductive capacity per cell"
+    },
+    {
+     "hypothesis_id": "H2b",
+     "readout": "resazurin signal per cell",
+     "expected": "decrease",
+     "versus": "vehicle",
+     "basis": "mechanism_derived",
+     "evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "mechanism_link_ids": [
+      "M2"
+     ],
+     "assumptions": [],
+     "biological_expectation": "less reductase activity per cell"
+    },
+    {
+     "hypothesis_id": "H3a",
+     "readout": "resazurin signal per cell",
+     "expected": "decrease",
+     "versus": "vehicle",
+     "basis": "measurement_model",
+     "evidence_ids": [
+      "lit-c400e3eff71e"
+     ],
+     "mechanism_link_ids": [],
+     "assumptions": []
+    },
+    {
+     "hypothesis_id": "H3b",
+     "readout": "resazurin signal per cell",
+     "expected": "decrease",
+     "versus": "vehicle",
+     "basis": "measurement_model",
+     "evidence_ids": [
+      "lit-fd67cab1bedc"
+     ],
+     "mechanism_link_ids": [
+      "M1"
+     ],
+     "assumptions": []
+    }
+   ],
+   "discriminates": [
+    "H1",
+    "H2a",
+    "H2b"
+   ]
+  },
+  {
+   "id": "E4",
+   "design": "Orthogonal endpoints: membrane integrity (impermeant DNA dye) and ATP per cell.",
+   "controls": [
+    "vehicle",
+    "lysis control"
+   ],
+   "measurements": [
+    "membrane-compromised fraction",
+    "ATP per cell"
+   ],
+   "readouts": [
+    {
+     "name": "membrane-compromised fraction",
+     "target": "DNA of permeabilised cells",
+     "assay": "impermeant DNA dye, imaging",
+     "compartment": "cells",
+     "timepoint": "end of the exposure that lowered the signal (exposure time is an open condition)",
+     "reference": "vehicle",
+     "normalization": "fraction of all nuclei",
+     "unit": "%"
+    },
+    {
+     "name": "ATP per cell",
+     "target": "ATP",
+     "assay": "luciferase luminescence",
+     "compartment": "cell lysate",
+     "timepoint": "end of the exposure that lowered the signal (exposure time is an open condition)",
+     "reference": "vehicle",
+     "normalization": "per cell (DNA)",
+     "unit": "RLU/cell"
+    }
+   ],
+   "purposes": [
+    "function_check",
+    "discriminate"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O1",
+     "level": "direct"
+    },
+    {
+     "objective_id": "O2",
+     "level": "proxy",
+     "note": "ATP is downstream of content and function"
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H1",
+     "readout": "membrane-compromised fraction",
+     "expected": "not_predicted",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [],
+     "unresolved": "increase if cells die, no change if they arrest; H1 covers both"
+    },
+    {
+     "hypothesis_id": "H2a",
+     "readout": "membrane-compromised fraction",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "H2 does not kill"
+     ]
+    },
+    {
+     "hypothesis_id": "H2b",
+     "readout": "membrane-compromised fraction",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "H2 does not kill"
+     ]
+    },
+    {
+     "hypothesis_id": "H3a",
+     "readout": "membrane-compromised fraction",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "the membrane readout is not resorufin-coupled and is not affected by the compound"
+     ]
+    },
+    {
+     "hypothesis_id": "H3b",
+     "readout": "membrane-compromised fraction",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "the membrane readout is not resorufin-coupled and is not affected by the compound"
+     ]
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "ATP per cell",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "dying or arrested cells keep ATP per cell"
+     ]
+    },
+    {
+     "hypothesis_id": "H2a",
+     "readout": "ATP per cell",
+     "expected": "not_predicted",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [],
+     "unresolved": "decrease only if glycolysis does not compensate; unknown for these cells and medium"
+    },
+    {
+     "hypothesis_id": "H2b",
+     "readout": "ATP per cell",
+     "expected": "not_predicted",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [],
+     "unresolved": "decrease only if glycolysis does not compensate; unknown for these cells and medium"
+    },
+    {
+     "hypothesis_id": "H3a",
+     "readout": "ATP per cell",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "the compound does not affect the luciferase ATP readout"
+     ]
+    },
+    {
+     "hypothesis_id": "H3b",
+     "readout": "ATP per cell",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "the compound does not affect the luciferase ATP readout"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "E5",
+   "design": "Mitochondrial content (citrate synthase) and OCR, normalised to cell number and to content.",
+   "controls": [
+    "vehicle",
+    "uncoupler titration"
+   ],
+   "measurements": [
+    "mitochondrial content per cell",
+    "OCR per mitochondrial content"
+   ],
+   "readouts": [
+    {
+     "name": "mitochondrial content per cell",
+     "target": "citrate synthase activity",
+     "assay": "DTNB absorbance",
+     "compartment": "cell lysate",
+     "timepoint": "end of the exposure that lowered the signal (exposure time is an open condition)",
+     "reference": "vehicle",
+     "normalization": "per cell (DNA)",
+     "unit": "nmol/min/10^6 cells"
+    },
+    {
+     "name": "OCR per mitochondrial content",
+     "target": "oxygen consumption",
+     "assay": "plate respirometry, fluorescent O2 probe",
+     "compartment": "intact cells",
+     "timepoint": "end of the exposure that lowered the signal (exposure time is an open condition)",
+     "reference": "vehicle",
+     "normalization": "per citrate synthase",
+     "unit": "pmol/min per CS unit"
+    }
+   ],
+   "purposes": [
+    "discriminate"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O2",
+     "level": "direct"
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H2a",
+     "readout": "mitochondrial content per cell",
+     "expected": "decrease",
+     "versus": "vehicle",
+     "basis": "measurement_model",
+     "evidence_ids": [
+      "lit-d4f08afd7961"
+     ],
+     "mechanism_link_ids": [],
+     "assumptions": [],
+     "biological_expectation": "less mitochondrial content"
+    },
+    {
+     "hypothesis_id": "H2b",
+     "readout": "mitochondrial content per cell",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "measurement_model",
+     "evidence_ids": [
+      "lit-d4f08afd7961"
+     ],
+     "mechanism_link_ids": [],
+     "assumptions": []
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "mitochondrial content per cell",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "fewer cells, each unchanged"
+     ]
+    },
+    {
+     "hypothesis_id": "H3a",
+     "readout": "mitochondrial content per cell",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "the compound does not affect the citrate synthase assay"
+     ]
+    },
+    {
+     "hypothesis_id": "H3b",
+     "readout": "mitochondrial content per cell",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "the compound does not affect the citrate synthase assay"
+     ]
+    },
+    {
+     "hypothesis_id": "H2a",
+     "readout": "OCR per mitochondrial content",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "measurement_model",
+     "evidence_ids": [
+      "lit-d4f08afd7961"
+     ],
+     "mechanism_link_ids": [],
+     "assumptions": []
+    },
+    {
+     "hypothesis_id": "H2b",
+     "readout": "OCR per mitochondrial content",
+     "expected": "not_predicted",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [
+      "lit-126b0584c71b"
+     ],
+     "mechanism_link_ids": [],
+     "assumptions": [],
+     "unresolved": "decrease if the lost activity is mitochondrial; no change if it is other reductases"
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "OCR per mitochondrial content",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "fewer cells, each unchanged"
+     ]
+    },
+    {
+     "hypothesis_id": "H3a",
+     "readout": "OCR per mitochondrial content",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "the compound does not affect the oxygen sensor"
+     ]
+    },
+    {
+     "hypothesis_id": "H3b",
+     "readout": "OCR per mitochondrial content",
+     "expected": "no_change",
+     "versus": "vehicle",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "mechanism_link_ids": [],
+     "assumptions": [
+      "the compound does not affect the oxygen sensor"
+     ]
+    }
+   ],
+   "discriminates": [
+    "H2a",
+    "H2b"
+   ]
+  },
+  {
+   "id": "E6",
+   "design": "Cell-free luciferase check: ATP standard ± compound, no cells.",
+   "controls": [
+    "ATP standard alone"
+   ],
+   "measurements": [
+    "ATP standard luminescence"
+   ],
+   "readouts": [
+    {
+     "name": "ATP standard luminescence",
+     "target": "ATP",
+     "assay": "luciferase luminescence",
+     "compartment": "buffer, no cells",
+     "timepoint": "end of the exposure that lowered the signal (exposure time is an open condition)",
+     "reference": "ATP standard alone",
+     "normalization": "none",
+     "unit": "RLU"
+    }
+   ],
+   "purposes": [
+    "method_check"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O1",
+     "level": "out_of_scope",
+     "note": "checks an assumption behind E4"
+    }
+   ],
+   "priority_rationale": "Tests the assumption 'the compound does not affect the luciferase ATP readout', on which the H3a/H3b ATP cells rest. No hypothesis here predicts luciferase interference, so it separates no pair and is still needed before ATP is read.",
+   "predictions": [],
+   "assumption_checks": [
+    {
+     "assumption": "the compound does not affect the luciferase ATP readout",
+     "readout": "ATP standard luminescence",
+     "expected_if_holds": "no_change",
+     "versus": "ATP standard alone"
+    }
+   ]
+  }
+ ],
+ "evidence": [
+  {
+   "id": "lit-126b0584c71b",
+   "kind": "retrieved_source",
+   "statement": "Toxic or non-toxic: a critical assessment of the contradictory results for selected graphene family materials.",
+   "locator": {
+    "article": {
+     "doi": "10.3389/ftox.2026.1818582",
+     "pmid": "42131575",
+     "pmcid": "PMC13167221",
+     "provider_id": "42131575"
+    },
+    "source_kind": "section",
+    "section_title": "Resazurin (alamar blue) assay",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "Alamar Blue (AB) is a water-soluble, cell-permeable redox indicator used to track metabolic activity (often interpreted as viability), but it more directly reflects metabolism (Vieira-da-Silva and Castanho, 2023). Viable cells reduce non-fluorescent resazurin (blue) to fluorescent resorufin (pink) via mitochondrial and other cellular reductases (including diaphorases) using NAD(P)H-linked reducing capacity. The assay is typically read fluorometrically (Ex ∼530–570 nm; Em ∼580–620 nm). Absorbance readouts are possible (e.g., ∼570 nm with a reference ∼600 nm) but are less sensitive (O’Brien et al., 2000; Petiti et al., 2024). A decrease in fluorescence is generally interpreted as reduced metabolic activity/cytotoxicity; however, graphene materials can distort this relationship through assay interference (Riss et al., 2004). Published AB outcomes for graphene materials remain contradictory (see Table 4). Some studies report decreased metabolic activity after exposure to G or GO (cell-type and material dependent), sometimes supporting the idea that surface functionalisation (e.g., GO vs. pristine G) reduces apparent toxicity. Others report little/no effect on macrophage viability",
+    "source_text_hash": "3ebe171ea79dc5887274bd1a8f3f3b6114a0baa21cd1f85c1a7807f39a6337af"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "126b0584c71b645f68eb9c2db62a1f3fe763d96e25057d596283a8116c4add0c"
+  },
+  {
+   "id": "lit-3c6767e30e20",
+   "kind": "retrieved_source",
+   "statement": "Extracellular flux analyses indicate low ATP yield and require refinement for accurate determination of maximal oxygen consumption rate.",
+   "locator": {
+    "article": {
+     "doi": "10.1038/s41598-026-46479-w",
+     "pmid": "42270718",
+     "pmcid": "PMC13263325",
+     "provider_id": "42270718"
+    },
+    "source_kind": "abstract",
+    "section_title": null,
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "uncoupler concentrations. Using the same Seahorse plate, we compared results from both assays. Combined application of the Cell Mito Stress Test and the Cell Stimulation Test enhances the accuracy of maximal OCR assessment and eliminates the need for prior optimization of uncoupler concentration. Our survey further indicates that oxygen consumption not coupled to ATP synthesis constitutes a substantial fraction of basal cellular OCR (median ≈50%), with an unexpectedly large contribution from OCR typically classified as non-mitochondrial. We briefly discuss the implications and limitations of this observation.",
+    "source_text_hash": "d858f287686a4e3dc06e845104c92629a9646a472ab9bb66e1bd9571d8cf6838"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "3c6767e30e2042a0cff132eb00f42b2dd2838ed012a8f9f7c097609325b2121f"
+  },
+  {
+   "id": "lit-479e219aad4e",
+   "kind": "retrieved_source",
+   "statement": "Revisiting ISO 10993-5 In Vitro Cytotoxicity Standard Tests for Evaluation of Extracellular Matrix-Based Biomaterials.",
+   "locator": {
+    "article": {
+     "doi": "10.1155/ijbm/7395612",
+     "pmid": "42256731",
+     "pmcid": "PMC13239468",
+     "provider_id": "42256731"
+    },
+    "source_kind": "abstract",
+    "section_title": null,
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "assay method employed. To address these limitations and achieve more precise insights into cellular activity, cell membrane integrity (live/dead staining), cell-ECM attachment (actin cytoskeleton), proliferation (Ki67), and apoptosis (annexin V) were analyzed. Notably, despite observing increased metabolic activity (100%-150%) under serum-free conditions measured using MTT and XTT assays, live/dead and actin staining showed no corresponding changes in cell viability or attachment, and Ki67 indicated only ∼15% proliferation. Annexin V staining was detected only in human primary dermal fibroblasts, highlighting their greater reliability over L929 cells for detecting apoptosis. These findings provide a valuable reference for researchers, regulatory bodies, and industry stakeholders in refining cytotoxicity testing protocols and guiding future ISO 10993-5 revisions for more reliable assessment of biomaterials and medical devices.",
+    "source_text_hash": "e7129b63275237535f0e79e7ef4437568413fd6762078383726d984e57ad8521"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "479e219aad4ece36b70a0d12ff3d93c8b990b2a000f0fee5e8042e52e1d7f98e"
+  },
+  {
+   "id": "lit-5559327e689b",
+   "kind": "retrieved_source",
+   "statement": "Preserved mitochondrial respiration in presence of oxidative stress and reduced mitochondrial mass after 10-day bed rest in older adults.",
+   "locator": {
+    "article": {
+     "doi": "10.1113/jp291588",
+     "pmid": "42723548",
+     "pmcid": "PMC13577690",
+     "provider_id": "42723548"
+    },
+    "source_kind": "abstract",
+    "section_title": null,
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "volume density. Reduced dynamin-like protein 1 (DRP1) phosphorylation at serine 637 was observed, whereas other mitochondrial fission and fusion protein levels remained unchanged. Mitochondrial morphology remained unaltered. Transcriptomic analysis revealed >3000 differentially expressed genes, characterised by downregulation of oxidative phosphorylation genes alongside altered mitophagy, antioxidant and oxidoreductase pathways. In summary, 10-day bed rest increased mitochondrial ROS emission and reduced mitochondrial mass in older skeletal muscle despite preserved respiratory function, indicating that elevated ROS production occurs upstream of respiratory dysfunction and is potentially linked to impaired antioxidant defence and ROS clearance. These findings suggest that preserving redox balance during inactivity may be a key strategy to maintain muscle health and functional independence in ageing populations. KEY POINTS: The impact of short-term physical inactivity on mitochondrial function within the context of ageing remains poorly defined. This study examined the impact of 10-day bed rest on skeletal muscle mitochondrial function, morphology and gene expression in older adults.",
+    "source_text_hash": "c59789cf7e73a0760d91f084de7a68a24af57bd176fc24737154734c671c023e"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "5559327e689b1167e51ba374be1f67b20450d7febceb0dc4d719f98b8adbb7ee"
+  },
+  {
+   "id": "lit-86b42ebcd0c4",
+   "kind": "retrieved_source",
+   "statement": "Cytotoxicity across OECD methods is not a single endpoint: context-dependent roles, variability and implications for decision-making.",
+   "locator": {
+    "article": {
+     "doi": "10.1016/j.namjnl.2026.100126",
+     "pmid": "42756855",
+     "pmcid": "PMC13583590",
+     "provider_id": "42756855"
+    },
+    "source_kind": "section",
+    "section_title": "Cytotoxicity endpoints measure different biological processes",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "mitochondrial function, redox state and metabolic stress independent of irreversible cell death (Berridge et al., 2005). Resazurin reduction allows endpoint and real-time monitoring and reflects metabolic activity. It can be influenced by redox-active substances or changes in cellular reducing capacity (Emter and Natsch, 2015). Neutral red uptake measures lysosomal accumulation and membrane-dependent cellular integrity (Repetto et al., 2008). ATP assays capture the cellular energy status, often with high sensitivity to early metabolic disturbance (Riss et al., 2016). Propidium iodide, 7-AAD and Trypan blue assays assess membrane integrity or dye exclusion and are therefore closer to late-stage loss of membrane function. Proliferation metrics such as RPD, RICC and CBPI reflect population-level growth over time, while clonogenic survival captures reproductive capacity after exposure. Chemical interference is a specific and often under-recognized source of cytotoxicity misclassification. Colored, fluorescent, reducing, oxidizing, precipitating, volatile, protein-binding or particle-forming substances may distort optical, fluorometric or luminescent readouts without causing",
+    "source_text_hash": "76f0dd1df2c804f75106e05f4745d54eac5a0baa9cbc885639644c3c65a777cf"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "86b42ebcd0c486b47331fa0b7454a118774e80fdb0f72121e07c3a9778950527"
+  },
+  {
+   "id": "lit-be2c3c428bde",
+   "kind": "retrieved_source",
+   "statement": "Extracellular flux analyses indicate low ATP yield and require refinement for accurate determination of maximal oxygen consumption rate.",
+   "locator": {
+    "article": {
+     "doi": "10.1038/s41598-026-46479-w",
+     "pmid": "42270718",
+     "pmcid": "PMC13263325",
+     "provider_id": "42270718"
+    },
+    "source_kind": "abstract",
+    "section_title": null,
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "The Agilent Seahorse XF Analyzer has become a central tool for investigating cellular oxidative metabolism. Most studies employ the Seahorse XF Cell Mito Stress Test, which measures the oxygen consumption rate (OCR) under sequential pharmacological modulation of mitochondrial respiration. This assay partitions basal OCR into its functional components and estimates maximal OCR through uncoupler-driven stimulation of respiration, with the resulting value interpreted as the spare respiratory capacity. However, maximal OCR is obtained only after complete inhibition of ATP synthesis by oxidative phosphorylation, and its reliable determination requires appropriate uncoupler titration. Studies have underscored the limitations of this approach. To evaluate its reliability, we examined 97 recent publications reporting 530 Cell Mito Stress Tests. Strikingly, 17% of assays yielded a maximal OCR lower than the basal OCR, raising concerns about the accuracy of the method. To improve maximal OCR determination, we introduce the Cell Stimulation Test, which - analogous to maximal VO₂ assessments in patients - stimulates respiration directly from the basal state across a broad (1-8x) range of",
+    "source_text_hash": "01c70c8496a7182a599f59c87b03474cbe9738b982fc3b85c080c59e014fafac"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "be2c3c428bdebde8190629195e0ee75caed46926c9413acb6fa009f0e46f2380"
+  },
+  {
+   "id": "lit-c400e3eff71e",
+   "kind": "retrieved_source",
+   "statement": "Cytotoxicity across OECD methods is not a single endpoint: context-dependent roles, variability and implications for decision-making.",
+   "locator": {
+    "article": {
+     "doi": "10.1016/j.namjnl.2026.100126",
+     "pmid": "42756855",
+     "pmcid": "PMC13583590",
+     "provider_id": "42756855"
+    },
+    "source_kind": "section",
+    "section_title": "Cytotoxicity endpoints measure different biological processes",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "proportional cellular injury. This problem has been demonstrated particularly clearly for nanomaterials, where carbon nanotubes interfered with MTT-based viability measurements, engineered nanoparticles produced assay-dependent toxicity estimates, and nanomaterial adsorption of marker enzymes caused artefacts in cytotoxicity assays (Wohlleben et al., 2011; Wörle-Knirsch et al., 2006; Monteiro-Riviere et al., 2009). Photochemical artefacts can also distort viability measurements when assay reagents or test systems are light-sensitive (Heuser et al., 2005). More generally, cytotoxicity and viability assays differ in principle, sensitivity, technical limitations and susceptibility to interference; apparent cytotoxicity should therefore be confirmed by orthogonal readouts whenever physicochemical properties of the test substance indicate plausible assay interference (Aslantürk, 2018). To ensure the accuracy of results, OECD TG 439 (in vitro skin irritation) requires a mandatory check for direct chemical reduction of MTT by the test substance, as such interactions can artificially inflate viability scores and lead to false-negative irritancy classifications (OECD, 2025b). These endpoint",
+    "source_text_hash": "03e5cd4966ed7b0b19726f5e31f15d7acfcc0b00c96cc6477bf7132444501e8e"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "c400e3eff71ef1468366c83b20d26ef2582deaab2bc7cd2aa91cc6f7ac5412c5"
+  },
+  {
+   "id": "lit-d1719f786da7",
+   "kind": "retrieved_source",
+   "statement": "Toxic or non-toxic: a critical assessment of the contradictory results for selected graphene family materials.",
+   "locator": {
+    "article": {
+     "doi": "10.3389/ftox.2026.1818582",
+     "pmid": "42131575",
+     "pmcid": "PMC13167221",
+     "provider_id": "42131575"
+    },
+    "source_kind": "section",
+    "section_title": "Resazurin (alamar blue) assay",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "incubations of AB reagent with graphene that show “no interference” only indicate that the material may not chemically reduce resazurin to resorufin under those conditions; they do not rule out quenching/adsorption of resorufin in cellular assays (Mukherjee et al., 2016).",
+    "source_text_hash": "d6f48bacd1458cc08c15c950a31597bdb25213418f170115d400f59ed2d9c3d4"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "d1719f786da77a003e9afca6f707f6eccfa4f5570f7a7f891bb725492d8dee52"
+  },
+  {
+   "id": "lit-d4f08afd7961",
+   "kind": "retrieved_source",
+   "statement": "Preserved mitochondrial respiration in presence of oxidative stress and reduced mitochondrial mass after 10-day bed rest in older adults.",
+   "locator": {
+    "article": {
+     "doi": "10.1113/jp291588",
+     "pmid": "42723548",
+     "pmcid": "PMC13577690",
+     "provider_id": "42723548"
+    },
+    "source_kind": "abstract",
+    "section_title": null,
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "Short-term inactivity increased mitochondrial ROS production, accompanied by a dysregulation of antioxidant and oxidoreductase genes, indicating a reduced capacity for ROS clearance. Mitochondrial respiration was preserved under both submaximal and maximal stimulation. When normalised to mitochondrial content (citrate synthase activity), respiratory capacity increased, suggesting improved intrinsic efficiency. Mitochondrial mass was reduced, supported by decreased mitochondrial volume density assessed morphologically. Transcriptomic alterations in the mitophagy pathway suggest a potential role of altered mitochondrial degradation in this reduction. These findings indicate a transient compensatory response of ageing mitochondria to short-term disuse, suggesting that functional impairments are likely driven by cardiovascular and microvascular factors rather than mitochondrial respiration itself.",
+    "source_text_hash": "0ee9147424744e8224f75f770b6b26e7a5cf0126b3578677f87d73fc8a82661e"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "d4f08afd796166b14ba115fa0a6e41e3e66718acebf2fd2b134e96cb25dd22fc"
+  },
+  {
+   "id": "lit-fd67cab1bedc",
+   "kind": "retrieved_source",
+   "statement": "Toxic or non-toxic: a critical assessment of the contradictory results for selected graphene family materials.",
+   "locator": {
+    "article": {
+     "doi": "10.3389/ftox.2026.1818582",
+     "pmid": "42131575",
+     "pmcid": "PMC13167221",
+     "provider_id": "42131575"
+    },
+    "source_kind": "section",
+    "section_title": "Resazurin (alamar blue) assay",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "across GO sizes. Other studies report apparent increases in fluorescence/metabolic activity, which may reflect biological stimulation, assay artefact, or both. Across these studies, differences in GO synthesis/source (Hummers-derived vs. commercial/other oxidation routes), and especially dispersion practices (sonication type, duration, and power) are repeatedly variable and inconsistently reported thereby limiting comparability. Because AB is fluorescence-based, graphene-driven quenching and adsorption are major concerns (Longhin et al., 2022). Kalman et al. (2019) recommended “interference controls” that include AB + nanomaterials without cells are useful but incomplete if they omit the key product controls, i.e., resorufin alone (no cells) and resorufin + nanomaterials (no cells). These are critical because graphene derivatives can quench resorufin fluorescence directly, which would bias results toward an underestimation of metabolic activity. Evidence exists that GO and carboxylated graphene can quench resorufin in a manner that may appear independent of fluorophore concentration when graphene surface availability is limiting (Lammel et al., 2013). By contrast, acellular",
+    "source_text_hash": "f7629205031a36249dc5f6ac635eb3cde32b81b47443dd5d4020e99d75f024b7"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "fd67cab1bedc4088cc0c3266a881a4600d980115b84cd092de94afbee969ecda"
+  }
+ ],
+ "evidence_used": [
+  "lit-126b0584c71b",
+  "lit-3c6767e30e20",
+  "lit-479e219aad4e",
+  "lit-5559327e689b",
+  "lit-86b42ebcd0c4",
+  "lit-be2c3c428bde",
+  "lit-c400e3eff71e",
+  "lit-d1719f786da7",
+  "lit-d4f08afd7961",
+  "lit-fd67cab1bedc"
+ ]
+}

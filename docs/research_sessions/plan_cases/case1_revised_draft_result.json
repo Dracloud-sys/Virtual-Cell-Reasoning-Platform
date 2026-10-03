@@ -1,0 +1,2965 @@
+{
+ "search_attempts": [
+  {
+   "question": "distinguish newly synthesized collagen from scaffold collagen labeling",
+   "attempts": [
+    "ok"
+   ]
+  },
+  {
+   "question": "collagen hybridizing peptide detection of degraded collagen",
+   "attempts": [
+    "ok"
+   ]
+  },
+  {
+   "question": "fibroblast mediated contraction of collagen scaffold EDC crosslinking myofibroblast",
+   "attempts": [
+    "ok"
+   ]
+  }
+ ],
+ "reads": [
+  {
+   "doi": "10.1172/jci.insight.175188",
+   "part": "full_text",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 0,
+     "total_chars": 0,
+     "reached_end": false,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1172/jci.insight.175188",
+   "part": "full_text",
+   "section": "sec-10",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 5996,
+     "total_chars": 10827,
+     "reached_end": false,
+     "next_offset": 5997
+    },
+    {
+     "status": "ok",
+     "span_start": 5997,
+     "span_end": 10827,
+     "total_chars": 10827,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1172/jci.insight.175188",
+   "part": "full_text",
+   "section": "sec-3",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 2005,
+     "total_chars": 2005,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1016/j.celbio.2026.100404",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1099,
+     "total_chars": 1099,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1016/j.celbio.2026.100404",
+   "part": "full_text",
+   "section": null,
+   "pages": [
+    {
+     "status": "not_available",
+     "span_start": 0,
+     "span_end": 0,
+     "total_chars": 0,
+     "reached_end": false,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1021/jacs.3c00713",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1252,
+     "total_chars": 1252,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1172/jci.insight.201712",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1507,
+     "total_chars": 1507,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1016/j.isci.2025.113317",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1240,
+     "total_chars": 1240,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1016/j.mtbio.2025.102239",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1849,
+     "total_chars": 1849,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  }
+ ],
+ "what_if": {
+  "remove_evidence_ids": [
+   "lit-670133a47aa6"
+  ],
+  "changed_conditions": [
+   "TGF-beta1 then withdrawal, 10% serum",
+   "lung myofibroblasts from IPF patients and bleomycin-injured mice"
+  ]
+ },
+ "check_research_draft": {
+  "scientific_validity_checked": false,
+  "not_checked": [
+   "Whether any hypothesis is biologically plausible for this system.",
+   "Whether the alternatives offered are the ones that actually compete.",
+   "Whether the proposed experiment would separate them, or merely produce data.",
+   "Whether a cited source supports what it is cited for — only that the id exists and carries the kind of label it claims.",
+   "Whether a source named in free text refers to a real publication. Only ids in the submitted evidence list are resolved; a paper named inside a sentence is not.",
+   "Whether the controls, timepoints or measurements are adequate.",
+   "Anything about a graph_findings path. Only ids in the submitted evidence[] are resolved, so a knowledge-graph path cannot be cited here and is out of scope for every check above. Do not re-submit one as a user_observation or a retrieved_source to get it checked: it is neither, and relabelling it would make an unverified traversal look like something someone read."
+  ],
+  "authored_by": "host_llm",
+  "internal_model_calls": 0,
+  "evidence_origins": [
+   {
+    "id": "lit-3011dae7c880",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-34e29aabd827",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-35e5ec7f8460",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-426cada79afd",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-42a676c7e0c2",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-670133a47aa6",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-a0879275b79e",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-b1bd82388798",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-cd732cb414f8",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   },
+   {
+    "id": "lit-eba9427a4c2d",
+    "origin": "server_retrieved",
+    "detail": "Issued by this server and unchanged since."
+   }
+  ],
+  "findings": [
+   {
+    "code": "discriminates_nothing",
+    "where": "experiment:E2",
+    "detail": "names no hypothesis this experiment would tell apart"
+   }
+  ],
+  "plan_analysis": {
+   "limits": [
+    "Everything here follows from what the host wrote. Discrimination is computed from the predicted values given, so a wrong prediction produces a wrong separation.",
+    "Two predictions differ only when their values differ. Wording is never compared, and two readouts named differently are treated as different readouts.",
+    "Evidence roles and readings are the host's interpretation. Counting studies says how many papers were cited, not that any of them supports the claim.",
+    "Mechanism links are case candidates. A graph path means the curated graph holds a route between two exactly-matched entities; it says nothing about this case's conditions.",
+    "Nothing here ranks experiments. Which to run first is the host's argument and the researcher's decision.",
+    "Two hypotheses predicting different values on a readout is not a measure of how well the experiment would discriminate them, and says nothing about separating causes acting together: effect size, noise and interference are not modelled.",
+    "A state (present/absent) and a change (increase/decrease/no_change) are different claims and are never compared; neither are two changes stated against different references.",
+    "Prediction traces follow the references the host gave. A connected path is not a verified causal chain."
+   ],
+   "conditions": {
+    "confirmed": [
+     "Current stage is in vitro cell experiments",
+     "Scar minimisation is a long-term aim, not a current endpoint"
+    ],
+    "open": [
+     "Material source",
+     "Cell type and source",
+     "Acellular versus cell-loaded format",
+     "Method for measuring new collagen"
+    ],
+    "host_assumptions": [
+     "Candidate material: type I collagen scaffold",
+     "Candidate cells: human dermal fibroblasts",
+     "Candidate crosslinker: EDC/NHS"
+    ]
+   },
+   "goal_trace": [
+    {
+     "objective_id": "O1",
+     "statement": "Temporarily bridge and support the defect",
+     "stated_by": "user",
+     "sub_question_ids": [
+      "Q1",
+      "Q4"
+     ],
+     "hypothesis_ids": [
+      "H1",
+      "H2",
+      "H3",
+      "H4",
+      "H5",
+      "H6"
+     ],
+     "experiment_ids": [
+      "E1",
+      "E4",
+      "E2",
+      "E5",
+      "E3"
+     ]
+    },
+    {
+     "objective_id": "O2",
+     "statement": "Admit cell ingress",
+     "stated_by": "user",
+     "sub_question_ids": [
+      "Q2"
+     ],
+     "hypothesis_ids": [
+      "H4"
+     ],
+     "experiment_ids": [
+      "E1",
+      "E2"
+     ]
+    },
+    {
+     "objective_id": "O3",
+     "statement": "Hand function over to newly formed ECM",
+     "stated_by": "user",
+     "sub_question_ids": [
+      "Q1",
+      "Q3",
+      "Q4"
+     ],
+     "hypothesis_ids": [
+      "H1",
+      "H2",
+      "H3",
+      "H4",
+      "H5",
+      "H6",
+      "H7"
+     ],
+     "experiment_ids": [
+      "E1",
+      "E4",
+      "E2",
+      "E5",
+      "E3"
+     ]
+    },
+    {
+     "objective_id": "O4",
+     "statement": "Minimise scarring (long-term; in vitro proxy only)",
+     "stated_by": "user",
+     "sub_question_ids": [
+      "Q5"
+     ],
+     "hypothesis_ids": [
+      "H3",
+      "H5",
+      "H8"
+     ],
+     "experiment_ids": [
+      "E1",
+      "E4",
+      "E5"
+     ]
+    }
+   ],
+   "unreached_objectives": [],
+   "unanswered_sub_questions": [],
+   "untested_hypotheses": [],
+   "evidence": [
+    {
+     "target_id": "H5",
+     "role": "supports",
+     "evidence_ids": [
+      "lit-426cada79afd",
+      "lit-a0879275b79e",
+      "lit-b1bd82388798",
+      "lit-35e5ec7f8460"
+     ],
+     "span_count": 4,
+     "independent_studies": 3,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Precontracted constructs synthesised homotrimer; active contractility may relate to homotrimer synthesis.",
+      "Continuation of the same sentence: 'contractility is related to homotrimer synthesis'."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H6",
+     "role": "method",
+     "evidence_ids": [
+      "lit-670133a47aa6",
+      "lit-cd732cb414f8",
+      "lit-3011dae7c880"
+     ],
+     "span_count": 3,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "New labelled collagen was found processed in the construct and as proforms in the medium: measure both compartments.",
+      "mRNA ratio did not track the new chain ratio: gene expression is not the new-collagen readout.",
+      "The mRNA ratio cannot read out homotrimerisation (same study as lit-cd732cb414f8)."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H7",
+     "role": "method",
+     "evidence_ids": [
+      "lit-eba9427a4c2d"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Medium held primarily proforms, possibly other collagens: medium readout needs a type-I-specific step and reads secretion, not deposition."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H6",
+     "role": "scope_limit",
+     "evidence_ids": [
+      "lit-eba9427a4c2d"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Shown in fibrin-based tendon-like constructs after an overnight label and 3-hour chase; the split depends on chase time and construct type."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H1",
+     "role": "method",
+     "evidence_ids": [
+      "lit-42a676c7e0c2"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "CHP binds denatured collagen from proteolysis or mechanical disruption: not protease-specific."
+     ],
+     "interpretation_by": "host"
+    },
+    {
+     "target_id": "H4",
+     "role": "scope_limit",
+     "evidence_ids": [
+      "lit-34e29aabd827"
+     ],
+     "span_count": 1,
+     "independent_studies": 1,
+     "user_observation_ids": [],
+     "ungrounded_ids": [],
+     "host_readings": [
+      "Fibroblast source changed infiltration and deposition within collagen scaffolds; crosslinking is not the only driver of ingress."
+     ],
+     "interpretation_by": "host"
+    }
+   ],
+   "same_study_spans": [
+    {
+     "target_id": "H5",
+     "role": "supports",
+     "study": "pmcid:PMC12128996",
+     "evidence_ids": [
+      "lit-b1bd82388798",
+      "lit-35e5ec7f8460"
+     ]
+    },
+    {
+     "target_id": "H6",
+     "role": "method",
+     "study": "pmcid:PMC12128996",
+     "evidence_ids": [
+      "lit-670133a47aa6",
+      "lit-cd732cb414f8",
+      "lit-3011dae7c880"
+     ]
+    }
+   ],
+   "mechanism_links": [
+    {
+     "id": "M1",
+     "source": "myofibroblast activation",
+     "relation": "reduces",
+     "target": "uptake of degraded collagen",
+     "conditions": [
+      "lung myofibroblasts from IPF patients and bleomycin-injured mice"
+     ],
+     "hypothesis_ids": [
+      "H5"
+     ],
+     "grounded_evidence_ids": [
+      "lit-a0879275b79e"
+     ],
+     "ungrounded_evidence_ids": [],
+     "gaps": [
+      "not_in_graph"
+     ],
+     "graph": {
+      "status": "endpoint_not_in_graph",
+      "source_entity": null,
+      "target_entity": null,
+      "path": [],
+      "tier": null,
+      "independent_paths": null,
+      "provenance": [],
+      "how_matched": "Each end is matched to a graph entity only by its exact name or alias. A partial or word-level match is not treated as the same entity."
+     },
+     "status": "case_candidate"
+    },
+    {
+     "id": "M2",
+     "source": "myofibroblast activation",
+     "relation": "reduces",
+     "target": "collagen degradation",
+     "conditions": [
+      "renal fibroblasts on a low-rigidity collagen gel with TGF-beta1"
+     ],
+     "hypothesis_ids": [
+      "H5"
+     ],
+     "grounded_evidence_ids": [
+      "lit-426cada79afd"
+     ],
+     "ungrounded_evidence_ids": [],
+     "gaps": [
+      "not_in_graph"
+     ],
+     "graph": {
+      "status": "endpoint_not_in_graph",
+      "source_entity": null,
+      "target_entity": null,
+      "path": [],
+      "tier": null,
+      "independent_paths": null,
+      "provenance": [],
+      "how_matched": "Each end is matched to a graph entity only by its exact name or alias. A partial or word-level match is not treated as the same entity."
+     },
+     "status": "case_candidate"
+    },
+    {
+     "id": "M3",
+     "source": "TGF-beta1",
+     "relation": "promotes",
+     "target": "myofibroblast activation",
+     "conditions": [],
+     "hypothesis_ids": [
+      "H5",
+      "H8"
+     ],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "gaps": [
+      "no_evidence",
+      "no_conditions",
+      "not_in_graph"
+     ],
+     "graph": {
+      "status": "endpoint_not_in_graph",
+      "source_entity": null,
+      "target_entity": null,
+      "path": [],
+      "tier": null,
+      "independent_paths": null,
+      "provenance": [],
+      "how_matched": "Each end is matched to a graph entity only by its exact name or alias. A partial or word-level match is not treated as the same entity."
+     },
+     "status": "case_candidate"
+    },
+    {
+     "id": "M4",
+     "source": "serum TGF-beta",
+     "relation": "promotes",
+     "target": "COL1A2 expression",
+     "conditions": [
+      "2D palmar fibroblasts in 10% serum"
+     ],
+     "hypothesis_ids": [],
+     "grounded_evidence_ids": [
+      "lit-3011dae7c880",
+      "lit-670133a47aa6"
+     ],
+     "ungrounded_evidence_ids": [],
+     "gaps": [
+      "no_hypothesis",
+      "not_in_graph"
+     ],
+     "graph": {
+      "status": "endpoint_not_in_graph",
+      "source_entity": null,
+      "target_entity": null,
+      "path": [],
+      "tier": null,
+      "independent_paths": null,
+      "provenance": [],
+      "how_matched": "Each end is matched to a graph entity only by its exact name or alias. A partial or word-level match is not treated as the same entity."
+     },
+     "status": "case_candidate"
+    },
+    {
+     "id": "M5",
+     "source": "active contractility",
+     "relation": "associated_with",
+     "target": "type I collagen homotrimer synthesis",
+     "conditions": [
+      "precontracted fibrin-based tendon-like constructs"
+     ],
+     "hypothesis_ids": [
+      "H5"
+     ],
+     "grounded_evidence_ids": [
+      "lit-b1bd82388798",
+      "lit-35e5ec7f8460"
+     ],
+     "ungrounded_evidence_ids": [],
+     "gaps": [
+      "not_in_graph"
+     ],
+     "graph": {
+      "status": "endpoint_not_in_graph",
+      "source_entity": null,
+      "target_entity": null,
+      "path": [],
+      "tier": null,
+      "independent_paths": null,
+      "provenance": [],
+      "how_matched": "Each end is matched to a graph entity only by its exact name or alias. A partial or word-level match is not treated as the same entity."
+     },
+     "status": "case_candidate"
+    },
+    {
+     "id": "M6",
+     "source": "crosslink density",
+     "relation": "reduces",
+     "target": "cell ingress",
+     "conditions": [
+      "candidate EDC/NHS collagen scaffold"
+     ],
+     "hypothesis_ids": [
+      "H4"
+     ],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "gaps": [
+      "no_evidence",
+      "not_in_graph"
+     ],
+     "graph": {
+      "status": "endpoint_not_in_graph",
+      "source_entity": null,
+      "target_entity": null,
+      "path": [],
+      "tier": null,
+      "independent_paths": null,
+      "provenance": [],
+      "how_matched": "Each end is matched to a graph entity only by its exact name or alias. A partial or word-level match is not treated as the same entity."
+     },
+     "status": "case_candidate"
+    }
+   ],
+   "experiments": [
+    {
+     "experiment_id": "E1",
+     "hypotheses_with_predictions": [
+      "H1",
+      "H2",
+      "H3",
+      "H4",
+      "H5"
+     ],
+     "separated_pairs": [
+      {
+       "pair": [
+        "H1",
+        "H2"
+       ],
+       "readouts": [
+        {
+         "readout": "original material remaining (vs acellular)",
+         "expected": {
+          "H1": "decrease",
+          "H2": "no_change"
+         }
+        },
+        {
+         "readout": "original material remaining (inhibitor vs vehicle)",
+         "expected": {
+          "H1": "increase",
+          "H2": "no_change"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'original material remaining (vs acellular)', a change tells that H1 holds; it cannot rule out H2, because H2 predicts no change there and both can be true.",
+        "On 'original material remaining (inhibitor vs vehicle)', a change tells that H1 holds; it cannot rule out H2, because H2 predicts no change there and both can be true."
+       ]
+      },
+      {
+       "pair": [
+        "H1",
+        "H3"
+       ],
+       "readouts": [
+        {
+         "readout": "original material remaining (vs acellular)",
+         "expected": {
+          "H1": "decrease",
+          "H3": "no_change"
+         }
+        },
+        {
+         "readout": "original material remaining (inhibitor vs vehicle)",
+         "expected": {
+          "H1": "increase",
+          "H3": "no_change"
+         }
+        },
+        {
+         "readout": "construct area",
+         "expected": {
+          "H1": "no_change",
+          "H3": "decrease"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'original material remaining (vs acellular)', a change tells that H1 holds; it cannot rule out H3, because H3 predicts no change there and both can be true.",
+        "On 'original material remaining (inhibitor vs vehicle)', a change tells that H1 holds; it cannot rule out H3, because H3 predicts no change there and both can be true.",
+        "On 'construct area', a change tells that H3 holds; it cannot rule out H1, because H1 predicts no change there and both can be true."
+       ]
+      },
+      {
+       "pair": [
+        "H2",
+        "H3"
+       ],
+       "readouts": [
+        {
+         "readout": "construct area",
+         "expected": {
+          "H2": "no_change",
+          "H3": "decrease"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'construct area', a change tells that H3 holds; it cannot rule out H2, because H2 predicts no change there and both can be true."
+       ]
+      }
+     ],
+     "unseparated_pairs": [
+      {
+       "pair": [
+        "H1",
+        "H4"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H1",
+        "H5"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H2",
+        "H4"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H2",
+        "H5"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H3",
+        "H4"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H3",
+        "H5"
+       ],
+       "reason": "no_shared_predicted_readout"
+      },
+      {
+       "pair": [
+        "H4",
+        "H5"
+       ],
+       "reason": "no_shared_predicted_readout"
+      }
+     ],
+     "outcome_table": [
+      {
+       "readout": "original material remaining (vs acellular)",
+       "by_expected": {
+        "decrease": [
+         "H1"
+        ],
+        "no_change": [
+         "H2",
+         "H3"
+        ]
+       }
+      },
+      {
+       "readout": "original material remaining (inhibitor vs vehicle)",
+       "by_expected": {
+        "increase": [
+         "H1"
+        ],
+        "no_change": [
+         "H2",
+         "H3"
+        ]
+       }
+      },
+      {
+       "readout": "original material remaining (crosslinked vs not)",
+       "by_expected": {
+        "increase": [
+         "H4"
+        ]
+       }
+      },
+      {
+       "readout": "CHP signal in scaffold",
+       "by_expected": {
+        "increase": [
+         "H1",
+         "H3"
+        ]
+       }
+      },
+      {
+       "readout": "construct area",
+       "by_expected": {
+        "no_change": [
+         "H1",
+         "H2"
+        ],
+        "decrease": [
+         "H3"
+        ]
+       }
+      }
+     ],
+     "controls": [
+      "acellular scaffold in the same medium",
+      "collagenase-digested positive control",
+      "inhibitor-only viability check"
+     ],
+     "readout_exclusions": [],
+     "next_decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "next_decisions_by": "host"
+    },
+    {
+     "experiment_id": "E2",
+     "hypotheses_with_predictions": [
+      "H4"
+     ],
+     "separated_pairs": [],
+     "unseparated_pairs": [],
+     "outcome_table": [
+      {
+       "readout": "nuclei at depth (crosslinked vs not)",
+       "by_expected": {
+        "decrease": [
+         "H4"
+        ]
+       }
+      }
+     ],
+     "controls": [
+      "pre-seeded scaffold (bypasses ingress)",
+      "acellular scaffold against acellular gel"
+     ],
+     "readout_exclusions": [],
+     "next_decisions": [
+      {
+       "outcome": "Crosslinked scaffold restricts depth",
+       "implication": "Crosslinking level becomes a constraint for O2."
+      }
+     ],
+     "next_decisions_by": "host"
+    },
+    {
+     "experiment_id": "E3",
+     "hypotheses_with_predictions": [
+      "H6",
+      "H7"
+     ],
+     "separated_pairs": [
+      {
+       "pair": [
+        "H6",
+        "H7"
+       ],
+       "readouts": [
+        {
+         "readout": "new type I collagen retained in construct",
+         "expected": {
+          "H6": "increase",
+          "H7": "no_change"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'new type I collagen retained in construct', a change tells that H6 holds; it cannot rule out H7, because H7 predicts no change there and both can be true."
+       ]
+      }
+     ],
+     "unseparated_pairs": [],
+     "outcome_table": [
+      {
+       "readout": "new type I collagen retained in construct",
+       "by_expected": {
+        "increase": [
+         "H6"
+        ],
+        "no_change": [
+         "H7"
+        ]
+       }
+      },
+      {
+       "readout": "new type I collagen in medium",
+       "by_expected": {
+        "increase": [
+         "H7"
+        ]
+       }
+      }
+     ],
+     "controls": [
+      "unlabelled construct",
+      "label plus protein-synthesis inhibitor",
+      "acellular scaffold exposed to label"
+     ],
+     "readout_exclusions": [],
+     "next_decisions": [
+      {
+       "outcome": "Retained new collagen rises over chase",
+       "implication": "Deposition that could take over load; go to E4."
+      },
+      {
+       "outcome": "Label mostly in medium as proforms",
+       "implication": "Secreted, not retained; handover unlikely under these conditions."
+      }
+     ],
+     "next_decisions_by": "host"
+    },
+    {
+     "experiment_id": "E4",
+     "hypotheses_with_predictions": [
+      "H1",
+      "H3",
+      "H6",
+      "H7"
+     ],
+     "separated_pairs": [
+      {
+       "pair": [
+        "H1",
+        "H3"
+       ],
+       "readouts": [
+        {
+         "readout": "continuity (cell-laden vs acellular)",
+         "expected": {
+          "H1": "decrease",
+          "H3": "increase"
+         }
+        },
+        {
+         "readout": "gap length (vs initial)",
+         "expected": {
+          "H1": "no_change",
+          "H3": "decrease"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "H1 and H3 can both hold and predict opposite values for 'continuity (cell-laden vs acellular)': their effects may offset, so an intermediate or unchanged result could mean both, not neither.",
+        "On 'gap length (vs initial)', a change tells that H3 holds; it cannot rule out H1, because H1 predicts no change there and both can be true."
+       ]
+      },
+      {
+       "pair": [
+        "H3",
+        "H6"
+       ],
+       "readouts": [
+        {
+         "readout": "gap length (vs initial)",
+         "expected": {
+          "H3": "decrease",
+          "H6": "no_change"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'gap length (vs initial)', a change tells that H3 holds; it cannot rule out H6, because H6 predicts no change there and both can be true."
+       ]
+      },
+      {
+       "pair": [
+        "H6",
+        "H7"
+       ],
+       "readouts": [
+        {
+         "readout": "continuity (cell-laden vs acellular)",
+         "expected": {
+          "H6": "increase",
+          "H7": "no_change"
+         }
+        }
+       ],
+       "coexistence_notes": [
+        "On 'continuity (cell-laden vs acellular)', a change tells that H6 holds; it cannot rule out H7, because H7 predicts no change there and both can be true."
+       ]
+      }
+     ],
+     "unseparated_pairs": [],
+     "outcome_table": [
+      {
+       "readout": "continuity (cell-laden vs acellular)",
+       "by_expected": {
+        "decrease": [
+         "H1"
+        ],
+        "increase": [
+         "H3",
+         "H6"
+        ],
+        "no_change": [
+         "H7"
+        ]
+       }
+      },
+      {
+       "readout": "gap length (vs initial)",
+       "by_expected": {
+        "no_change": [
+         "H1",
+         "H6"
+        ],
+        "decrease": [
+         "H3"
+        ]
+       }
+      }
+     ],
+     "controls": [
+      "acellular bridge",
+      "empty gap"
+     ],
+     "readout_exclusions": [],
+     "next_decisions": [
+      {
+       "outcome": "Continuity kept in cell-laden bridges, gap unchanged, new collagen rising",
+       "implication": "Candidate handover in vitro; next, persistence of contraction (E5)."
+      },
+      {
+       "outcome": "Continuity kept only with a shortened gap",
+       "implication": "Contraction maintained the bridge: the outcome the long-term goal avoids."
+      }
+     ],
+     "next_decisions_by": "host"
+    },
+    {
+     "experiment_id": "E5",
+     "hypotheses_with_predictions": [
+      "H5",
+      "H8"
+     ],
+     "separated_pairs": [
+      {
+       "pair": [
+        "H5",
+        "H8"
+       ],
+       "readouts": [
+        {
+         "readout": "contraction after withdrawal",
+         "expected": {
+          "H5": "increase",
+          "H8": "no_change"
+         }
+        },
+        {
+         "readout": "alpha-SMA after withdrawal",
+         "expected": {
+          "H5": "increase",
+          "H8": "no_change"
+         }
+        },
+        {
+         "readout": "degraded collagen uptake",
+         "expected": {
+          "H5": "decrease",
+          "H8": "no_change"
+         }
+        }
+       ],
+       "coexistence_notes": []
+      }
+     ],
+     "unseparated_pairs": [],
+     "outcome_table": [
+      {
+       "readout": "contraction after withdrawal",
+       "by_expected": {
+        "increase": [
+         "H5"
+        ],
+        "no_change": [
+         "H8"
+        ]
+       }
+      },
+      {
+       "readout": "alpha-SMA after withdrawal",
+       "by_expected": {
+        "increase": [
+         "H5"
+        ],
+        "no_change": [
+         "H8"
+        ]
+       }
+      },
+      {
+       "readout": "degraded collagen uptake",
+       "by_expected": {
+        "decrease": [
+         "H5"
+        ],
+        "no_change": [
+         "H8"
+        ]
+       }
+      }
+     ],
+     "controls": [
+      "no TGF-beta1 in each medium",
+      "tissue-culture plastic reference"
+     ],
+     "readout_exclusions": [],
+     "next_decisions": [
+      {
+       "outcome": "Contraction and alpha-SMA persist after withdrawal",
+       "implication": "Change formulation or cell source before judging handover favourable."
+      }
+     ],
+     "next_decisions_by": "host"
+    }
+   ],
+   "pairs_never_separated": [
+    [
+     "H1",
+     "H4"
+    ],
+    [
+     "H1",
+     "H5"
+    ],
+    [
+     "H2",
+     "H4"
+    ],
+    [
+     "H2",
+     "H5"
+    ],
+    [
+     "H3",
+     "H4"
+    ],
+    [
+     "H3",
+     "H5"
+    ],
+    [
+     "H3",
+     "H8"
+    ],
+    [
+     "H4",
+     "H5"
+    ]
+   ],
+   "experiments_without_predictions": [],
+   "coverage": [
+    {
+     "experiment_id": "E4",
+     "covers_experiment_id": "E3",
+     "relation": "strict_superset"
+    }
+   ],
+   "pair_selection": [
+    {
+     "pair": [
+      "H1",
+      "H2"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H1",
+      "H3"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H1",
+      "H4"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H1",
+      "H5"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H1",
+      "H6"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H1",
+      "H7"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H1",
+      "H8"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H2",
+      "H3"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H2",
+      "H4"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H2",
+      "H5"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H2",
+      "H6"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H2",
+      "H7"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H2",
+      "H8"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H3",
+      "H4"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H3",
+      "H5"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H3",
+      "H6"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H3",
+      "H7"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H3",
+      "H8"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H4",
+      "H5"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H4",
+      "H6"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H4",
+      "H7"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H4",
+      "H8"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H5",
+      "H6"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H5",
+      "H7"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H5",
+      "H8"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H6",
+      "H7"
+     ],
+     "compared": true,
+     "reason": "shared_sub_question"
+    },
+    {
+     "pair": [
+      "H6",
+      "H8"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    },
+    {
+     "pair": [
+      "H7",
+      "H8"
+     ],
+     "compared": false,
+     "reason": "no_shared_sub_question_and_not_declared_alternatives"
+    }
+   ],
+   "objective_levels": [
+    {
+     "objective_id": "O1",
+     "direct": [
+      "E4"
+     ],
+     "proxy": [
+      "E1"
+     ],
+     "out_of_scope": [],
+     "reached_without_stated_level": [
+      "E2",
+      "E5",
+      "E3"
+     ],
+     "directly_measured": true,
+     "judged_by": [
+      "host"
+     ]
+    },
+    {
+     "objective_id": "O2",
+     "direct": [
+      "E2"
+     ],
+     "proxy": [],
+     "out_of_scope": [],
+     "reached_without_stated_level": [
+      "E1"
+     ],
+     "directly_measured": true,
+     "judged_by": [
+      "host"
+     ]
+    },
+    {
+     "objective_id": "O3",
+     "direct": [],
+     "proxy": [
+      "E1",
+      "E3",
+      "E4"
+     ],
+     "out_of_scope": [],
+     "reached_without_stated_level": [
+      "E2",
+      "E5"
+     ],
+     "directly_measured": false,
+     "judged_by": [
+      "host"
+     ]
+    },
+    {
+     "objective_id": "O4",
+     "direct": [],
+     "proxy": [
+      "E5"
+     ],
+     "out_of_scope": [
+      "E4"
+     ],
+     "reached_without_stated_level": [
+      "E1"
+     ],
+     "directly_measured": false,
+     "judged_by": [
+      "host"
+     ]
+    }
+   ],
+   "non_discriminating_experiments": [
+    {
+     "experiment_id": "E2",
+     "purposes": [
+      "function_check"
+     ],
+     "note": "Separates no hypothesis pair as written. That is not a defect: an experiment can be needed as a method check, a function check or a baseline."
+    }
+   ],
+   "prediction_traces": [
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H1",
+     "readout": "original material remaining (vs acellular)",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "acellular scaffold in the same medium",
+     "condition": null,
+     "biological_expectation": "cells degrade original collagen",
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-42a676c7e0c2"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-42a676c7e0c2"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [
+      "hydroxyproline in the scaffold reads original material once new collagen is subtracted"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2"
+      ],
+      [
+       "H1",
+       "H3"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H2",
+     "readout": "original material remaining (vs acellular)",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "acellular scaffold in the same medium",
+     "condition": null,
+     "biological_expectation": "loss is the same with or without cells",
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "hydroxyproline in the scaffold reads original material once new collagen is subtracted"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H3",
+     "readout": "original material remaining (vs acellular)",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "acellular scaffold in the same medium",
+     "condition": null,
+     "biological_expectation": "contraction moves material, does not remove it",
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "hydroxyproline in the scaffold reads original material once new collagen is subtracted"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H5",
+     "readout": "original material remaining (vs acellular)",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "acellular scaffold in the same medium",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "mechanism_derived",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [
+      "lit-426cada79afd"
+     ],
+     "grounded_evidence_ids": [
+      "lit-426cada79afd"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [
+      {
+       "id": "M2",
+       "gaps": [
+        "not_in_graph"
+       ]
+      }
+     ],
+     "assumptions": [],
+     "unresolved": "H5 predicts less degradation than non-activated cells; E1 has no activated/non-activated arm",
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H1",
+     "readout": "original material remaining (inhibitor vs vehicle)",
+     "expected": "increase",
+     "kind": "change",
+     "versus": "cells without inhibitor",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "hydroxyproline in the scaffold reads original material once new collagen is subtracted",
+      "the broad inhibitor does not reduce viability"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2"
+      ],
+      [
+       "H1",
+       "H3"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H2",
+     "readout": "original material remaining (inhibitor vs vehicle)",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "cells without inhibitor",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "hydroxyproline in the scaffold reads original material once new collagen is subtracted"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H2"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H3",
+     "readout": "original material remaining (inhibitor vs vehicle)",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "cells without inhibitor",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "hydroxyproline in the scaffold reads original material once new collagen is subtracted"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H4",
+     "readout": "original material remaining (crosslinked vs not)",
+     "expected": "increase",
+     "kind": "change",
+     "versus": "non-crosslinked scaffold",
+     "condition": null,
+     "biological_expectation": "denser crosslinks slow loss",
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "hydroxyproline in the scaffold reads original material once new collagen is subtracted"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H1",
+     "readout": "original material remaining (crosslinked vs not)",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "non-crosslinked scaffold",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "crosslinking may slow proteolysis too; H1 does not say how much",
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H2",
+     "readout": "original material remaining (crosslinked vs not)",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "non-crosslinked scaffold",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "crosslinking may slow hydrolysis too",
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H3",
+     "readout": "original material remaining (crosslinked vs not)",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "non-crosslinked scaffold",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "a stiffer scaffold may resist traction",
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H1",
+     "readout": "CHP signal in scaffold",
+     "expected": "increase",
+     "kind": "change",
+     "versus": "acellular scaffold in the same medium",
+     "condition": null,
+     "biological_expectation": "proteolysis denatures collagen",
+     "basis": "evidence_observed",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-42a676c7e0c2"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-42a676c7e0c2"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H2",
+     "readout": "CHP signal in scaffold",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "acellular scaffold in the same medium",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "whether hydrolysis in medium denatures enough to register is unknown",
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H3",
+     "readout": "CHP signal in scaffold",
+     "expected": "increase",
+     "kind": "change",
+     "versus": "acellular scaffold in the same medium",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-42a676c7e0c2"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-42a676c7e0c2"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [
+      "contraction denatures enough collagen to register on CHP"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H3",
+     "readout": "construct area",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "acellular scaffold in the same medium",
+     "condition": null,
+     "biological_expectation": "traction contracts the construct",
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3"
+      ],
+      [
+       "H2",
+       "H3"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H1",
+     "readout": "construct area",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "acellular scaffold in the same medium",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "degradation thins without shrinking the outline"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E1",
+     "hypothesis_id": "H2",
+     "readout": "construct area",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "acellular scaffold in the same medium",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "degradation thins without shrinking the outline"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H2",
+       "H3"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+       "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+      },
+      {
+       "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+       "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E2",
+     "hypothesis_id": "H4",
+     "readout": "nuclei at depth (crosslinked vs not)",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "non-crosslinked scaffold",
+     "condition": null,
+     "biological_expectation": "denser crosslinks restrict migration",
+     "basis": "mechanism_derived",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-34e29aabd827"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-34e29aabd827"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [
+      {
+       "id": "M6",
+       "gaps": [
+        "no_evidence",
+        "not_in_graph"
+       ]
+      }
+     ],
+     "assumptions": [
+      "cell source held constant"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Crosslinked scaffold restricts depth",
+       "implication": "Crosslinking level becomes a constraint for O2."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H6",
+     "readout": "new type I collagen retained in construct",
+     "expected": "increase",
+     "kind": "change",
+     "versus": "start of chase",
+     "condition": null,
+     "biological_expectation": "new collagen deposited and kept",
+     "basis": "evidence_observed",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-670133a47aa6"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-670133a47aa6"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [
+      "the chase is long enough for processing, and the readout is type-I-specific"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H6",
+       "H7"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Retained new collagen rises over chase",
+       "implication": "Deposition that could take over load; go to E4."
+      },
+      {
+       "outcome": "Label mostly in medium as proforms",
+       "implication": "Secreted, not retained; handover unlikely under these conditions."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H7",
+     "readout": "new type I collagen retained in construct",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "start of chase",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "evidence_observed",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-eba9427a4c2d"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-eba9427a4c2d"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [
+      "the chase is long enough for processing, and the readout is type-I-specific"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H6",
+       "H7"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Retained new collagen rises over chase",
+       "implication": "Deposition that could take over load; go to E4."
+      },
+      {
+       "outcome": "Label mostly in medium as proforms",
+       "implication": "Secreted, not retained; handover unlikely under these conditions."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H6",
+     "readout": "new type I collagen in medium",
+     "expected": "not_predicted",
+     "kind": null,
+     "versus": "start of chase",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "evidence_observed",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-eba9427a4c2d"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-eba9427a4c2d"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": "proforms appear in medium even when processed collagen is retained; split depends on chase time",
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Retained new collagen rises over chase",
+       "implication": "Deposition that could take over load; go to E4."
+      },
+      {
+       "outcome": "Label mostly in medium as proforms",
+       "implication": "Secreted, not retained; handover unlikely under these conditions."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E3",
+     "hypothesis_id": "H7",
+     "readout": "new type I collagen in medium",
+     "expected": "increase",
+     "kind": "change",
+     "versus": "start of chase",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "evidence_observed",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [
+      "lit-eba9427a4c2d"
+     ],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [
+      "lit-eba9427a4c2d"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [],
+     "assumptions": [
+      "the chase is long enough for processing, and the readout is type-I-specific"
+     ],
+     "unresolved": null,
+     "separates": [],
+     "decisions": [
+      {
+       "outcome": "Retained new collagen rises over chase",
+       "implication": "Deposition that could take over load; go to E4."
+      },
+      {
+       "outcome": "Label mostly in medium as proforms",
+       "implication": "Secreted, not retained; handover unlikely under these conditions."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H6",
+     "readout": "continuity (cell-laden vs acellular)",
+     "expected": "increase",
+     "kind": "change",
+     "versus": "acellular bridge",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "retained new collagen contributes to continuity"
+     ],
+     "unresolved": "no readout measures load carried by new collagen; continuity does not show handover",
+     "separates": [
+      [
+       "H6",
+       "H7"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Continuity kept in cell-laden bridges, gap unchanged, new collagen rising",
+       "implication": "Candidate handover in vitro; next, persistence of contraction (E5)."
+      },
+      {
+       "outcome": "Continuity kept only with a shortened gap",
+       "implication": "Contraction maintained the bridge: the outcome the long-term goal avoids."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H3",
+     "readout": "continuity (cell-laden vs acellular)",
+     "expected": "increase",
+     "kind": "change",
+     "versus": "acellular bridge",
+     "condition": null,
+     "biological_expectation": "a shortened gap stays bridged",
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Continuity kept in cell-laden bridges, gap unchanged, new collagen rising",
+       "implication": "Candidate handover in vitro; next, persistence of contraction (E5)."
+      },
+      {
+       "outcome": "Continuity kept only with a shortened gap",
+       "implication": "Contraction maintained the bridge: the outcome the long-term goal avoids."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H1",
+     "readout": "continuity (cell-laden vs acellular)",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "acellular bridge",
+     "condition": null,
+     "biological_expectation": "cells remove the original span faster",
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Continuity kept in cell-laden bridges, gap unchanged, new collagen rising",
+       "implication": "Candidate handover in vitro; next, persistence of contraction (E5)."
+      },
+      {
+       "outcome": "Continuity kept only with a shortened gap",
+       "implication": "Contraction maintained the bridge: the outcome the long-term goal avoids."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H7",
+     "readout": "continuity (cell-laden vs acellular)",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "acellular bridge",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [
+      "unretained collagen does not bridge"
+     ],
+     "unresolved": null,
+     "separates": [
+      [
+       "H6",
+       "H7"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Continuity kept in cell-laden bridges, gap unchanged, new collagen rising",
+       "implication": "Candidate handover in vitro; next, persistence of contraction (E5)."
+      },
+      {
+       "outcome": "Continuity kept only with a shortened gap",
+       "implication": "Contraction maintained the bridge: the outcome the long-term goal avoids."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H6",
+     "readout": "gap length (vs initial)",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "initial gap",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H3",
+       "H6"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Continuity kept in cell-laden bridges, gap unchanged, new collagen rising",
+       "implication": "Candidate handover in vitro; next, persistence of contraction (E5)."
+      },
+      {
+       "outcome": "Continuity kept only with a shortened gap",
+       "implication": "Contraction maintained the bridge: the outcome the long-term goal avoids."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H3",
+     "readout": "gap length (vs initial)",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "initial gap",
+     "condition": null,
+     "biological_expectation": "traction pulls anchors together",
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3"
+      ],
+      [
+       "H3",
+       "H6"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Continuity kept in cell-laden bridges, gap unchanged, new collagen rising",
+       "implication": "Candidate handover in vitro; next, persistence of contraction (E5)."
+      },
+      {
+       "outcome": "Continuity kept only with a shortened gap",
+       "implication": "Contraction maintained the bridge: the outcome the long-term goal avoids."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    },
+    {
+     "experiment_id": "E4",
+     "hypothesis_id": "H1",
+     "readout": "gap length (vs initial)",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "initial gap",
+     "condition": null,
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H1",
+       "H3"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Continuity kept in cell-laden bridges, gap unchanged, new collagen rising",
+       "implication": "Candidate handover in vitro; next, persistence of contraction (E5)."
+      },
+      {
+       "outcome": "Continuity kept only with a shortened gap",
+       "implication": "Contraction maintained the bridge: the outcome the long-term goal avoids."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H5",
+     "readout": "contraction after withdrawal",
+     "expected": "increase",
+     "kind": "change",
+     "versus": "no TGF-beta1 control, same time after withdrawal",
+     "condition": "TGF-beta1 then withdrawal, 10% serum",
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H5",
+       "H8"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Contraction and alpha-SMA persist after withdrawal",
+       "implication": "Change formulation or cell source before judging handover favourable."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H8",
+     "readout": "contraction after withdrawal",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "no TGF-beta1 control, same time after withdrawal",
+     "condition": "TGF-beta1 then withdrawal, 10% serum",
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H5",
+       "H8"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Contraction and alpha-SMA persist after withdrawal",
+       "implication": "Change formulation or cell source before judging handover favourable."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H5",
+     "readout": "alpha-SMA after withdrawal",
+     "expected": "increase",
+     "kind": "change",
+     "versus": "no TGF-beta1 control, same time after withdrawal",
+     "condition": "TGF-beta1 then withdrawal, 10% serum",
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H5",
+       "H8"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Contraction and alpha-SMA persist after withdrawal",
+       "implication": "Change formulation or cell source before judging handover favourable."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H8",
+     "readout": "alpha-SMA after withdrawal",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "no TGF-beta1 control, same time after withdrawal",
+     "condition": "TGF-beta1 then withdrawal, 10% serum",
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H5",
+       "H8"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Contraction and alpha-SMA persist after withdrawal",
+       "implication": "Change formulation or cell source before judging handover favourable."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H5",
+     "readout": "degraded collagen uptake",
+     "expected": "decrease",
+     "kind": "change",
+     "versus": "no TGF-beta1 control, same time after withdrawal",
+     "condition": "TGF-beta1 then withdrawal, 10% serum",
+     "biological_expectation": "activated cells take up less degraded collagen",
+     "basis": "mechanism_derived",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [
+      "lit-a0879275b79e"
+     ],
+     "grounded_evidence_ids": [
+      "lit-a0879275b79e"
+     ],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 1,
+     "mechanism_links": [
+      {
+       "id": "M1",
+       "gaps": [
+        "not_in_graph"
+       ]
+      }
+     ],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H5",
+       "H8"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Contraction and alpha-SMA persist after withdrawal",
+       "implication": "Change formulation or cell source before judging handover favourable."
+      }
+     ],
+     "gaps": []
+    },
+    {
+     "experiment_id": "E5",
+     "hypothesis_id": "H8",
+     "readout": "degraded collagen uptake",
+     "expected": "no_change",
+     "kind": "change",
+     "versus": "no TGF-beta1 control, same time after withdrawal",
+     "condition": "TGF-beta1 then withdrawal, 10% serum",
+     "biological_expectation": null,
+     "basis": "assumption",
+     "basis_stated_by": "host",
+     "direct_evidence_ids": [],
+     "mechanism_evidence_ids": [],
+     "grounded_evidence_ids": [],
+     "ungrounded_evidence_ids": [],
+     "independent_studies": 0,
+     "mechanism_links": [],
+     "assumptions": [],
+     "unresolved": null,
+     "separates": [
+      [
+       "H5",
+       "H8"
+      ]
+     ],
+     "decisions": [
+      {
+       "outcome": "Contraction and alpha-SMA persist after withdrawal",
+       "implication": "Change formulation or cell source before judging handover favourable."
+      }
+     ],
+     "gaps": [
+      "assumption_without_stated_assumptions"
+     ]
+    }
+   ],
+   "readout_specs_missing": [],
+   "impact": {
+    "removed_evidence_ids": [
+     "lit-670133a47aa6"
+    ],
+    "changed_conditions": [
+     "TGF-beta1 then withdrawal, 10% serum",
+     "lung myofibroblasts from IPF patients and bleomycin-injured mice"
+    ],
+    "affected_predictions": [
+     {
+      "experiment_id": "E3",
+      "hypothesis_id": "H6",
+      "readout": "new type I collagen retained in construct",
+      "via": [
+       "evidence:lit-670133a47aa6"
+      ]
+     },
+     {
+      "experiment_id": "E5",
+      "hypothesis_id": "H5",
+      "readout": "contraction after withdrawal",
+      "via": [
+       "condition"
+      ]
+     },
+     {
+      "experiment_id": "E5",
+      "hypothesis_id": "H8",
+      "readout": "contraction after withdrawal",
+      "via": [
+       "condition"
+      ]
+     },
+     {
+      "experiment_id": "E5",
+      "hypothesis_id": "H5",
+      "readout": "alpha-SMA after withdrawal",
+      "via": [
+       "condition"
+      ]
+     },
+     {
+      "experiment_id": "E5",
+      "hypothesis_id": "H8",
+      "readout": "alpha-SMA after withdrawal",
+      "via": [
+       "condition"
+      ]
+     },
+     {
+      "experiment_id": "E5",
+      "hypothesis_id": "H5",
+      "readout": "degraded collagen uptake",
+      "via": [
+       "mechanism_link:M1",
+       "condition"
+      ]
+     },
+     {
+      "experiment_id": "E5",
+      "hypothesis_id": "H8",
+      "readout": "degraded collagen uptake",
+      "via": [
+       "condition"
+      ]
+     }
+    ],
+    "affected_mechanism_links": [
+     "M1",
+     "M4"
+    ],
+    "affected_hypotheses": [
+     "H6",
+     "H5",
+     "H8"
+    ],
+    "affected_experiments": [
+     "E3",
+     "E5"
+    ],
+    "note": "These rest on what was withdrawn or changed and need re-examining. No predicted value is changed or reversed here, and nothing is propagated from one assay to another."
+   },
+   "findings": [],
+   "wrote_to_knowledge_graph": false
+  }
+ }
+}

@@ -1,0 +1,54 @@
+{
+ "revises": "decisions.json",
+ "note": "Revision 2 of the host's decisions. Corrects two statements in decisions.json: the background check merged the AB values of two time points, and the H_more reason named a Ti6Al4V well. Decisions are unchanged.",
+ "decisions": [
+  {
+   "target_id": "H_tox",
+   "decision": "hold",
+   "reason": "Not classified at 24 or 48 h (combinations disagree). Host reading, not a classification: none of the 40 BMG/Ti6Al4V combinations (20 per time point) reached the declared decrease band (lowest 0.926). Held rather than revised: the Ti6Al4V/TI-CTL correspondence is unaccepted, the background assumption is not established, and interference is untested.",
+   "next_experiment_ids": [
+    "E2",
+    "E3"
+   ]
+  },
+  {
+   "target_id": "H_eq",
+   "decision": "hold",
+   "reason": "The authors' 'comparable' rests on ANOVA of means; this comparison computes no statistic and did not classify no_change: 3/20 (24 h) and 1/20 (48 h) combinations fall in the no_change band, all involving one BMG well.",
+   "next_experiment_ids": [
+    "E3"
+   ]
+  },
+  {
+   "target_id": "H_more",
+   "decision": "hold",
+   "reason": "At 48 h, 18 of the 20 BMG x Ti6Al4V combinations fall in the increase band, one between bands and one in no_change; both non-increase combinations involve BMG well S8. These are counts of combinations, not of replicates, and not a probability. A raised signal is also what H_int predicts, and E3 separates cell number from activity per cell only in part.",
+   "next_experiment_ids": [
+    "E2",
+    "E3"
+   ]
+  },
+  {
+   "target_id": "H_int",
+   "decision": "hold",
+   "reason": "No cell-free specimen read exists in the export; the procedure (dye added onto specimens) does not exclude a material contribution.",
+   "next_experiment_ids": [
+    "E2"
+   ]
+  },
+  {
+   "target_id": "the Ti6Al4V wells read above the reagent-only background at the same read",
+   "decision": "hold",
+   "reason": "Not established on its check: the TI-CTL vs AB combinations disagree at both times. Per time point: at 24 h TI-CTL L22 (1641 RFU) reads below both 24 h AB wells (1743, 1756); at 48 h TI-CTL O7 (1595 RFU) reads within the 48 h AB range (1581-1624). The other three TI-CTL wells are above AB at their own time point. What AB contains is not recorded. Raw-RFU ratios to Ti6Al4V are therefore not ratios of cell signal; background handling must be declared before any re-read. No well is called an outlier or removed.",
+   "next_experiment_ids": [
+    "E2"
+   ]
+  },
+  {
+   "target_id": "E1:alamarBlue fluorescence",
+   "decision": "hold",
+   "reason": "Kept as recorded; not re-analysed by dropping wells. Five record questions go to the researcher before any re-read: (1) accept or reject TI-CTL = Ti6Al4V and AB = reagent only; (2) was the specimen in the read well; (3) are wells independent specimens, and is the same specimen read at 24 and 48 h; (4) the AB well position conflict (grid C7-C8 vs plate area H8-H9); (5) 'triplicate' vs 4 and 5 wells.",
+   "next_experiment_ids": []
+  }
+ ]
+}

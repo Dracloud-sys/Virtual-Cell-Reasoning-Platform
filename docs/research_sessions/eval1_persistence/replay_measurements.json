@@ -1,0 +1,119 @@
+[
+ {
+  "payload": "condition_B_payload_1.json",
+  "finding_count": 83,
+  "full_bytes": 358685,
+  "full_text_block_chars": 532434,
+  "compact_bytes": 26847,
+  "compact_text_block_chars": 46576,
+  "largest_full_parts": {
+   "plan_analysis.prediction_traces": 228896,
+   "plan_analysis.experiments": 55565,
+   "plan_analysis.findings": 11857,
+   "plan_analysis.mechanism_links": 9113,
+   "plan_analysis.evidence": 7362,
+   "findings": 24580
+  },
+  "trace_decisions_bytes": 125856,
+  "prediction_traces": 144,
+  "groups": [
+   {
+    "code": "unsupported_evidence_link",
+    "kind": "input",
+    "source": "findings",
+    "field": "hypotheses[].supporting_evidence_ids",
+    "case": "supports_link_not_in_supporting_ids",
+    "count": 5,
+    "derived": {}
+   },
+   {
+    "code": "unknown_hypothesis_id",
+    "kind": "input",
+    "source": "findings",
+    "field": "experiments[].discriminates",
+    "case": null,
+    "count": 39,
+    "derived": {
+     "discrimination_claimed_without_predictions": 39
+    }
+   },
+   {
+    "code": "assumption_without_stated_assumptions",
+    "kind": "review",
+    "source": "prediction_traces",
+    "field": "experiments[].predictions[]",
+    "case": null,
+    "count": 3,
+    "derived": {}
+   }
+  ],
+  "not_computed": [
+   "experiment:E1: 12 discriminates value(s) are not hypothesis ids, so what the experiment was declared to separate is not checked against its predictions. What its predictions separate is still computed.",
+   "experiment:E2: 6 discriminates value(s) are not hypothesis ids, so what the experiment was declared to separate is not checked against its predictions. What its predictions separate is still computed.",
+   "experiment:E3: 6 discriminates value(s) are not hypothesis ids, so what the experiment was declared to separate is not checked against its predictions. What its predictions separate is still computed.",
+   "experiment:E4: 5 discriminates value(s) are not hypothesis ids, so what the experiment was declared to separate is not checked against its predictions. What its predictions separate is still computed.",
+   "experiment:E5: 4 discriminates value(s) are not hypothesis ids, so what the experiment was declared to separate is not checked against its predictions. What its predictions separate is still computed.",
+   "experiment:E6: 6 discriminates value(s) are not hypothesis ids, so what the experiment was declared to separate is not checked against its predictions. What its predictions separate is still computed."
+  ]
+ },
+ {
+  "payload": "condition_B_payload_2.json",
+  "finding_count": 1,
+  "full_bytes": 313101,
+  "full_text_block_chars": 475801,
+  "compact_bytes": 19389,
+  "compact_text_block_chars": 35553,
+  "largest_full_parts": {
+   "plan_analysis.prediction_traces": 229084,
+   "plan_analysis.experiments": 55565,
+   "plan_analysis.mechanism_links": 9113,
+   "plan_analysis.evidence": 5184,
+   "findings": 180
+  },
+  "trace_decisions_bytes": 125856,
+  "prediction_traces": 144,
+  "groups": [
+   {
+    "code": "understated_evidence_link",
+    "kind": "review",
+    "source": "findings",
+    "field": null,
+    "case": null,
+    "count": 1,
+    "derived": {}
+   }
+  ],
+  "not_computed": [
+   "what_if was not sent, so no dependency impact was computed."
+  ]
+ },
+ {
+  "payload": "draft_v2.json",
+  "finding_count": 0,
+  "full_bytes": 314137,
+  "full_text_block_chars": 477567,
+  "compact_bytes": 20631,
+  "compact_text_block_chars": 37618,
+  "largest_full_parts": {
+   "plan_analysis.prediction_traces": 228941,
+   "plan_analysis.experiments": 55565,
+   "plan_analysis.mechanism_links": 9113,
+   "plan_analysis.evidence": 5418,
+   "findings": 2
+  },
+  "trace_decisions_bytes": 125856,
+  "prediction_traces": 144,
+  "groups": [
+   {
+    "code": "assumption_without_stated_assumptions",
+    "kind": "review",
+    "source": "prediction_traces",
+    "field": "experiments[].predictions[]",
+    "case": null,
+    "count": 2,
+    "derived": {}
+   }
+  ],
+  "not_computed": []
+ }
+]

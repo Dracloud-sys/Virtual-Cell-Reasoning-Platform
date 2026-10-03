@@ -1,0 +1,171 @@
+{
+ "note": "Written 2026-09-26, after the values were seen. The bands pre-date the data; the choice to apply them here, the mappings and the correspondences are post hoc. No pairs are declared: the export records no specimen or donor pairing. 24 h and 48 h are not compared with each other: the plate was read at 29.2 C and 35.1 C.",
+ "time_order": "post_hoc",
+ "plan": "plan.json",
+ "mappings": [
+  {
+   "key": "E1_main_24h",
+   "experiment_id": "E1",
+   "readout": "alamarBlue fluorescence",
+   "measurement_name": "alamarblue_rfu",
+   "unit": "RFU",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 24.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "group": "TI-BMG"
+   },
+   "reference": {
+    "group": "TI-CTL"
+   },
+   "versus": "Ti6Al4V",
+   "reference_correspondence": {
+    "plan_reference": "Ti6Al4V",
+    "observed_conditions": {
+     "group": "TI-CTL"
+    },
+    "applies_to": [
+     "E1"
+    ],
+    "basis": "Zenodo 8342247 description names Ti6Al4V and Ti40Zr10Cu36Pd14 BMG; the paper (sec3.3, lit-5737e83c47b3) names Ti-6Al-4V as the control surface; the export labels this group TI-CTL. The label itself does not say Ti6Al4V.",
+    "stated_by": "host"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "Bands copied unchanged from docs/research_sessions/plan_cases/case2_b1_rules.json, fixed on 2026-09-25 (commit d7d8bc2) for synthetic development, before this dataset was seen. Applying them to this assay is the host's choice, made AFTER viewing the values (post hoc). Not an acceptance criterion and not a statistical test."
+   }
+  },
+  {
+   "key": "E1_background_24h",
+   "experiment_id": "E1",
+   "readout": "alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+   "measurement_name": "alamarblue_rfu",
+   "unit": "RFU",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 24.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "group": "TI-CTL"
+   },
+   "reference": {
+    "group": "AB"
+   },
+   "versus": "reagent only (no cells)",
+   "reference_correspondence": {
+    "plan_reference": "reagent only (no cells)",
+    "observed_conditions": {
+     "group": "AB"
+    },
+    "applies_to": [
+     "E1"
+    ],
+    "basis": "Two wells labelled 'AB' in the plate grid, read with the plate, 1581-1756 RFU. Neither the record nor the paper defines them; 'reagent only' is the host's reading of the label.",
+    "stated_by": "host"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "Bands copied unchanged from docs/research_sessions/plan_cases/case2_b1_rules.json, fixed on 2026-09-25 (commit d7d8bc2) for synthetic development, before this dataset was seen. Applying them to this assay is the host's choice, made AFTER viewing the values (post hoc). Not an acceptance criterion and not a statistical test."
+   }
+  },
+  {
+   "key": "E1_main_48h",
+   "experiment_id": "E1",
+   "readout": "alamarBlue fluorescence",
+   "measurement_name": "alamarblue_rfu",
+   "unit": "RFU",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 48.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "group": "TI-BMG"
+   },
+   "reference": {
+    "group": "TI-CTL"
+   },
+   "versus": "Ti6Al4V",
+   "reference_correspondence": {
+    "plan_reference": "Ti6Al4V",
+    "observed_conditions": {
+     "group": "TI-CTL"
+    },
+    "applies_to": [
+     "E1"
+    ],
+    "basis": "Zenodo 8342247 description names Ti6Al4V and Ti40Zr10Cu36Pd14 BMG; the paper (sec3.3, lit-5737e83c47b3) names Ti-6Al-4V as the control surface; the export labels this group TI-CTL. The label itself does not say Ti6Al4V.",
+    "stated_by": "host"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "Bands copied unchanged from docs/research_sessions/plan_cases/case2_b1_rules.json, fixed on 2026-09-25 (commit d7d8bc2) for synthetic development, before this dataset was seen. Applying them to this assay is the host's choice, made AFTER viewing the values (post hoc). Not an acceptance criterion and not a statistical test."
+   }
+  },
+  {
+   "key": "E1_background_48h",
+   "experiment_id": "E1",
+   "readout": "alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+   "measurement_name": "alamarblue_rfu",
+   "unit": "RFU",
+   "time_point": {
+    "kind": "elapsed_time",
+    "value": 48.0,
+    "unit": "hour"
+   },
+   "treatment": {
+    "group": "TI-CTL"
+   },
+   "reference": {
+    "group": "AB"
+   },
+   "versus": "reagent only (no cells)",
+   "reference_correspondence": {
+    "plan_reference": "reagent only (no cells)",
+    "observed_conditions": {
+     "group": "AB"
+    },
+    "applies_to": [
+     "E1"
+    ],
+    "basis": "Two wells labelled 'AB' in the plate grid, read with the plate, 1581-1756 RFU. Neither the record nor the paper defines them; 'reagent only' is the host's reading of the label.",
+    "stated_by": "host"
+   },
+   "rule": {
+    "comparison": "ratio",
+    "increase_at_or_above": 1.25,
+    "decrease_at_or_below": 0.8,
+    "no_change_between": [
+     0.9,
+     1.1
+    ],
+    "declared_by": "host",
+    "basis": "Bands copied unchanged from docs/research_sessions/plan_cases/case2_b1_rules.json, fixed on 2026-09-25 (commit d7d8bc2) for synthetic development, before this dataset was seen. Applying them to this assay is the host's choice, made AFTER viewing the values (post hoc). Not an acceptance criterion and not a statistical test."
+   }
+  }
+ ]
+}

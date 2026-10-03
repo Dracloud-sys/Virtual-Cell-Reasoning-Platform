@@ -1,0 +1,75 @@
+"""Write a revision of condition_B_payload_1.json changing only two fields.
+
+- experiments[].discriminates: "Hx vs Hy" pair strings -> unique hypothesis ids,
+  first-appearance order.
+- hypotheses[].supporting_evidence_ids: for hypotheses the check flagged
+  (H2-H6), the ids the draft's own evidence_links already link to that
+  hypothesis with role "supports". No ids invented, no other role used.
+
+Assumptions are deliberately NOT filled. Source is never written.
+"""
+
+import copy
+import hashlib
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+root = Path(os.environ["VIRTUALCELL_MCP_DRAFT_DIR"])
+src = root / "records" / "condition_B_payload_1.json"
+out_dir = root / "host_file_tool_trial"
+out = out_dir / "draft_v2.json"
+if out.exists():
+    sys.exit("refusing to overwrite existing output")
+
+raw = src.read_bytes()
+draft = json.loads(raw)
+new = copy.deepcopy(draft)
+flagged = {"H2", "H3", "H4", "H5", "H6"}
+
+hyp_ids = {h["id"] for h in new["hypotheses"]}
+for e in new["experiments"]:
+    ids = []
+    for entry in e["discriminates"]:
+        for hid in re.findall(r"H\d+", entry):
+            if hid not in hyp_ids:
+                sys.exit(f"{e['id']}: {hid} is not a hypothesis")
+            if hid not in ids:
+                ids.append(hid)
+    e["discriminates"] = ids
+
+for h in new["hypotheses"]:
+    if h["id"] not in flagged:
+        continue
+    sup = []
+    for link in new["evidence_links"]:
+        if link["target_id"] == h["id"] and link["role"] == "supports":
+            if link["evidence_id"] not in sup:
+                sup.append(link["evidence_id"])
+    h["supporting_evidence_ids"] = sorted(sup)
+
+# Prove only the two fields differ.
+def strip(d):
+    d = copy.deepcopy(d)
+    for e in d["experiments"]:
+        e.pop("discriminates")
+    for h in d["hypotheses"]:
+        h.pop("supporting_evidence_ids", None)
+    return d
+
+assert strip(draft) == strip(new), "something other than the two fields changed"
+assert draft["assumptions"] == new["assumptions"]
+
+out_dir.mkdir(exist_ok=False)
+data = (json.dumps(new, indent=2, ensure_ascii=False) + "\n").encode()
+out.write_bytes(data)
+print("source sha256 (unchanged):", hashlib.sha256(src.read_bytes()).hexdigest())
+print("new path:", out.relative_to(root))
+print("new sha256:", hashlib.sha256(data).hexdigest())
+for h in new["hypotheses"]:
+    if h["id"] in flagged:
+        print(h["id"], "supporting_evidence_ids", h["supporting_evidence_ids"])
+for e in new["experiments"]:
+    print(e["id"], "discriminates", e["discriminates"])

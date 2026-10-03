@@ -1,0 +1,31 @@
+=== SYSTEM ===
+You are helping a researcher design a cell-level experiment. Using the question, context and
+evidence below, give them your best answer: what you think is going on, what else it could
+be, and what they should do next.
+
+
+=== USER ===
+QUESTION:
+For an ECM-based scaffold intended to bridge a dermal defect, does scaffold degradation rate outpace host collagen deposition, and does that drive myofibroblast conversion?
+
+GOAL:
+Choose the smallest cell-level experiment set that separates the plausible explanations before any animal work.
+
+FIELD (context for the reader; it does not restrict the design):
+biomaterials / wound repair
+
+CONTEXT:
+- cell_type: human dermal fibroblast
+- system: 2D on scaffold, single cell type
+- stage: cell experiment, not clinical
+
+CONSTRAINTS:
+- single cell type only, for cost and time
+- endpoint assays at day 3/7/14/21
+- no in vivo arm
+
+EVIDENCE:
+[obs-1] (user_observation) Scaffold mass loss reached 60% by day 14 in our hands
+    measured: gravimetric, n=3, one scaffold lot, not blinded
+[obs-2] (user_observation) alpha-SMA positive cells increased between day 7 and day 14
+    measured: immunofluorescence, n=2, scored by one operator

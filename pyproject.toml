@@ -54,6 +54,14 @@ xlsx = [
 mcp = [
     "mcp>=2.1,<3",
 ]
+# The same MCP server over Streamable HTTP, behind OAuth, for a host that connects by URL.
+# Both packages already arrive with the SDK; they are named because `mcp/remote.py` imports
+# them directly, and a transitive dependency is not a promise.
+mcp-http = [
+    "mcp>=2.1,<3",
+    "pyjwt[crypto]>=2.10.1",
+    "uvicorn>=0.31.1",
+]
 dev = [
     "pytest>=8.2",
     "pytest-asyncio>=0.23",
@@ -64,6 +72,7 @@ dev = [
     "pyyaml>=6",
     "openpyxl>=3.1",
     "mcp>=2.1,<3",
+    "pyjwt[crypto]>=2.10.1",
 ]
 
 [project.scripts]
