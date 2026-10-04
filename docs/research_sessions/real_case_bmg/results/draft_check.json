@@ -1,0 +1,1088 @@
+{
+ "scientific_validity_checked": false,
+ "not_checked": [
+  "Whether any hypothesis is biologically plausible for this system.",
+  "Whether the alternatives offered are the ones that actually compete.",
+  "Whether the proposed experiment would separate them, or merely produce data.",
+  "Whether a cited source supports what it is cited for — only that the id exists and carries the kind of label it claims.",
+  "Whether a source named in free text refers to a real publication. Only ids in the submitted evidence list are resolved; a paper named inside a sentence is not.",
+  "Whether the controls, timepoints or measurements are adequate.",
+  "Anything about a graph_findings path. Only ids in the submitted evidence[] are resolved, so a knowledge-graph path cannot be cited here and is out of scope for every check above. Do not re-submit one as a user_observation or a retrieved_source to get it checked: it is neither, and relabelling it would make an unverified traversal look like something someone read."
+ ],
+ "authored_by": "host_llm",
+ "internal_model_calls": 0,
+ "evidence_origins": [
+  {
+   "id": "lit-a5f2aed4ebb7",
+   "origin": "server_retrieved",
+   "detail": "Issued by this server and unchanged since."
+  },
+  {
+   "id": "lit-63999accf5e0",
+   "origin": "server_retrieved",
+   "detail": "Issued by this server and unchanged since."
+  },
+  {
+   "id": "lit-634a044d1a6e",
+   "origin": "server_retrieved",
+   "detail": "Issued by this server and unchanged since."
+  },
+  {
+   "id": "lit-6568ef3c8998",
+   "origin": "server_retrieved",
+   "detail": "Issued by this server and unchanged since."
+  },
+  {
+   "id": "lit-8ca7c1052560",
+   "origin": "server_retrieved",
+   "detail": "Issued by this server and unchanged since."
+  },
+  {
+   "id": "lit-5737e83c47b3",
+   "origin": "server_retrieved",
+   "detail": "Issued by this server and unchanged since."
+  },
+  {
+   "id": "lit-d6e068c5c86e",
+   "origin": "server_retrieved",
+   "detail": "Issued by this server and unchanged since."
+  },
+  {
+   "id": "lit-d63648e413e3",
+   "origin": "server_retrieved",
+   "detail": "Issued by this server and unchanged since."
+  },
+  {
+   "id": "lit-87f1e5a990f3",
+   "origin": "server_retrieved",
+   "detail": "Issued by this server and unchanged since."
+  }
+ ],
+ "findings": [
+  {
+   "code": "discriminates_nothing",
+   "where": "experiment:E1",
+   "detail": "names no hypothesis this experiment would tell apart"
+  },
+  {
+   "code": "no_decision_branches",
+   "where": "experiment:E2",
+   "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+  },
+  {
+   "code": "discriminates_nothing",
+   "where": "experiment:E2",
+   "detail": "names no hypothesis this experiment would tell apart"
+  },
+  {
+   "code": "no_decision_branches",
+   "where": "experiment:E3",
+   "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+  },
+  {
+   "code": "discriminates_nothing",
+   "where": "experiment:E3",
+   "detail": "names no hypothesis this experiment would tell apart"
+  }
+ ],
+ "plan_analysis": {
+  "limits": [
+   "Everything here follows from what the host wrote. Discrimination is computed from the predicted values given, so a wrong prediction produces a wrong separation.",
+   "Two predictions differ only when their values differ. Wording is never compared, and two readouts named differently are treated as different readouts.",
+   "Evidence roles and readings are the host's interpretation. Counting studies says how many papers were cited, not that any of them supports the claim.",
+   "Mechanism links are case candidates. A graph path means the curated graph holds a route between two exactly-matched entities; it says nothing about this case's conditions.",
+   "Nothing here ranks experiments. Which to run first is the host's argument and the researcher's decision.",
+   "Two hypotheses predicting different values on a readout is not a measure of how well the experiment would discriminate them, and says nothing about separating causes acting together: effect size, noise and interference are not modelled.",
+   "A state (present/absent) and a change (increase/decrease/no_change) are different claims and are never compared; neither are two changes stated against different references.",
+   "Prediction traces follow the references the host gave. A connected path is not a verified causal chain."
+  ],
+  "conditions": {
+   "confirmed": [
+    "HGF (PromoCell) seeded at 2000 cells per 3 mm specimen, 4 h adhesion, then 450 ul medium (paper sec2.6.2)",
+    "alamarBlue read after 24 h and 48 h culture; Ex 530 / Em 590, gain 80 (export header)"
+   ],
+   "open": [
+    "What the two 'AB' wells contain (neither the record nor the paper defines them)",
+    "Whether the specimen was in the well that was read, or the dye was transferred",
+    "Whether wells are independent specimens; the paper says triplicate, the export has 4 and 5 wells",
+    "Well positions of the typed values; the 48 h grid puts AB at C7-C8, the plate-area line says H8-H9"
+   ],
+   "host_assumptions": [
+    "the Ti6Al4V wells read above the reagent-only background at the same read",
+    "the BMG specimen does not change alamarBlue fluorescence without cells"
+   ]
+  },
+  "goal_trace": [
+   {
+    "objective_id": "O1",
+    "statement": "Judge whether the BMG surface is cytocompatible for HGF relative to Ti6Al4V (taken from the dataset's stated purpose; no researcher stated it here).",
+    "stated_by": "host",
+    "sub_question_ids": [
+     "Q1"
+    ],
+    "hypothesis_ids": [
+     "H_tox",
+     "H_eq",
+     "H_more",
+     "H_int"
+    ],
+    "experiment_ids": [
+     "E1",
+     "E2",
+     "E3"
+    ]
+   }
+  ],
+  "unreached_objectives": [],
+  "unanswered_sub_questions": [],
+  "untested_hypotheses": [],
+  "evidence": [
+   {
+    "target_id": "H_eq",
+    "role": "supports",
+    "evidence_ids": [
+     "lit-d6e068c5c86e"
+    ],
+    "span_count": 1,
+    "independent_studies": 1,
+    "user_observation_ids": [],
+    "ungrounded_ids": [],
+    "host_readings": [],
+    "interpretation_by": "host"
+   },
+   {
+    "target_id": "H_int",
+    "role": "method",
+    "evidence_ids": [
+     "lit-6568ef3c8998",
+     "lit-a5f2aed4ebb7"
+    ],
+    "span_count": 2,
+    "independent_studies": 1,
+    "user_observation_ids": [],
+    "ungrounded_ids": [],
+    "host_readings": [
+     "Cells were seeded directly on 3 mm specimens; whether the specimen stayed in the read well is not stated.",
+     "Dye added directly onto specimens, 4 h in the dark, read on the Spark: a material contribution to the reading is not excluded by the procedure described."
+    ],
+    "interpretation_by": "host"
+   },
+   {
+    "target_id": "H_eq",
+    "role": "scope_limit",
+    "evidence_ids": [
+     "lit-8ca7c1052560"
+    ],
+    "span_count": 1,
+    "independent_studies": 1,
+    "user_observation_ids": [],
+    "ungrounded_ids": [],
+    "host_readings": [
+     "'Performed in triplicate'; the export has 4 and 5 wells per group, so which unit was replicated is open."
+    ],
+    "interpretation_by": "host"
+   }
+  ],
+  "same_study_spans": [
+   {
+    "target_id": "H_int",
+    "role": "method",
+    "study": "pmcid:PMC9418555",
+    "evidence_ids": [
+     "lit-6568ef3c8998",
+     "lit-a5f2aed4ebb7"
+    ]
+   }
+  ],
+  "mechanism_links": [],
+  "experiments": [
+   {
+    "experiment_id": "E1",
+    "hypotheses_with_predictions": [
+     "H_tox",
+     "H_eq",
+     "H_more",
+     "H_int"
+    ],
+    "separated_pairs": [
+     {
+      "pair": [
+       "H_tox",
+       "H_eq"
+      ],
+      "readouts": [
+       {
+        "readout": "alamarBlue fluorescence",
+        "expected": {
+         "H_tox": "decrease",
+         "H_eq": "no_change"
+        }
+       }
+      ],
+      "coexistence_notes": []
+     },
+     {
+      "pair": [
+       "H_tox",
+       "H_more"
+      ],
+      "readouts": [
+       {
+        "readout": "alamarBlue fluorescence",
+        "expected": {
+         "H_tox": "decrease",
+         "H_more": "increase"
+        }
+       }
+      ],
+      "coexistence_notes": []
+     },
+     {
+      "pair": [
+       "H_tox",
+       "H_int"
+      ],
+      "readouts": [
+       {
+        "readout": "alamarBlue fluorescence",
+        "expected": {
+         "H_tox": "decrease",
+         "H_int": "increase"
+        }
+       }
+      ],
+      "coexistence_notes": [
+       "H_tox and H_int can both hold and predict opposite values for 'alamarBlue fluorescence': their effects may offset, so an intermediate or unchanged result could mean both, not neither."
+      ]
+     },
+     {
+      "pair": [
+       "H_eq",
+       "H_more"
+      ],
+      "readouts": [
+       {
+        "readout": "alamarBlue fluorescence",
+        "expected": {
+         "H_eq": "no_change",
+         "H_more": "increase"
+        }
+       }
+      ],
+      "coexistence_notes": []
+     },
+     {
+      "pair": [
+       "H_eq",
+       "H_int"
+      ],
+      "readouts": [
+       {
+        "readout": "alamarBlue fluorescence",
+        "expected": {
+         "H_eq": "no_change",
+         "H_int": "increase"
+        }
+       }
+      ],
+      "coexistence_notes": [
+       "On 'alamarBlue fluorescence', a change tells that H_int holds; it cannot rule out H_eq, because H_eq predicts no change there and both can be true."
+      ]
+     }
+    ],
+    "unseparated_pairs": [
+     {
+      "pair": [
+       "H_more",
+       "H_int"
+      ],
+      "reason": "same_prediction_on_every_shared_readout"
+     }
+    ],
+    "outcome_table": [
+     {
+      "readout": "alamarBlue fluorescence",
+      "by_expected": {
+       "decrease": [
+        "H_tox"
+       ],
+       "no_change": [
+        "H_eq"
+       ],
+       "increase": [
+        "H_more",
+        "H_int"
+       ]
+      }
+     }
+    ],
+    "controls": [
+     "Ti6Al4V specimen",
+     "AB wells (undefined)",
+     "POLY wells (undefined)"
+    ],
+    "readout_exclusions": [],
+    "next_decisions": [
+     {
+      "outcome": "BMG classified below Ti6Al4V on every combination",
+      "implication": "H_tox stays open for E2/E3; interference must be excluded first."
+     },
+     {
+      "outcome": "combinations disagree or no rule classifies",
+      "implication": "No judgement from this export; resolve the records, then E2 and E3."
+     }
+    ],
+    "next_decisions_by": "host"
+   },
+   {
+    "experiment_id": "E2",
+    "hypotheses_with_predictions": [
+     "H_tox",
+     "H_eq",
+     "H_more",
+     "H_int"
+    ],
+    "separated_pairs": [
+     {
+      "pair": [
+       "H_tox",
+       "H_int"
+      ],
+      "readouts": [
+       {
+        "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+        "expected": {
+         "H_tox": "no_change",
+         "H_int": "increase"
+        }
+       }
+      ],
+      "coexistence_notes": [
+       "On 'alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)', a change tells that H_int holds; it cannot rule out H_tox, because H_tox predicts no change there and both can be true."
+      ]
+     },
+     {
+      "pair": [
+       "H_eq",
+       "H_int"
+      ],
+      "readouts": [
+       {
+        "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+        "expected": {
+         "H_eq": "no_change",
+         "H_int": "increase"
+        }
+       }
+      ],
+      "coexistence_notes": [
+       "On 'alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)', a change tells that H_int holds; it cannot rule out H_eq, because H_eq predicts no change there and both can be true."
+      ]
+     },
+     {
+      "pair": [
+       "H_more",
+       "H_int"
+      ],
+      "readouts": [
+       {
+        "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+        "expected": {
+         "H_more": "no_change",
+         "H_int": "increase"
+        }
+       }
+      ],
+      "coexistence_notes": [
+       "On 'alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)', a change tells that H_int holds; it cannot rule out H_more, because H_more predicts no change there and both can be true."
+      ]
+     }
+    ],
+    "unseparated_pairs": [
+     {
+      "pair": [
+       "H_tox",
+       "H_eq"
+      ],
+      "reason": "same_prediction_on_every_shared_readout"
+     },
+     {
+      "pair": [
+       "H_tox",
+       "H_more"
+      ],
+      "reason": "same_prediction_on_every_shared_readout"
+     },
+     {
+      "pair": [
+       "H_eq",
+       "H_more"
+      ],
+      "reason": "same_prediction_on_every_shared_readout"
+     }
+    ],
+    "outcome_table": [
+     {
+      "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+      "by_expected": {
+       "no_change": [
+        "H_tox",
+        "H_eq",
+        "H_more"
+       ],
+       "increase": [
+        "H_int"
+       ]
+      }
+     }
+    ],
+    "controls": [
+     "dye alone"
+    ],
+    "readout_exclusions": [],
+    "next_decisions": [],
+    "next_decisions_by": "host"
+   },
+   {
+    "experiment_id": "E3",
+    "hypotheses_with_predictions": [
+     "H_tox",
+     "H_eq",
+     "H_more",
+     "H_int"
+    ],
+    "separated_pairs": [
+     {
+      "pair": [
+       "H_tox",
+       "H_eq"
+      ],
+      "readouts": [
+       {
+        "readout": "DNA per specimen",
+        "expected": {
+         "H_tox": "decrease",
+         "H_eq": "no_change"
+        }
+       }
+      ],
+      "coexistence_notes": []
+     },
+     {
+      "pair": [
+       "H_tox",
+       "H_int"
+      ],
+      "readouts": [
+       {
+        "readout": "DNA per specimen",
+        "expected": {
+         "H_tox": "decrease",
+         "H_int": "no_change"
+        }
+       }
+      ],
+      "coexistence_notes": [
+       "On 'DNA per specimen', a change tells that H_tox holds; it cannot rule out H_int, because H_int predicts no change there and both can be true."
+      ]
+     }
+    ],
+    "unseparated_pairs": [
+     {
+      "pair": [
+       "H_tox",
+       "H_more"
+      ],
+      "reason": "no_shared_predicted_readout"
+     },
+     {
+      "pair": [
+       "H_eq",
+       "H_more"
+      ],
+      "reason": "no_shared_predicted_readout"
+     },
+     {
+      "pair": [
+       "H_eq",
+       "H_int"
+      ],
+      "reason": "same_prediction_on_every_shared_readout"
+     },
+     {
+      "pair": [
+       "H_more",
+       "H_int"
+      ],
+      "reason": "no_shared_predicted_readout"
+     }
+    ],
+    "outcome_table": [
+     {
+      "readout": "DNA per specimen",
+      "by_expected": {
+       "decrease": [
+        "H_tox"
+       ],
+       "no_change": [
+        "H_eq",
+        "H_int"
+       ]
+      }
+     }
+    ],
+    "controls": [
+     "Ti6Al4V specimen",
+     "DNA standard curve"
+    ],
+    "readout_exclusions": [],
+    "next_decisions": [],
+    "next_decisions_by": "host"
+   }
+  ],
+  "pairs_never_separated": [],
+  "experiments_without_predictions": [],
+  "coverage": [
+   {
+    "experiment_id": "E1",
+    "covers_experiment_id": "E3",
+    "relation": "strict_superset"
+   }
+  ],
+  "pair_selection": [
+   {
+    "pair": [
+     "H_tox",
+     "H_eq"
+    ],
+    "compared": true,
+    "reason": "shared_sub_question"
+   },
+   {
+    "pair": [
+     "H_tox",
+     "H_more"
+    ],
+    "compared": true,
+    "reason": "shared_sub_question"
+   },
+   {
+    "pair": [
+     "H_tox",
+     "H_int"
+    ],
+    "compared": true,
+    "reason": "shared_sub_question"
+   },
+   {
+    "pair": [
+     "H_eq",
+     "H_more"
+    ],
+    "compared": true,
+    "reason": "shared_sub_question"
+   },
+   {
+    "pair": [
+     "H_eq",
+     "H_int"
+    ],
+    "compared": true,
+    "reason": "shared_sub_question"
+   },
+   {
+    "pair": [
+     "H_more",
+     "H_int"
+    ],
+    "compared": true,
+    "reason": "shared_sub_question"
+   }
+  ],
+  "objective_levels": [
+   {
+    "objective_id": "O1",
+    "direct": [
+     "E3"
+    ],
+    "proxy": [
+     "E1"
+    ],
+    "out_of_scope": [
+     "E2"
+    ],
+    "reached_without_stated_level": [],
+    "directly_measured": true,
+    "judged_by": [
+     "host"
+    ]
+   }
+  ],
+  "non_discriminating_experiments": [],
+  "prediction_traces": [
+   {
+    "experiment_id": "E1",
+    "hypothesis_id": "H_tox",
+    "readout": "alamarBlue fluorescence",
+    "expected": "decrease",
+    "kind": "change",
+    "versus": "Ti6Al4V",
+    "condition": null,
+    "biological_expectation": "fewer or less active fibroblasts on BMG",
+    "basis": "assumption",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 0,
+    "mechanism_links": [],
+    "assumptions": [
+     "the Ti6Al4V wells read above the reagent-only background at the same read",
+     "the BMG specimen does not change alamarBlue fluorescence without cells"
+    ],
+    "unresolved": null,
+    "checked_by": [
+     "E1:alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+     "E2:alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)"
+    ],
+    "separates": [
+     [
+      "H_tox",
+      "H_eq"
+     ],
+     [
+      "H_tox",
+      "H_more"
+     ],
+     [
+      "H_tox",
+      "H_int"
+     ]
+    ],
+    "decisions": [
+     {
+      "outcome": "BMG classified below Ti6Al4V on every combination",
+      "implication": "H_tox stays open for E2/E3; interference must be excluded first."
+     },
+     {
+      "outcome": "combinations disagree or no rule classifies",
+      "implication": "No judgement from this export; resolve the records, then E2 and E3."
+     }
+    ],
+    "gaps": []
+   },
+   {
+    "experiment_id": "E1",
+    "hypothesis_id": "H_eq",
+    "readout": "alamarBlue fluorescence",
+    "expected": "no_change",
+    "kind": "change",
+    "versus": "Ti6Al4V",
+    "condition": null,
+    "biological_expectation": null,
+    "basis": "evidence_observed",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [
+     "lit-d6e068c5c86e"
+    ],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [
+     "lit-d6e068c5c86e"
+    ],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 1,
+    "mechanism_links": [],
+    "assumptions": [
+     "the Ti6Al4V wells read above the reagent-only background at the same read",
+     "the BMG specimen does not change alamarBlue fluorescence without cells"
+    ],
+    "unresolved": null,
+    "checked_by": [
+     "E1:alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+     "E2:alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)"
+    ],
+    "separates": [
+     [
+      "H_tox",
+      "H_eq"
+     ],
+     [
+      "H_eq",
+      "H_more"
+     ],
+     [
+      "H_eq",
+      "H_int"
+     ]
+    ],
+    "decisions": [
+     {
+      "outcome": "BMG classified below Ti6Al4V on every combination",
+      "implication": "H_tox stays open for E2/E3; interference must be excluded first."
+     },
+     {
+      "outcome": "combinations disagree or no rule classifies",
+      "implication": "No judgement from this export; resolve the records, then E2 and E3."
+     }
+    ],
+    "gaps": []
+   },
+   {
+    "experiment_id": "E1",
+    "hypothesis_id": "H_more",
+    "readout": "alamarBlue fluorescence",
+    "expected": "increase",
+    "kind": "change",
+    "versus": "Ti6Al4V",
+    "condition": null,
+    "biological_expectation": "more or more active fibroblasts on BMG",
+    "basis": "assumption",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 0,
+    "mechanism_links": [],
+    "assumptions": [
+     "the Ti6Al4V wells read above the reagent-only background at the same read",
+     "the BMG specimen does not change alamarBlue fluorescence without cells"
+    ],
+    "unresolved": null,
+    "checked_by": [
+     "E1:alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+     "E2:alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)"
+    ],
+    "separates": [
+     [
+      "H_tox",
+      "H_more"
+     ],
+     [
+      "H_eq",
+      "H_more"
+     ]
+    ],
+    "decisions": [
+     {
+      "outcome": "BMG classified below Ti6Al4V on every combination",
+      "implication": "H_tox stays open for E2/E3; interference must be excluded first."
+     },
+     {
+      "outcome": "combinations disagree or no rule classifies",
+      "implication": "No judgement from this export; resolve the records, then E2 and E3."
+     }
+    ],
+    "gaps": []
+   },
+   {
+    "experiment_id": "E1",
+    "hypothesis_id": "H_int",
+    "readout": "alamarBlue fluorescence",
+    "expected": "increase",
+    "kind": "change",
+    "versus": "Ti6Al4V",
+    "condition": null,
+    "biological_expectation": null,
+    "basis": "assumption",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [
+     "lit-a5f2aed4ebb7"
+    ],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [
+     "lit-a5f2aed4ebb7"
+    ],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 1,
+    "mechanism_links": [],
+    "assumptions": [],
+    "unresolved": "the size of a material contribution is unknown without a cell-free specimen read (E2)",
+    "checked_by": [],
+    "separates": [
+     [
+      "H_tox",
+      "H_int"
+     ],
+     [
+      "H_eq",
+      "H_int"
+     ]
+    ],
+    "decisions": [
+     {
+      "outcome": "BMG classified below Ti6Al4V on every combination",
+      "implication": "H_tox stays open for E2/E3; interference must be excluded first."
+     },
+     {
+      "outcome": "combinations disagree or no rule classifies",
+      "implication": "No judgement from this export; resolve the records, then E2 and E3."
+     }
+    ],
+    "gaps": [
+     "assumption_without_stated_assumptions"
+    ]
+   },
+   {
+    "experiment_id": "E2",
+    "hypothesis_id": "H_int",
+    "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+    "expected": "increase",
+    "kind": "change",
+    "versus": "Ti6Al4V specimen, no cells",
+    "condition": null,
+    "biological_expectation": null,
+    "basis": "measurement_model",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [
+     "lit-a5f2aed4ebb7"
+    ],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [
+     "lit-a5f2aed4ebb7"
+    ],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 1,
+    "mechanism_links": [],
+    "assumptions": [],
+    "unresolved": null,
+    "checked_by": [],
+    "separates": [
+     [
+      "H_tox",
+      "H_int"
+     ],
+     [
+      "H_eq",
+      "H_int"
+     ],
+     [
+      "H_more",
+      "H_int"
+     ]
+    ],
+    "decisions": [],
+    "gaps": []
+   },
+   {
+    "experiment_id": "E2",
+    "hypothesis_id": "H_tox",
+    "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+    "expected": "no_change",
+    "kind": "change",
+    "versus": "Ti6Al4V specimen, no cells",
+    "condition": null,
+    "biological_expectation": null,
+    "basis": "measurement_model",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 0,
+    "mechanism_links": [],
+    "assumptions": [
+     "no cells, so no biology"
+    ],
+    "unresolved": null,
+    "checked_by": [],
+    "separates": [
+     [
+      "H_tox",
+      "H_int"
+     ]
+    ],
+    "decisions": [],
+    "gaps": []
+   },
+   {
+    "experiment_id": "E2",
+    "hypothesis_id": "H_eq",
+    "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+    "expected": "no_change",
+    "kind": "change",
+    "versus": "Ti6Al4V specimen, no cells",
+    "condition": null,
+    "biological_expectation": null,
+    "basis": "measurement_model",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 0,
+    "mechanism_links": [],
+    "assumptions": [
+     "no cells, so no biology"
+    ],
+    "unresolved": null,
+    "checked_by": [],
+    "separates": [
+     [
+      "H_eq",
+      "H_int"
+     ]
+    ],
+    "decisions": [],
+    "gaps": []
+   },
+   {
+    "experiment_id": "E2",
+    "hypothesis_id": "H_more",
+    "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+    "expected": "no_change",
+    "kind": "change",
+    "versus": "Ti6Al4V specimen, no cells",
+    "condition": null,
+    "biological_expectation": null,
+    "basis": "measurement_model",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 0,
+    "mechanism_links": [],
+    "assumptions": [
+     "no cells, so no biology"
+    ],
+    "unresolved": null,
+    "checked_by": [],
+    "separates": [
+     [
+      "H_more",
+      "H_int"
+     ]
+    ],
+    "decisions": [],
+    "gaps": []
+   },
+   {
+    "experiment_id": "E3",
+    "hypothesis_id": "H_tox",
+    "readout": "DNA per specimen",
+    "expected": "decrease",
+    "kind": "change",
+    "versus": "Ti6Al4V",
+    "condition": null,
+    "biological_expectation": null,
+    "basis": "assumption",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 0,
+    "mechanism_links": [],
+    "assumptions": [
+     "the DNA dye readout is not affected by either specimen"
+    ],
+    "unresolved": null,
+    "checked_by": [],
+    "separates": [
+     [
+      "H_tox",
+      "H_eq"
+     ],
+     [
+      "H_tox",
+      "H_int"
+     ]
+    ],
+    "decisions": [],
+    "gaps": []
+   },
+   {
+    "experiment_id": "E3",
+    "hypothesis_id": "H_eq",
+    "readout": "DNA per specimen",
+    "expected": "no_change",
+    "kind": "change",
+    "versus": "Ti6Al4V",
+    "condition": null,
+    "biological_expectation": null,
+    "basis": "assumption",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 0,
+    "mechanism_links": [],
+    "assumptions": [
+     "the DNA dye readout is not affected by either specimen"
+    ],
+    "unresolved": null,
+    "checked_by": [],
+    "separates": [
+     [
+      "H_tox",
+      "H_eq"
+     ]
+    ],
+    "decisions": [],
+    "gaps": []
+   },
+   {
+    "experiment_id": "E3",
+    "hypothesis_id": "H_more",
+    "readout": "DNA per specimen",
+    "expected": "not_predicted",
+    "kind": null,
+    "versus": "Ti6Al4V",
+    "condition": null,
+    "biological_expectation": null,
+    "basis": "assumption",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 0,
+    "mechanism_links": [],
+    "assumptions": [],
+    "unresolved": "increase if more cells; no change if more activity per cell",
+    "checked_by": [],
+    "separates": [],
+    "decisions": [],
+    "gaps": []
+   },
+   {
+    "experiment_id": "E3",
+    "hypothesis_id": "H_int",
+    "readout": "DNA per specimen",
+    "expected": "no_change",
+    "kind": "change",
+    "versus": "Ti6Al4V",
+    "condition": null,
+    "biological_expectation": null,
+    "basis": "assumption",
+    "basis_stated_by": "host",
+    "direct_evidence_ids": [],
+    "mechanism_evidence_ids": [],
+    "grounded_evidence_ids": [],
+    "ungrounded_evidence_ids": [],
+    "independent_studies": 0,
+    "mechanism_links": [],
+    "assumptions": [
+     "the DNA dye readout is not affected by either specimen"
+    ],
+    "unresolved": null,
+    "checked_by": [],
+    "separates": [
+     [
+      "H_tox",
+      "H_int"
+     ]
+    ],
+    "decisions": [],
+    "gaps": []
+   }
+  ],
+  "readout_specs_missing": [],
+  "impact": null,
+  "findings": [],
+  "wrote_to_knowledge_graph": false
+ }
+}

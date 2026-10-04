@@ -1,0 +1,42 @@
+{
+  "question": "For an ECM-based scaffold intended to bridge a dermal defect, does scaffold degradation rate outpace host collagen deposition, and does that drive myofibroblast conversion?",
+  "goal": "Choose the smallest cell-level experiment set that separates the plausible explanations before any animal work.",
+  "field_of_study": "biomaterials / wound repair",
+  "context": {
+    "cell_type": "human dermal fibroblast",
+    "system": "2D on scaffold, single cell type",
+    "stage": "cell experiment, not clinical"
+  },
+  "constraints": [
+    "single cell type only, for cost and time",
+    "endpoint assays at day 3/7/14/21",
+    "no in vivo arm"
+  ],
+  "evidence": [
+    {
+      "id": "obs-1",
+      "kind": "user_observation",
+      "statement": "Scaffold mass loss reached 60% by day 14 in our hands",
+      "locator": null,
+      "measurement_context": "gravimetric, n=3, one scaffold lot, not blinded",
+      "verification": null,
+      "derived_from": [],
+      "assumptions": [],
+      "content_hash": "5336ae0bb35e898d6157043017c2ff367971af0edaa5fbbb9246743cb5685f80"
+    },
+    {
+      "id": "obs-2",
+      "kind": "user_observation",
+      "statement": "alpha-SMA positive cells increased between day 7 and day 14",
+      "locator": null,
+      "measurement_context": "immunofluorescence, n=2, scored by one operator",
+      "verification": null,
+      "derived_from": [],
+      "assumptions": [],
+      "content_hash": "28a67ad78563aaea1425c9a45a102a5171fd7d12c0fea958ea09d1ac8a3fe0b5"
+    }
+  ],
+  "budget": {
+    "max_output_tokens": 4096
+  }
+}

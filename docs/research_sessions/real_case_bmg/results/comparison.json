@@ -1,0 +1,835 @@
+{
+ "scientific_validity_checked": false,
+ "not_checked": [
+  "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+  "Whether a consistent result supports the hypothesis over others predicting the same value.",
+  "Whether the runs are what their provenance says they are.",
+  "Whether the plan should change. Keep, revise and hold are the host's proposal."
+ ],
+ "authored_by": "host_llm",
+ "internal_model_calls": 0,
+ "findings": [
+  {
+   "code": "discriminates_nothing",
+   "where": "experiment:E1",
+   "detail": "names no hypothesis this experiment would tell apart"
+  },
+  {
+   "code": "no_decision_branches",
+   "where": "experiment:E2",
+   "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+  },
+  {
+   "code": "discriminates_nothing",
+   "where": "experiment:E2",
+   "detail": "names no hypothesis this experiment would tell apart"
+  },
+  {
+   "code": "no_decision_branches",
+   "where": "experiment:E3",
+   "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+  },
+  {
+   "code": "discriminates_nothing",
+   "where": "experiment:E3",
+   "detail": "names no hypothesis this experiment would tell apart"
+  }
+ ],
+ "comparison": {
+  "revision_id": "rev-f504a3f151e819d6",
+  "prior_plan_sha256": "7ec6aba95c01533810559d7aeb2468792a6d5d4cae9ca6c13966e00b2dd20523",
+  "observations_sha256": "95e7729401a9d144d99d9c8e97fff052ff9acabdd87268aef55247905745bd51",
+  "prior_plan_unchanged": true,
+  "runs_used": [
+   "zenodo:zenodo-8342247-alamarblue"
+  ],
+  "runs_collapsed_as_duplicates": [],
+  "comparisons": [
+   {
+    "experiment_id": "E1",
+    "readout": "alamarBlue fluorescence",
+    "measurement_name": "alamarblue_rfu",
+    "run_ids": [
+     "zenodo:zenodo-8342247-alamarblue"
+    ],
+    "kind": "change",
+    "versus": "Ti6Al4V",
+    "reference_link": "host_proposed",
+    "reference_correspondence": {
+     "plan_reference": "Ti6Al4V",
+     "observed_conditions": {
+      "group": "TI-CTL"
+     },
+     "applies_to": [
+      "E1"
+     ],
+     "basis": "Zenodo 8342247 description names Ti6Al4V and Ti40Zr10Cu36Pd14 BMG; the paper (sec3.3, lit-5737e83c47b3) names Ti-6Al-4V as the control surface; the export labels this group TI-CTL. The label itself does not say Ti6Al4V.",
+     "stated_by": "host",
+     "accepted_by": null
+    },
+    "status": "insufficient",
+    "reasons": [
+     "combinations_disagree"
+    ],
+    "observed": null,
+    "treatment_values": [
+     2805.0,
+     3052.0,
+     2905.0,
+     3012.0,
+     2343.0
+    ],
+    "reference_values": [
+     1641.0,
+     2307.0,
+     2491.0,
+     2393.0
+    ],
+    "pairing": "all_combinations",
+    "pairs": [],
+    "declared_pairs": null,
+    "used_pairs": null,
+    "pair_independence": null,
+    "combinations": 20,
+    "unpaired_observations": 0,
+    "pairwise": [
+     1.709324,
+     1.215865,
+     1.126054,
+     1.172169,
+     1.859842,
+     1.32293,
+     1.225211,
+     1.275387,
+     1.770262,
+     1.259211,
+     1.166198,
+     1.213957,
+     1.835466,
+     1.305592,
+     1.209153,
+     1.258671,
+     1.427788,
+     1.015605,
+     0.940586,
+     0.979106
+    ],
+    "pairwise_classes": [
+     "increase",
+     "indeterminate",
+     "indeterminate",
+     "indeterminate",
+     "increase",
+     "increase",
+     "indeterminate",
+     "increase",
+     "increase",
+     "increase",
+     "indeterminate",
+     "indeterminate",
+     "increase",
+     "increase",
+     "indeterminate",
+     "increase",
+     "increase",
+     "no_change",
+     "no_change",
+     "no_change"
+    ],
+    "below_detection": 0,
+    "left_out": {},
+    "rule": {
+     "comparison": "ratio",
+     "increase_at_or_above": 1.25,
+     "decrease_at_or_below": 0.8,
+     "no_change_between": [
+      0.9,
+      1.1
+     ],
+     "declared_by": "host",
+     "basis": "Bands copied unchanged from docs/research_sessions/plan_cases/case2_b1_rules.json, fixed on 2026-09-25 (commit d7d8bc2) for synthetic development, before this dataset was seen. Applying them to this assay is the host's choice, made AFTER viewing the values (post hoc). Not an acceptance criterion and not a statistical test."
+    },
+    "by_hypothesis": [
+     {
+      "hypothesis_id": "H_tox",
+      "expected": "decrease",
+      "versus": "Ti6Al4V",
+      "outcome": "not_read",
+      "note": "nothing classified",
+      "scope": {
+       "experiment_id": "E1",
+       "readout": "alamarBlue fluorescence",
+       "versus": "Ti6Al4V",
+       "reference_conditions": {
+        "group": "TI-CTL"
+       },
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "pairing": "all_combinations",
+       "values": 20,
+       "hypothesis_alone": true
+      },
+      "if_accepted": null,
+      "may_coexist_with": [],
+      "assumptions_checked": {
+       "the Ti6Al4V wells read above the reagent-only background at the same read": "not_established"
+      },
+      "interpretation": null
+     },
+     {
+      "hypothesis_id": "H_eq",
+      "expected": "no_change",
+      "versus": "Ti6Al4V",
+      "outcome": "not_read",
+      "note": "nothing classified",
+      "scope": {
+       "experiment_id": "E1",
+       "readout": "alamarBlue fluorescence",
+       "versus": "Ti6Al4V",
+       "reference_conditions": {
+        "group": "TI-CTL"
+       },
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "pairing": "all_combinations",
+       "values": 20,
+       "hypothesis_alone": true
+      },
+      "if_accepted": null,
+      "may_coexist_with": [],
+      "assumptions_checked": {
+       "the Ti6Al4V wells read above the reagent-only background at the same read": "not_established"
+      },
+      "interpretation": null
+     },
+     {
+      "hypothesis_id": "H_more",
+      "expected": "increase",
+      "versus": "Ti6Al4V",
+      "outcome": "not_read",
+      "note": "nothing classified",
+      "scope": {
+       "experiment_id": "E1",
+       "readout": "alamarBlue fluorescence",
+       "versus": "Ti6Al4V",
+       "reference_conditions": {
+        "group": "TI-CTL"
+       },
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "pairing": "all_combinations",
+       "values": 20,
+       "hypothesis_alone": true
+      },
+      "if_accepted": null,
+      "may_coexist_with": [],
+      "assumptions_checked": {
+       "the Ti6Al4V wells read above the reagent-only background at the same read": "not_established"
+      },
+      "interpretation": null
+     },
+     {
+      "hypothesis_id": "H_int",
+      "expected": "increase",
+      "versus": "Ti6Al4V",
+      "outcome": "not_read",
+      "note": "nothing classified",
+      "scope": {
+       "experiment_id": "E1",
+       "readout": "alamarBlue fluorescence",
+       "versus": "Ti6Al4V",
+       "reference_conditions": {
+        "group": "TI-CTL"
+       },
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "pairing": "all_combinations",
+       "values": 20,
+       "hypothesis_alone": true
+      },
+      "if_accepted": null,
+      "may_coexist_with": [],
+      "assumptions_checked": {},
+      "interpretation": null
+     }
+    ],
+    "assumption_outcomes": []
+   },
+   {
+    "experiment_id": "E1",
+    "readout": "alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+    "measurement_name": "alamarblue_rfu",
+    "run_ids": [
+     "zenodo:zenodo-8342247-alamarblue"
+    ],
+    "kind": "change",
+    "versus": "reagent only (no cells)",
+    "reference_link": "host_proposed",
+    "reference_correspondence": {
+     "plan_reference": "reagent only (no cells)",
+     "observed_conditions": {
+      "group": "AB"
+     },
+     "applies_to": [
+      "E1"
+     ],
+     "basis": "Two wells labelled 'AB' in the plate grid, read with the plate, 1581-1756 RFU. Neither the record nor the paper defines them; 'reagent only' is the host's reading of the label.",
+     "stated_by": "host",
+     "accepted_by": null
+    },
+    "status": "insufficient",
+    "reasons": [
+     "combinations_disagree"
+    ],
+    "observed": null,
+    "treatment_values": [
+     1641.0,
+     2307.0,
+     2491.0,
+     2393.0
+    ],
+    "reference_values": [
+     1743.0,
+     1756.0
+    ],
+    "pairing": "all_combinations",
+    "pairs": [],
+    "declared_pairs": null,
+    "used_pairs": null,
+    "pair_independence": null,
+    "combinations": 8,
+    "unpaired_observations": 0,
+    "pairwise": [
+     0.94148,
+     0.93451,
+     1.32358,
+     1.313781,
+     1.429145,
+     1.418565,
+     1.37292,
+     1.362756
+    ],
+    "pairwise_classes": [
+     "no_change",
+     "no_change",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase"
+    ],
+    "below_detection": 0,
+    "left_out": {},
+    "rule": {
+     "comparison": "ratio",
+     "increase_at_or_above": 1.25,
+     "decrease_at_or_below": 0.8,
+     "no_change_between": [
+      0.9,
+      1.1
+     ],
+     "declared_by": "host",
+     "basis": "Bands copied unchanged from docs/research_sessions/plan_cases/case2_b1_rules.json, fixed on 2026-09-25 (commit d7d8bc2) for synthetic development, before this dataset was seen. Applying them to this assay is the host's choice, made AFTER viewing the values (post hoc). Not an acceptance criterion and not a statistical test."
+    },
+    "by_hypothesis": [],
+    "assumption_outcomes": [
+     {
+      "assumption": "the Ti6Al4V wells read above the reagent-only background at the same read",
+      "expected_if_holds": "increase",
+      "versus": "reagent only (no cells)",
+      "outcome": "not_read",
+      "note": "nothing classified",
+      "if_accepted": null,
+      "scope": {
+       "experiment_id": "E1",
+       "readout": "alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+       "versus": "reagent only (no cells)",
+       "reference_conditions": {
+        "group": "AB"
+       },
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "pairing": "all_combinations",
+       "values": 8,
+       "hypothesis_alone": true
+      }
+     }
+    ]
+   },
+   {
+    "experiment_id": "E1",
+    "readout": "alamarBlue fluorescence",
+    "measurement_name": "alamarblue_rfu",
+    "run_ids": [
+     "zenodo:zenodo-8342247-alamarblue"
+    ],
+    "kind": "change",
+    "versus": "Ti6Al4V",
+    "reference_link": "host_proposed",
+    "reference_correspondence": {
+     "plan_reference": "Ti6Al4V",
+     "observed_conditions": {
+      "group": "TI-CTL"
+     },
+     "applies_to": [
+      "E1"
+     ],
+     "basis": "Zenodo 8342247 description names Ti6Al4V and Ti40Zr10Cu36Pd14 BMG; the paper (sec3.3, lit-5737e83c47b3) names Ti-6Al-4V as the control surface; the export labels this group TI-CTL. The label itself does not say Ti6Al4V.",
+     "stated_by": "host",
+     "accepted_by": null
+    },
+    "status": "insufficient",
+    "reasons": [
+     "combinations_disagree"
+    ],
+    "observed": null,
+    "treatment_values": [
+     3610.0,
+     4625.0,
+     3968.0,
+     3579.0,
+     2495.0
+    ],
+    "reference_values": [
+     1595.0,
+     1894.0,
+     2105.0,
+     2695.0
+    ],
+    "pairing": "all_combinations",
+    "pairs": [],
+    "declared_pairs": null,
+    "used_pairs": null,
+    "pair_independence": null,
+    "combinations": 20,
+    "unpaired_observations": 0,
+    "pairwise": [
+     2.263323,
+     1.906019,
+     1.714964,
+     1.339518,
+     2.899687,
+     2.441922,
+     2.19715,
+     1.716141,
+     2.487774,
+     2.095037,
+     1.885036,
+     1.472356,
+     2.243887,
+     1.889652,
+     1.700238,
+     1.328015,
+     1.564263,
+     1.317318,
+     1.185273,
+     0.925788
+    ],
+    "pairwise_classes": [
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "increase",
+     "indeterminate",
+     "no_change"
+    ],
+    "below_detection": 0,
+    "left_out": {},
+    "rule": {
+     "comparison": "ratio",
+     "increase_at_or_above": 1.25,
+     "decrease_at_or_below": 0.8,
+     "no_change_between": [
+      0.9,
+      1.1
+     ],
+     "declared_by": "host",
+     "basis": "Bands copied unchanged from docs/research_sessions/plan_cases/case2_b1_rules.json, fixed on 2026-09-25 (commit d7d8bc2) for synthetic development, before this dataset was seen. Applying them to this assay is the host's choice, made AFTER viewing the values (post hoc). Not an acceptance criterion and not a statistical test."
+    },
+    "by_hypothesis": [
+     {
+      "hypothesis_id": "H_tox",
+      "expected": "decrease",
+      "versus": "Ti6Al4V",
+      "outcome": "not_read",
+      "note": "nothing classified",
+      "scope": {
+       "experiment_id": "E1",
+       "readout": "alamarBlue fluorescence",
+       "versus": "Ti6Al4V",
+       "reference_conditions": {
+        "group": "TI-CTL"
+       },
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 48.0,
+        "unit": "hour"
+       },
+       "pairing": "all_combinations",
+       "values": 20,
+       "hypothesis_alone": true
+      },
+      "if_accepted": null,
+      "may_coexist_with": [],
+      "assumptions_checked": {
+       "the Ti6Al4V wells read above the reagent-only background at the same read": "not_established"
+      },
+      "interpretation": null
+     },
+     {
+      "hypothesis_id": "H_eq",
+      "expected": "no_change",
+      "versus": "Ti6Al4V",
+      "outcome": "not_read",
+      "note": "nothing classified",
+      "scope": {
+       "experiment_id": "E1",
+       "readout": "alamarBlue fluorescence",
+       "versus": "Ti6Al4V",
+       "reference_conditions": {
+        "group": "TI-CTL"
+       },
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 48.0,
+        "unit": "hour"
+       },
+       "pairing": "all_combinations",
+       "values": 20,
+       "hypothesis_alone": true
+      },
+      "if_accepted": null,
+      "may_coexist_with": [],
+      "assumptions_checked": {
+       "the Ti6Al4V wells read above the reagent-only background at the same read": "not_established"
+      },
+      "interpretation": null
+     },
+     {
+      "hypothesis_id": "H_more",
+      "expected": "increase",
+      "versus": "Ti6Al4V",
+      "outcome": "not_read",
+      "note": "nothing classified",
+      "scope": {
+       "experiment_id": "E1",
+       "readout": "alamarBlue fluorescence",
+       "versus": "Ti6Al4V",
+       "reference_conditions": {
+        "group": "TI-CTL"
+       },
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 48.0,
+        "unit": "hour"
+       },
+       "pairing": "all_combinations",
+       "values": 20,
+       "hypothesis_alone": true
+      },
+      "if_accepted": null,
+      "may_coexist_with": [],
+      "assumptions_checked": {
+       "the Ti6Al4V wells read above the reagent-only background at the same read": "not_established"
+      },
+      "interpretation": null
+     },
+     {
+      "hypothesis_id": "H_int",
+      "expected": "increase",
+      "versus": "Ti6Al4V",
+      "outcome": "not_read",
+      "note": "nothing classified",
+      "scope": {
+       "experiment_id": "E1",
+       "readout": "alamarBlue fluorescence",
+       "versus": "Ti6Al4V",
+       "reference_conditions": {
+        "group": "TI-CTL"
+       },
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 48.0,
+        "unit": "hour"
+       },
+       "pairing": "all_combinations",
+       "values": 20,
+       "hypothesis_alone": true
+      },
+      "if_accepted": null,
+      "may_coexist_with": [],
+      "assumptions_checked": {},
+      "interpretation": null
+     }
+    ],
+    "assumption_outcomes": []
+   },
+   {
+    "experiment_id": "E1",
+    "readout": "alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+    "measurement_name": "alamarblue_rfu",
+    "run_ids": [
+     "zenodo:zenodo-8342247-alamarblue"
+    ],
+    "kind": "change",
+    "versus": "reagent only (no cells)",
+    "reference_link": "host_proposed",
+    "reference_correspondence": {
+     "plan_reference": "reagent only (no cells)",
+     "observed_conditions": {
+      "group": "AB"
+     },
+     "applies_to": [
+      "E1"
+     ],
+     "basis": "Two wells labelled 'AB' in the plate grid, read with the plate, 1581-1756 RFU. Neither the record nor the paper defines them; 'reagent only' is the host's reading of the label.",
+     "stated_by": "host",
+     "accepted_by": null
+    },
+    "status": "insufficient",
+    "reasons": [
+     "combinations_disagree"
+    ],
+    "observed": null,
+    "treatment_values": [
+     1595.0,
+     1894.0,
+     2105.0,
+     2695.0
+    ],
+    "reference_values": [
+     1581.0,
+     1624.0
+    ],
+    "pairing": "all_combinations",
+    "pairs": [],
+    "declared_pairs": null,
+    "used_pairs": null,
+    "pair_independence": null,
+    "combinations": 8,
+    "unpaired_observations": 0,
+    "pairwise": [
+     1.008855,
+     0.982143,
+     1.197976,
+     1.166256,
+     1.331436,
+     1.296182,
+     1.704617,
+     1.659483
+    ],
+    "pairwise_classes": [
+     "no_change",
+     "no_change",
+     "indeterminate",
+     "indeterminate",
+     "increase",
+     "increase",
+     "increase",
+     "increase"
+    ],
+    "below_detection": 0,
+    "left_out": {},
+    "rule": {
+     "comparison": "ratio",
+     "increase_at_or_above": 1.25,
+     "decrease_at_or_below": 0.8,
+     "no_change_between": [
+      0.9,
+      1.1
+     ],
+     "declared_by": "host",
+     "basis": "Bands copied unchanged from docs/research_sessions/plan_cases/case2_b1_rules.json, fixed on 2026-09-25 (commit d7d8bc2) for synthetic development, before this dataset was seen. Applying them to this assay is the host's choice, made AFTER viewing the values (post hoc). Not an acceptance criterion and not a statistical test."
+    },
+    "by_hypothesis": [],
+    "assumption_outcomes": [
+     {
+      "assumption": "the Ti6Al4V wells read above the reagent-only background at the same read",
+      "expected_if_holds": "increase",
+      "versus": "reagent only (no cells)",
+      "outcome": "not_read",
+      "note": "nothing classified",
+      "if_accepted": null,
+      "scope": {
+       "experiment_id": "E1",
+       "readout": "alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+       "versus": "reagent only (no cells)",
+       "reference_conditions": {
+        "group": "AB"
+       },
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 48.0,
+        "unit": "hour"
+       },
+       "pairing": "all_combinations",
+       "values": 8,
+       "hypothesis_alone": true
+      }
+     }
+    ]
+   }
+  ],
+  "hypotheses": [
+   {
+    "hypothesis_id": "H_tox",
+    "consistent": [],
+    "inconsistent": [],
+    "undecided": [],
+    "not_read": [
+     "E1:alamarBlue fluorescence",
+     "E1:alamarBlue fluorescence"
+    ],
+    "held_reference": [],
+    "to_re_examine": []
+   },
+   {
+    "hypothesis_id": "H_eq",
+    "consistent": [],
+    "inconsistent": [],
+    "undecided": [],
+    "not_read": [
+     "E1:alamarBlue fluorescence",
+     "E1:alamarBlue fluorescence"
+    ],
+    "held_reference": [],
+    "to_re_examine": []
+   },
+   {
+    "hypothesis_id": "H_more",
+    "consistent": [],
+    "inconsistent": [],
+    "undecided": [],
+    "not_read": [
+     "E1:alamarBlue fluorescence",
+     "E1:alamarBlue fluorescence"
+    ],
+    "held_reference": [],
+    "to_re_examine": []
+   },
+   {
+    "hypothesis_id": "H_int",
+    "consistent": [],
+    "inconsistent": [],
+    "undecided": [],
+    "not_read": [
+     "E1:alamarBlue fluorescence",
+     "E1:alamarBlue fluorescence"
+    ],
+    "held_reference": [],
+    "to_re_examine": []
+   }
+  ],
+  "assumption_reviews": [
+   {
+    "assumption": "the Ti6Al4V wells read above the reagent-only background at the same read",
+    "status": "not_established",
+    "checks": [
+     "E1:alamarBlue fluorescence (Ti6Al4V wells vs reagent only)=not_read",
+     "E1:alamarBlue fluorescence (Ti6Al4V wells vs reagent only)=not_read"
+    ],
+    "dependent_predictions": [
+     "E1:H_tox:alamarBlue fluorescence",
+     "E1:H_eq:alamarBlue fluorescence",
+     "E1:H_more:alamarBlue fluorescence"
+    ],
+    "meaning": "Read under the declared rule, on the tested readout, arms and time point only. Not a general statement that the assay is free of interference, and not a scientific validation. Predictions that do not name this assumption were not marked because no dependency is stated; that is not a finding that they are unaffected."
+   }
+  ],
+  "re_examine": [],
+  "host_decisions": [
+   {
+    "target_id": "H_tox",
+    "decision": "hold",
+    "reason": "Not classified at 24 or 48 h (combinations disagree). Host reading, not a classification: none of the 40 BMG/Ti6Al4V combinations reached the declared decrease band (lowest 0.926). Held rather than revised: the Ti6Al4V/TI-CTL correspondence is unaccepted, the background assumption is not established, and interference is untested.",
+    "next_experiment_ids": [
+     "E2",
+     "E3"
+    ]
+   },
+   {
+    "target_id": "H_eq",
+    "decision": "hold",
+    "reason": "The authors' 'comparable' rests on ANOVA of means; this comparison computes no statistic and did not classify no_change: 3/20 (24 h) and 1/20 (48 h) combinations fall in the no_change band, all involving one BMG well.",
+    "next_experiment_ids": [
+     "E3"
+    ]
+   },
+   {
+    "target_id": "H_more",
+    "decision": "hold",
+    "reason": "18/20 combinations at 48 h are in the increase band, but both non-increase combinations involve one BMG well (S8), and a raised signal is also what H_int predicts. E3 separates cell number from activity per cell only in part.",
+    "next_experiment_ids": [
+     "E2",
+     "E3"
+    ]
+   },
+   {
+    "target_id": "H_int",
+    "decision": "hold",
+    "reason": "No cell-free specimen read exists in the export; the procedure (dye added onto specimens) does not exclude a material contribution.",
+    "next_experiment_ids": [
+     "E2"
+    ]
+   },
+   {
+    "target_id": "the Ti6Al4V wells read above the reagent-only background at the same read",
+    "decision": "hold",
+    "reason": "Not established on its check: one TI-CTL well per day (1641 and 1595 RFU) reads within the AB range (1581-1756). Raw-RFU ratios to Ti6Al4V are therefore not ratios of cell signal. Background handling must be declared before the next read.",
+    "next_experiment_ids": [
+     "E2"
+    ]
+   },
+   {
+    "target_id": "E1:alamarBlue fluorescence",
+    "decision": "hold",
+    "reason": "Kept as recorded; not re-analysed by dropping wells. Five record questions go to the researcher before any re-read: (1) accept or reject TI-CTL = Ti6Al4V and AB = reagent only; (2) was the specimen in the read well; (3) are wells independent specimens, and is the same specimen read at 24 and 48 h; (4) the AB well position conflict (grid C7-C8 vs plate area H8-H9); (5) 'triplicate' vs 4 and 5 wells.",
+    "next_experiment_ids": []
+   }
+  ],
+  "decisions_by": "host",
+  "findings": [],
+  "limits": [
+   "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+   "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+   "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+   "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+   "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+   "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+   "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+   "An assumption check holds or does not hold under its declared rule and tested condition only. It marks the predictions that name that assumption; the others are left unmarked because no dependency is stated, which does not mean they are unaffected. Interference seen on one assay is not carried to another.",
+   "A named reference is compared only when the reference arm's own conditions carry that name. A name the conditions do not carry is a declaration, and the comparison is held.",
+   "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+  ]
+ }
+}

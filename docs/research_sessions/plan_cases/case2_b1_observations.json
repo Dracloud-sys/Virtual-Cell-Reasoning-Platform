@@ -1,0 +1,1070 @@
+{
+ "note": "SYNTHETIC. Written after case2_b1_rules.json was committed (d7d8bc2); read against it. No value here is an experimental or literature value.",
+ "rules": "case2_b1_rules.json",
+ "scenarios": [
+  {
+   "id": "S1",
+   "title": "Consistent with interference: the product control falls, cells do not.",
+   "mapping_keys": [
+    "E2_resorufin",
+    "E3_cell_number",
+    "E3_per_cell"
+   ],
+   "runs": [
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S1-E2",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "fluorescence plate reader",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "resorufin + compound"
+       },
+       "measurements": [
+        {
+         "name": "resorufin_fluorescence",
+         "value": 55,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 52,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 57,
+         "unit": "RFU",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "resorufin alone"
+       },
+       "measurements": [
+        {
+         "name": "resorufin_fluorescence",
+         "value": 100,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 98,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 102,
+         "unit": "RFU",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S1-E3-count",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "DNA-binding dye fluorescence",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "compound"
+       },
+       "measurements": [
+        {
+         "name": "cell_number",
+         "value": 10100,
+         "unit": "cells/well",
+         "quality": "valid"
+        },
+        {
+         "name": "cell_number",
+         "value": 9800,
+         "unit": "cells/well",
+         "quality": "valid"
+        },
+        {
+         "name": "cell_number",
+         "value": 10000,
+         "unit": "cells/well",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "vehicle"
+       },
+       "measurements": [
+        {
+         "name": "cell_number",
+         "value": 10000,
+         "unit": "cells/well",
+         "quality": "valid"
+        },
+        {
+         "name": "cell_number",
+         "value": 10200,
+         "unit": "cells/well",
+         "quality": "valid"
+        },
+        {
+         "name": "cell_number",
+         "value": 9900,
+         "unit": "cells/well",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S1-E3-resazurin",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "fluorescence plate reader",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "compound"
+       },
+       "measurements": [
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.52,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.55,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.5,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "vehicle"
+       },
+       "measurements": [
+        {
+         "name": "resazurin_per_cell",
+         "value": 1.0,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.98,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "resazurin_per_cell",
+         "value": 1.03,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S2",
+   "title": "Needs further measures and controls: no product interference, per-cell signal down, ATP unchanged, luciferase check recorded but not readable by the plan.",
+   "mapping_keys": [
+    "E2_resorufin",
+    "E3_cell_number",
+    "E3_per_cell",
+    "E4_atp",
+    "E6_luciferase"
+   ],
+   "runs": [
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S2-E2",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "fluorescence plate reader",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "resorufin + compound"
+       },
+       "measurements": [
+        {
+         "name": "resorufin_fluorescence",
+         "value": 99,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 101,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 97,
+         "unit": "RFU",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "resorufin alone"
+       },
+       "measurements": [
+        {
+         "name": "resorufin_fluorescence",
+         "value": 100,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 98,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 102,
+         "unit": "RFU",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S2-E3-count",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "DNA-binding dye fluorescence",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "compound"
+       },
+       "measurements": [
+        {
+         "name": "cell_number",
+         "value": 9900,
+         "unit": "cells/well",
+         "quality": "valid"
+        },
+        {
+         "name": "cell_number",
+         "value": 10050,
+         "unit": "cells/well",
+         "quality": "valid"
+        },
+        {
+         "name": "cell_number",
+         "value": 10100,
+         "unit": "cells/well",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "vehicle"
+       },
+       "measurements": [
+        {
+         "name": "cell_number",
+         "value": 10000,
+         "unit": "cells/well",
+         "quality": "valid"
+        },
+        {
+         "name": "cell_number",
+         "value": 10200,
+         "unit": "cells/well",
+         "quality": "valid"
+        },
+        {
+         "name": "cell_number",
+         "value": 9900,
+         "unit": "cells/well",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S2-E3-resazurin",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "fluorescence plate reader",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "compound"
+       },
+       "measurements": [
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.61,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.58,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.6,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "vehicle"
+       },
+       "measurements": [
+        {
+         "name": "resazurin_per_cell",
+         "value": 1.0,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.98,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "resazurin_per_cell",
+         "value": 1.03,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S2-E4-atp",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "luciferase luminescence",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "compound"
+       },
+       "measurements": [
+        {
+         "name": "atp_per_cell",
+         "value": 0.97,
+         "unit": "RLU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "atp_per_cell",
+         "value": 1.0,
+         "unit": "RLU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "atp_per_cell",
+         "value": 1.02,
+         "unit": "RLU/cell",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "vehicle"
+       },
+       "measurements": [
+        {
+         "name": "atp_per_cell",
+         "value": 1.0,
+         "unit": "RLU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "atp_per_cell",
+         "value": 0.99,
+         "unit": "RLU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "atp_per_cell",
+         "value": 1.01,
+         "unit": "RLU/cell",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S2-E6",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "luciferase luminescence",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "ATP standard + compound"
+       },
+       "measurements": [
+        {
+         "name": "atp_standard_luminescence",
+         "value": 1000,
+         "unit": "RLU",
+         "quality": "valid"
+        },
+        {
+         "name": "atp_standard_luminescence",
+         "value": 990,
+         "unit": "RLU",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "ATP standard alone"
+       },
+       "measurements": [
+        {
+         "name": "atp_standard_luminescence",
+         "value": 1010,
+         "unit": "RLU",
+         "quality": "valid"
+        },
+        {
+         "name": "atp_standard_luminescence",
+         "value": 1000,
+         "unit": "RLU",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S3",
+   "title": "Insufficient: product-control replicates disagree; per-cell ratio between bands.",
+   "mapping_keys": [
+    "E2_resorufin",
+    "E3_cell_number",
+    "E3_per_cell"
+   ],
+   "runs": [
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S3-E2",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "fluorescence plate reader",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "resorufin + compound"
+       },
+       "measurements": [
+        {
+         "name": "resorufin_fluorescence",
+         "value": 60,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 98,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 75,
+         "unit": "RFU",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "resorufin alone"
+       },
+       "measurements": [
+        {
+         "name": "resorufin_fluorescence",
+         "value": 100,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 99,
+         "unit": "RFU",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S3-E3-count",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "DNA-binding dye fluorescence",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "compound"
+       },
+       "measurements": [
+        {
+         "name": "cell_number",
+         "value": 9900,
+         "unit": "cells/well",
+         "quality": "valid"
+        },
+        {
+         "name": "cell_number",
+         "value": 10100,
+         "unit": "cells/well",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "vehicle"
+       },
+       "measurements": [
+        {
+         "name": "cell_number",
+         "value": 10000,
+         "unit": "cells/well",
+         "quality": "valid"
+        },
+        {
+         "name": "cell_number",
+         "value": 10050,
+         "unit": "cells/well",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S3-E3-resazurin",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "fluorescence plate reader",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "compound"
+       },
+       "measurements": [
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.85,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "vehicle"
+       },
+       "measurements": [
+        {
+         "name": "resazurin_per_cell",
+         "value": 1.0,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S4",
+   "title": "Not comparable: wrong unit, reference at another time, unusable readings, assay named differently.",
+   "mapping_keys": [
+    "E2_resorufin",
+    "E3_per_cell",
+    "E4_atp",
+    "E5_content"
+   ],
+   "runs": [
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S4-E2",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "fluorescence plate reader",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "resorufin + compound"
+       },
+       "measurements": [
+        {
+         "name": "resorufin_fluorescence",
+         "value": 55,
+         "unit": "AU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 52,
+         "unit": "AU",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "resorufin alone"
+       },
+       "measurements": [
+        {
+         "name": "resorufin_fluorescence",
+         "value": 100,
+         "unit": "RFU",
+         "quality": "valid"
+        },
+        {
+         "name": "resorufin_fluorescence",
+         "value": 98,
+         "unit": "RFU",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S4-E3-resazurin",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "fluorescence plate reader",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "compound"
+       },
+       "measurements": [
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.52,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.55,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 48.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "vehicle"
+       },
+       "measurements": [
+        {
+         "name": "resazurin_per_cell",
+         "value": 1.0,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "resazurin_per_cell",
+         "value": 0.98,
+         "unit": "RFU/cell",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S4-E4-atp",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "luciferase luminescence",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "compound"
+       },
+       "measurements": [
+        {
+         "name": "atp_per_cell",
+         "value": 0.4,
+         "unit": "RLU/cell",
+         "quality": "suspect"
+        },
+        {
+         "name": "atp_per_cell",
+         "value": 0.5,
+         "unit": "RLU/cell",
+         "quality": "suspect"
+        },
+        {
+         "name": "atp_per_cell",
+         "value": 2.0,
+         "unit": "RLU/cell",
+         "quality": "valid",
+         "quality_flags": [
+          "bound:>"
+         ]
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "vehicle"
+       },
+       "measurements": [
+        {
+         "name": "atp_per_cell",
+         "value": 1.0,
+         "unit": "RLU/cell",
+         "quality": "valid"
+        },
+        {
+         "name": "atp_per_cell",
+         "value": 0.99,
+         "unit": "RLU/cell",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "schema_version": "1.0",
+     "run_id": "dev:synthetic-S4-E5-cs",
+     "provenance": {
+      "origin_kind": "experiment",
+      "acquisition_mode": "manual",
+      "method": "absorbance",
+      "metadata": {
+       "synthetic": true
+      }
+     },
+     "observations": [
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "compound"
+       },
+       "measurements": [
+        {
+         "name": "citrate_synthase_per_cell",
+         "value": 60,
+         "unit": "nmol/min/10^6 cells",
+         "quality": "valid"
+        },
+        {
+         "name": "citrate_synthase_per_cell",
+         "value": 62,
+         "unit": "nmol/min/10^6 cells",
+         "quality": "valid"
+        }
+       ]
+      },
+      {
+       "time_point": {
+        "kind": "elapsed_time",
+        "value": 24.0,
+        "unit": "hour"
+       },
+       "conditions": {
+        "arm": "vehicle"
+       },
+       "measurements": [
+        {
+         "name": "citrate_synthase_per_cell",
+         "value": 100,
+         "unit": "nmol/min/10^6 cells",
+         "quality": "valid"
+        },
+        {
+         "name": "citrate_synthase_per_cell",
+         "value": 98,
+         "unit": "nmol/min/10^6 cells",
+         "quality": "valid"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

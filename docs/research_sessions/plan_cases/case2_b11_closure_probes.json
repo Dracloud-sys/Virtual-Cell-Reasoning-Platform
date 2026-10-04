@@ -1,0 +1,4373 @@
+{
+ "note": "B1.1 closure probes through build_server() -> compare_research_observations, synthetic values. 'before' is the code at 8c3f03d, 'after' the closure fix. R1-R3 re-run on the closure code with the B1.1 inputs are under 'r1_r3_after'.",
+ "before": {
+  "B_vehicle_named_untreated_selected": {
+   "input": {
+    "runs": [
+     {
+      "schema_version": "1.0",
+      "run_id": "dev:synthetic-closure",
+      "provenance": {
+       "origin_kind": "experiment",
+       "acquisition_mode": "manual",
+       "method": "fluorescence plate reader"
+      },
+      "observations": [
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 0.5,
+          "unit": "RFU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "untreated"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 1.0,
+          "unit": "RFU/cell"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "mappings": [
+     {
+      "experiment_id": "E3",
+      "readout": "resazurin signal per cell",
+      "measurement_name": "m",
+      "unit": "RFU/cell",
+      "time_point": {
+       "kind": "elapsed_time",
+       "value": 24.0,
+       "unit": "hour"
+      },
+      "treatment": {
+       "arm": "compound"
+      },
+      "reference": {
+       "arm": "untreated"
+      },
+      "versus": "vehicle",
+      "rule": {
+       "comparison": "ratio",
+       "increase_at_or_above": 1.25,
+       "decrease_at_or_below": 0.8,
+       "no_change_between": [
+        0.9,
+        1.1
+       ],
+       "declared_by": "host",
+       "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+      }
+     }
+    ]
+   },
+   "output": {
+    "scientific_validity_checked": false,
+    "not_checked": [
+     "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+     "Whether a consistent result supports the hypothesis over others predicting the same value.",
+     "Whether the runs are what their provenance says they are.",
+     "Whether the plan should change. Keep, revise and hold are the host's proposal."
+    ],
+    "authored_by": "host_llm",
+    "internal_model_calls": 0,
+    "findings": [
+     {
+      "code": "question_not_restated",
+      "where": "restated_question",
+      "detail": "no measurable restatement of the question was produced"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E4",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E4",
+      "detail": "names no hypothesis this experiment would tell apart"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E5",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E6",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E6",
+      "detail": "names no hypothesis this experiment would tell apart"
+     }
+    ],
+    "comparison": {
+     "revision_id": "rev-85f81861e4bd709e",
+     "prior_plan_sha256": "bb64836034622097711b50b45e9e6911cca11319ee6d5ab02493030300fc4761",
+     "observations_sha256": "3cb8dc078fe270574d241f54809e7ac25a6cce1587712d8da3e5aa9e3d86ec66",
+     "prior_plan_unchanged": true,
+     "runs_used": [
+      "dev:synthetic-closure"
+     ],
+     "runs_collapsed_as_duplicates": [],
+     "comparisons": [
+      {
+       "experiment_id": "E3",
+       "readout": "resazurin signal per cell",
+       "measurement_name": "m",
+       "run_ids": [
+        "dev:synthetic-closure"
+       ],
+       "kind": "change",
+       "versus": "vehicle",
+       "status": "compared",
+       "reasons": [],
+       "observed": "decrease",
+       "treatment_values": [
+        0.5
+       ],
+       "reference_values": [
+        1.0
+       ],
+       "pairing": "all_combinations",
+       "pairs": [],
+       "independent_pairs": null,
+       "combinations": 1,
+       "unpaired_observations": 0,
+       "pairwise": [
+        0.5
+       ],
+       "pairwise_classes": [
+        "decrease"
+       ],
+       "below_detection": 0,
+       "left_out": {},
+       "rule": {
+        "comparison": "ratio",
+        "increase_at_or_above": 1.25,
+        "decrease_at_or_below": 0.8,
+        "no_change_between": [
+         0.9,
+         1.1
+        ],
+        "declared_by": "host",
+        "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+       },
+       "by_hypothesis": [
+        {
+         "hypothesis_id": "H1",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "inconsistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 1,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [
+          "H2a",
+          "H2b",
+          "H3a",
+          "H3b"
+         ],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 1,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 1,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 1,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 1,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        }
+       ],
+       "assumption_outcomes": []
+      }
+     ],
+     "hypotheses": [
+      {
+       "hypothesis_id": "H1",
+       "consistent": [],
+       "inconsistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2a",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2b",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3a",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3b",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      }
+     ],
+     "assumption_reviews": [],
+     "re_examine": [
+      {
+       "hypothesis_id": "H1",
+       "experiment_id": "E3",
+       "readout": "resazurin signal per cell",
+       "expected": "no_change",
+       "observed": "decrease",
+       "because": [
+        "inconsistent"
+       ],
+       "basis": "evidence_observed",
+       "evidence_ids": [
+        "lit-86b42ebcd0c4"
+       ],
+       "ungrounded_evidence_ids": [],
+       "mechanism_link_ids": [],
+       "mechanism_evidence_ids": [],
+       "assumptions": [],
+       "shaken_assumptions": [],
+       "shares_dependencies_with": [
+        "E3:H1:cell number"
+       ]
+      }
+     ],
+     "host_decisions": [],
+     "decisions_by": "host",
+     "findings": [],
+     "limits": [
+      "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+      "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+      "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+      "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+      "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+      "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+      "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+      "An assumption check marks only the predictions that name that assumption. Interference seen on one assay is not carried to another; each readout is read on its own.",
+      "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+     ]
+    }
+   }
+  },
+  "A_one_observation_in_two_pairs": {
+   "input": {
+    "runs": [
+     {
+      "schema_version": "1.0",
+      "run_id": "dev:synthetic-closure",
+      "provenance": {
+       "origin_kind": "experiment",
+       "acquisition_mode": "manual",
+       "method": "fluorescence plate reader"
+      },
+      "observations": [
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 0.5,
+          "unit": "RFU/cell"
+         }
+        ],
+        "observation_id": "c1"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 1.0,
+          "unit": "RFU/cell"
+         }
+        ],
+        "observation_id": "v1"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 1.0,
+          "unit": "RFU/cell"
+         }
+        ],
+        "observation_id": "v2"
+       }
+      ]
+     }
+    ],
+    "mappings": [
+     {
+      "experiment_id": "E3",
+      "readout": "resazurin signal per cell",
+      "measurement_name": "m",
+      "unit": "RFU/cell",
+      "time_point": {
+       "kind": "elapsed_time",
+       "value": 24.0,
+       "unit": "hour"
+      },
+      "treatment": {
+       "arm": "compound"
+      },
+      "reference": {
+       "arm": "vehicle"
+      },
+      "versus": "vehicle",
+      "rule": {
+       "comparison": "ratio",
+       "increase_at_or_above": 1.25,
+       "decrease_at_or_below": 0.8,
+       "no_change_between": [
+        0.9,
+        1.1
+       ],
+       "declared_by": "host",
+       "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+      },
+      "pairs": [
+       {
+        "treatment_observation_id": "c1",
+        "reference_observation_id": "v1"
+       },
+       {
+        "treatment_observation_id": "c1",
+        "reference_observation_id": "v2"
+       }
+      ]
+     }
+    ]
+   },
+   "output": {
+    "scientific_validity_checked": false,
+    "not_checked": [
+     "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+     "Whether a consistent result supports the hypothesis over others predicting the same value.",
+     "Whether the runs are what their provenance says they are.",
+     "Whether the plan should change. Keep, revise and hold are the host's proposal."
+    ],
+    "authored_by": "host_llm",
+    "internal_model_calls": 0,
+    "findings": [
+     {
+      "code": "question_not_restated",
+      "where": "restated_question",
+      "detail": "no measurable restatement of the question was produced"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E4",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E4",
+      "detail": "names no hypothesis this experiment would tell apart"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E5",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E6",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E6",
+      "detail": "names no hypothesis this experiment would tell apart"
+     }
+    ],
+    "comparison": {
+     "revision_id": "rev-ecd746d5c8a59fa3",
+     "prior_plan_sha256": "bb64836034622097711b50b45e9e6911cca11319ee6d5ab02493030300fc4761",
+     "observations_sha256": "313ffff13c2a3b13f094c1bce3c45a49cdae5e56a58ac8e4c32a8cbc7648b472",
+     "prior_plan_unchanged": true,
+     "runs_used": [
+      "dev:synthetic-closure"
+     ],
+     "runs_collapsed_as_duplicates": [],
+     "comparisons": [
+      {
+       "experiment_id": "E3",
+       "readout": "resazurin signal per cell",
+       "measurement_name": "m",
+       "run_ids": [
+        "dev:synthetic-closure"
+       ],
+       "kind": "change",
+       "versus": "vehicle",
+       "status": "compared",
+       "reasons": [],
+       "observed": "decrease",
+       "treatment_values": [
+        0.5
+       ],
+       "reference_values": [
+        1.0,
+        1.0
+       ],
+       "pairing": "declared_pairs",
+       "pairs": [
+        {
+         "treatment_observation_id": "c1",
+         "reference_observation_id": "v1",
+         "value": 0.5,
+         "classified": "decrease",
+         "note": null
+        },
+        {
+         "treatment_observation_id": "c1",
+         "reference_observation_id": "v2",
+         "value": 0.5,
+         "classified": "decrease",
+         "note": null
+        }
+       ],
+       "independent_pairs": 2,
+       "combinations": null,
+       "unpaired_observations": 0,
+       "pairwise": [
+        0.5,
+        0.5
+       ],
+       "pairwise_classes": [
+        "decrease",
+        "decrease"
+       ],
+       "below_detection": 0,
+       "left_out": {},
+       "rule": {
+        "comparison": "ratio",
+        "increase_at_or_above": 1.25,
+        "decrease_at_or_below": 0.8,
+        "no_change_between": [
+         0.9,
+         1.1
+        ],
+        "declared_by": "host",
+        "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+       },
+       "by_hypothesis": [
+        {
+         "hypothesis_id": "H1",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "inconsistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 2,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [
+          "H2a",
+          "H2b",
+          "H3a",
+          "H3b"
+         ],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 2,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 2,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 2,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 2,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        }
+       ],
+       "assumption_outcomes": []
+      }
+     ],
+     "hypotheses": [
+      {
+       "hypothesis_id": "H1",
+       "consistent": [],
+       "inconsistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2a",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2b",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3a",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3b",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      }
+     ],
+     "assumption_reviews": [],
+     "re_examine": [
+      {
+       "hypothesis_id": "H1",
+       "experiment_id": "E3",
+       "readout": "resazurin signal per cell",
+       "expected": "no_change",
+       "observed": "decrease",
+       "because": [
+        "inconsistent"
+       ],
+       "basis": "evidence_observed",
+       "evidence_ids": [
+        "lit-86b42ebcd0c4"
+       ],
+       "ungrounded_evidence_ids": [],
+       "mechanism_link_ids": [],
+       "mechanism_evidence_ids": [],
+       "assumptions": [],
+       "shaken_assumptions": [],
+       "shares_dependencies_with": [
+        "E3:H1:cell number"
+       ]
+      }
+     ],
+     "host_decisions": [],
+     "decisions_by": "host",
+     "findings": [],
+     "limits": [
+      "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+      "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+      "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+      "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+      "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+      "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+      "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+      "An assumption check marks only the predictions that name that assumption. Interference seen on one assay is not carried to another; each readout is read on its own.",
+      "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+     ]
+    }
+   }
+  },
+  "A_same_pair_twice": {
+   "input": {
+    "runs": [
+     {
+      "schema_version": "1.0",
+      "run_id": "dev:synthetic-closure",
+      "provenance": {
+       "origin_kind": "experiment",
+       "acquisition_mode": "manual",
+       "method": "fluorescence plate reader"
+      },
+      "observations": [
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 0.5,
+          "unit": "RFU/cell"
+         }
+        ],
+        "observation_id": "c1"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 1.0,
+          "unit": "RFU/cell"
+         }
+        ],
+        "observation_id": "v1"
+       }
+      ]
+     }
+    ],
+    "mappings": [
+     {
+      "experiment_id": "E3",
+      "readout": "resazurin signal per cell",
+      "measurement_name": "m",
+      "unit": "RFU/cell",
+      "time_point": {
+       "kind": "elapsed_time",
+       "value": 24.0,
+       "unit": "hour"
+      },
+      "treatment": {
+       "arm": "compound"
+      },
+      "reference": {
+       "arm": "vehicle"
+      },
+      "versus": "vehicle",
+      "rule": {
+       "comparison": "ratio",
+       "increase_at_or_above": 1.25,
+       "decrease_at_or_below": 0.8,
+       "no_change_between": [
+        0.9,
+        1.1
+       ],
+       "declared_by": "host",
+       "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+      },
+      "pairs": [
+       {
+        "treatment_observation_id": "c1",
+        "reference_observation_id": "v1"
+       },
+       {
+        "treatment_observation_id": "c1",
+        "reference_observation_id": "v1"
+       }
+      ]
+     }
+    ]
+   },
+   "output": {
+    "scientific_validity_checked": false,
+    "not_checked": [
+     "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+     "Whether a consistent result supports the hypothesis over others predicting the same value.",
+     "Whether the runs are what their provenance says they are.",
+     "Whether the plan should change. Keep, revise and hold are the host's proposal."
+    ],
+    "authored_by": "host_llm",
+    "internal_model_calls": 0,
+    "findings": [
+     {
+      "code": "question_not_restated",
+      "where": "restated_question",
+      "detail": "no measurable restatement of the question was produced"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E4",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E4",
+      "detail": "names no hypothesis this experiment would tell apart"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E5",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E6",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E6",
+      "detail": "names no hypothesis this experiment would tell apart"
+     }
+    ],
+    "comparison": {
+     "revision_id": "rev-632c7bc51e5230e0",
+     "prior_plan_sha256": "bb64836034622097711b50b45e9e6911cca11319ee6d5ab02493030300fc4761",
+     "observations_sha256": "0a3d9aa82e02acd2435f8b0b36ba5dc3b7083673b0b439822549bb2b60217933",
+     "prior_plan_unchanged": true,
+     "runs_used": [
+      "dev:synthetic-closure"
+     ],
+     "runs_collapsed_as_duplicates": [],
+     "comparisons": [
+      {
+       "experiment_id": "E3",
+       "readout": "resazurin signal per cell",
+       "measurement_name": "m",
+       "run_ids": [
+        "dev:synthetic-closure"
+       ],
+       "kind": "change",
+       "versus": "vehicle",
+       "status": "compared",
+       "reasons": [],
+       "observed": "decrease",
+       "treatment_values": [
+        0.5
+       ],
+       "reference_values": [
+        1.0
+       ],
+       "pairing": "declared_pairs",
+       "pairs": [
+        {
+         "treatment_observation_id": "c1",
+         "reference_observation_id": "v1",
+         "value": 0.5,
+         "classified": "decrease",
+         "note": null
+        },
+        {
+         "treatment_observation_id": "c1",
+         "reference_observation_id": "v1",
+         "value": 0.5,
+         "classified": "decrease",
+         "note": null
+        }
+       ],
+       "independent_pairs": 2,
+       "combinations": null,
+       "unpaired_observations": 0,
+       "pairwise": [
+        0.5,
+        0.5
+       ],
+       "pairwise_classes": [
+        "decrease",
+        "decrease"
+       ],
+       "below_detection": 0,
+       "left_out": {},
+       "rule": {
+        "comparison": "ratio",
+        "increase_at_or_above": 1.25,
+        "decrease_at_or_below": 0.8,
+        "no_change_between": [
+         0.9,
+         1.1
+        ],
+        "declared_by": "host",
+        "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+       },
+       "by_hypothesis": [
+        {
+         "hypothesis_id": "H1",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "inconsistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 2,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [
+          "H2a",
+          "H2b",
+          "H3a",
+          "H3b"
+         ],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 2,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 2,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 2,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 2,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        }
+       ],
+       "assumption_outcomes": []
+      }
+     ],
+     "hypotheses": [
+      {
+       "hypothesis_id": "H1",
+       "consistent": [],
+       "inconsistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2a",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2b",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3a",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3b",
+       "consistent": [
+        "E3:resazurin signal per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      }
+     ],
+     "assumption_reviews": [],
+     "re_examine": [
+      {
+       "hypothesis_id": "H1",
+       "experiment_id": "E3",
+       "readout": "resazurin signal per cell",
+       "expected": "no_change",
+       "observed": "decrease",
+       "because": [
+        "inconsistent"
+       ],
+       "basis": "evidence_observed",
+       "evidence_ids": [
+        "lit-86b42ebcd0c4"
+       ],
+       "ungrounded_evidence_ids": [],
+       "mechanism_link_ids": [],
+       "mechanism_evidence_ids": [],
+       "assumptions": [],
+       "shaken_assumptions": [],
+       "shares_dependencies_with": [
+        "E3:H1:cell number"
+       ]
+      }
+     ],
+     "host_decisions": [],
+     "decisions_by": "host",
+     "findings": [],
+     "limits": [
+      "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+      "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+      "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+      "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+      "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+      "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+      "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+      "An assumption check marks only the predictions that name that assumption. Interference seen on one assay is not carried to another; each readout is read on its own.",
+      "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+     ]
+    }
+   }
+  }
+ },
+ "after": {
+  "B_vehicle_named_untreated_selected": {
+   "input": {
+    "runs": [
+     {
+      "schema_version": "1.0",
+      "run_id": "dev:synthetic-closure",
+      "provenance": {
+       "origin_kind": "experiment",
+       "acquisition_mode": "manual",
+       "method": "fluorescence plate reader"
+      },
+      "observations": [
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 0.5,
+          "unit": "RFU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "untreated"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 1.0,
+          "unit": "RFU/cell"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "mappings": [
+     {
+      "experiment_id": "E3",
+      "readout": "resazurin signal per cell",
+      "measurement_name": "m",
+      "unit": "RFU/cell",
+      "time_point": {
+       "kind": "elapsed_time",
+       "value": 24.0,
+       "unit": "hour"
+      },
+      "treatment": {
+       "arm": "compound"
+      },
+      "reference": {
+       "arm": "untreated"
+      },
+      "versus": "vehicle",
+      "rule": {
+       "comparison": "ratio",
+       "increase_at_or_above": 1.25,
+       "decrease_at_or_below": 0.8,
+       "no_change_between": [
+        0.9,
+        1.1
+       ],
+       "declared_by": "host",
+       "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+      }
+     }
+    ]
+   },
+   "output": {
+    "scientific_validity_checked": false,
+    "not_checked": [
+     "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+     "Whether a consistent result supports the hypothesis over others predicting the same value.",
+     "Whether the runs are what their provenance says they are.",
+     "Whether the plan should change. Keep, revise and hold are the host's proposal."
+    ],
+    "authored_by": "host_llm",
+    "internal_model_calls": 0,
+    "findings": [
+     {
+      "code": "question_not_restated",
+      "where": "restated_question",
+      "detail": "no measurable restatement of the question was produced"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E4",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E4",
+      "detail": "names no hypothesis this experiment would tell apart"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E5",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E6",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E6",
+      "detail": "names no hypothesis this experiment would tell apart"
+     }
+    ],
+    "comparison": {
+     "revision_id": "rev-85f81861e4bd709e",
+     "prior_plan_sha256": "bb64836034622097711b50b45e9e6911cca11319ee6d5ab02493030300fc4761",
+     "observations_sha256": "3cb8dc078fe270574d241f54809e7ac25a6cce1587712d8da3e5aa9e3d86ec66",
+     "prior_plan_unchanged": true,
+     "runs_used": [
+      "dev:synthetic-closure"
+     ],
+     "runs_collapsed_as_duplicates": [],
+     "comparisons": [
+      {
+       "experiment_id": "E3",
+       "readout": "resazurin signal per cell",
+       "measurement_name": "m",
+       "run_ids": [
+        "dev:synthetic-closure"
+       ],
+       "kind": "change",
+       "versus": "vehicle",
+       "reference_link": "declared_only",
+       "status": "compared",
+       "reasons": [],
+       "observed": "decrease",
+       "treatment_values": [
+        0.5
+       ],
+       "reference_values": [
+        1.0
+       ],
+       "pairing": "all_combinations",
+       "pairs": [],
+       "declared_pairs": null,
+       "used_pairs": null,
+       "pair_independence": null,
+       "combinations": 1,
+       "unpaired_observations": 0,
+       "pairwise": [
+        0.5
+       ],
+       "pairwise_classes": [
+        "decrease"
+       ],
+       "below_detection": 0,
+       "left_out": {},
+       "rule": {
+        "comparison": "ratio",
+        "increase_at_or_above": 1.25,
+        "decrease_at_or_below": 0.8,
+        "no_change_between": [
+         0.9,
+         1.1
+        ],
+        "declared_by": "host",
+        "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+       },
+       "by_hypothesis": [
+        {
+         "hypothesis_id": "H1",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "held_reference",
+         "note": "the mapping names 'vehicle', but the reference arm is selected by {'arm': 'untreated'}, which does not carry that name. The link is only declared.",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 1,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "held_reference",
+         "note": "the mapping names 'vehicle', but the reference arm is selected by {'arm': 'untreated'}, which does not carry that name. The link is only declared.",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 1,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "held_reference",
+         "note": "the mapping names 'vehicle', but the reference arm is selected by {'arm': 'untreated'}, which does not carry that name. The link is only declared.",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 1,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "held_reference",
+         "note": "the mapping names 'vehicle', but the reference arm is selected by {'arm': 'untreated'}, which does not carry that name. The link is only declared.",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 1,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "held_reference",
+         "note": "the mapping names 'vehicle', but the reference arm is selected by {'arm': 'untreated'}, which does not carry that name. The link is only declared.",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 1,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        }
+       ],
+       "assumption_outcomes": []
+      }
+     ],
+     "hypotheses": [
+      {
+       "hypothesis_id": "H1",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [
+        "E3:resazurin signal per cell"
+       ],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2a",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [
+        "E3:resazurin signal per cell"
+       ],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2b",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [
+        "E3:resazurin signal per cell"
+       ],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3a",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [
+        "E3:resazurin signal per cell"
+       ],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3b",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [
+        "E3:resazurin signal per cell"
+       ],
+       "to_re_examine": []
+      }
+     ],
+     "assumption_reviews": [],
+     "re_examine": [],
+     "host_decisions": [],
+     "decisions_by": "host",
+     "findings": [],
+     "limits": [
+      "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+      "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+      "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+      "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+      "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+      "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+      "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+      "An assumption check holds or does not hold under its declared rule and tested condition only. It marks the predictions that name that assumption; the others are left unmarked because no dependency is stated, which does not mean they are unaffected. Interference seen on one assay is not carried to another.",
+      "A named reference is compared only when the reference arm's own conditions carry that name. A name the conditions do not carry is a declaration, and the comparison is held.",
+      "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+     ]
+    }
+   }
+  },
+  "A_one_observation_in_two_pairs": {
+   "input": {
+    "runs": [
+     {
+      "schema_version": "1.0",
+      "run_id": "dev:synthetic-closure",
+      "provenance": {
+       "origin_kind": "experiment",
+       "acquisition_mode": "manual",
+       "method": "fluorescence plate reader"
+      },
+      "observations": [
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 0.5,
+          "unit": "RFU/cell"
+         }
+        ],
+        "observation_id": "c1"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 1.0,
+          "unit": "RFU/cell"
+         }
+        ],
+        "observation_id": "v1"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 1.0,
+          "unit": "RFU/cell"
+         }
+        ],
+        "observation_id": "v2"
+       }
+      ]
+     }
+    ],
+    "mappings": [
+     {
+      "experiment_id": "E3",
+      "readout": "resazurin signal per cell",
+      "measurement_name": "m",
+      "unit": "RFU/cell",
+      "time_point": {
+       "kind": "elapsed_time",
+       "value": 24.0,
+       "unit": "hour"
+      },
+      "treatment": {
+       "arm": "compound"
+      },
+      "reference": {
+       "arm": "vehicle"
+      },
+      "versus": "vehicle",
+      "rule": {
+       "comparison": "ratio",
+       "increase_at_or_above": 1.25,
+       "decrease_at_or_below": 0.8,
+       "no_change_between": [
+        0.9,
+        1.1
+       ],
+       "declared_by": "host",
+       "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+      },
+      "pairs": [
+       {
+        "treatment_observation_id": "c1",
+        "reference_observation_id": "v1"
+       },
+       {
+        "treatment_observation_id": "c1",
+        "reference_observation_id": "v2"
+       }
+      ]
+     }
+    ]
+   },
+   "output": {
+    "scientific_validity_checked": false,
+    "not_checked": [
+     "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+     "Whether a consistent result supports the hypothesis over others predicting the same value.",
+     "Whether the runs are what their provenance says they are.",
+     "Whether the plan should change. Keep, revise and hold are the host's proposal."
+    ],
+    "authored_by": "host_llm",
+    "internal_model_calls": 0,
+    "findings": [
+     {
+      "code": "question_not_restated",
+      "where": "restated_question",
+      "detail": "no measurable restatement of the question was produced"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E4",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E4",
+      "detail": "names no hypothesis this experiment would tell apart"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E5",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E6",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E6",
+      "detail": "names no hypothesis this experiment would tell apart"
+     }
+    ],
+    "comparison": {
+     "revision_id": "rev-ecd746d5c8a59fa3",
+     "prior_plan_sha256": "bb64836034622097711b50b45e9e6911cca11319ee6d5ab02493030300fc4761",
+     "observations_sha256": "313ffff13c2a3b13f094c1bce3c45a49cdae5e56a58ac8e4c32a8cbc7648b472",
+     "prior_plan_unchanged": true,
+     "runs_used": [
+      "dev:synthetic-closure"
+     ],
+     "runs_collapsed_as_duplicates": [],
+     "comparisons": [
+      {
+       "experiment_id": "E3",
+       "readout": "resazurin signal per cell",
+       "measurement_name": "m",
+       "run_ids": [
+        "dev:synthetic-closure"
+       ],
+       "kind": "change",
+       "versus": "vehicle",
+       "reference_link": "structural",
+       "status": "not_comparable",
+       "reasons": [
+        "observation_in_more_than_one_pair"
+       ],
+       "observed": null,
+       "treatment_values": [
+        0.5
+       ],
+       "reference_values": [
+        1.0,
+        1.0
+       ],
+       "pairing": null,
+       "pairs": [],
+       "declared_pairs": null,
+       "used_pairs": null,
+       "pair_independence": null,
+       "combinations": null,
+       "unpaired_observations": 0,
+       "pairwise": [],
+       "pairwise_classes": [],
+       "below_detection": 0,
+       "left_out": {},
+       "rule": {
+        "comparison": "ratio",
+        "increase_at_or_above": 1.25,
+        "decrease_at_or_below": 0.8,
+        "no_change_between": [
+         0.9,
+         1.1
+        ],
+        "declared_by": "host",
+        "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+       },
+       "by_hypothesis": [
+        {
+         "hypothesis_id": "H1",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "not comparable",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": null,
+          "values": 0,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "not comparable",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": null,
+          "values": 0,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "not comparable",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": null,
+          "values": 0,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "not comparable",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": null,
+          "values": 0,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "not comparable",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": null,
+          "values": 0,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        }
+       ],
+       "assumption_outcomes": []
+      }
+     ],
+     "hypotheses": [
+      {
+       "hypothesis_id": "H1",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E3:resazurin signal per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2a",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E3:resazurin signal per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2b",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E3:resazurin signal per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3a",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E3:resazurin signal per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3b",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E3:resazurin signal per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      }
+     ],
+     "assumption_reviews": [],
+     "re_examine": [],
+     "host_decisions": [],
+     "decisions_by": "host",
+     "findings": [],
+     "limits": [
+      "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+      "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+      "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+      "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+      "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+      "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+      "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+      "An assumption check holds or does not hold under its declared rule and tested condition only. It marks the predictions that name that assumption; the others are left unmarked because no dependency is stated, which does not mean they are unaffected. Interference seen on one assay is not carried to another.",
+      "A named reference is compared only when the reference arm's own conditions carry that name. A name the conditions do not carry is a declaration, and the comparison is held.",
+      "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+     ]
+    }
+   }
+  },
+  "A_same_pair_twice": {
+   "input": {
+    "runs": [
+     {
+      "schema_version": "1.0",
+      "run_id": "dev:synthetic-closure",
+      "provenance": {
+       "origin_kind": "experiment",
+       "acquisition_mode": "manual",
+       "method": "fluorescence plate reader"
+      },
+      "observations": [
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 0.5,
+          "unit": "RFU/cell"
+         }
+        ],
+        "observation_id": "c1"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle"
+        },
+        "measurements": [
+         {
+          "name": "m",
+          "value": 1.0,
+          "unit": "RFU/cell"
+         }
+        ],
+        "observation_id": "v1"
+       }
+      ]
+     }
+    ],
+    "mappings": [
+     {
+      "experiment_id": "E3",
+      "readout": "resazurin signal per cell",
+      "measurement_name": "m",
+      "unit": "RFU/cell",
+      "time_point": {
+       "kind": "elapsed_time",
+       "value": 24.0,
+       "unit": "hour"
+      },
+      "treatment": {
+       "arm": "compound"
+      },
+      "reference": {
+       "arm": "vehicle"
+      },
+      "versus": "vehicle",
+      "rule": {
+       "comparison": "ratio",
+       "increase_at_or_above": 1.25,
+       "decrease_at_or_below": 0.8,
+       "no_change_between": [
+        0.9,
+        1.1
+       ],
+       "declared_by": "host",
+       "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+      },
+      "pairs": [
+       {
+        "treatment_observation_id": "c1",
+        "reference_observation_id": "v1"
+       },
+       {
+        "treatment_observation_id": "c1",
+        "reference_observation_id": "v1"
+       }
+      ]
+     }
+    ]
+   },
+   "output": {
+    "scientific_validity_checked": false,
+    "not_checked": [
+     "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+     "Whether a consistent result supports the hypothesis over others predicting the same value.",
+     "Whether the runs are what their provenance says they are.",
+     "Whether the plan should change. Keep, revise and hold are the host's proposal."
+    ],
+    "authored_by": "host_llm",
+    "internal_model_calls": 0,
+    "findings": [
+     {
+      "code": "question_not_restated",
+      "where": "restated_question",
+      "detail": "no measurable restatement of the question was produced"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E4",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E4",
+      "detail": "names no hypothesis this experiment would tell apart"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E5",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E6",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E6",
+      "detail": "names no hypothesis this experiment would tell apart"
+     }
+    ],
+    "comparison": {
+     "revision_id": "rev-632c7bc51e5230e0",
+     "prior_plan_sha256": "bb64836034622097711b50b45e9e6911cca11319ee6d5ab02493030300fc4761",
+     "observations_sha256": "0a3d9aa82e02acd2435f8b0b36ba5dc3b7083673b0b439822549bb2b60217933",
+     "prior_plan_unchanged": true,
+     "runs_used": [
+      "dev:synthetic-closure"
+     ],
+     "runs_collapsed_as_duplicates": [],
+     "comparisons": [
+      {
+       "experiment_id": "E3",
+       "readout": "resazurin signal per cell",
+       "measurement_name": "m",
+       "run_ids": [
+        "dev:synthetic-closure"
+       ],
+       "kind": "change",
+       "versus": "vehicle",
+       "reference_link": "structural",
+       "status": "not_comparable",
+       "reasons": [
+        "observation_in_more_than_one_pair"
+       ],
+       "observed": null,
+       "treatment_values": [
+        0.5
+       ],
+       "reference_values": [
+        1.0
+       ],
+       "pairing": null,
+       "pairs": [],
+       "declared_pairs": null,
+       "used_pairs": null,
+       "pair_independence": null,
+       "combinations": null,
+       "unpaired_observations": 0,
+       "pairwise": [],
+       "pairwise_classes": [],
+       "below_detection": 0,
+       "left_out": {},
+       "rule": {
+        "comparison": "ratio",
+        "increase_at_or_above": 1.25,
+        "decrease_at_or_below": 0.8,
+        "no_change_between": [
+         0.9,
+         1.1
+        ],
+        "declared_by": "host",
+        "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+       },
+       "by_hypothesis": [
+        {
+         "hypothesis_id": "H1",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "not comparable",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": null,
+          "values": 0,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "not comparable",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": null,
+          "values": 0,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "not comparable",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": null,
+          "values": 0,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "not comparable",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": null,
+          "values": 0,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "not comparable",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": null,
+          "values": 0,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        }
+       ],
+       "assumption_outcomes": []
+      }
+     ],
+     "hypotheses": [
+      {
+       "hypothesis_id": "H1",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E3:resazurin signal per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2a",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E3:resazurin signal per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2b",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E3:resazurin signal per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3a",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E3:resazurin signal per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3b",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E3:resazurin signal per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      }
+     ],
+     "assumption_reviews": [],
+     "re_examine": [],
+     "host_decisions": [],
+     "decisions_by": "host",
+     "findings": [],
+     "limits": [
+      "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+      "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+      "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+      "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+      "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+      "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+      "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+      "An assumption check holds or does not hold under its declared rule and tested condition only. It marks the predictions that name that assumption; the others are left unmarked because no dependency is stated, which does not mean they are unaffected. Interference seen on one assay is not carried to another.",
+      "A named reference is compared only when the reference arm's own conditions carry that name. A name the conditions do not carry is a declaration, and the comparison is held.",
+      "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+     ]
+    }
+   }
+  }
+ },
+ "r1_r3_after": {
+  "R1": {
+   "input": {
+    "runs": [
+     {
+      "schema_version": "1.0",
+      "run_id": "dev:synthetic-b11-R1",
+      "provenance": {
+       "origin_kind": "experiment",
+       "acquisition_mode": "manual",
+       "method": "fluorescence plate reader",
+       "metadata": {
+        "synthetic": true
+       }
+      },
+      "observations": [
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "resazurin_per_cell",
+          "value": 0.52,
+          "unit": "RFU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "resazurin_per_cell",
+          "value": 0.55,
+          "unit": "RFU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "resazurin_per_cell",
+          "value": 0.5,
+          "unit": "RFU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "untreated"
+        },
+        "measurements": [
+         {
+          "name": "resazurin_per_cell",
+          "value": 1.0,
+          "unit": "RFU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "untreated"
+        },
+        "measurements": [
+         {
+          "name": "resazurin_per_cell",
+          "value": 0.98,
+          "unit": "RFU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "untreated"
+        },
+        "measurements": [
+         {
+          "name": "resazurin_per_cell",
+          "value": 1.03,
+          "unit": "RFU/cell"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "mappings": [
+     {
+      "experiment_id": "E3",
+      "readout": "resazurin signal per cell",
+      "measurement_name": "resazurin_per_cell",
+      "unit": "RFU/cell",
+      "time_point": {
+       "kind": "elapsed_time",
+       "value": 24.0,
+       "unit": "hour"
+      },
+      "treatment": {
+       "arm": "compound"
+      },
+      "reference": {
+       "arm": "untreated"
+      },
+      "rule": {
+       "comparison": "ratio",
+       "increase_at_or_above": 1.25,
+       "decrease_at_or_below": 0.8,
+       "no_change_between": [
+        0.9,
+        1.1
+       ],
+       "declared_by": "host",
+       "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+      },
+      "versus": "untreated"
+     }
+    ]
+   },
+   "output": {
+    "scientific_validity_checked": false,
+    "not_checked": [
+     "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+     "Whether a consistent result supports the hypothesis over others predicting the same value.",
+     "Whether the runs are what their provenance says they are.",
+     "Whether the plan should change. Keep, revise and hold are the host's proposal."
+    ],
+    "authored_by": "host_llm",
+    "internal_model_calls": 0,
+    "findings": [
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E4",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E4",
+      "detail": "names no hypothesis this experiment would tell apart"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E5",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E6",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E6",
+      "detail": "names no hypothesis this experiment would tell apart"
+     },
+     {
+      "code": "mapping_reference_differs_from_readout_spec",
+      "where": "mapping:E3:resazurin signal per cell",
+      "detail": "the readout spec's reference is 'vehicle'; the mapping says its reference arm stands for 'untreated'."
+     }
+    ],
+    "comparison": {
+     "revision_id": "rev-632b915713f13901",
+     "prior_plan_sha256": "30a61edd9817ed124d8913ca48daccae362296fc611c59bb08e804cdddb932a5",
+     "observations_sha256": "ea82d8bbb1401a9d59e728af35d53700f5ce3c544a44576c62b1b0dae4e81f1a",
+     "prior_plan_unchanged": true,
+     "runs_used": [
+      "dev:synthetic-b11-R1"
+     ],
+     "runs_collapsed_as_duplicates": [],
+     "comparisons": [
+      {
+       "experiment_id": "E3",
+       "readout": "resazurin signal per cell",
+       "measurement_name": "resazurin_per_cell",
+       "run_ids": [
+        "dev:synthetic-b11-R1"
+       ],
+       "kind": "change",
+       "versus": "untreated",
+       "reference_link": "structural",
+       "status": "compared",
+       "reasons": [],
+       "observed": "decrease",
+       "treatment_values": [
+        0.52,
+        0.55,
+        0.5
+       ],
+       "reference_values": [
+        1.0,
+        0.98,
+        1.03
+       ],
+       "pairing": "all_combinations",
+       "pairs": [],
+       "declared_pairs": null,
+       "used_pairs": null,
+       "pair_independence": null,
+       "combinations": 9,
+       "unpaired_observations": 0,
+       "pairwise": [
+        0.52,
+        0.530612,
+        0.504854,
+        0.55,
+        0.561224,
+        0.533981,
+        0.5,
+        0.510204,
+        0.485437
+       ],
+       "pairwise_classes": [
+        "decrease",
+        "decrease",
+        "decrease",
+        "decrease",
+        "decrease",
+        "decrease",
+        "decrease",
+        "decrease",
+        "decrease"
+       ],
+       "below_detection": 0,
+       "left_out": {},
+       "rule": {
+        "comparison": "ratio",
+        "increase_at_or_above": 1.25,
+        "decrease_at_or_below": 0.8,
+        "no_change_between": [
+         0.9,
+         1.1
+        ],
+        "declared_by": "host",
+        "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+       },
+       "by_hypothesis": [
+        {
+         "hypothesis_id": "H1",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "held_reference",
+         "note": "the prediction is vs 'vehicle'; the observation's reference arm stands for 'untreated'. Compared only on the same reference.",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "untreated",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 9,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "held_reference",
+         "note": "the prediction is vs 'vehicle'; the observation's reference arm stands for 'untreated'. Compared only on the same reference.",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "untreated",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 9,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "held_reference",
+         "note": "the prediction is vs 'vehicle'; the observation's reference arm stands for 'untreated'. Compared only on the same reference.",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "untreated",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 9,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3a",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "held_reference",
+         "note": "the prediction is vs 'vehicle'; the observation's reference arm stands for 'untreated'. Compared only on the same reference.",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "untreated",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 9,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3b",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "held_reference",
+         "note": "the prediction is vs 'vehicle'; the observation's reference arm stands for 'untreated'. Compared only on the same reference.",
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "resazurin signal per cell",
+          "versus": "untreated",
+          "reference_conditions": {
+           "arm": "untreated"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 9,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        }
+       ],
+       "assumption_outcomes": []
+      }
+     ],
+     "hypotheses": [
+      {
+       "hypothesis_id": "H1",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [
+        "E3:resazurin signal per cell"
+       ],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2a",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [
+        "E3:resazurin signal per cell"
+       ],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2b",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [
+        "E3:resazurin signal per cell"
+       ],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3a",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [
+        "E3:resazurin signal per cell"
+       ],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3b",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [
+        "E3:resazurin signal per cell"
+       ],
+       "to_re_examine": []
+      }
+     ],
+     "assumption_reviews": [],
+     "re_examine": [],
+     "host_decisions": [],
+     "decisions_by": "host",
+     "findings": [
+      {
+       "code": "mapping_reference_differs_from_readout_spec",
+       "where": "mapping:E3:resazurin signal per cell",
+       "detail": "the readout spec's reference is 'vehicle'; the mapping says its reference arm stands for 'untreated'."
+      }
+     ],
+     "limits": [
+      "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+      "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+      "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+      "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+      "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+      "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+      "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+      "An assumption check holds or does not hold under its declared rule and tested condition only. It marks the predictions that name that assumption; the others are left unmarked because no dependency is stated, which does not mean they are unaffected. Interference seen on one assay is not carried to another.",
+      "A named reference is compared only when the reference arm's own conditions carry that name. A name the conditions do not carry is a declaration, and the comparison is held.",
+      "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+     ]
+    }
+   }
+  },
+  "R2": {
+   "input": {
+    "runs": [
+     {
+      "schema_version": "1.0",
+      "run_id": "dev:synthetic-b11-R2",
+      "provenance": {
+       "origin_kind": "experiment",
+       "acquisition_mode": "manual",
+       "method": "DNA-binding dye fluorescence",
+       "metadata": {
+        "synthetic": true
+       }
+      },
+      "observations": [
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound",
+         "donor": "D1"
+        },
+        "measurements": [
+         {
+          "name": "cell_number",
+          "value": 50.0,
+          "unit": "cells/well"
+         }
+        ],
+        "observation_id": "D1-compound"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle",
+         "donor": "D1"
+        },
+        "measurements": [
+         {
+          "name": "cell_number",
+          "value": 100.0,
+          "unit": "cells/well"
+         }
+        ],
+        "observation_id": "D1-vehicle"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound",
+         "donor": "D2"
+        },
+        "measurements": [
+         {
+          "name": "cell_number",
+          "value": 25.0,
+          "unit": "cells/well"
+         }
+        ],
+        "observation_id": "D2-compound"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle",
+         "donor": "D2"
+        },
+        "measurements": [
+         {
+          "name": "cell_number",
+          "value": 50.0,
+          "unit": "cells/well"
+         }
+        ],
+        "observation_id": "D2-vehicle"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound",
+         "donor": "D3"
+        },
+        "measurements": [
+         {
+          "name": "cell_number",
+          "value": 100.0,
+          "unit": "cells/well"
+         }
+        ],
+        "observation_id": "D3-compound"
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle",
+         "donor": "D3"
+        },
+        "measurements": [
+         {
+          "name": "cell_number",
+          "value": 200.0,
+          "unit": "cells/well"
+         }
+        ],
+        "observation_id": "D3-vehicle"
+       }
+      ]
+     }
+    ],
+    "mappings": [
+     {
+      "experiment_id": "E3",
+      "readout": "cell number",
+      "measurement_name": "cell_number",
+      "unit": "cells/well",
+      "time_point": {
+       "kind": "elapsed_time",
+       "value": 24.0,
+       "unit": "hour"
+      },
+      "treatment": {
+       "arm": "compound"
+      },
+      "reference": {
+       "arm": "vehicle"
+      },
+      "rule": {
+       "comparison": "ratio",
+       "increase_at_or_above": 1.25,
+       "decrease_at_or_below": 0.8,
+       "no_change_between": [
+        0.9,
+        1.1
+       ],
+       "declared_by": "host",
+       "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+      },
+      "versus": "vehicle",
+      "pairs": [
+       {
+        "treatment_observation_id": "D1-compound",
+        "reference_observation_id": "D1-vehicle"
+       },
+       {
+        "treatment_observation_id": "D2-compound",
+        "reference_observation_id": "D2-vehicle"
+       },
+       {
+        "treatment_observation_id": "D3-compound",
+        "reference_observation_id": "D3-vehicle"
+       }
+      ]
+     }
+    ]
+   },
+   "output": {
+    "scientific_validity_checked": false,
+    "not_checked": [
+     "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+     "Whether a consistent result supports the hypothesis over others predicting the same value.",
+     "Whether the runs are what their provenance says they are.",
+     "Whether the plan should change. Keep, revise and hold are the host's proposal."
+    ],
+    "authored_by": "host_llm",
+    "internal_model_calls": 0,
+    "findings": [
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E4",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E4",
+      "detail": "names no hypothesis this experiment would tell apart"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E5",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E6",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E6",
+      "detail": "names no hypothesis this experiment would tell apart"
+     }
+    ],
+    "comparison": {
+     "revision_id": "rev-f6d6e08e8a515124",
+     "prior_plan_sha256": "30a61edd9817ed124d8913ca48daccae362296fc611c59bb08e804cdddb932a5",
+     "observations_sha256": "9ce364d6cdfb192a7821506ba221ac422934a437e15db33d9ad3c741e7f90436",
+     "prior_plan_unchanged": true,
+     "runs_used": [
+      "dev:synthetic-b11-R2"
+     ],
+     "runs_collapsed_as_duplicates": [],
+     "comparisons": [
+      {
+       "experiment_id": "E3",
+       "readout": "cell number",
+       "measurement_name": "cell_number",
+       "run_ids": [
+        "dev:synthetic-b11-R2"
+       ],
+       "kind": "change",
+       "versus": "vehicle",
+       "reference_link": "structural",
+       "status": "compared",
+       "reasons": [],
+       "observed": "decrease",
+       "treatment_values": [
+        50.0,
+        25.0,
+        100.0
+       ],
+       "reference_values": [
+        100.0,
+        50.0,
+        200.0
+       ],
+       "pairing": "declared_pairs",
+       "pairs": [
+        {
+         "treatment_observation_id": "D1-compound",
+         "reference_observation_id": "D1-vehicle",
+         "value": 0.5,
+         "classified": "decrease",
+         "note": null
+        },
+        {
+         "treatment_observation_id": "D2-compound",
+         "reference_observation_id": "D2-vehicle",
+         "value": 0.5,
+         "classified": "decrease",
+         "note": null
+        },
+        {
+         "treatment_observation_id": "D3-compound",
+         "reference_observation_id": "D3-vehicle",
+         "value": 0.5,
+         "classified": "decrease",
+         "note": null
+        }
+       ],
+       "declared_pairs": 3,
+       "used_pairs": 3,
+       "pair_independence": "not_established",
+       "combinations": null,
+       "unpaired_observations": 0,
+       "pairwise": [
+        0.5,
+        0.5,
+        0.5
+       ],
+       "pairwise_classes": [
+        "decrease",
+        "decrease",
+        "decrease"
+       ],
+       "below_detection": 0,
+       "left_out": {},
+       "rule": {
+        "comparison": "ratio",
+        "increase_at_or_above": 1.25,
+        "decrease_at_or_below": 0.8,
+        "no_change_between": [
+         0.9,
+         1.1
+        ],
+        "declared_by": "host",
+        "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+       },
+       "by_hypothesis": [
+        {
+         "hypothesis_id": "H1",
+         "expected": "decrease",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "cell number",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 3,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2a",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "inconsistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "cell number",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 3,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [
+          "H1"
+         ],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2b",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "inconsistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "cell number",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 3,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [
+          "H1"
+         ],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3a",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "inconsistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "cell number",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 3,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [
+          "H1"
+         ],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3b",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "inconsistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E3",
+          "readout": "cell number",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "declared_pairs",
+          "values": 3,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [
+          "H1"
+         ],
+         "assumptions_checked": {},
+         "interpretation": null
+        }
+       ],
+       "assumption_outcomes": []
+      }
+     ],
+     "hypotheses": [
+      {
+       "hypothesis_id": "H1",
+       "consistent": [
+        "E3:cell number"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2a",
+       "consistent": [],
+       "inconsistent": [
+        "E3:cell number"
+       ],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2b",
+       "consistent": [],
+       "inconsistent": [
+        "E3:cell number"
+       ],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3a",
+       "consistent": [],
+       "inconsistent": [
+        "E3:cell number"
+       ],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3b",
+       "consistent": [],
+       "inconsistent": [
+        "E3:cell number"
+       ],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      }
+     ],
+     "assumption_reviews": [],
+     "re_examine": [
+      {
+       "hypothesis_id": "H2a",
+       "experiment_id": "E3",
+       "readout": "cell number",
+       "expected": "no_change",
+       "observed": "decrease",
+       "because": [
+        "inconsistent"
+       ],
+       "basis": "assumption",
+       "evidence_ids": [],
+       "ungrounded_evidence_ids": [],
+       "mechanism_link_ids": [],
+       "mechanism_evidence_ids": [],
+       "assumptions": [
+        "H2 acts per cell, not on number"
+       ],
+       "shaken_assumptions": [],
+       "shares_dependencies_with": [
+        "E3:H2b:cell number"
+       ]
+      },
+      {
+       "hypothesis_id": "H2b",
+       "experiment_id": "E3",
+       "readout": "cell number",
+       "expected": "no_change",
+       "observed": "decrease",
+       "because": [
+        "inconsistent"
+       ],
+       "basis": "assumption",
+       "evidence_ids": [],
+       "ungrounded_evidence_ids": [],
+       "mechanism_link_ids": [],
+       "mechanism_evidence_ids": [],
+       "assumptions": [
+        "H2 acts per cell, not on number"
+       ],
+       "shaken_assumptions": [],
+       "shares_dependencies_with": [
+        "E3:H2a:cell number"
+       ]
+      },
+      {
+       "hypothesis_id": "H3a",
+       "experiment_id": "E3",
+       "readout": "cell number",
+       "expected": "no_change",
+       "observed": "decrease",
+       "because": [
+        "inconsistent"
+       ],
+       "basis": "assumption",
+       "evidence_ids": [],
+       "ungrounded_evidence_ids": [],
+       "mechanism_link_ids": [],
+       "mechanism_evidence_ids": [],
+       "assumptions": [
+        "the compound does not interfere with the DNA dye readout"
+       ],
+       "shaken_assumptions": [],
+       "shares_dependencies_with": [
+        "E3:H3b:cell number"
+       ]
+      },
+      {
+       "hypothesis_id": "H3b",
+       "experiment_id": "E3",
+       "readout": "cell number",
+       "expected": "no_change",
+       "observed": "decrease",
+       "because": [
+        "inconsistent"
+       ],
+       "basis": "assumption",
+       "evidence_ids": [],
+       "ungrounded_evidence_ids": [],
+       "mechanism_link_ids": [],
+       "mechanism_evidence_ids": [],
+       "assumptions": [
+        "the compound does not interfere with the DNA dye readout"
+       ],
+       "shaken_assumptions": [],
+       "shares_dependencies_with": [
+        "E3:H3a:cell number"
+       ]
+      }
+     ],
+     "host_decisions": [],
+     "decisions_by": "host",
+     "findings": [],
+     "limits": [
+      "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+      "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+      "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+      "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+      "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+      "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+      "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+      "An assumption check holds or does not hold under its declared rule and tested condition only. It marks the predictions that name that assumption; the others are left unmarked because no dependency is stated, which does not mean they are unaffected. Interference seen on one assay is not carried to another.",
+      "A named reference is compared only when the reference arm's own conditions carry that name. A name the conditions do not carry is a declaration, and the comparison is held.",
+      "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+     ]
+    }
+   }
+  },
+  "R3": {
+   "input": {
+    "runs": [
+     {
+      "schema_version": "1.0",
+      "run_id": "dev:synthetic-b11-R3-atp",
+      "provenance": {
+       "origin_kind": "experiment",
+       "acquisition_mode": "manual",
+       "method": "luciferase luminescence",
+       "metadata": {
+        "synthetic": true
+       }
+      },
+      "observations": [
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "atp_per_cell",
+          "value": 0.97,
+          "unit": "RLU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "atp_per_cell",
+          "value": 1.0,
+          "unit": "RLU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "compound"
+        },
+        "measurements": [
+         {
+          "name": "atp_per_cell",
+          "value": 1.02,
+          "unit": "RLU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle"
+        },
+        "measurements": [
+         {
+          "name": "atp_per_cell",
+          "value": 1.0,
+          "unit": "RLU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle"
+        },
+        "measurements": [
+         {
+          "name": "atp_per_cell",
+          "value": 0.99,
+          "unit": "RLU/cell"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "vehicle"
+        },
+        "measurements": [
+         {
+          "name": "atp_per_cell",
+          "value": 1.01,
+          "unit": "RLU/cell"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "schema_version": "1.0",
+      "run_id": "dev:synthetic-b11-R3-luc",
+      "provenance": {
+       "origin_kind": "experiment",
+       "acquisition_mode": "manual",
+       "method": "luciferase luminescence",
+       "metadata": {
+        "synthetic": true
+       }
+      },
+      "observations": [
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "ATP standard + compound"
+        },
+        "measurements": [
+         {
+          "name": "atp_standard_luminescence",
+          "value": 600,
+          "unit": "RLU"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "ATP standard + compound"
+        },
+        "measurements": [
+         {
+          "name": "atp_standard_luminescence",
+          "value": 620,
+          "unit": "RLU"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "ATP standard alone"
+        },
+        "measurements": [
+         {
+          "name": "atp_standard_luminescence",
+          "value": 1010,
+          "unit": "RLU"
+         }
+        ]
+       },
+       {
+        "time_point": {
+         "kind": "elapsed_time",
+         "value": 24.0,
+         "unit": "hour"
+        },
+        "conditions": {
+         "arm": "ATP standard alone"
+        },
+        "measurements": [
+         {
+          "name": "atp_standard_luminescence",
+          "value": 1000,
+          "unit": "RLU"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "mappings": [
+     {
+      "experiment_id": "E4",
+      "readout": "ATP per cell",
+      "measurement_name": "atp_per_cell",
+      "unit": "RLU/cell",
+      "time_point": {
+       "kind": "elapsed_time",
+       "value": 24.0,
+       "unit": "hour"
+      },
+      "treatment": {
+       "arm": "compound"
+      },
+      "reference": {
+       "arm": "vehicle"
+      },
+      "rule": {
+       "comparison": "ratio",
+       "increase_at_or_above": 1.25,
+       "decrease_at_or_below": 0.8,
+       "no_change_between": [
+        0.9,
+        1.1
+       ],
+       "declared_by": "host",
+       "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+      },
+      "versus": "vehicle"
+     },
+     {
+      "experiment_id": "E6",
+      "readout": "ATP standard luminescence",
+      "measurement_name": "atp_standard_luminescence",
+      "unit": "RLU",
+      "time_point": {
+       "kind": "elapsed_time",
+       "value": 24.0,
+       "unit": "hour"
+      },
+      "treatment": {
+       "arm": "ATP standard + compound"
+      },
+      "reference": {
+       "arm": "ATP standard alone"
+      },
+      "rule": {
+       "comparison": "ratio",
+       "increase_at_or_above": 1.25,
+       "decrease_at_or_below": 0.8,
+       "no_change_between": [
+        0.9,
+        1.1
+       ],
+       "declared_by": "host",
+       "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+      },
+      "versus": "ATP standard alone"
+     }
+    ]
+   },
+   "output": {
+    "scientific_validity_checked": false,
+    "not_checked": [
+     "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+     "Whether a consistent result supports the hypothesis over others predicting the same value.",
+     "Whether the runs are what their provenance says they are.",
+     "Whether the plan should change. Keep, revise and hold are the host's proposal."
+    ],
+    "authored_by": "host_llm",
+    "internal_model_calls": 0,
+    "findings": [
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E4",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E4",
+      "detail": "names no hypothesis this experiment would tell apart"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E5",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "no_decision_branches",
+      "where": "experiment:E6",
+      "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+     },
+     {
+      "code": "discriminates_nothing",
+      "where": "experiment:E6",
+      "detail": "names no hypothesis this experiment would tell apart"
+     }
+    ],
+    "comparison": {
+     "revision_id": "rev-db318cfa00060c15",
+     "prior_plan_sha256": "30a61edd9817ed124d8913ca48daccae362296fc611c59bb08e804cdddb932a5",
+     "observations_sha256": "b636196bd6448c699dc91e485aacbbefbfb8c8d44b05cbd6b16d2bd6114af90b",
+     "prior_plan_unchanged": true,
+     "runs_used": [
+      "dev:synthetic-b11-R3-atp",
+      "dev:synthetic-b11-R3-luc"
+     ],
+     "runs_collapsed_as_duplicates": [],
+     "comparisons": [
+      {
+       "experiment_id": "E4",
+       "readout": "ATP per cell",
+       "measurement_name": "atp_per_cell",
+       "run_ids": [
+        "dev:synthetic-b11-R3-atp",
+        "dev:synthetic-b11-R3-luc"
+       ],
+       "kind": "change",
+       "versus": "vehicle",
+       "reference_link": "structural",
+       "status": "compared",
+       "reasons": [],
+       "observed": "no_change",
+       "treatment_values": [
+        0.97,
+        1.0,
+        1.02
+       ],
+       "reference_values": [
+        1.0,
+        0.99,
+        1.01
+       ],
+       "pairing": "all_combinations",
+       "pairs": [],
+       "declared_pairs": null,
+       "used_pairs": null,
+       "pair_independence": null,
+       "combinations": 9,
+       "unpaired_observations": 0,
+       "pairwise": [
+        0.97,
+        0.979798,
+        0.960396,
+        1.0,
+        1.010101,
+        0.990099,
+        1.02,
+        1.030303,
+        1.009901
+       ],
+       "pairwise_classes": [
+        "no_change",
+        "no_change",
+        "no_change",
+        "no_change",
+        "no_change",
+        "no_change",
+        "no_change",
+        "no_change",
+        "no_change"
+       ],
+       "below_detection": 0,
+       "left_out": {},
+       "rule": {
+        "comparison": "ratio",
+        "increase_at_or_above": 1.25,
+        "decrease_at_or_below": 0.8,
+        "no_change_between": [
+         0.9,
+         1.1
+        ],
+        "declared_by": "host",
+        "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+       },
+       "by_hypothesis": [
+        {
+         "hypothesis_id": "H1",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E4",
+          "readout": "ATP per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 9,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2a",
+         "expected": "not_predicted",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "decrease only if glycolysis does not compensate; unknown for these cells and medium",
+         "scope": {
+          "experiment_id": "E4",
+          "readout": "ATP per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 9,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H2b",
+         "expected": "not_predicted",
+         "versus": "vehicle",
+         "outcome": "not_read",
+         "note": "decrease only if glycolysis does not compensate; unknown for these cells and medium",
+         "scope": {
+          "experiment_id": "E4",
+          "readout": "ATP per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 9,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {},
+         "interpretation": null
+        },
+        {
+         "hypothesis_id": "H3a",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E4",
+          "readout": "ATP per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 9,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {
+          "the compound does not affect the luciferase ATP readout": "does_not_hold"
+         },
+         "interpretation": "re_examine"
+        },
+        {
+         "hypothesis_id": "H3b",
+         "expected": "no_change",
+         "versus": "vehicle",
+         "outcome": "consistent",
+         "note": null,
+         "scope": {
+          "experiment_id": "E4",
+          "readout": "ATP per cell",
+          "versus": "vehicle",
+          "reference_conditions": {
+           "arm": "vehicle"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 9,
+          "hypothesis_alone": true
+         },
+         "may_coexist_with": [],
+         "assumptions_checked": {
+          "the compound does not affect the luciferase ATP readout": "does_not_hold"
+         },
+         "interpretation": "re_examine"
+        }
+       ],
+       "assumption_outcomes": []
+      },
+      {
+       "experiment_id": "E6",
+       "readout": "ATP standard luminescence",
+       "measurement_name": "atp_standard_luminescence",
+       "run_ids": [
+        "dev:synthetic-b11-R3-atp",
+        "dev:synthetic-b11-R3-luc"
+       ],
+       "kind": "change",
+       "versus": "ATP standard alone",
+       "reference_link": "structural",
+       "status": "compared",
+       "reasons": [],
+       "observed": "decrease",
+       "treatment_values": [
+        600.0,
+        620.0
+       ],
+       "reference_values": [
+        1010.0,
+        1000.0
+       ],
+       "pairing": "all_combinations",
+       "pairs": [],
+       "declared_pairs": null,
+       "used_pairs": null,
+       "pair_independence": null,
+       "combinations": 4,
+       "unpaired_observations": 0,
+       "pairwise": [
+        0.594059,
+        0.6,
+        0.613861,
+        0.62
+       ],
+       "pairwise_classes": [
+        "decrease",
+        "decrease",
+        "decrease",
+        "decrease"
+       ],
+       "below_detection": 0,
+       "left_out": {},
+       "rule": {
+        "comparison": "ratio",
+        "increase_at_or_above": 1.25,
+        "decrease_at_or_below": 0.8,
+        "no_change_between": [
+         0.9,
+         1.1
+        ],
+        "declared_by": "host",
+        "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+       },
+       "by_hypothesis": [],
+       "assumption_outcomes": [
+        {
+         "assumption": "the compound does not affect the luciferase ATP readout",
+         "expected_if_holds": "no_change",
+         "versus": "ATP standard alone",
+         "outcome": "does_not_hold",
+         "note": null,
+         "scope": {
+          "experiment_id": "E6",
+          "readout": "ATP standard luminescence",
+          "versus": "ATP standard alone",
+          "reference_conditions": {
+           "arm": "ATP standard alone"
+          },
+          "time_point": {
+           "kind": "elapsed_time",
+           "value": 24.0,
+           "unit": "hour"
+          },
+          "pairing": "all_combinations",
+          "values": 4,
+          "hypothesis_alone": true
+         }
+        }
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "hypothesis_id": "H1",
+       "consistent": [
+        "E4:ATP per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2a",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E4:ATP per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H2b",
+       "consistent": [],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [
+        "E4:ATP per cell"
+       ],
+       "held_reference": [],
+       "to_re_examine": []
+      },
+      {
+       "hypothesis_id": "H3a",
+       "consistent": [
+        "E4:ATP per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": [
+        "E4:ATP per cell"
+       ]
+      },
+      {
+       "hypothesis_id": "H3b",
+       "consistent": [
+        "E4:ATP per cell"
+       ],
+       "inconsistent": [],
+       "undecided": [],
+       "not_read": [],
+       "held_reference": [],
+       "to_re_examine": [
+        "E4:ATP per cell"
+       ]
+      }
+     ],
+     "assumption_reviews": [
+      {
+       "assumption": "the compound does not affect the luciferase ATP readout",
+       "status": "does_not_hold",
+       "checks": [
+        "E6:ATP standard luminescence=does_not_hold"
+       ],
+       "dependent_predictions": [
+        "E4:H3a:ATP per cell",
+        "E4:H3b:ATP per cell"
+       ],
+       "meaning": "Read under the declared rule, on the tested readout, arms and time point only. Not a general statement that the assay is free of interference, and not a scientific validation. Predictions that do not name this assumption were not marked because no dependency is stated; that is not a finding that they are unaffected."
+      }
+     ],
+     "re_examine": [
+      {
+       "hypothesis_id": "H3a",
+       "experiment_id": "E4",
+       "readout": "ATP per cell",
+       "expected": "no_change",
+       "observed": "no_change",
+       "because": [
+        "assumption_does_not_hold"
+       ],
+       "basis": "assumption",
+       "evidence_ids": [],
+       "ungrounded_evidence_ids": [],
+       "mechanism_link_ids": [],
+       "mechanism_evidence_ids": [],
+       "assumptions": [
+        "the compound does not affect the luciferase ATP readout"
+       ],
+       "shaken_assumptions": [
+        "the compound does not affect the luciferase ATP readout"
+       ],
+       "shares_dependencies_with": [
+        "E4:H3b:ATP per cell"
+       ]
+      },
+      {
+       "hypothesis_id": "H3b",
+       "experiment_id": "E4",
+       "readout": "ATP per cell",
+       "expected": "no_change",
+       "observed": "no_change",
+       "because": [
+        "assumption_does_not_hold"
+       ],
+       "basis": "assumption",
+       "evidence_ids": [],
+       "ungrounded_evidence_ids": [],
+       "mechanism_link_ids": [],
+       "mechanism_evidence_ids": [],
+       "assumptions": [
+        "the compound does not affect the luciferase ATP readout"
+       ],
+       "shaken_assumptions": [
+        "the compound does not affect the luciferase ATP readout"
+       ],
+       "shares_dependencies_with": [
+        "E4:H3a:ATP per cell"
+       ]
+      }
+     ],
+     "host_decisions": [],
+     "decisions_by": "host",
+     "findings": [],
+     "limits": [
+      "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+      "No mean, variance or test statistic is computed. Declared pairs are classified one by one and count only when every pair agrees. Without declared pairs every treatment reading is set against every reference reading; those combinations are not independent replicates.",
+      "A change prediction is compared only against the reference it names, as written. A mapping that does not name its reference, or names another, holds the comparison.",
+      "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+      "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+      "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+      "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+      "An assumption check holds or does not hold under its declared rule and tested condition only. It marks the predictions that name that assumption; the others are left unmarked because no dependency is stated, which does not mean they are unaffected. Interference seen on one assay is not carried to another.",
+      "A named reference is compared only when the reference arm's own conditions carry that name. A name the conditions do not carry is a declaration, and the comparison is held.",
+      "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+     ]
+    }
+   }
+  }
+ }
+}

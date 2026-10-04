@@ -1,0 +1,334 @@
+[
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row0",
+  "source": "24 hours!L22",
+  "group": "TI-CTL",
+  "hours": 24.0,
+  "rfu": 1641.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_24h:reference",
+   "E1_background_24h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row1",
+  "source": "24 hours!M22",
+  "group": "TI-CTL",
+  "hours": 24.0,
+  "rfu": 2307.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_24h:reference",
+   "E1_background_24h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row2",
+  "source": "24 hours!N22",
+  "group": "TI-CTL",
+  "hours": 24.0,
+  "rfu": 2491.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_24h:reference",
+   "E1_background_24h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row3",
+  "source": "24 hours!O22",
+  "group": "TI-CTL",
+  "hours": 24.0,
+  "rfu": 2393.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_24h:reference",
+   "E1_background_24h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row4",
+  "source": "24 hours!L23",
+  "group": "TI-BMG",
+  "hours": 24.0,
+  "rfu": 2805.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_24h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row5",
+  "source": "24 hours!M23",
+  "group": "TI-BMG",
+  "hours": 24.0,
+  "rfu": 3052.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_24h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row6",
+  "source": "24 hours!N23",
+  "group": "TI-BMG",
+  "hours": 24.0,
+  "rfu": 2905.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_24h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row7",
+  "source": "24 hours!O23",
+  "group": "TI-BMG",
+  "hours": 24.0,
+  "rfu": 3012.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_24h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row8",
+  "source": "24 hours!P23",
+  "group": "TI-BMG",
+  "hours": 24.0,
+  "rfu": 2343.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_24h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row9",
+  "source": "24 hours!L24",
+  "group": "POLY",
+  "hours": 24.0,
+  "rfu": 3075.0,
+  "quality": "valid",
+  "used_in": [],
+  "not_used_because": "no mapping selects this group: no prediction or check names it"
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row10",
+  "source": "24 hours!M24",
+  "group": "POLY",
+  "hours": 24.0,
+  "rfu": 3261.0,
+  "quality": "valid",
+  "used_in": [],
+  "not_used_because": "no mapping selects this group: no prediction or check names it"
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row11",
+  "source": "24 hours!N24",
+  "group": "POLY",
+  "hours": 24.0,
+  "rfu": 3276.0,
+  "quality": "valid",
+  "used_in": [],
+  "not_used_because": "no mapping selects this group: no prediction or check names it"
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row12",
+  "source": "24 hours!B45",
+  "group": "AB",
+  "hours": 24.0,
+  "rfu": 1743.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_background_24h:reference"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row13",
+  "source": "24 hours!C45",
+  "group": "AB",
+  "hours": 24.0,
+  "rfu": 1756.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_background_24h:reference"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row14",
+  "source": "48 hours!O7",
+  "group": "TI-CTL",
+  "hours": 48.0,
+  "rfu": 1595.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_48h:reference",
+   "E1_background_48h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row15",
+  "source": "48 hours!P7",
+  "group": "TI-CTL",
+  "hours": 48.0,
+  "rfu": 1894.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_48h:reference",
+   "E1_background_48h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row16",
+  "source": "48 hours!Q7",
+  "group": "TI-CTL",
+  "hours": 48.0,
+  "rfu": 2105.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_48h:reference",
+   "E1_background_48h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row17",
+  "source": "48 hours!R7",
+  "group": "TI-CTL",
+  "hours": 48.0,
+  "rfu": 2695.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_48h:reference",
+   "E1_background_48h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row18",
+  "source": "48 hours!O8",
+  "group": "TI-BMG",
+  "hours": 48.0,
+  "rfu": 3610.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_48h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row19",
+  "source": "48 hours!P8",
+  "group": "TI-BMG",
+  "hours": 48.0,
+  "rfu": 4625.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_48h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row20",
+  "source": "48 hours!Q8",
+  "group": "TI-BMG",
+  "hours": 48.0,
+  "rfu": 3968.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_48h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row21",
+  "source": "48 hours!R8",
+  "group": "TI-BMG",
+  "hours": 48.0,
+  "rfu": 3579.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_48h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row22",
+  "source": "48 hours!S8",
+  "group": "TI-BMG",
+  "hours": 48.0,
+  "rfu": 2495.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_main_48h:treatment"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row23",
+  "source": "48 hours!O9",
+  "group": "POLY",
+  "hours": 48.0,
+  "rfu": 5678.0,
+  "quality": "valid",
+  "used_in": [],
+  "not_used_because": "no mapping selects this group: no prediction or check names it"
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row24",
+  "source": "48 hours!P9",
+  "group": "POLY",
+  "hours": 48.0,
+  "rfu": 5509.0,
+  "quality": "valid",
+  "used_in": [],
+  "not_used_because": "no mapping selects this group: no prediction or check names it"
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row25",
+  "source": "48 hours!Q9",
+  "group": "POLY",
+  "hours": 48.0,
+  "rfu": 4835.0,
+  "quality": "valid",
+  "used_in": [],
+  "not_used_because": "no mapping selects this group: no prediction or check names it"
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row26",
+  "source": "48 hours!H28",
+  "group": "AB",
+  "hours": 48.0,
+  "rfu": 1581.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_background_48h:reference"
+  ],
+  "not_used_because": null
+ },
+ {
+  "observation_id": "bmg_alamar_tidy.csv:row27",
+  "source": "48 hours!I28",
+  "group": "AB",
+  "hours": 48.0,
+  "rfu": 1624.0,
+  "quality": "valid",
+  "used_in": [
+   "E1_background_48h:reference"
+  ],
+  "not_used_because": null
+ }
+]

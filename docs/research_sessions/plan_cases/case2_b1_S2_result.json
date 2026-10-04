@@ -1,0 +1,834 @@
+{
+ "search_attempts": [
+  {
+   "question": "resazurin reduction assay interference by test compounds cell viability",
+   "attempts": [
+    "ok"
+   ]
+  },
+  {
+   "question": "tetrazolium MTT assay mitochondrial activity does not reflect cell number",
+   "attempts": [
+    "ok"
+   ]
+  },
+  {
+   "question": "oxygen consumption rate normalization to cell number mitochondrial content",
+   "attempts": [
+    "ok"
+   ]
+  }
+ ],
+ "reads": [
+  {
+   "doi": "10.1016/j.namjnl.2026.100126",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1297,
+     "total_chars": 1297,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.3389/ftox.2026.1818582",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1814,
+     "total_chars": 1814,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1155/ijbm/7395612",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 2135,
+     "total_chars": 2135,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1113/jp291588",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 3303,
+     "total_chars": 3303,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1038/s41598-026-46479-w",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1811,
+     "total_chars": 1811,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.21769/bioprotoc.5763",
+   "part": "abstract",
+   "section": null,
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1978,
+     "total_chars": 1978,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.3389/ftox.2026.1818582",
+   "part": "full_text",
+   "section": "s8-3",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 2660,
+     "total_chars": 2660,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.3389/ftox.2026.1818582",
+   "part": "full_text",
+   "section": "s7-5",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 1210,
+     "total_chars": 1210,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  },
+  {
+   "doi": "10.1016/j.namjnl.2026.100126",
+   "part": "full_text",
+   "section": "sec0008",
+   "pages": [
+    {
+     "status": "ok",
+     "span_start": 0,
+     "span_end": 5716,
+     "total_chars": 5716,
+     "reached_end": true,
+     "next_offset": null
+    }
+   ]
+  }
+ ],
+ "scenario": "S2",
+ "compare_research_observations": {
+  "scientific_validity_checked": false,
+  "not_checked": [
+   "Whether the decision rule's bounds are adequate. They are whoever declared them.",
+   "Whether a consistent result supports the hypothesis over others predicting the same value.",
+   "Whether the runs are what their provenance says they are.",
+   "Whether the plan should change. Keep, revise and hold are the host's proposal."
+  ],
+  "authored_by": "host_llm",
+  "internal_model_calls": 0,
+  "findings": [
+   {
+    "code": "no_decision_branches",
+    "where": "experiment:E4",
+    "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+   },
+   {
+    "code": "discriminates_nothing",
+    "where": "experiment:E4",
+    "detail": "names no hypothesis this experiment would tell apart"
+   },
+   {
+    "code": "no_decision_branches",
+    "where": "experiment:E5",
+    "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+   },
+   {
+    "code": "no_decision_branches",
+    "where": "experiment:E6",
+    "detail": "proposes an experiment without saying what any result would change, so running it decides nothing"
+   },
+   {
+    "code": "discriminates_nothing",
+    "where": "experiment:E6",
+    "detail": "names no hypothesis this experiment would tell apart"
+   },
+   {
+    "code": "unknown_readout",
+    "where": "mapping:E6:ATP standard luminescence",
+    "detail": "no prediction in 'E6' names readout 'ATP standard luminescence'."
+   }
+  ],
+  "comparison": {
+   "revision_id": "rev-039f361a0ac1a19a",
+   "prior_plan_sha256": "2144db206372972fded13975a4589d9df376ff8fde5f17a8f55cc2257c749c36",
+   "observations_sha256": "133a97b0268767cc9e2334a4c08e7f6c6513a181ac9f9a885507ab3b3dbdde1f",
+   "prior_plan_unchanged": true,
+   "runs_used": [
+    "dev:synthetic-S2-E2",
+    "dev:synthetic-S2-E3-count",
+    "dev:synthetic-S2-E3-resazurin",
+    "dev:synthetic-S2-E4-atp",
+    "dev:synthetic-S2-E6"
+   ],
+   "runs_collapsed_as_duplicates": [],
+   "comparisons": [
+    {
+     "experiment_id": "E2",
+     "readout": "resorufin fluorescence",
+     "measurement_name": "resorufin_fluorescence",
+     "run_ids": [
+      "dev:synthetic-S2-E2",
+      "dev:synthetic-S2-E3-count",
+      "dev:synthetic-S2-E3-resazurin",
+      "dev:synthetic-S2-E4-atp",
+      "dev:synthetic-S2-E6"
+     ],
+     "kind": "change",
+     "status": "compared",
+     "reasons": [],
+     "observed": "no_change",
+     "treatment_values": [
+      99.0,
+      101.0,
+      97.0
+     ],
+     "reference_values": [
+      100.0,
+      98.0,
+      102.0
+     ],
+     "pairwise": [
+      0.99,
+      1.010204,
+      0.970588,
+      1.01,
+      1.030612,
+      0.990196,
+      0.97,
+      0.989796,
+      0.95098
+     ],
+     "pairwise_classes": [
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change"
+     ],
+     "below_detection": 0,
+     "left_out": {},
+     "rule": {
+      "comparison": "ratio",
+      "increase_at_or_above": 1.25,
+      "decrease_at_or_below": 0.8,
+      "no_change_between": [
+       0.9,
+       1.1
+      ],
+      "declared_by": "host",
+      "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+     },
+     "by_hypothesis": [
+      {
+       "hypothesis_id": "H1",
+       "expected": "no_change",
+       "versus": "resorufin in medium alone",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H2a",
+       "expected": "no_change",
+       "versus": "resorufin in medium alone",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H2b",
+       "expected": "no_change",
+       "versus": "resorufin in medium alone",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H3b",
+       "expected": "decrease",
+       "versus": "resorufin in medium alone",
+       "outcome": "inconsistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H3a",
+       "expected": "not_predicted",
+       "versus": "resorufin in medium alone",
+       "outcome": "not_read",
+       "note": "over-reduction of resorufin lowers it; otherwise no change"
+      }
+     ]
+    },
+    {
+     "experiment_id": "E3",
+     "readout": "cell number",
+     "measurement_name": "cell_number",
+     "run_ids": [
+      "dev:synthetic-S2-E2",
+      "dev:synthetic-S2-E3-count",
+      "dev:synthetic-S2-E3-resazurin",
+      "dev:synthetic-S2-E4-atp",
+      "dev:synthetic-S2-E6"
+     ],
+     "kind": "change",
+     "status": "compared",
+     "reasons": [],
+     "observed": "no_change",
+     "treatment_values": [
+      9900.0,
+      10050.0,
+      10100.0
+     ],
+     "reference_values": [
+      10000.0,
+      10200.0,
+      9900.0
+     ],
+     "pairwise": [
+      0.99,
+      0.970588,
+      1.0,
+      1.005,
+      0.985294,
+      1.015152,
+      1.01,
+      0.990196,
+      1.020202
+     ],
+     "pairwise_classes": [
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change"
+     ],
+     "below_detection": 0,
+     "left_out": {},
+     "rule": {
+      "comparison": "ratio",
+      "increase_at_or_above": 1.25,
+      "decrease_at_or_below": 0.8,
+      "no_change_between": [
+       0.9,
+       1.1
+      ],
+      "declared_by": "host",
+      "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+     },
+     "by_hypothesis": [
+      {
+       "hypothesis_id": "H1",
+       "expected": "decrease",
+       "versus": "vehicle",
+       "outcome": "inconsistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H2a",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H2b",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H3a",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H3b",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      }
+     ]
+    },
+    {
+     "experiment_id": "E3",
+     "readout": "resazurin signal per cell",
+     "measurement_name": "resazurin_per_cell",
+     "run_ids": [
+      "dev:synthetic-S2-E2",
+      "dev:synthetic-S2-E3-count",
+      "dev:synthetic-S2-E3-resazurin",
+      "dev:synthetic-S2-E4-atp",
+      "dev:synthetic-S2-E6"
+     ],
+     "kind": "change",
+     "status": "compared",
+     "reasons": [],
+     "observed": "decrease",
+     "treatment_values": [
+      0.61,
+      0.58,
+      0.6
+     ],
+     "reference_values": [
+      1.0,
+      0.98,
+      1.03
+     ],
+     "pairwise": [
+      0.61,
+      0.622449,
+      0.592233,
+      0.58,
+      0.591837,
+      0.563107,
+      0.6,
+      0.612245,
+      0.582524
+     ],
+     "pairwise_classes": [
+      "decrease",
+      "decrease",
+      "decrease",
+      "decrease",
+      "decrease",
+      "decrease",
+      "decrease",
+      "decrease",
+      "decrease"
+     ],
+     "below_detection": 0,
+     "left_out": {},
+     "rule": {
+      "comparison": "ratio",
+      "increase_at_or_above": 1.25,
+      "decrease_at_or_below": 0.8,
+      "no_change_between": [
+       0.9,
+       1.1
+      ],
+      "declared_by": "host",
+      "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+     },
+     "by_hypothesis": [
+      {
+       "hypothesis_id": "H1",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "inconsistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H2a",
+       "expected": "decrease",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H2b",
+       "expected": "decrease",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H3a",
+       "expected": "decrease",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H3b",
+       "expected": "decrease",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      }
+     ]
+    },
+    {
+     "experiment_id": "E4",
+     "readout": "ATP per cell",
+     "measurement_name": "atp_per_cell",
+     "run_ids": [
+      "dev:synthetic-S2-E2",
+      "dev:synthetic-S2-E3-count",
+      "dev:synthetic-S2-E3-resazurin",
+      "dev:synthetic-S2-E4-atp",
+      "dev:synthetic-S2-E6"
+     ],
+     "kind": "change",
+     "status": "compared",
+     "reasons": [],
+     "observed": "no_change",
+     "treatment_values": [
+      0.97,
+      1.0,
+      1.02
+     ],
+     "reference_values": [
+      1.0,
+      0.99,
+      1.01
+     ],
+     "pairwise": [
+      0.97,
+      0.979798,
+      0.960396,
+      1.0,
+      1.010101,
+      0.990099,
+      1.02,
+      1.030303,
+      1.009901
+     ],
+     "pairwise_classes": [
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change",
+      "no_change"
+     ],
+     "below_detection": 0,
+     "left_out": {},
+     "rule": {
+      "comparison": "ratio",
+      "increase_at_or_above": 1.25,
+      "decrease_at_or_below": 0.8,
+      "no_change_between": [
+       0.9,
+       1.1
+      ],
+      "declared_by": "host",
+      "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+     },
+     "by_hypothesis": [
+      {
+       "hypothesis_id": "H1",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H2a",
+       "expected": "not_predicted",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "decrease only if glycolysis does not compensate; unknown for these cells and medium"
+      },
+      {
+       "hypothesis_id": "H2b",
+       "expected": "not_predicted",
+       "versus": "vehicle",
+       "outcome": "not_read",
+       "note": "decrease only if glycolysis does not compensate; unknown for these cells and medium"
+      },
+      {
+       "hypothesis_id": "H3a",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      },
+      {
+       "hypothesis_id": "H3b",
+       "expected": "no_change",
+       "versus": "vehicle",
+       "outcome": "consistent",
+       "note": null
+      }
+     ]
+    },
+    {
+     "experiment_id": "E6",
+     "readout": "ATP standard luminescence",
+     "measurement_name": "atp_standard_luminescence",
+     "run_ids": [],
+     "kind": null,
+     "status": "not_comparable",
+     "reasons": [
+      "unknown_readout"
+     ],
+     "observed": null,
+     "treatment_values": [],
+     "reference_values": [],
+     "pairwise": [],
+     "pairwise_classes": [],
+     "below_detection": 0,
+     "left_out": {},
+     "rule": {
+      "comparison": "ratio",
+      "increase_at_or_above": 1.25,
+      "decrease_at_or_below": 0.8,
+      "no_change_between": [
+       0.9,
+       1.1
+      ],
+      "declared_by": "host",
+      "basis": "SYNTHETIC development rule, fixed before any synthetic observation was written. Not taken from literature, an instrument's precision or a researcher. It exists to exercise the comparison, and must not be read as an acceptance criterion for a real assay."
+     },
+     "by_hypothesis": []
+    }
+   ],
+   "hypotheses": [
+    {
+     "hypothesis_id": "H1",
+     "consistent": [
+      "E2:resorufin fluorescence",
+      "E4:ATP per cell"
+     ],
+     "inconsistent": [
+      "E3:cell number",
+      "E3:resazurin signal per cell"
+     ],
+     "undecided": [],
+     "not_read": []
+    },
+    {
+     "hypothesis_id": "H2a",
+     "consistent": [
+      "E2:resorufin fluorescence",
+      "E3:cell number",
+      "E3:resazurin signal per cell"
+     ],
+     "inconsistent": [],
+     "undecided": [],
+     "not_read": [
+      "E4:ATP per cell"
+     ]
+    },
+    {
+     "hypothesis_id": "H2b",
+     "consistent": [
+      "E2:resorufin fluorescence",
+      "E3:cell number",
+      "E3:resazurin signal per cell"
+     ],
+     "inconsistent": [],
+     "undecided": [],
+     "not_read": [
+      "E4:ATP per cell"
+     ]
+    },
+    {
+     "hypothesis_id": "H3a",
+     "consistent": [
+      "E3:cell number",
+      "E3:resazurin signal per cell",
+      "E4:ATP per cell"
+     ],
+     "inconsistent": [],
+     "undecided": [],
+     "not_read": [
+      "E2:resorufin fluorescence"
+     ]
+    },
+    {
+     "hypothesis_id": "H3b",
+     "consistent": [
+      "E3:cell number",
+      "E3:resazurin signal per cell",
+      "E4:ATP per cell"
+     ],
+     "inconsistent": [
+      "E2:resorufin fluorescence"
+     ],
+     "undecided": [],
+     "not_read": []
+    }
+   ],
+   "re_examine": [
+    {
+     "hypothesis_id": "H3b",
+     "experiment_id": "E2",
+     "readout": "resorufin fluorescence",
+     "expected": "decrease",
+     "observed": "no_change",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-fd67cab1bedc",
+      "lit-d1719f786da7"
+     ],
+     "ungrounded_evidence_ids": [],
+     "mechanism_link_ids": [
+      "M1"
+     ],
+     "mechanism_evidence_ids": [
+      "lit-fd67cab1bedc"
+     ],
+     "assumptions": [
+      "what was seen for graphene materials applies to this compound class"
+     ],
+     "shares_dependencies_with": [
+      "E1:H3b:fluorescence vs resazurin alone",
+      "E3:H3b:resazurin signal per cell"
+     ]
+    },
+    {
+     "hypothesis_id": "H1",
+     "experiment_id": "E3",
+     "readout": "cell number",
+     "expected": "decrease",
+     "observed": "no_change",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-86b42ebcd0c4"
+     ],
+     "ungrounded_evidence_ids": [],
+     "mechanism_link_ids": [],
+     "mechanism_evidence_ids": [],
+     "assumptions": [],
+     "shares_dependencies_with": [
+      "E3:H1:resazurin signal per cell"
+     ]
+    },
+    {
+     "hypothesis_id": "H1",
+     "experiment_id": "E3",
+     "readout": "resazurin signal per cell",
+     "expected": "no_change",
+     "observed": "decrease",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-86b42ebcd0c4"
+     ],
+     "ungrounded_evidence_ids": [],
+     "mechanism_link_ids": [],
+     "mechanism_evidence_ids": [],
+     "assumptions": [],
+     "shares_dependencies_with": [
+      "E3:H1:cell number"
+     ]
+    }
+   ],
+   "host_decisions": [
+    {
+     "target_id": "H3b",
+     "decision": "revise",
+     "reason": "Product control unchanged on every pairing (0.95-1.03). Quenching does not account for this fall at this concentration.",
+     "next_experiment_ids": []
+    },
+    {
+     "target_id": "H1",
+     "decision": "revise",
+     "reason": "Cell number flat on every pairing.",
+     "next_experiment_ids": []
+    },
+    {
+     "target_id": "H2a",
+     "decision": "hold",
+     "reason": "Per-cell decrease is what H2a predicts, and also H2b and H3a. ATP was not predicted for H2. E5 content separates H2a from H2b.",
+     "next_experiment_ids": [
+      "E5"
+     ]
+    },
+    {
+     "target_id": "H2b",
+     "decision": "hold",
+     "reason": "As for H2a; its OCR cell stays unresolved because H2b covers non-mitochondrial reductases too.",
+     "next_experiment_ids": [
+      "E5"
+     ]
+    },
+    {
+     "target_id": "the compound does not affect the luciferase ATP readout",
+     "decision": "hold",
+     "reason": "E6 was recorded and reads unchanged by hand, but the plan has no prediction for E6, so the comparison could not read it (unknown_readout). The ATP consistency for H3a/H3b rests on that hand reading until the plan can carry an assumption check.",
+     "next_experiment_ids": []
+    },
+    {
+     "target_id": "H3a",
+     "decision": "hold",
+     "reason": "E1 not run.",
+     "next_experiment_ids": [
+      "E1"
+     ]
+    }
+   ],
+   "decisions_by": "host",
+   "findings": [
+    {
+     "code": "unknown_readout",
+     "where": "mapping:E6:ATP standard luminescence",
+     "detail": "no prediction in 'E6' names readout 'ATP standard luminescence'."
+    }
+   ],
+   "limits": [
+    "A change is classified only by the rule declared for it. The rule's bounds are whoever declared them; nothing here checks that they are biologically or statistically adequate.",
+    "No mean, variance or test statistic is computed. Each treatment/reference pairing is classified on its own and replicates count only when every pairing agrees.",
+    "'Consistent' means the classified result equals the predicted value. It does not show the hypothesis holds: other hypotheses may predict the same value, and causes can act together.",
+    "'Inconsistent' means this hypothesis alone does not predict what was seen. Where hypotheses may coexist, another may account for the result; it is not a refutation.",
+    "'present' means the producer recorded a valid non-zero reading and did not mark it below detection; the detection limit is the producer's. A zero is not below detection.",
+    "Units are compared as written; nothing is converted. The run's method is compared with the readout's declared assay as written.",
+    "Interference seen on one assay is not carried to another; each readout is read on its own.",
+    "The plan is not modified. Keep, revise and hold are the host's proposals and the researcher's decision."
+   ]
+  }
+ }
+}

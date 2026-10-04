@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "virtualcell": {
+      "command": "${VCRP_PYTHON}",
+      "args": ["-m", "virtualcell.mcp", "--literature"]
+    }
+  }
+}

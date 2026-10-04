@@ -1,0 +1,884 @@
+{
+ "question": "An ECM-based material should temporarily bridge and support a defect, admit cell ingress, and hand function over to newly formed ECM; scar minimisation is long-term. What should be tested first in vitro?",
+ "restated_question": "In vitro, which experiment first tells apart the routes by which a candidate ECM scaffold loses original material, gains retained new collagen and keeps or loses continuity across a gap, without narrowing the goal to degradation alone?",
+ "objectives": [
+  {
+   "id": "O1",
+   "statement": "Temporarily bridge and support the defect",
+   "stated_by": "user"
+  },
+  {
+   "id": "O2",
+   "statement": "Admit cell ingress",
+   "stated_by": "user"
+  },
+  {
+   "id": "O3",
+   "statement": "Hand function over to newly formed ECM",
+   "stated_by": "user"
+  },
+  {
+   "id": "O4",
+   "statement": "Minimise scarring (long-term; in vitro proxy only)",
+   "stated_by": "user"
+  }
+ ],
+ "confirmed_conditions": [
+  "Current stage is in vitro cell experiments",
+  "Scar minimisation is a long-term aim, not a current endpoint"
+ ],
+ "open_conditions": [
+  "Material source",
+  "Cell type and source",
+  "Acellular versus cell-loaded format",
+  "Method for measuring new collagen"
+ ],
+ "assumptions": [
+  "Candidate material: type I collagen scaffold",
+  "Candidate cells: human dermal fibroblasts",
+  "Candidate crosslinker: EDC/NHS"
+ ],
+ "sub_questions": [
+  {
+   "id": "Q1",
+   "question": "Does continuity across the gap persist long enough?",
+   "objective_ids": [
+    "O1",
+    "O3"
+   ]
+  },
+  {
+   "id": "Q2",
+   "question": "Do cells enter the scaffold, and how deep?",
+   "objective_ids": [
+    "O2"
+   ]
+  },
+  {
+   "id": "Q3",
+   "question": "Is new collagen deposited and retained in the construct, told apart from original material?",
+   "objective_ids": [
+    "O3"
+   ]
+  },
+  {
+   "id": "Q4",
+   "question": "By which routes is original material lost?",
+   "objective_ids": [
+    "O1",
+    "O3"
+   ]
+  },
+  {
+   "id": "Q5",
+   "question": "Does the construct drive a persistent contraction/myofibroblast state?",
+   "objective_ids": [
+    "O4"
+   ]
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "Cell-dependent proteolysis contributes to loss of original material.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q4"
+   ]
+  },
+  {
+   "id": "H2",
+   "statement": "Cell-independent loss (hydrolysis, medium) contributes to loss of original material.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q4"
+   ]
+  },
+  {
+   "id": "H3",
+   "statement": "Cell traction contracts the construct, changing geometry and apparent continuity independently of degradation.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q4",
+    "Q1",
+    "Q5"
+   ]
+  },
+  {
+   "id": "H4",
+   "statement": "Higher crosslink density slows material loss but restricts ingress.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q2",
+    "Q4"
+   ]
+  },
+  {
+   "id": "H5",
+   "statement": "A myofibroblast-like state couples higher contractility with less matrix degradation and less uptake of degraded collagen, and persists after the stimulus is removed.",
+   "support": "evidence_linked",
+   "sub_question_ids": [
+    "Q5",
+    "Q4"
+   ],
+   "supporting_evidence_ids": [
+    "lit-426cada79afd",
+    "lit-a0879275b79e"
+   ],
+   "applicability": "Sources: renal fibroblasts on a low-rigidity collagen gel; lung myofibroblasts. Not dermal fibroblasts in a porous scaffold.",
+   "mutually_exclusive_with": [
+    "H8"
+   ]
+  },
+  {
+   "id": "H6",
+   "statement": "New collagen is deposited and retained in the construct and begins to carry load before the scaffold loses continuity (handover).",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q1",
+    "Q3"
+   ]
+  },
+  {
+   "id": "H7",
+   "statement": "New collagen is secreted but largely not retained in the construct.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q3"
+   ]
+  },
+  {
+   "id": "H8",
+   "statement": "Myofibroblast activation on this scaffold reverses after the stimulus is removed.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q5"
+   ]
+  }
+ ],
+ "evidence_links": [
+  {
+   "evidence_id": "lit-670133a47aa6",
+   "target_id": "H6",
+   "role": "method",
+   "reading": "New labelled collagen was found processed in the construct and as proforms in the medium: measure both compartments."
+  },
+  {
+   "evidence_id": "lit-eba9427a4c2d",
+   "target_id": "H7",
+   "role": "method",
+   "reading": "Medium held primarily proforms, possibly other collagens: medium readout needs a type-I-specific step and reads secretion, not deposition."
+  },
+  {
+   "evidence_id": "lit-eba9427a4c2d",
+   "target_id": "H6",
+   "role": "scope_limit",
+   "reading": "Shown in fibrin-based tendon-like constructs after an overnight label and 3-hour chase; the split depends on chase time and construct type."
+  },
+  {
+   "evidence_id": "lit-cd732cb414f8",
+   "target_id": "H6",
+   "role": "method",
+   "reading": "mRNA ratio did not track the new chain ratio: gene expression is not the new-collagen readout."
+  },
+  {
+   "evidence_id": "lit-3011dae7c880",
+   "target_id": "H6",
+   "role": "method",
+   "reading": "The mRNA ratio cannot read out homotrimerisation (same study as lit-cd732cb414f8)."
+  },
+  {
+   "evidence_id": "lit-42a676c7e0c2",
+   "target_id": "H1",
+   "role": "method",
+   "reading": "CHP binds denatured collagen from proteolysis or mechanical disruption: not protease-specific."
+  },
+  {
+   "evidence_id": "lit-34e29aabd827",
+   "target_id": "H4",
+   "role": "scope_limit",
+   "reading": "Fibroblast source changed infiltration and deposition within collagen scaffolds; crosslinking is not the only driver of ingress."
+  },
+  {
+   "evidence_id": "lit-b1bd82388798",
+   "target_id": "H5",
+   "role": "supports",
+   "reading": "Precontracted constructs synthesised homotrimer; active contractility may relate to homotrimer synthesis."
+  },
+  {
+   "evidence_id": "lit-35e5ec7f8460",
+   "target_id": "H5",
+   "role": "supports",
+   "reading": "Continuation of the same sentence: 'contractility is related to homotrimer synthesis'."
+  }
+ ],
+ "mechanism_links": [
+  {
+   "id": "M1",
+   "source": "myofibroblast activation",
+   "relation": "reduces",
+   "target": "uptake of degraded collagen",
+   "evidence_ids": [
+    "lit-a0879275b79e"
+   ],
+   "conditions": [
+    "lung myofibroblasts from IPF patients and bleomycin-injured mice"
+   ],
+   "hypothesis_ids": [
+    "H5"
+   ]
+  },
+  {
+   "id": "M2",
+   "source": "myofibroblast activation",
+   "relation": "reduces",
+   "target": "collagen degradation",
+   "evidence_ids": [
+    "lit-426cada79afd"
+   ],
+   "conditions": [
+    "renal fibroblasts on a low-rigidity collagen gel with TGF-beta1"
+   ],
+   "hypothesis_ids": [
+    "H5"
+   ]
+  },
+  {
+   "id": "M3",
+   "source": "TGF-beta1",
+   "relation": "promotes",
+   "target": "myofibroblast activation",
+   "hypothesis_ids": [
+    "H5",
+    "H8"
+   ]
+  },
+  {
+   "id": "M4",
+   "source": "serum TGF-beta",
+   "relation": "promotes",
+   "target": "COL1A2 expression",
+   "evidence_ids": [
+    "lit-3011dae7c880",
+    "lit-670133a47aa6"
+   ],
+   "conditions": [
+    "2D palmar fibroblasts in 10% serum"
+   ]
+  },
+  {
+   "id": "M5",
+   "source": "active contractility",
+   "relation": "associated_with",
+   "target": "type I collagen homotrimer synthesis",
+   "evidence_ids": [
+    "lit-b1bd82388798",
+    "lit-35e5ec7f8460"
+   ],
+   "conditions": [
+    "precontracted fibrin-based tendon-like constructs"
+   ],
+   "hypothesis_ids": [
+    "H5"
+   ]
+  },
+  {
+   "id": "M6",
+   "source": "crosslink density",
+   "relation": "reduces",
+   "target": "cell ingress",
+   "conditions": [
+    "candidate EDC/NHS collagen scaffold"
+   ],
+   "hypothesis_ids": [
+    "H4"
+   ]
+  }
+ ],
+ "experiments": [
+  {
+   "id": "E1",
+   "design": "Degradation routes: cells present/absent x broad metalloproteinase inhibitor x crosslinked/non-crosslinked, read in situ and by compartment.",
+   "discriminates": [
+    "H1",
+    "H2",
+    "H3",
+    "H5"
+   ],
+   "controls": [
+    "acellular scaffold in the same medium",
+    "collagenase-digested positive control",
+    "inhibitor-only viability check"
+   ],
+   "measurements": [
+    "cell-dependent loss of original material",
+    "loss reduction by inhibitor",
+    "CHP signal in scaffold",
+    "construct area",
+    "degraded collagen in cell lysate"
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H1",
+     "readout": "cell-dependent loss of original material",
+     "expected": "increase"
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "cell-dependent loss of original material",
+     "expected": "no_change"
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "cell-dependent loss of original material",
+     "expected": "no_change"
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "cell-dependent loss of original material",
+     "expected": "decrease"
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "loss reduction by inhibitor",
+     "expected": "present"
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "loss reduction by inhibitor",
+     "expected": "absent"
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "loss reduction by inhibitor",
+     "expected": "absent"
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "CHP signal in scaffold",
+     "expected": "increase"
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "CHP signal in scaffold",
+     "expected": "not_predicted"
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "CHP signal in scaffold",
+     "expected": "increase",
+     "note": "mechanical disruption also denatures"
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "construct area",
+     "expected": "decrease"
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "construct area",
+     "expected": "no_change"
+    },
+    {
+     "hypothesis_id": "H2",
+     "readout": "construct area",
+     "expected": "no_change"
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "degraded collagen in cell lysate",
+     "expected": "increase"
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "degraded collagen in cell lysate",
+     "expected": "decrease"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Cell-dependent loss present and reduced by inhibitor, area unchanged",
+     "implication": "Consistent with a metalloproteinase-sensitive contribution; enzyme not identified; H2 not excluded."
+    },
+    {
+     "outcome": "Area falls while scaffold hydroxyproline and CHP do not change",
+     "implication": "Contraction, not degradation, drives geometry; area is not a degradation readout."
+    }
+   ]
+  },
+  {
+   "id": "E2",
+   "design": "Ingress: scaffold against a cell source, crosslinked vs not; nuclei by depth.",
+   "controls": [
+    "pre-seeded scaffold (bypasses ingress)",
+    "acellular scaffold against acellular gel"
+   ],
+   "measurements": [
+    "nuclei at depth, crosslinked vs non-crosslinked"
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H4",
+     "readout": "nuclei at depth, crosslinked vs non-crosslinked",
+     "expected": "decrease"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Crosslinked scaffold restricts depth",
+     "implication": "Crosslinking level becomes a constraint for O2."
+    }
+   ]
+  },
+  {
+   "id": "E3",
+   "design": "New vs original matrix: pulse-chase label of new protein with a type-I-collagen-specific readout, in construct and in medium, chase time as a factor.",
+   "discriminates": [
+    "H6",
+    "H7"
+   ],
+   "controls": [
+    "unlabelled construct",
+    "label plus protein-synthesis inhibitor",
+    "acellular scaffold exposed to label"
+   ],
+   "measurements": [
+    "labelled type I collagen retained in construct",
+    "labelled type I collagen in medium"
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H6",
+     "readout": "labelled type I collagen retained in construct",
+     "expected": "increase"
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "labelled type I collagen retained in construct",
+     "expected": "no_change"
+    },
+    {
+     "hypothesis_id": "H6",
+     "readout": "labelled type I collagen in medium",
+     "expected": "not_predicted"
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "labelled type I collagen in medium",
+     "expected": "increase"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Retained new collagen rises over chase",
+     "implication": "Deposition that could take over load; go to E4."
+    },
+    {
+     "outcome": "Label mostly in medium as proforms",
+     "implication": "Secreted, not retained; handover unlikely under these conditions."
+    }
+   ]
+  },
+  {
+   "id": "E4",
+   "design": "Bridge continuity: scaffold spanning a defined gap between anchored ends, cells entering from the edges; continuity, gap length, remaining original material and new collagen in the same constructs.",
+   "discriminates": [
+    "H6",
+    "H3",
+    "H1"
+   ],
+   "controls": [
+    "acellular bridge",
+    "empty gap"
+   ],
+   "measurements": [
+    "continuity, cell-laden vs acellular bridge"
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H6",
+     "readout": "continuity, cell-laden vs acellular bridge",
+     "expected": "increase"
+    },
+    {
+     "hypothesis_id": "H3",
+     "readout": "continuity, cell-laden vs acellular bridge",
+     "expected": "increase",
+     "note": "a shortened gap stays bridged"
+    },
+    {
+     "hypothesis_id": "H1",
+     "readout": "continuity, cell-laden vs acellular bridge",
+     "expected": "decrease"
+    },
+    {
+     "hypothesis_id": "H7",
+     "readout": "continuity, cell-laden vs acellular bridge",
+     "expected": "no_change"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Continuity kept in cell-laden bridges, gap unchanged, new collagen rising",
+     "implication": "Candidate handover in vitro; next, persistence of contraction (E5)."
+    },
+    {
+     "outcome": "Continuity kept only with a shortened gap",
+     "implication": "Contraction maintained the bridge: the outcome the long-term goal avoids."
+    }
+   ]
+  },
+  {
+   "id": "E5",
+   "design": "Persistence: TGF-beta1 vs none, serum vs defined low-serum medium, then withdrawal.",
+   "discriminates": [
+    "H5",
+    "H8"
+   ],
+   "controls": [
+    "no TGF-beta1 in each medium",
+    "tissue-culture plastic reference"
+   ],
+   "measurements": [
+    "contraction after withdrawal",
+    "alpha-SMA after withdrawal",
+    "degraded collagen uptake"
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H5",
+     "readout": "contraction after withdrawal",
+     "expected": "increase"
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "contraction after withdrawal",
+     "expected": "no_change"
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "alpha-SMA after withdrawal",
+     "expected": "increase"
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "alpha-SMA after withdrawal",
+     "expected": "no_change"
+    },
+    {
+     "hypothesis_id": "H5",
+     "readout": "degraded collagen uptake",
+     "expected": "decrease"
+    },
+    {
+     "hypothesis_id": "H8",
+     "readout": "degraded collagen uptake",
+     "expected": "no_change"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "Contraction and alpha-SMA persist after withdrawal",
+     "implication": "Change formulation or cell source before judging handover favourable."
+    }
+   ]
+  }
+ ],
+ "open_items": [
+  "Researcher chooses material, cells and format; E2 and E4 change with that choice."
+ ],
+ "evidence": [
+  {
+   "id": "lit-3011dae7c880",
+   "kind": "retrieved_source",
+   "statement": "Active synthesis of type I collagen homotrimer in Dupuytren's fibrosis is unaffected by anti-TNF-α treatment.",
+   "locator": {
+    "article": {
+     "doi": "10.1172/jci.insight.175188",
+     "pmid": "40337865",
+     "pmcid": "PMC12128996",
+     "provider_id": "40337865"
+    },
+    "source_kind": "section",
+    "section_title": "Discussion",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "polypeptide chain ratio is maintained when the mRNA ratio is disrupted to 1:1 by a nonfunctional COL1A1 allele (46) and overexpression of both genes results in 2:1 heterotrimers, unless COL1A1 is in large excess (47). Cytosolic mRNA binding proteins have been reported to coordinate translation of COL1 mRNAs (48), and specific type I collagen C-propeptide sequences favor its heterotrimerization (49, 50). Hence, the mRNA ratio cannot provide a direct readout of the extent of homotrimerization. While we did not detect a difference in COL1A1 gene expression in 2D cell cultures with TNF-α treatment in the presence or absence of serum, COL1A2 gene expression was reduced by TNF-α in the presence of serum (Figure 4) in accordance with a prior study (29). TNF-α had opposing effects on new collagen protein secretion in the presence or absence of serum with a more repressive effect in 10% serum. This may relate to the presence of TGF-β in serum, antagonistic TNF-α, and TGF-β signaling and the inhibitory effect of serum α2-macroglobulin on cytokine signaling (29). TGF-β is estimated to be present in 10% serum at approximately 10 ng/mL (51), which is comparable with that used for exogenous",
+    "source_text_hash": "6ac159ee0439899390cfef80d21079b0bc650bcdd9a00576a98eb45c55ebf0e0"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "3011dae7c880a3b9e868e24c64bb3cf8679bed20e46bd9e8e2e27bd94e5d60ff"
+  },
+  {
+   "id": "lit-34e29aabd827",
+   "kind": "retrieved_source",
+   "statement": "Collagen-elastin dermal scaffolds enhance tissue regeneration and reduce scarring in preclinical models.",
+   "locator": {
+    "article": {
+     "doi": "10.1016/j.mtbio.2025.102239",
+     "pmid": "40917518",
+     "pmcid": "PMC12408406",
+     "provider_id": "40917518"
+    },
+    "source_kind": "abstract",
+    "section_title": null,
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "findings indicated that fetal fibroblasts exhibited the most pronounced extracellular matrix deposition and cellular infiltration within the scaffolds, followed by eschar fibroblasts and, lastly, healthy adult cells. The incorporation of elastin into collagen scaffolds led to a reduction in α-SMA protein expression, a biomarker of fibrosis, compared to collagen-only scaffolds. Notably, collagen scaffolds supplemented with elastin hydrolysate from basic hydrolysis demonstrated the most promising outcomes for scarless healing, characterized by minimal wound contraction, enhanced extracellular matrix formation, and increased neovascularization.",
+    "source_text_hash": "ad54865b9b1a1caf8994acaed193d01a200b8e9c6bb73ef3fdd747cd48895876"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "34e29aabd82758075ea8c2d3d72b9f438ee2c2d42f012ffdc78407b72e34f45b"
+  },
+  {
+   "id": "lit-35e5ec7f8460",
+   "kind": "retrieved_source",
+   "statement": "Active synthesis of type I collagen homotrimer in Dupuytren's fibrosis is unaffected by anti-TNF-α treatment.",
+   "locator": {
+    "article": {
+     "doi": "10.1172/jci.insight.175188",
+     "pmid": "40337865",
+     "pmcid": "PMC12128996",
+     "provider_id": "40337865"
+    },
+    "source_kind": "section",
+    "section_title": "Discussion",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "contractility is related to homotrimer synthesis. We noted an absence of detectable type I collagen protein synthesis in normal PF by radiolabeling (Figure 1D), obtaining similar results for healthy canine CCL and postnatal equine SDFT. These findings indicate that the type I collagen synthesis detected in Dupuytren’s and ruptured CCL explants is not due to an acute injury response to dissection. In ruptured canine CCL, expression of COL1A1 and COL1A2 mRNA was increased (Figure 3, A and B). A previous study in canine CCL indicated a significant increase in COL1A2 mRNA but not of COL1A1 in ruptured ligaments (42), while COL1A1 mRNA was found to be increased in ruptured human anterior cruciate ligament by in situ hybridization (43). In the present study, the COL1A1/COL1A2 ratio was significantly higher in ruptured canine CCLs, but the ratio did not exceed 2, and type I collagen homotrimer synthesis was not apparent (Figure 3E). Gene expression of COL1A1 and COL1A2 in equine SDFT reduced dramatically after 2 years of age (Figure 3G), and type I collagen protein synthesis was only detected in fetal tendon (Figure 3F), consistent with the known high-level type I collagen expression",
+    "source_text_hash": "855de076a3a9a4f60cb833b775c18e796671c36251d1c59bab4cd7e7dff710b4"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "35e5ec7f8460cba1d1c4af4bdd7e63ffd74401f4385f4af7451e27345609c8c8"
+  },
+  {
+   "id": "lit-426cada79afd",
+   "kind": "retrieved_source",
+   "statement": "Depletion of tropomyosin 1.6 alleviates TGF-β1-induced fibroblast activation by promoting the α-SMA-MMP9 matrix-degrading structure.",
+   "locator": {
+    "article": {
+     "doi": "10.1016/j.isci.2025.113317",
+     "pmid": "40917878",
+     "pmcid": "PMC12410407",
+     "provider_id": "40917878"
+    },
+    "source_kind": "abstract",
+    "section_title": null,
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "Fibroblasts can be transformed into myofibroblasts under pro-fibrotic conditions, which are characterized by increased contractility and reduced matrix degradation. The relationship between contractile activity and matrix degradation is not fully understood. To mimic physiological conditions, fibroblasts were cultured on a collagen gel with low rigidity. We reveal that a tropomyosin isoform, tropomyosin 1.6 (Tpm1.6), plays a pivotal role in the phenotypic switch upon TGF-β1. Tpm1.6 was specifically upregulated by TGF-β1 in renal fibroblasts. Tpm1.6-silencing decreased TGF-β1-induced myofibroblast markers and contractility, and promoted collagen degradation. Remarkably, in Tpm1.6-silenced fibroblasts, TGF-β1 triggered the formation of distinct α-SMA dots enriched with MMP9, promoting collagen degradation. The targeted silencing of Tpm1.6 in activated myofibroblasts by the induction of promoters of <i>Foxd1</i> and <i>Acta2</i> mitigated unilateral ureteral obstruction-induced renal fibrosis and preserved proximal tubule differentiation. Our study highlights the crucial role of Tpm1.6 in TGF-β1-induced myofibroblast activation and collagen degradation, suggesting a potential",
+    "source_text_hash": "4dcfa79b0ba277e8b0d2898ed0bd392c634520b68ed0ef5487fc4999528c4284"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "426cada79afdb290363dc15e0fc964d47c710527132cd3fdf180a15c99bb45cc"
+  },
+  {
+   "id": "lit-42a676c7e0c2",
+   "kind": "retrieved_source",
+   "statement": "The Chemistry and Biology of Collagen Hybridization.",
+   "locator": {
+    "article": {
+     "doi": "10.1021/jacs.3c00713",
+     "pmid": "37158802",
+     "pmcid": "PMC10789224",
+     "provider_id": "37158802"
+    },
+    "source_kind": "abstract",
+    "section_title": null,
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "Collagen provides mechanical and biological support for virtually all human tissues in the extracellular matrix (ECM). Its defining molecular structure, the triple-helix, could be damaged and denatured in disease and injuries. To probe collagen damage, the concept of collagen hybridization has been proposed, revised, and validated through a series of investigations reported as early as 1973: a collagen-mimicking peptide strand may form a hybrid triple-helix with the denatured chains of natural collagen but not the intact triple-helical collagen proteins, enabling assessment of proteolytic degradation or mechanical disruption to collagen within a tissue-of-interest. Here we describe the concept and development of collagen hybridization, summarize the decades of chemical investigations on rules underlying the collagen triple-helix folding, and discuss the growing biomedical evidence on collagen denaturation as a previously overlooked ECM signature for an array of conditions involving pathological tissue remodeling and mechanical injuries. Finally, we propose a series of emerging questions regarding the chemical and biological nature of collagen denaturation and highlight the",
+    "source_text_hash": "610f8a5c64600403060fb4fbd5b0129fc50123d3649b5ba30d416d791a24879d"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "42a676c7e0c2c35c1bbe6d4cb203da0e43e05bac0876b9f6f50383a440c6946e"
+  },
+  {
+   "id": "lit-670133a47aa6",
+   "kind": "retrieved_source",
+   "statement": "Active synthesis of type I collagen homotrimer in Dupuytren's fibrosis is unaffected by anti-TNF-α treatment.",
+   "locator": {
+    "article": {
+     "doi": "10.1172/jci.insight.175188",
+     "pmid": "40337865",
+     "pmcid": "PMC12128996",
+     "provider_id": "40337865"
+    },
+    "source_kind": "section",
+    "section_title": "Discussion",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "media, therefore, contain sufficient TGF-β to drive COL1A2 gene expression, which can be at least partially counteracted by equimolar TNF-α. Prior work indicated that TNF-α increased COL1A1 mRNA in palmar fibroblasts, from patients with Dupuytren’s though not in Dupuytren’s nonpalmar dermal fibroblasts or in palmar fibroblasts from those unaffected by Dupuytren’s, though it is unclear whether treatments were carried out in the presence of serum. Adult human tenocytes have been previously found to form 3D tendon–like constructs when seeded into a fibrin gel scaffold (33), although these were younger (29 ± 7.5 years) than the normal PF and Dupuytren’s cells used in our study (range, 57–76 years). Therefore, cells derived from normal PF retain the capacity to synthesize a new collagenous ECM even up to 69 years of age (Supplemental Table 3). Prior radiolabeling of newly synthesized collagen in 3D tendon–like constructs detected proforms as well as fully processed collagen (52) following 1 hour of labeling. In the present study, fully processed collagen was primarily detected within constructs, which can be attributed to a 3-hour chase, following overnight labeling, allowing the",
+    "source_text_hash": "880e62631b25d0473b90f2b83dec000deec5f894a79e9eb8e6d7eb1d4ccc58dd"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "670133a47aa692a2eb1407e1d74b109c5a91f47c42259d96ba76e52260009022"
+  },
+  {
+   "id": "lit-a0879275b79e",
+   "kind": "retrieved_source",
+   "statement": "MRC2-mediated collagen internalization is reduced in fibrotic lung fibroblasts and increased upon phenotypic dedifferentiation.",
+   "locator": {
+    "article": {
+     "doi": "10.1172/jci.insight.201712",
+     "pmid": "42154525",
+     "pmcid": "PMC13460822",
+     "provider_id": "42154525"
+    },
+    "source_kind": "abstract",
+    "section_title": null,
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "Idiopathic pulmonary fibrosis (IPF) is characterized by parenchymal scarring reflecting an imbalance between collagen deposition by myofibroblasts (MFs) and its turnover. Although collagen clearance is essential for fibrosis resolution, this process and its potential for therapeutic modulation in IPF are poorly understood. Here we evaluated internalization of degraded collagen and the role of its requisite endocytic receptor mannose receptor C-type 2 (MRC2), in lung tissue and MFs from patients with IPF and bleomycin-injured mice. Fibrotic human and murine lung tissue exhibited an accumulation of degraded collagen, highlighting a failure of its clearance. MFs from fibrotic lung demonstrated a reduced capacity to internalize extracellular degraded collagen, with a concomitant reduction in MRC2 expression and endolysosomal activity. Both diminished collagen uptake and MRC2 expression recovered to baseline levels during spontaneous resolution of bleomycin fibrosis. In vitro treatment of IPF or TGF-β-elicited MFs with a variety of mechanistically distinct agents known to effect phenotypic dedifferentiation restored defective collagen internalization. Although enhanced uptake was MRC2",
+    "source_text_hash": "06a91ec2f5a798bc79dc91ab36cd0065d36171ae3485f105d455ac6de1ff3ff8"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "a0879275b79e00207036792f63803fb1be485c2dc91b728faa03795aac279340"
+  },
+  {
+   "id": "lit-b1bd82388798",
+   "kind": "retrieved_source",
+   "statement": "Active synthesis of type I collagen homotrimer in Dupuytren's fibrosis is unaffected by anti-TNF-α treatment.",
+   "locator": {
+    "article": {
+     "doi": "10.1172/jci.insight.175188",
+     "pmid": "40337865",
+     "pmcid": "PMC12128996",
+     "provider_id": "40337865"
+    },
+    "source_kind": "section",
+    "section_title": "Discussion",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "particularly high α1(I)/α2(I) chain ratio (Figure 1, E and F). We hypothesized that individual variation or samples analyzed at different stages of disease progression may be responsible for the relative proportion of newly synthesized collagen; however, no association with demographics data or disease stage was observed (Figure 2). It is possible that the current study is underpowered to accurately identify factors or interactions that may direct high type I collagen homotrimer synthesis or that the granularity of the demographics data is insufficient. The mean percentage of homotrimeric collagen is higher than that reported by Ehrlich et al., although there is a cluster of several samples apparently synthesizing type I collagen homotrimer to a similar extent, at around 10% (21). Notably our study also provides a snapshot of type I collagen homotrimer synthesis, whereas Ehrlich et al. analyzed accumulated homotrimeric type I collagen. Interestingly, precontracted, but not fully contracted, tendon-like constructs appeared to synthesize type I collagen homotrimer, as the α1(I)/α2(I) chain ratio was significantly greater than 2. Hence, it may be the case that active cell",
+    "source_text_hash": "30134ce8011a417d415275266fb7c004ad0cc2f1e7088413436ff80e9ae06364"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "b1bd823887983fab2540814dc8bfb560260a3cf0c7f112bc8a917be1a02c7e1f"
+  },
+  {
+   "id": "lit-cd732cb414f8",
+   "kind": "retrieved_source",
+   "statement": "Active synthesis of type I collagen homotrimer in Dupuytren's fibrosis is unaffected by anti-TNF-α treatment.",
+   "locator": {
+    "article": {
+     "doi": "10.1172/jci.insight.175188",
+     "pmid": "40337865",
+     "pmcid": "PMC12128996",
+     "provider_id": "40337865"
+    },
+    "source_kind": "section",
+    "section_title": "Type I collagen homotrimer is actively produced by Dupuytren’s tissue.",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "with Dupuytren’s were sufficiently labeled for densitometric quantification (Supplemental Table 1). The α1(I)/α2(I) chain ratio was significantly greater than 2 (P < 0.001) (Figure 1E) indicative of new type I collagen homotrimer synthesis. Using the ratios for the nodule only in the analyses (discounting 3 other cord samples) produced similar results (P < 0.001, data not shown). The α1(I)/α2(I) ratio was converted to a percentage of homotrimeric type I collagen, indicating a mean value of 14.3% (SD ± 14.4%), with 1 sample reading 50.4% (Figure 1F). Plotting the α1(I)/α2(I) ratio against the COL1A1/COL1A2 mRNA ratio indicated no positive linear relationship between relative mRNA and polypeptide chain ratios (Figure 1G), and the Pearson correlation coefficient was negative (r = –0.522, P = 0.046).",
+    "source_text_hash": "80e886b9919adb07298f127624efd91084d82de834056e38541549483d18c26f"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "cd732cb414f8a04770f954788745d7804a8a92b157c8bedb055891bfaa6366b0"
+  },
+  {
+   "id": "lit-eba9427a4c2d",
+   "kind": "retrieved_source",
+   "statement": "Active synthesis of type I collagen homotrimer in Dupuytren's fibrosis is unaffected by anti-TNF-α treatment.",
+   "locator": {
+    "article": {
+     "doi": "10.1172/jci.insight.175188",
+     "pmid": "40337865",
+     "pmcid": "PMC12128996",
+     "provider_id": "40337865"
+    },
+    "source_kind": "section",
+    "section_title": "Discussion",
+    "table_id": null,
+    "figure_id": null,
+    "row_index": null,
+    "column_index": null,
+    "row_label": null,
+    "column_label": null,
+    "source_text": "majority of the newly synthesized labeled collagen to traverse the secretory pathway and be fully proteolytically processed to tropocollagen. In contrast the media contained primarily proforms, likely due to dilution of the procollagen substrate and processing enzymes in the liquid environment, and potentially due to other collagens. In 3D tendon–like constructs the COL1A1/COL1A2 ratio was decreased with TNF-α treatment in the presence of serum (Figure 6), indicating potential differential effects on COL1A1 and COL1A2 gene expression in 3D culture. However, this was not reflected in an altered type I collagen α1(I)/α2(I) protein chain ratio. Unlike in 2D culture, no differential effects of TNF-α on collagen protein production were observed in 3D culture, either for secreted protein in the media or that within the constructs. These findings may reflect residual serum proteins being retained within the fully formed 3D tendon–like constructs, differences in signaling responses in 3D culture, or the presence of a collagenous ECM barrier that could prevent TNF-α from interacting with cells. In the present study, anti-TNF was not able to reduce type I collagen synthesis in fully",
+    "source_text_hash": "860e0003a6bc167d34874c75d20cf939a0a1b2eee849d51a5979e543edee32a5"
+   },
+   "measurement_context": null,
+   "verification": null,
+   "derived_from": [],
+   "assumptions": [],
+   "content_hash": "eba9427a4c2d4617f677ecd1df5c20c4f56aa5e1d33bb8305f6036565d962692"
+  }
+ ],
+ "evidence_used": [
+  "lit-3011dae7c880",
+  "lit-34e29aabd827",
+  "lit-35e5ec7f8460",
+  "lit-426cada79afd",
+  "lit-42a676c7e0c2",
+  "lit-670133a47aa6",
+  "lit-a0879275b79e",
+  "lit-b1bd82388798",
+  "lit-cd732cb414f8",
+  "lit-eba9427a4c2d"
+ ]
+}

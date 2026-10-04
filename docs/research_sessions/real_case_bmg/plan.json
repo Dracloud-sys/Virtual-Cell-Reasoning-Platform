@@ -1,0 +1,409 @@
+{
+ "question": "Does the Ti40Zr10Cu36Pd14 bulk metallic glass (BMG) surface lower human gingival fibroblast metabolic activity relative to Ti6Al4V at 24 and 48 h, and can the alamarBlue signal of Zenodo 8342247 say so?",
+ "restated_question": "On one public alamarBlue export (HGF on BMG vs Ti6Al4V specimens, 24 and 48 h), which readings can be compared with which prediction, and what would be needed to tell cytotoxicity, equality, more activity and interference apart.",
+ "objectives": [
+  {
+   "id": "O1",
+   "stated_by": "host",
+   "statement": "Judge whether the BMG surface is cytocompatible for HGF relative to Ti6Al4V (taken from the dataset's stated purpose; no researcher stated it here)."
+  }
+ ],
+ "confirmed_conditions": [
+  "HGF (PromoCell) seeded at 2000 cells per 3 mm specimen, 4 h adhesion, then 450 ul medium (paper sec2.6.2)",
+  "alamarBlue read after 24 h and 48 h culture; Ex 530 / Em 590, gain 80 (export header)"
+ ],
+ "open_conditions": [
+  "What the two 'AB' wells contain (neither the record nor the paper defines them)",
+  "Whether the specimen was in the well that was read, or the dye was transferred",
+  "Whether wells are independent specimens; the paper says triplicate, the export has 4 and 5 wells",
+  "Well positions of the typed values; the 48 h grid puts AB at C7-C8, the plate-area line says H8-H9"
+ ],
+ "assumptions": [
+  "the Ti6Al4V wells read above the reagent-only background at the same read",
+  "the BMG specimen does not change alamarBlue fluorescence without cells"
+ ],
+ "sub_questions": [
+  {
+   "id": "Q1",
+   "question": "Does the BMG surface change HGF alamarBlue signal relative to Ti6Al4V, and why?",
+   "objective_ids": [
+    "O1"
+   ]
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H_tox",
+   "statement": "The BMG surface lowers HGF metabolic activity or number relative to Ti6Al4V.",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q1"
+   ],
+   "mutually_exclusive_with": [
+    "H_eq",
+    "H_more"
+   ]
+  },
+  {
+   "id": "H_eq",
+   "statement": "BMG and Ti6Al4V support equal HGF metabolic activity.",
+   "support": "evidence_linked",
+   "supporting_evidence_ids": [
+    "lit-d6e068c5c86e"
+   ],
+   "sub_question_ids": [
+    "Q1"
+   ],
+   "mutually_exclusive_with": [
+    "H_tox",
+    "H_more"
+   ]
+  },
+  {
+   "id": "H_more",
+   "statement": "The BMG surface supports more HGF metabolic activity (more cells or more activity per cell).",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q1"
+   ],
+   "mutually_exclusive_with": [
+    "H_tox",
+    "H_eq"
+   ]
+  },
+  {
+   "id": "H_int",
+   "statement": "The BMG specimen raises the alamarBlue reading without cells (assay interference).",
+   "support": "unverified_candidate",
+   "sub_question_ids": [
+    "Q1"
+   ]
+  }
+ ],
+ "evidence_links": [
+  {
+   "evidence_id": "lit-d6e068c5c86e",
+   "target_id": "H_eq",
+   "role": "supports",
+   "reading": "The authors report comparable metabolism at 24/48 h, a slight non-significant increase for BMG at 48 h (one-way ANOVA, Tukey)."
+  },
+  {
+   "evidence_id": "lit-6568ef3c8998",
+   "target_id": "H_int",
+   "role": "method",
+   "reading": "Cells were seeded directly on 3 mm specimens; whether the specimen stayed in the read well is not stated."
+  },
+  {
+   "evidence_id": "lit-a5f2aed4ebb7",
+   "target_id": "H_int",
+   "role": "method",
+   "reading": "Dye added directly onto specimens, 4 h in the dark, read on the Spark: a material contribution to the reading is not excluded by the procedure described."
+  },
+  {
+   "evidence_id": "lit-8ca7c1052560",
+   "target_id": "H_eq",
+   "role": "scope_limit",
+   "reading": "'Performed in triplicate'; the export has 4 and 5 wells per group, so which unit was replicated is open."
+  }
+ ],
+ "mechanism_links": [],
+ "experiments": [
+  {
+   "id": "E1",
+   "design": "HGF seeded on BMG and Ti6Al4V specimens; alamarBlue at 24 and 48 h (Zenodo 8342247, existing data).",
+   "controls": [
+    "Ti6Al4V specimen",
+    "AB wells (undefined)",
+    "POLY wells (undefined)"
+   ],
+   "measurements": [
+    "alamarBlue fluorescence",
+    "alamarBlue fluorescence (Ti6Al4V wells vs reagent only)"
+   ],
+   "timepoints": [
+    "24 h",
+    "48 h"
+   ],
+   "readouts": [
+    {
+     "name": "alamarBlue fluorescence",
+     "target": "resorufin from reduced resazurin",
+     "assay": "alamarBlue fluorescence top reading, Ex 530 nm / Em 590 nm, gain 80, Tecan Spark",
+     "compartment": "well (specimen presence unresolved)",
+     "timepoint": "24 h and 48 h culture",
+     "reference": "Ti6Al4V",
+     "normalization": "none (raw RFU)",
+     "unit": "RFU"
+    },
+    {
+     "name": "alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+     "target": "resorufin from reduced resazurin",
+     "assay": "alamarBlue fluorescence top reading, Ex 530 nm / Em 590 nm, gain 80, Tecan Spark",
+     "compartment": "well (specimen presence unresolved)",
+     "timepoint": "24 h and 48 h culture",
+     "reference": "reagent only (no cells)",
+     "normalization": "none (raw RFU)",
+     "unit": "RFU"
+    }
+   ],
+   "purposes": [
+    "discriminate",
+    "method_check"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O1",
+     "level": "proxy",
+     "note": "metabolic signal, not cell number or health"
+    }
+   ],
+   "branches": [
+    {
+     "outcome": "BMG classified below Ti6Al4V on every combination",
+     "implication": "H_tox stays open for E2/E3; interference must be excluded first."
+    },
+    {
+     "outcome": "combinations disagree or no rule classifies",
+     "implication": "No judgement from this export; resolve the records, then E2 and E3."
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H_tox",
+     "readout": "alamarBlue fluorescence",
+     "expected": "decrease",
+     "versus": "Ti6Al4V",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "assumptions": [
+      "the Ti6Al4V wells read above the reagent-only background at the same read",
+      "the BMG specimen does not change alamarBlue fluorescence without cells"
+     ],
+     "biological_expectation": "fewer or less active fibroblasts on BMG"
+    },
+    {
+     "hypothesis_id": "H_eq",
+     "readout": "alamarBlue fluorescence",
+     "expected": "no_change",
+     "versus": "Ti6Al4V",
+     "basis": "evidence_observed",
+     "evidence_ids": [
+      "lit-d6e068c5c86e"
+     ],
+     "assumptions": [
+      "the Ti6Al4V wells read above the reagent-only background at the same read",
+      "the BMG specimen does not change alamarBlue fluorescence without cells"
+     ]
+    },
+    {
+     "hypothesis_id": "H_more",
+     "readout": "alamarBlue fluorescence",
+     "expected": "increase",
+     "versus": "Ti6Al4V",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "assumptions": [
+      "the Ti6Al4V wells read above the reagent-only background at the same read",
+      "the BMG specimen does not change alamarBlue fluorescence without cells"
+     ],
+     "biological_expectation": "more or more active fibroblasts on BMG"
+    },
+    {
+     "hypothesis_id": "H_int",
+     "readout": "alamarBlue fluorescence",
+     "expected": "increase",
+     "versus": "Ti6Al4V",
+     "basis": "assumption",
+     "evidence_ids": [
+      "lit-a5f2aed4ebb7"
+     ],
+     "assumptions": [],
+     "unresolved": "the size of a material contribution is unknown without a cell-free specimen read (E2)"
+    }
+   ],
+   "assumption_checks": [
+    {
+     "assumption": "the Ti6Al4V wells read above the reagent-only background at the same read",
+     "readout": "alamarBlue fluorescence (Ti6Al4V wells vs reagent only)",
+     "expected_if_holds": "increase",
+     "versus": "reagent only (no cells)"
+    }
+   ]
+  },
+  {
+   "id": "E2",
+   "design": "Cell-free controls on the same plate and read: dye alone, dye on a Ti6Al4V specimen, dye on a BMG specimen, 4 h in the dark, same volume.",
+   "controls": [
+    "dye alone"
+   ],
+   "measurements": [
+    "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)"
+   ],
+   "timepoints": [
+    "same read as the cell plate"
+   ],
+   "readouts": [
+    {
+     "name": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+     "target": "resorufin",
+     "assay": "alamarBlue fluorescence top reading, Ex 530 nm / Em 590 nm, gain 80, Tecan Spark",
+     "compartment": "well with specimen, no cells",
+     "timepoint": "4 h dye incubation",
+     "reference": "Ti6Al4V specimen, no cells",
+     "normalization": "none",
+     "unit": "RFU"
+    }
+   ],
+   "purposes": [
+    "method_check",
+    "discriminate"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O1",
+     "level": "out_of_scope",
+     "note": "checks the readout, not cells"
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H_int",
+     "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+     "expected": "increase",
+     "versus": "Ti6Al4V specimen, no cells",
+     "basis": "measurement_model",
+     "evidence_ids": [
+      "lit-a5f2aed4ebb7"
+     ],
+     "assumptions": []
+    },
+    {
+     "hypothesis_id": "H_tox",
+     "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+     "expected": "no_change",
+     "versus": "Ti6Al4V specimen, no cells",
+     "basis": "measurement_model",
+     "evidence_ids": [],
+     "assumptions": [
+      "no cells, so no biology"
+     ]
+    },
+    {
+     "hypothesis_id": "H_eq",
+     "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+     "expected": "no_change",
+     "versus": "Ti6Al4V specimen, no cells",
+     "basis": "measurement_model",
+     "evidence_ids": [],
+     "assumptions": [
+      "no cells, so no biology"
+     ]
+    },
+    {
+     "hypothesis_id": "H_more",
+     "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+     "expected": "no_change",
+     "versus": "Ti6Al4V specimen, no cells",
+     "basis": "measurement_model",
+     "evidence_ids": [],
+     "assumptions": [
+      "no cells, so no biology"
+     ]
+    }
+   ],
+   "assumption_checks": [
+    {
+     "assumption": "the BMG specimen does not change alamarBlue fluorescence without cells",
+     "readout": "alamarBlue fluorescence without cells (BMG specimen vs Ti6Al4V specimen)",
+     "expected_if_holds": "no_change",
+     "versus": "Ti6Al4V specimen, no cells"
+    }
+   ]
+  },
+  {
+   "id": "E3",
+   "design": "DNA per specimen in the same wells after the alamarBlue read, specimen as the declared unit; alamarBlue per DNA.",
+   "controls": [
+    "Ti6Al4V specimen",
+    "DNA standard curve"
+   ],
+   "measurements": [
+    "DNA per specimen"
+   ],
+   "timepoints": [
+    "24 h",
+    "48 h"
+   ],
+   "readouts": [
+    {
+     "name": "DNA per specimen",
+     "target": "DNA",
+     "assay": "DNA-binding dye fluorescence",
+     "compartment": "specimen lysate",
+     "timepoint": "24 h and 48 h culture",
+     "reference": "Ti6Al4V",
+     "normalization": "standard curve",
+     "unit": "ng/specimen"
+    }
+   ],
+   "purposes": [
+    "discriminate"
+   ],
+   "objective_coverage": [
+    {
+     "objective_id": "O1",
+     "level": "direct",
+     "note": "cell number on the surface"
+    }
+   ],
+   "predictions": [
+    {
+     "hypothesis_id": "H_tox",
+     "readout": "DNA per specimen",
+     "expected": "decrease",
+     "versus": "Ti6Al4V",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "assumptions": [
+      "the DNA dye readout is not affected by either specimen"
+     ]
+    },
+    {
+     "hypothesis_id": "H_eq",
+     "readout": "DNA per specimen",
+     "expected": "no_change",
+     "versus": "Ti6Al4V",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "assumptions": [
+      "the DNA dye readout is not affected by either specimen"
+     ]
+    },
+    {
+     "hypothesis_id": "H_more",
+     "readout": "DNA per specimen",
+     "expected": "not_predicted",
+     "versus": "Ti6Al4V",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "assumptions": [],
+     "unresolved": "increase if more cells; no change if more activity per cell"
+    },
+    {
+     "hypothesis_id": "H_int",
+     "readout": "DNA per specimen",
+     "expected": "no_change",
+     "versus": "Ti6Al4V",
+     "basis": "assumption",
+     "evidence_ids": [],
+     "assumptions": [
+      "the DNA dye readout is not affected by either specimen"
+     ]
+    }
+   ]
+  }
+ ],
+ "open_items": [
+  "The plan, rules and mappings were written after the values had been seen: this is not a pre-declared test."
+ ]
+}
