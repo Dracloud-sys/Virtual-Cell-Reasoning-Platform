@@ -75,6 +75,7 @@ TOOL_NAMES = sorted(
         "read_evidence_source",
         "check_research_draft",
         "compare_research_observations",
+        "run_logic_model",
     ]
 )
 

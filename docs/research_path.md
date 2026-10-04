@@ -603,6 +603,29 @@ through searches and reads, back into the plan.
   changed is a finding, and so is a non-supporting role listed as support.
 - **What it does not do.** It judges nothing, moves no value and ranks nothing.
 
+### A candidate model, run: `run_logic_model`
+
+Until now every predicted value was written by the host. `run_logic_model`
+(`simulation/logic.py`, one code path for the tool and the tests) takes a small Boolean
+candidate model, an initial state and clamps, and computes the states that follow.
+- **Synchronous only.** Every rule reads the previous state.
+- **Structured expressions** (`const`, `var`, `not`, `and`, `or`). Nothing is parsed from a
+  string.
+- **Unknowns are expanded into cases** and every path is kept. A missing rule or input is not
+  computed, never inactive.
+- **What comes back:**
+  - per-step summaries;
+  - differences from a same-start baseline;
+  - repetition only once the inputs stop changing;
+  - what each final value was computed from (not a cause);
+  - readouts only through an explicit mapping;
+  - optional Prediction drafts with basis `assumption`.
+
+`SimulationEngine` was not reused: its float layers, `time` and `dt` cannot hold unknown or a
+step that is not time. The reference case is `research_sessions/logic_model_v0/`, an abstract
+three-node circuit checked against hand-traced tables before the code existed. It says the
+engine computes what its specification says, and nothing about any cell.
+
 ### What has and has not been exercised
 
 Three different things, kept apart:

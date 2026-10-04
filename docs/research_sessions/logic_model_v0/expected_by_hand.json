@@ -1,0 +1,96 @@
+{
+ "about": "Traced by hand from SPEC.md and case.json before the engine existed. Each row is one state index t = 0..6, written as U S P with 1 = active, 0 = inactive. Cases are keyed by the unknown's assignment, or 'all' when there is no unknown.",
+ "paths": {
+  "A_input_dependent": {
+   "s1_input_on": {"all": ["111", "111", "111", "111", "111", "111", "111"]},
+   "s2_input_off": {"all": ["111", "011", "001", "000", "000", "000", "000"]},
+   "s3_S_off": {"all": ["111", "101", "100", "100", "100", "100", "100"]},
+   "s4_input_off_then_released": {"all": ["111", "011", "001", "100", "110", "111", "111"]},
+   "s5a_P_unknown_input_off": {
+    "P=0": ["110", "011", "001", "000", "000", "000", "000"],
+    "P=1": ["111", "011", "001", "000", "000", "000", "000"]
+   },
+   "s5b_U_unknown": {
+    "U=0": ["011", "001", "000", "000", "000", "000", "000"],
+    "U=1": ["111", "111", "111", "111", "111", "111", "111"]
+   },
+   "s5c_base_P_unknown": {
+    "P=0": ["110", "111", "111", "111", "111", "111", "111"],
+    "P=1": ["111", "111", "111", "111", "111", "111", "111"]
+   },
+   "s5c_S_off_from_0_P_unknown": {
+    "P=0": ["100", "100", "100", "100", "100", "100", "100"],
+    "P=1": ["101", "100", "100", "100", "100", "100", "100"]
+   }
+  },
+  "B_self_maintaining": {
+   "s1_input_on": {"all": ["111", "111", "111", "111", "111", "111", "111"]},
+   "s2_input_off": {"all": ["111", "011", "001", "001", "001", "001", "001"]},
+   "s3_S_off": {"all": ["111", "101", "101", "101", "101", "101", "101"]},
+   "s4_input_off_then_released": {"all": ["111", "011", "001", "101", "111", "111", "111"]},
+   "s5a_P_unknown_input_off": {
+    "P=0": ["110", "011", "001", "001", "001", "001", "001"],
+    "P=1": ["111", "011", "001", "001", "001", "001", "001"]
+   },
+   "s5b_U_unknown": {
+    "U=0": ["011", "001", "001", "001", "001", "001", "001"],
+    "U=1": ["111", "111", "111", "111", "111", "111", "111"]
+   },
+   "s5c_base_P_unknown": {
+    "P=0": ["110", "111", "111", "111", "111", "111", "111"],
+    "P=1": ["111", "111", "111", "111", "111", "111", "111"]
+   },
+   "s5c_S_off_from_0_P_unknown": {
+    "P=0": ["100", "100", "100", "100", "100", "100", "100"],
+    "P=1": ["101", "101", "101", "101", "101", "101", "101"]
+   }
+  }
+ },
+ "repetition": {
+  "about": "Index from which inputs and clamps stop changing, and the first index t >= it whose state equals the next one.",
+  "A_input_dependent": {
+   "s1_input_on": {"constant_from": 0, "fixed_point_from": 0},
+   "s2_input_off": {"constant_from": 1, "fixed_point_from": 3},
+   "s3_S_off": {"constant_from": 1, "fixed_point_from": 2},
+   "s4_input_off_then_released": {"constant_from": 3, "fixed_point_from": 5}
+  },
+  "B_self_maintaining": {
+   "s1_input_on": {"constant_from": 0, "fixed_point_from": 0},
+   "s2_input_off": {"constant_from": 1, "fixed_point_from": 2},
+   "s3_S_off": {"constant_from": 1, "fixed_point_from": 1},
+   "s4_input_off_then_released": {"constant_from": 3, "fixed_point_from": 4}
+  }
+ },
+ "readout_R_P_at_step_6_vs_baseline": {
+  "A_input_dependent": {
+   "s2_input_off": "decrease",
+   "s3_S_off": "decrease",
+   "s4_input_off_then_released": "no_change",
+   "s5c_S_off_from_0_P_unknown": "decrease"
+  },
+  "B_self_maintaining": {
+   "s2_input_off": "no_change",
+   "s3_S_off": "no_change",
+   "s4_input_off_then_released": "no_change",
+   "s5c_S_off_from_0_P_unknown": "undetermined"
+  }
+ },
+ "paired_R_P_at_step_6": {
+  "about": "s5c against its baseline, case by case (same unknown, same assignment).",
+  "B_self_maintaining": {"P=0": "decrease", "P=1": "no_change"},
+  "A_input_dependent": {"P=0": "decrease", "P=1": "decrease"}
+ },
+ "summary_P_by_step": {
+  "about": "Summary of P per step across cases: a value when the same in every case, 'differs' otherwise.",
+  "A_input_dependent": {
+   "s5a_P_unknown_input_off": ["differs", 1, 1, 0, 0, 0, 0],
+   "s5b_U_unknown": [1, 1, "differs", "differs", "differs", "differs", "differs"],
+   "s5c_S_off_from_0_P_unknown": ["differs", 0, 0, 0, 0, 0, 0]
+  },
+  "B_self_maintaining": {
+   "s5a_P_unknown_input_off": ["differs", 1, 1, 1, 1, 1, 1],
+   "s5b_U_unknown": [1, 1, 1, 1, 1, 1, 1],
+   "s5c_S_off_from_0_P_unknown": ["differs", "differs", "differs", "differs", "differs", "differs", "differs"]
+  }
+ }
+}

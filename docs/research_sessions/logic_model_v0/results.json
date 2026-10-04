@@ -1,0 +1,3565 @@
+{
+ "comparisons": {
+  "A_input_dependent/s2_input_off_vs_s1_input_on": {
+   "differences": [
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    }
+   ],
+   "limits": [
+    "Everything here follows from the rules as stated. The rules are candidates; their evidence ids and assumptions are carried, not checked.",
+    "A step is a logical update. Nothing here is a time, a rate, a half-life or a dose.",
+    "Active and inactive are the model's abstract states. They are not concentrations, detections or expression levels unless a readout mapping says how one is read.",
+    "A clamp is an ideal intervention. That a wash or an inhibitor achieved it is not shown.",
+    "Counts of cases are counts of logical combinations, not probabilities.",
+    "'Computed from' lists what a value was computed from in the unrolled steps. It is not a claim that any one rule is the cause, the only cause or the minimal cause."
+   ],
+   "paired_differences": [
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 6
+    }
+   ],
+   "prediction_drafts": [
+    {
+     "assumptions": [
+      "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6, from rules ['R1', 'R2'] stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "P needs S at the previous update."
+     ],
+     "basis": "assumption",
+     "condition": "scenario 's2_input_off', logical step 6",
+     "evidence_ids": [],
+     "expected": "decrease",
+     "hypothesis_id": "H_A_input_dependent",
+     "note": "Computed from a candidate model, not observed. Readout basis: Abstract test mapping: P read as itself. Not a validated assay.",
+     "readout": "R_P",
+     "versus": "scenario 's1_input_on' at logical step 6"
+    }
+   ],
+   "readout_final": {
+    "paired": {
+     "all": "decrease"
+    },
+    "readout": "R_P",
+    "state": "absent",
+    "t": 6,
+    "versus_baseline": "decrease"
+   },
+   "readouts_not_derivable": [
+    "alpha_SMA_IF"
+   ]
+  },
+  "A_input_dependent/s3_S_off_vs_s1_input_on": {
+   "differences": [
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    }
+   ],
+   "limits": [
+    "Everything here follows from the rules as stated. The rules are candidates; their evidence ids and assumptions are carried, not checked.",
+    "A step is a logical update. Nothing here is a time, a rate, a half-life or a dose.",
+    "Active and inactive are the model's abstract states. They are not concentrations, detections or expression levels unless a readout mapping says how one is read.",
+    "A clamp is an ideal intervention. That a wash or an inhibitor achieved it is not shown.",
+    "Counts of cases are counts of logical combinations, not probabilities.",
+    "'Computed from' lists what a value was computed from in the unrolled steps. It is not a claim that any one rule is the cause, the only cause or the minimal cause."
+   ],
+   "paired_differences": [
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 6
+    }
+   ],
+   "prediction_drafts": [
+    {
+     "assumptions": [
+      "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6, from rules ['R2'] stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "P needs S at the previous update."
+     ],
+     "basis": "assumption",
+     "condition": "scenario 's3_S_off', logical step 6",
+     "evidence_ids": [],
+     "expected": "decrease",
+     "hypothesis_id": "H_A_input_dependent",
+     "note": "Computed from a candidate model, not observed. Readout basis: Abstract test mapping: P read as itself. Not a validated assay.",
+     "readout": "R_P",
+     "versus": "scenario 's1_input_on' at logical step 6"
+    }
+   ],
+   "readout_final": {
+    "paired": {
+     "all": "decrease"
+    },
+    "readout": "R_P",
+    "state": "absent",
+    "t": 6,
+    "versus_baseline": "decrease"
+   },
+   "readouts_not_derivable": [
+    "alpha_SMA_IF"
+   ]
+  },
+  "A_input_dependent/s4_input_off_then_released_vs_s1_input_on": {
+   "differences": [
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    }
+   ],
+   "limits": [
+    "Everything here follows from the rules as stated. The rules are candidates; their evidence ids and assumptions are carried, not checked.",
+    "A step is a logical update. Nothing here is a time, a rate, a half-life or a dose.",
+    "Active and inactive are the model's abstract states. They are not concentrations, detections or expression levels unless a readout mapping says how one is read.",
+    "A clamp is an ideal intervention. That a wash or an inhibitor achieved it is not shown.",
+    "Counts of cases are counts of logical combinations, not probabilities.",
+    "'Computed from' lists what a value was computed from in the unrolled steps. It is not a claim that any one rule is the cause, the only cause or the minimal cause."
+   ],
+   "paired_differences": [
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "P",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 2
+    }
+   ],
+   "prediction_drafts": [
+    {
+     "assumptions": [
+      "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6, from rules ['R1', 'R2'] stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "P needs S at the previous update."
+     ],
+     "basis": "assumption",
+     "condition": "scenario 's4_input_off_then_released', logical step 6",
+     "evidence_ids": [],
+     "expected": "no_change",
+     "hypothesis_id": "H_A_input_dependent",
+     "note": "Computed from a candidate model, not observed. Readout basis: Abstract test mapping: P read as itself. Not a validated assay.",
+     "readout": "R_P",
+     "versus": "scenario 's1_input_on' at logical step 6"
+    }
+   ],
+   "readout_final": {
+    "paired": {
+     "all": "no_change"
+    },
+    "readout": "R_P",
+    "state": "present",
+    "t": 6,
+    "versus_baseline": "no_change"
+   },
+   "readouts_not_derivable": [
+    "alpha_SMA_IF"
+   ]
+  },
+  "A_input_dependent/s5c_S_off_from_0_P_unknown_vs_s5c_base_P_unknown": {
+   "differences": [
+    {
+     "baseline": null,
+     "component": "P",
+     "scenario": null,
+     "status": "undetermined",
+     "t": 0
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "P",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 0
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    }
+   ],
+   "limits": [
+    "Everything here follows from the rules as stated. The rules are candidates; their evidence ids and assumptions are carried, not checked.",
+    "A step is a logical update. Nothing here is a time, a rate, a half-life or a dose.",
+    "Active and inactive are the model's abstract states. They are not concentrations, detections or expression levels unless a readout mapping says how one is read.",
+    "A clamp is an ideal intervention. That a wash or an inhibitor achieved it is not shown.",
+    "Counts of cases are counts of logical combinations, not probabilities.",
+    "'Computed from' lists what a value was computed from in the unrolled steps. It is not a claim that any one rule is the cause, the only cause or the minimal cause."
+   ],
+   "paired_differences": [
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 0
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "P",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "P",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "P",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "P",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "P",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "P",
+     "scenario": false,
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 0
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 6
+    }
+   ],
+   "prediction_drafts": [
+    {
+     "assumptions": [
+      "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6, from rules ['R2'] stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "P needs S at the previous update."
+     ],
+     "basis": "assumption",
+     "condition": "scenario 's5c_S_off_from_0_P_unknown', logical step 6",
+     "evidence_ids": [],
+     "expected": "decrease",
+     "hypothesis_id": "H_A_input_dependent",
+     "note": "Computed from a candidate model, not observed. Readout basis: Abstract test mapping: P read as itself. Not a validated assay.",
+     "readout": "R_P",
+     "versus": "scenario 's5c_base_P_unknown' at logical step 6"
+    }
+   ],
+   "readout_final": {
+    "paired": {
+     "P=0": "decrease",
+     "P=1": "decrease"
+    },
+    "readout": "R_P",
+    "state": "absent",
+    "t": 6,
+    "versus_baseline": "decrease"
+   },
+   "readouts_not_derivable": [
+    "alpha_SMA_IF"
+   ]
+  },
+  "B_self_maintaining/s2_input_off_vs_s1_input_on": {
+   "differences": [
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    }
+   ],
+   "limits": [
+    "Everything here follows from the rules as stated. The rules are candidates; their evidence ids and assumptions are carried, not checked.",
+    "A step is a logical update. Nothing here is a time, a rate, a half-life or a dose.",
+    "Active and inactive are the model's abstract states. They are not concentrations, detections or expression levels unless a readout mapping says how one is read.",
+    "A clamp is an ideal intervention. That a wash or an inhibitor achieved it is not shown.",
+    "Counts of cases are counts of logical combinations, not probabilities.",
+    "'Computed from' lists what a value was computed from in the unrolled steps. It is not a claim that any one rule is the cause, the only cause or the minimal cause."
+   ],
+   "paired_differences": [
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 6
+    }
+   ],
+   "prediction_drafts": [
+    {
+     "assumptions": [
+      "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6, from rules ['R1', 'R2'] stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "Self-maintenance of P is stated as a candidate rule, not observed."
+     ],
+     "basis": "assumption",
+     "condition": "scenario 's2_input_off', logical step 6",
+     "evidence_ids": [],
+     "expected": "no_change",
+     "hypothesis_id": "H_B_self_maintaining",
+     "note": "Computed from a candidate model, not observed. Readout basis: Abstract test mapping: P read as itself. Not a validated assay.",
+     "readout": "R_P",
+     "versus": "scenario 's1_input_on' at logical step 6"
+    }
+   ],
+   "readout_final": {
+    "paired": {
+     "all": "no_change"
+    },
+    "readout": "R_P",
+    "state": "present",
+    "t": 6,
+    "versus_baseline": "no_change"
+   },
+   "readouts_not_derivable": [
+    "alpha_SMA_IF"
+   ]
+  },
+  "B_self_maintaining/s3_S_off_vs_s1_input_on": {
+   "differences": [
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    }
+   ],
+   "limits": [
+    "Everything here follows from the rules as stated. The rules are candidates; their evidence ids and assumptions are carried, not checked.",
+    "A step is a logical update. Nothing here is a time, a rate, a half-life or a dose.",
+    "Active and inactive are the model's abstract states. They are not concentrations, detections or expression levels unless a readout mapping says how one is read.",
+    "A clamp is an ideal intervention. That a wash or an inhibitor achieved it is not shown.",
+    "Counts of cases are counts of logical combinations, not probabilities.",
+    "'Computed from' lists what a value was computed from in the unrolled steps. It is not a claim that any one rule is the cause, the only cause or the minimal cause."
+   ],
+   "paired_differences": [
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 6
+    }
+   ],
+   "prediction_drafts": [
+    {
+     "assumptions": [
+      "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6, from rules ['R2'] stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "Self-maintenance of P is stated as a candidate rule, not observed."
+     ],
+     "basis": "assumption",
+     "condition": "scenario 's3_S_off', logical step 6",
+     "evidence_ids": [],
+     "expected": "no_change",
+     "hypothesis_id": "H_B_self_maintaining",
+     "note": "Computed from a candidate model, not observed. Readout basis: Abstract test mapping: P read as itself. Not a validated assay.",
+     "readout": "R_P",
+     "versus": "scenario 's1_input_on' at logical step 6"
+    }
+   ],
+   "readout_final": {
+    "paired": {
+     "all": "no_change"
+    },
+    "readout": "R_P",
+    "state": "present",
+    "t": 6,
+    "versus_baseline": "no_change"
+   },
+   "readouts_not_derivable": [
+    "alpha_SMA_IF"
+   ]
+  },
+  "B_self_maintaining/s4_input_off_then_released_vs_s1_input_on": {
+   "differences": [
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "component": "U",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    }
+   ],
+   "limits": [
+    "Everything here follows from the rules as stated. The rules are candidates; their evidence ids and assumptions are carried, not checked.",
+    "A step is a logical update. Nothing here is a time, a rate, a half-life or a dose.",
+    "Active and inactive are the model's abstract states. They are not concentrations, detections or expression levels unless a readout mapping says how one is read.",
+    "A clamp is an ideal intervention. That a wash or an inhibitor achieved it is not shown.",
+    "Counts of cases are counts of logical combinations, not probabilities.",
+    "'Computed from' lists what a value was computed from in the unrolled steps. It is not a claim that any one rule is the cause, the only cause or the minimal cause."
+   ],
+   "paired_differences": [
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "S",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "all",
+     "component": "U",
+     "scenario": false,
+     "t": 2
+    }
+   ],
+   "prediction_drafts": [
+    {
+     "assumptions": [
+      "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6, from rules ['R1', 'R2'] stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "Self-maintenance of P is stated as a candidate rule, not observed."
+     ],
+     "basis": "assumption",
+     "condition": "scenario 's4_input_off_then_released', logical step 6",
+     "evidence_ids": [],
+     "expected": "no_change",
+     "hypothesis_id": "H_B_self_maintaining",
+     "note": "Computed from a candidate model, not observed. Readout basis: Abstract test mapping: P read as itself. Not a validated assay.",
+     "readout": "R_P",
+     "versus": "scenario 's1_input_on' at logical step 6"
+    }
+   ],
+   "readout_final": {
+    "paired": {
+     "all": "no_change"
+    },
+    "readout": "R_P",
+    "state": "present",
+    "t": 6,
+    "versus_baseline": "no_change"
+   },
+   "readouts_not_derivable": [
+    "alpha_SMA_IF"
+   ]
+  },
+  "B_self_maintaining/s5c_S_off_from_0_P_unknown_vs_s5c_base_P_unknown": {
+   "differences": [
+    {
+     "baseline": null,
+     "component": "P",
+     "scenario": null,
+     "status": "undetermined",
+     "t": 0
+    },
+    {
+     "baseline": null,
+     "component": "P",
+     "scenario": null,
+     "status": "undetermined",
+     "t": 1
+    },
+    {
+     "baseline": null,
+     "component": "P",
+     "scenario": null,
+     "status": "undetermined",
+     "t": 2
+    },
+    {
+     "baseline": null,
+     "component": "P",
+     "scenario": null,
+     "status": "undetermined",
+     "t": 3
+    },
+    {
+     "baseline": null,
+     "component": "P",
+     "scenario": null,
+     "status": "undetermined",
+     "t": 4
+    },
+    {
+     "baseline": null,
+     "component": "P",
+     "scenario": null,
+     "status": "undetermined",
+     "t": 5
+    },
+    {
+     "baseline": null,
+     "component": "P",
+     "scenario": null,
+     "status": "undetermined",
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 0
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "component": "S",
+     "scenario": false,
+     "status": "differs",
+     "t": 6
+    }
+   ],
+   "limits": [
+    "Everything here follows from the rules as stated. The rules are candidates; their evidence ids and assumptions are carried, not checked.",
+    "A step is a logical update. Nothing here is a time, a rate, a half-life or a dose.",
+    "Active and inactive are the model's abstract states. They are not concentrations, detections or expression levels unless a readout mapping says how one is read.",
+    "A clamp is an ideal intervention. That a wash or an inhibitor achieved it is not shown.",
+    "Counts of cases are counts of logical combinations, not probabilities.",
+    "'Computed from' lists what a value was computed from in the unrolled steps. It is not a claim that any one rule is the cause, the only cause or the minimal cause."
+   ],
+   "paired_differences": [
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "P",
+     "scenario": false,
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 0
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "P=0",
+     "component": "S",
+     "scenario": false,
+     "t": 6
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 0
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 1
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 2
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 3
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 4
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 5
+    },
+    {
+     "baseline": true,
+     "case": "P=1",
+     "component": "S",
+     "scenario": false,
+     "t": 6
+    }
+   ],
+   "prediction_drafts": [
+    {
+     "assumptions": [
+      "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6, from rules ['R2'] stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "Self-maintenance of P is stated as a candidate rule, not observed."
+     ],
+     "basis": "assumption",
+     "condition": "scenario 's5c_S_off_from_0_P_unknown', logical step 6",
+     "evidence_ids": [],
+     "expected": "not_predicted",
+     "hypothesis_id": "H_B_self_maintaining",
+     "note": "Computed from a candidate model, not observed. Readout basis: Abstract test mapping: P read as itself. Not a validated assay.",
+     "readout": "R_P",
+     "unresolved": "The model gives different values across cases or could not compute this; see the run's summary.",
+     "versus": "scenario 's5c_base_P_unknown' at logical step 6"
+    }
+   ],
+   "readout_final": {
+    "paired": {
+     "P=0": "decrease",
+     "P=1": "no_change"
+    },
+    "readout": "R_P",
+    "state": "undetermined",
+    "t": 6,
+    "versus_baseline": "undetermined"
+   },
+   "readouts_not_derivable": [
+    "alpha_SMA_IF"
+   ]
+  }
+ },
+ "runs": {
+  "A_input_dependent/s1_input_on": {
+   "cases_explored": 1,
+   "cases_total": 1,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "P needs S at the previous update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    }
+   ],
+   "model_sha256": "3779a1ca97bc65c6fa4bb67d5b91fce7a1b429be8f18c18a3c56d06b65943bec",
+   "paths_USP": {
+    "all": [
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "all",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "50fd72d8ea4ce9dfdb39b687e155b026a2b26ff5a026893270fcfbed2bb9b4c9",
+   "unknowns": []
+  },
+  "A_input_dependent/s2_input_off": {
+   "cases_explored": 1,
+   "cases_total": 1,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "clamp:U[1:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "P needs S at the previous update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "clamp:U[1:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "clamp:U[1:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "false": 1
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "false": 1
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "false": 1
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    }
+   ],
+   "model_sha256": "3779a1ca97bc65c6fa4bb67d5b91fce7a1b429be8f18c18a3c56d06b65943bec",
+   "paths_USP": {
+    "all": [
+     "111",
+     "011",
+     "001",
+     "000",
+     "000",
+     "000",
+     "000"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "all",
+     "constant_from": 1,
+     "from_step": 3,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "e1246253a371fdefc83700a7b0464599b1a392d26e09af43cbf22054853df98b",
+   "unknowns": []
+  },
+  "A_input_dependent/s3_S_off": {
+   "cases_explored": 1,
+   "cases_total": 1,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "clamp:S[1:end]",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "P needs S at the previous update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "clamp:S[1:end]"
+     ],
+     "rules": [],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "false": 1
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "false": 1
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    }
+   ],
+   "model_sha256": "3779a1ca97bc65c6fa4bb67d5b91fce7a1b429be8f18c18a3c56d06b65943bec",
+   "paths_USP": {
+    "all": [
+     "111",
+     "101",
+     "100",
+     "100",
+     "100",
+     "100",
+     "100"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "all",
+     "constant_from": 1,
+     "from_step": 2,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "2ebf6774f19c35e91606242a8d8e262963cbf9d19eb5b2c8e8d01a970799bb7c",
+   "unknowns": []
+  },
+  "A_input_dependent/s4_input_off_then_released": {
+   "cases_explored": 1,
+   "cases_total": 1,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "P needs S at the previous update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    }
+   ],
+   "model_sha256": "3779a1ca97bc65c6fa4bb67d5b91fce7a1b429be8f18c18a3c56d06b65943bec",
+   "paths_USP": {
+    "all": [
+     "111",
+     "011",
+     "001",
+     "100",
+     "110",
+     "111",
+     "111"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "all",
+     "constant_from": 3,
+     "from_step": 5,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "4be72ba0d81b0a56ecb3d7e2e369145324610f1e71623eb8a38e3408b3d6737b",
+   "unknowns": []
+  },
+  "A_input_dependent/s5a_P_unknown_input_off": {
+   "cases_explored": 2,
+   "cases_total": 2,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "clamp:U[1:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "P needs S at the previous update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "clamp:U[1:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "clamp:U[1:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "false": 2
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "false": 2
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "false": 2
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    }
+   ],
+   "model_sha256": "3779a1ca97bc65c6fa4bb67d5b91fce7a1b429be8f18c18a3c56d06b65943bec",
+   "paths_USP": {
+    "P=0": [
+     "110",
+     "011",
+     "001",
+     "000",
+     "000",
+     "000",
+     "000"
+    ],
+    "P=1": [
+     "111",
+     "011",
+     "001",
+     "000",
+     "000",
+     "000",
+     "000"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "P=0",
+     "constant_from": 1,
+     "from_step": 3,
+     "period": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 1,
+     "from_step": 3,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "9941a498b6d5feaaa285cc5cad709d04766516790fea5264378a5814596e8c13",
+   "unknowns": [
+    "P"
+   ]
+  },
+  "A_input_dependent/s5b_U_unknown": {
+   "cases_explored": 2,
+   "cases_total": 2,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "P needs S at the previous update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "false": 1,
+      "true": 1
+     },
+     "component": "P",
+     "status": "differs_by_case",
+     "t": 6,
+     "value": null
+    },
+    {
+     "cases_by_value": {
+      "false": 1,
+      "true": 1
+     },
+     "component": "S",
+     "status": "differs_by_case",
+     "t": 6,
+     "value": null
+    },
+    {
+     "cases_by_value": {
+      "false": 1,
+      "true": 1
+     },
+     "component": "U",
+     "status": "differs_by_case",
+     "t": 6,
+     "value": null
+    }
+   ],
+   "model_sha256": "3779a1ca97bc65c6fa4bb67d5b91fce7a1b429be8f18c18a3c56d06b65943bec",
+   "paths_USP": {
+    "U=0": [
+     "011",
+     "001",
+     "000",
+     "000",
+     "000",
+     "000",
+     "000"
+    ],
+    "U=1": [
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "U[0:end]=0",
+     "constant_from": 0,
+     "from_step": 2,
+     "period": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "U[0:end]=1",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "438e19a6777cdedfdc26bf0a57ba6f9c05c99e0ee39529fa70de97b9f97338b2",
+   "unknowns": [
+    "U[0:end]"
+   ]
+  },
+  "A_input_dependent/s5c_S_off_from_0_P_unknown": {
+   "cases_explored": 2,
+   "cases_total": 2,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "clamp:S[0:end]",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "P needs S at the previous update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "clamp:S[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "false": 2
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "false": 2
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "true": 2
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    }
+   ],
+   "model_sha256": "3779a1ca97bc65c6fa4bb67d5b91fce7a1b429be8f18c18a3c56d06b65943bec",
+   "paths_USP": {
+    "P=0": [
+     "100",
+     "100",
+     "100",
+     "100",
+     "100",
+     "100",
+     "100"
+    ],
+    "P=1": [
+     "101",
+     "100",
+     "100",
+     "100",
+     "100",
+     "100",
+     "100"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "P=0",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 0,
+     "from_step": 1,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "2d6ea84ab42d557c61f6c95f5de614113c745233225ca3fa05fdf1495b19b723",
+   "unknowns": [
+    "P"
+   ]
+  },
+  "A_input_dependent/s5c_base_P_unknown": {
+   "cases_explored": 2,
+   "cases_total": 2,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "P needs S at the previous update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "true": 2
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 2
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 2
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    }
+   ],
+   "model_sha256": "3779a1ca97bc65c6fa4bb67d5b91fce7a1b429be8f18c18a3c56d06b65943bec",
+   "paths_USP": {
+    "P=0": [
+     "110",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111"
+    ],
+    "P=1": [
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "P=0",
+     "constant_from": 0,
+     "from_step": 1,
+     "period": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "4b00da294d3668aafbd12845a5e4935429d0be261759f7aeda5dd3ca907d92a0",
+   "unknowns": [
+    "P"
+   ]
+  },
+  "B_self_maintaining/s1_input_on": {
+   "cases_explored": 1,
+   "cases_total": 1,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "initial:P",
+      "initial:S",
+      "input:U[0:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "Self-maintenance of P is stated as a candidate rule, not observed."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    }
+   ],
+   "model_sha256": "509b67a44675c0ee98be6dd94c5f8529ecd4aff6e98e1427389ec80a0b4c2bc2",
+   "paths_USP": {
+    "all": [
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "all",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "df6f55e5e012c6387c4ee9b8cf8c995f4d75d29ebe6f816d098723c8d045a174",
+   "unknowns": []
+  },
+  "B_self_maintaining/s2_input_off": {
+   "cases_explored": 1,
+   "cases_total": 1,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "clamp:U[1:end]",
+      "initial:P",
+      "initial:S",
+      "input:U[0:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "Self-maintenance of P is stated as a candidate rule, not observed."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "clamp:U[1:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "clamp:U[1:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "false": 1
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "false": 1
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    }
+   ],
+   "model_sha256": "509b67a44675c0ee98be6dd94c5f8529ecd4aff6e98e1427389ec80a0b4c2bc2",
+   "paths_USP": {
+    "all": [
+     "111",
+     "011",
+     "001",
+     "001",
+     "001",
+     "001",
+     "001"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "all",
+     "constant_from": 1,
+     "from_step": 2,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "ec1df224ee55f951f1d43962abbf67081adb470b87ca03457a645df8c1d5ed91",
+   "unknowns": []
+  },
+  "B_self_maintaining/s3_S_off": {
+   "cases_explored": 1,
+   "cases_total": 1,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "clamp:S[1:end]",
+      "initial:P",
+      "initial:S",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "Self-maintenance of P is stated as a candidate rule, not observed."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "clamp:S[1:end]"
+     ],
+     "rules": [],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "false": 1
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    }
+   ],
+   "model_sha256": "509b67a44675c0ee98be6dd94c5f8529ecd4aff6e98e1427389ec80a0b4c2bc2",
+   "paths_USP": {
+    "all": [
+     "111",
+     "101",
+     "101",
+     "101",
+     "101",
+     "101",
+     "101"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "all",
+     "constant_from": 1,
+     "from_step": 1,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "dcd12472a78548fcff23758df6ac77f5442ff7c779b757b719754b9f147ef5bd",
+   "unknowns": []
+  },
+  "B_self_maintaining/s4_input_off_then_released": {
+   "cases_explored": 1,
+   "cases_total": 1,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "clamp:U[1:2]",
+      "initial:P",
+      "initial:S",
+      "input:U[0:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "Self-maintenance of P is stated as a candidate rule, not observed."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 1
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    }
+   ],
+   "model_sha256": "509b67a44675c0ee98be6dd94c5f8529ecd4aff6e98e1427389ec80a0b4c2bc2",
+   "paths_USP": {
+    "all": [
+     "111",
+     "011",
+     "001",
+     "101",
+     "111",
+     "111",
+     "111"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "all",
+     "constant_from": 3,
+     "from_step": 4,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "b9c55b5e4b4863d309f71e84ecd6da525971d33cb00255dfcf0dd5d49a8773e8",
+   "unknowns": []
+  },
+  "B_self_maintaining/s5a_P_unknown_input_off": {
+   "cases_explored": 2,
+   "cases_total": 2,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "clamp:U[1:end]",
+      "initial:P",
+      "initial:S",
+      "input:U[0:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "Self-maintenance of P is stated as a candidate rule, not observed."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "clamp:U[1:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "clamp:U[1:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "true": 2
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "false": 2
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "false": 2
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    }
+   ],
+   "model_sha256": "509b67a44675c0ee98be6dd94c5f8529ecd4aff6e98e1427389ec80a0b4c2bc2",
+   "paths_USP": {
+    "P=0": [
+     "110",
+     "011",
+     "001",
+     "001",
+     "001",
+     "001",
+     "001"
+    ],
+    "P=1": [
+     "111",
+     "011",
+     "001",
+     "001",
+     "001",
+     "001",
+     "001"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "P=0",
+     "constant_from": 1,
+     "from_step": 2,
+     "period": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 1,
+     "from_step": 2,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "b4f40afd3d831f17f5b5b8a82cf6645e86f349b7b507917bd6056fef58ce7d6d",
+   "unknowns": [
+    "P"
+   ]
+  },
+  "B_self_maintaining/s5b_U_unknown": {
+   "cases_explored": 2,
+   "cases_total": 2,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "initial:P",
+      "initial:S",
+      "input:U[0:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "Self-maintenance of P is stated as a candidate rule, not observed."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "true": 2
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "false": 1,
+      "true": 1
+     },
+     "component": "S",
+     "status": "differs_by_case",
+     "t": 6,
+     "value": null
+    },
+    {
+     "cases_by_value": {
+      "false": 1,
+      "true": 1
+     },
+     "component": "U",
+     "status": "differs_by_case",
+     "t": 6,
+     "value": null
+    }
+   ],
+   "model_sha256": "509b67a44675c0ee98be6dd94c5f8529ecd4aff6e98e1427389ec80a0b4c2bc2",
+   "paths_USP": {
+    "U=0": [
+     "011",
+     "001",
+     "001",
+     "001",
+     "001",
+     "001",
+     "001"
+    ],
+    "U=1": [
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "U[0:end]=0",
+     "constant_from": 0,
+     "from_step": 1,
+     "period": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "U[0:end]=1",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "2065b100cbfc3a2c23651141040d5d2d5a4d30d143ddbc3bf61b88c998e0ea06",
+   "unknowns": [
+    "U[0:end]"
+   ]
+  },
+  "B_self_maintaining/s5c_S_off_from_0_P_unknown": {
+   "cases_explored": 2,
+   "cases_total": 2,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "clamp:S[0:end]",
+      "initial:P",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "Self-maintenance of P is stated as a candidate rule, not observed."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "clamp:S[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "false": 1,
+      "true": 1
+     },
+     "component": "P",
+     "status": "differs_by_case",
+     "t": 6,
+     "value": null
+    },
+    {
+     "cases_by_value": {
+      "false": 2
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": false
+    },
+    {
+     "cases_by_value": {
+      "true": 2
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    }
+   ],
+   "model_sha256": "509b67a44675c0ee98be6dd94c5f8529ecd4aff6e98e1427389ec80a0b4c2bc2",
+   "paths_USP": {
+    "P=0": [
+     "100",
+     "100",
+     "100",
+     "100",
+     "100",
+     "100",
+     "100"
+    ],
+    "P=1": [
+     "101",
+     "101",
+     "101",
+     "101",
+     "101",
+     "101",
+     "101"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "P=0",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "e89be0a148dd09b49d38f97df1c89320dc0b61d59dbad623a51e2078fa6bf081",
+   "unknowns": [
+    "P"
+   ]
+  },
+  "B_self_maintaining/s5c_base_P_unknown": {
+   "cases_explored": 2,
+   "cases_total": 2,
+   "dependencies": [
+    {
+     "component": "P",
+     "computed_from": [
+      "initial:P",
+      "initial:S",
+      "input:U[0:end]",
+      "rule:R1",
+      "rule:R2"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      },
+      {
+       "assumptions": [
+        "Self-maintenance of P is stated as a candidate rule, not observed."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R2",
+       "stated_by": "host",
+       "target": "P",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "S",
+     "computed_from": [
+      "input:U[0:end]",
+      "rule:R1"
+     ],
+     "rules": [
+      {
+       "assumptions": [
+        "S responds to U within one update."
+       ],
+       "evidence_ids": [],
+       "rule_id": "R1",
+       "stated_by": "host",
+       "target": "S",
+       "validated": false
+      }
+     ],
+     "t": 6
+    },
+    {
+     "component": "U",
+     "computed_from": [
+      "input:U[0:end]"
+     ],
+     "rules": [],
+     "t": 6
+    }
+   ],
+   "final": [
+    {
+     "cases_by_value": {
+      "true": 2
+     },
+     "component": "P",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 2
+     },
+     "component": "S",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    },
+    {
+     "cases_by_value": {
+      "true": 2
+     },
+     "component": "U",
+     "status": "same_in_all_explored",
+     "t": 6,
+     "value": true
+    }
+   ],
+   "model_sha256": "509b67a44675c0ee98be6dd94c5f8529ecd4aff6e98e1427389ec80a0b4c2bc2",
+   "paths_USP": {
+    "P=0": [
+     "110",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111"
+    ],
+    "P=1": [
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111",
+     "111"
+    ]
+   },
+   "repetition": [
+    {
+     "case": "P=0",
+     "constant_from": 0,
+     "from_step": 1,
+     "period": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "status": "fixed_point"
+    }
+   ],
+   "run_sha256": "b081742c23ac2419fc1274091876f9ab3ad244b12b8bcd2b86ac6423584bf32f",
+   "unknowns": [
+    "P"
+   ]
+  }
+ }
+}

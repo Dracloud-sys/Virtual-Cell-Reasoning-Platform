@@ -216,6 +216,49 @@ and the researcher decides. Relay `not_checked` and `limits` with the result.\
 """
 
 
+RUN_LOGIC_MODEL = """\
+Run a small Boolean candidate model under an intervention and get what the rules compute. This
+calls no model. It answers "if this candidate model and these conditions held, what would
+follow?" - not what any cell does.
+
+`model`: `components` (each `input`, given by the scenario, or `internal`, given by one rule)
+and `rules` (`target`, `expr`, `evidence_ids`, `assumptions`, `stated_by`). An `expr` is a JSON
+node with exactly one key: `{"const": true}`, `{"var": "S"}`, `{"not": node}`,
+`{"and": [node, ...]}`, `{"or": [node, ...]}`. No other operator exists and nothing is parsed
+from text. Self-maintenance must be written as a rule (`{"or": [{"var": "S"}, {"var": "P"}]}`
+for P). An internal component with no rule is reported not computed - it is never filled with
+inactive or held at its last value. `update` is `synchronous` only; another mode is refused,
+not converted.
+
+Every rule reads the same previous state, so listing order changes nothing. A step is a logical
+update, not a unit of time: no duration, rate or half-life is computed, and reaching the last
+step is not reaching a steady state.
+
+`scenario`: `initial` (every internal component: true, false or "unknown"), `inputs` (per
+input, segments `{start, end, value}`, end inclusive or null; value true, false, "unknown" held
+over the segment, or "unknown_each_step"), and `clamps` `{target, value, start, end}`: the
+target is fixed at state indices start..end inclusive, rules computing start+1 read the fixed
+value, and from end+1 its own rule applies again. Conflicting clamps are refused, never chosen
+by order. A clamp is an ideal intervention; that a wash or an inhibitor achieved it is not shown.
+
+Unknowns are expanded into cases and every path is kept; unknown is never read as inactive.
+`summary` says per component and step whether all explored cases agree, differ, or could not
+be computed. Case counts are not probabilities. Past `max_cases` the run says the exploration is
+incomplete and claims nothing about all cases.
+
+`baseline` (same initial state) gives the difference at each step, and per case when both have
+the same unknowns. `readouts` map one state to one readout (`identity`: active reads present);
+without a mapping a requested readout is `not_derivable` and the run still completes. With
+`hypothesis_id`, the final-step readouts come back as Prediction drafts with basis `assumption`
+that name the model and its hash - never as observed evidence. Nothing is added to any plan.
+
+`dependencies` list what each final value was computed from (rules, clamps, inputs, initial
+values). That is not a cause, the only cause or a minimal cause, and the evidence ids on a rule
+are carried, not validated. `view: "full"` adds every case path and the rule-application trace.
+Relay `limits` with the result.\
+"""
+
+
 def flatten(text: str) -> str:
     """Collapse wrapping so a phrase check does not depend on where a line broke."""
     return " ".join(text.split())
@@ -291,4 +334,12 @@ REQUIRED_PHRASES: tuple[tuple[str, str], ...] = (
     ("compare_research_observations", "not independent replicates"),
     ("compare_research_observations", "not in a made-up hypothesis"),
     ("compare_research_observations", "Interference on one assay is not carried"),
+    ("run_logic_model", "calls no model"),
+    ("run_logic_model", "not what any cell does"),
+    ("run_logic_model", "never filled with inactive"),
+    ("run_logic_model", "A step is a logical update, not a unit of time"),
+    ("run_logic_model", "unknown is never read as inactive"),
+    ("run_logic_model", "Case counts are not probabilities"),
+    ("run_logic_model", "never as observed evidence"),
+    ("run_logic_model", "That is not a cause"),
 )

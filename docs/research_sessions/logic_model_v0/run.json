@@ -1,0 +1,16 @@
+{
+ "code": {
+  "git_head": "b56583d109d18ceac1c42f3c661791a1252679b9",
+  "src_uncommitted_changes": true
+ },
+ "inputs": {
+  "case.json": "2b0f4b56d0ab50c7614e58eab91d08e2c88a79bfc3fbed61943d4a84f6619973",
+  "expected_by_hand.json": "4ad3e2e6750cddce8f37d70a979b0af7f538ddc79b6bceaa8c29b8eecda9a970"
+ },
+ "outputs": {
+  "results.json": "8e95257044bcd2d669a6d05d0e384b4b4368c4dd5c48d26466b87ae75686d0be",
+  "hand_check.json": "a50e67bdf5f3d03aac5f318b38ff2addc3a581801cef9ea62a3e1920052b7dfe"
+ },
+ "hand_checks": 24,
+ "hand_mismatches": 0
+}

@@ -7,6 +7,31 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`run_logic_model`: compute what a small Boolean candidate model gives under an
+  intervention** (`simulation/logic.py`; `docs/research_sessions/logic_model_v0/`).
+  - Inputs are components (input or internal), one structured rule per internal component
+    (`const`, `var`, `not`, `and`, `or`, no eval), an initial state (true, false or unknown),
+    input segments and clamps.
+  - Clamps are inclusive ranges of state indices: rules for `start+1` read the clamped value,
+    and from `end+1` the target's own rule applies again. Conflicting clamps are refused.
+  - Synchronous update only; another mode is refused, not converted. A step is a logical
+    update, not time.
+  - Unknown initial values and input segments are expanded into cases (one choice per segment,
+    or per index for `unknown_each_step`).
+    - Results say same-in-all, differs-by-case, not computed, or exploration incomplete
+      (limits: 32 components, 100 steps, 256-4096 cases). Case counts are not probabilities.
+    - A missing rule or input is not computed. Kleene logic decides only what it can.
+  - Also returned:
+    - repetition after inputs stop changing;
+    - differences from a same-start baseline, also per paired case;
+    - what each final value was computed from, with the rules' stated evidence and
+      assumptions, not validated;
+    - readouts through an explicit mapping (`identity` only), otherwise `not_derivable`;
+    - optional Prediction drafts with basis `assumption` naming the model hash.
+  - Reference case: two candidate models (input-dependent, self-maintaining) across eight
+    scenarios. Every value was traced by hand first; 24 of 24 match.
+  - `SimulationEngine` is unchanged: its float layers, `time` and `dt` cannot carry unknown or
+    a non-time step.
 - **A revised research draft is set beside the one it revises** (`revision` on
   `check_research_draft` / `check_research_draft_file`;
   `docs/research_sessions/eval1_persistence/evidence_gap_v1/`).

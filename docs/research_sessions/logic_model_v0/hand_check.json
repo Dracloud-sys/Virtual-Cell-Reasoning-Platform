@@ -1,0 +1,610 @@
+[
+ {
+  "computed": {
+   "all": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "hand": {
+   "all": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "match": true,
+  "what": "path A_input_dependent/s1_input_on"
+ },
+ {
+  "computed": {
+   "all": [
+    "111",
+    "011",
+    "001",
+    "000",
+    "000",
+    "000",
+    "000"
+   ]
+  },
+  "hand": {
+   "all": [
+    "111",
+    "011",
+    "001",
+    "000",
+    "000",
+    "000",
+    "000"
+   ]
+  },
+  "match": true,
+  "what": "path A_input_dependent/s2_input_off"
+ },
+ {
+  "computed": {
+   "all": [
+    "111",
+    "101",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100"
+   ]
+  },
+  "hand": {
+   "all": [
+    "111",
+    "101",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100"
+   ]
+  },
+  "match": true,
+  "what": "path A_input_dependent/s3_S_off"
+ },
+ {
+  "computed": {
+   "all": [
+    "111",
+    "011",
+    "001",
+    "100",
+    "110",
+    "111",
+    "111"
+   ]
+  },
+  "hand": {
+   "all": [
+    "111",
+    "011",
+    "001",
+    "100",
+    "110",
+    "111",
+    "111"
+   ]
+  },
+  "match": true,
+  "what": "path A_input_dependent/s4_input_off_then_released"
+ },
+ {
+  "computed": {
+   "P=0": [
+    "110",
+    "011",
+    "001",
+    "000",
+    "000",
+    "000",
+    "000"
+   ],
+   "P=1": [
+    "111",
+    "011",
+    "001",
+    "000",
+    "000",
+    "000",
+    "000"
+   ]
+  },
+  "hand": {
+   "P=0": [
+    "110",
+    "011",
+    "001",
+    "000",
+    "000",
+    "000",
+    "000"
+   ],
+   "P=1": [
+    "111",
+    "011",
+    "001",
+    "000",
+    "000",
+    "000",
+    "000"
+   ]
+  },
+  "match": true,
+  "what": "path A_input_dependent/s5a_P_unknown_input_off"
+ },
+ {
+  "computed": {
+   "U=0": [
+    "011",
+    "001",
+    "000",
+    "000",
+    "000",
+    "000",
+    "000"
+   ],
+   "U=1": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "hand": {
+   "U=0": [
+    "011",
+    "001",
+    "000",
+    "000",
+    "000",
+    "000",
+    "000"
+   ],
+   "U=1": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "match": true,
+  "what": "path A_input_dependent/s5b_U_unknown"
+ },
+ {
+  "computed": {
+   "P=0": [
+    "110",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ],
+   "P=1": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "hand": {
+   "P=0": [
+    "110",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ],
+   "P=1": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "match": true,
+  "what": "path A_input_dependent/s5c_base_P_unknown"
+ },
+ {
+  "computed": {
+   "P=0": [
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100"
+   ],
+   "P=1": [
+    "101",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100"
+   ]
+  },
+  "hand": {
+   "P=0": [
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100"
+   ],
+   "P=1": [
+    "101",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100"
+   ]
+  },
+  "match": true,
+  "what": "path A_input_dependent/s5c_S_off_from_0_P_unknown"
+ },
+ {
+  "computed": "decrease",
+  "hand": "decrease",
+  "match": true,
+  "what": "R_P at step 6, A_input_dependent/s2_input_off vs s1_input_on"
+ },
+ {
+  "computed": "decrease",
+  "hand": "decrease",
+  "match": true,
+  "what": "R_P at step 6, A_input_dependent/s3_S_off vs s1_input_on"
+ },
+ {
+  "computed": "no_change",
+  "hand": "no_change",
+  "match": true,
+  "what": "R_P at step 6, A_input_dependent/s4_input_off_then_released vs s1_input_on"
+ },
+ {
+  "computed": "decrease",
+  "hand": "decrease",
+  "match": true,
+  "what": "R_P at step 6, A_input_dependent/s5c_S_off_from_0_P_unknown vs s5c_base_P_unknown"
+ },
+ {
+  "computed": {
+   "all": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "hand": {
+   "all": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "match": true,
+  "what": "path B_self_maintaining/s1_input_on"
+ },
+ {
+  "computed": {
+   "all": [
+    "111",
+    "011",
+    "001",
+    "001",
+    "001",
+    "001",
+    "001"
+   ]
+  },
+  "hand": {
+   "all": [
+    "111",
+    "011",
+    "001",
+    "001",
+    "001",
+    "001",
+    "001"
+   ]
+  },
+  "match": true,
+  "what": "path B_self_maintaining/s2_input_off"
+ },
+ {
+  "computed": {
+   "all": [
+    "111",
+    "101",
+    "101",
+    "101",
+    "101",
+    "101",
+    "101"
+   ]
+  },
+  "hand": {
+   "all": [
+    "111",
+    "101",
+    "101",
+    "101",
+    "101",
+    "101",
+    "101"
+   ]
+  },
+  "match": true,
+  "what": "path B_self_maintaining/s3_S_off"
+ },
+ {
+  "computed": {
+   "all": [
+    "111",
+    "011",
+    "001",
+    "101",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "hand": {
+   "all": [
+    "111",
+    "011",
+    "001",
+    "101",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "match": true,
+  "what": "path B_self_maintaining/s4_input_off_then_released"
+ },
+ {
+  "computed": {
+   "P=0": [
+    "110",
+    "011",
+    "001",
+    "001",
+    "001",
+    "001",
+    "001"
+   ],
+   "P=1": [
+    "111",
+    "011",
+    "001",
+    "001",
+    "001",
+    "001",
+    "001"
+   ]
+  },
+  "hand": {
+   "P=0": [
+    "110",
+    "011",
+    "001",
+    "001",
+    "001",
+    "001",
+    "001"
+   ],
+   "P=1": [
+    "111",
+    "011",
+    "001",
+    "001",
+    "001",
+    "001",
+    "001"
+   ]
+  },
+  "match": true,
+  "what": "path B_self_maintaining/s5a_P_unknown_input_off"
+ },
+ {
+  "computed": {
+   "U=0": [
+    "011",
+    "001",
+    "001",
+    "001",
+    "001",
+    "001",
+    "001"
+   ],
+   "U=1": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "hand": {
+   "U=0": [
+    "011",
+    "001",
+    "001",
+    "001",
+    "001",
+    "001",
+    "001"
+   ],
+   "U=1": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "match": true,
+  "what": "path B_self_maintaining/s5b_U_unknown"
+ },
+ {
+  "computed": {
+   "P=0": [
+    "110",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ],
+   "P=1": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "hand": {
+   "P=0": [
+    "110",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ],
+   "P=1": [
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111",
+    "111"
+   ]
+  },
+  "match": true,
+  "what": "path B_self_maintaining/s5c_base_P_unknown"
+ },
+ {
+  "computed": {
+   "P=0": [
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100"
+   ],
+   "P=1": [
+    "101",
+    "101",
+    "101",
+    "101",
+    "101",
+    "101",
+    "101"
+   ]
+  },
+  "hand": {
+   "P=0": [
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100"
+   ],
+   "P=1": [
+    "101",
+    "101",
+    "101",
+    "101",
+    "101",
+    "101",
+    "101"
+   ]
+  },
+  "match": true,
+  "what": "path B_self_maintaining/s5c_S_off_from_0_P_unknown"
+ },
+ {
+  "computed": "no_change",
+  "hand": "no_change",
+  "match": true,
+  "what": "R_P at step 6, B_self_maintaining/s2_input_off vs s1_input_on"
+ },
+ {
+  "computed": "no_change",
+  "hand": "no_change",
+  "match": true,
+  "what": "R_P at step 6, B_self_maintaining/s3_S_off vs s1_input_on"
+ },
+ {
+  "computed": "no_change",
+  "hand": "no_change",
+  "match": true,
+  "what": "R_P at step 6, B_self_maintaining/s4_input_off_then_released vs s1_input_on"
+ },
+ {
+  "computed": "undetermined",
+  "hand": "undetermined",
+  "match": true,
+  "what": "R_P at step 6, B_self_maintaining/s5c_S_off_from_0_P_unknown vs s5c_base_P_unknown"
+ }
+]
