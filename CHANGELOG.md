@@ -32,6 +32,17 @@ to [Semantic Versioning](https://semver.org/).
     scenarios. Every value was traced by hand first; 24 of 24 match.
   - `SimulationEngine` is unchanged: its float layers, `time` and `dt` cannot carry unknown or
     a non-time step.
+  - Review r2 (`logic_model_v0/review_r2/`), both items reproduced on the product path first:
+    - **Repetition.** It is now assessed only between fully computed states, and only once no
+      declared input or clamp changes again, including changes declared after the last step.
+      Otherwise it is `not_assessed`, with a reason. At `915eb4f`, equal not-computed states
+      read as a fixed point, and a 3-step run ignored an input change declared at index 11.
+    - **Relative predictions.** A draft against a baseline now carries both sides' rules, with
+      their evidence ids and assumptions. New `baseline_dependencies` and
+      `relative_dependencies` trace each side apart. A rule only the baseline used (its target
+      clamped in the scenario) had been left out.
+    - The reference case's state paths, repetition, readouts and draft directions are unchanged
+      (24/24 hand checks). Four of its drafts gain R1's assumption.
 - **A revised research draft is set beside the one it revises** (`revision` on
   `check_research_draft` / `check_research_draft_file`;
   `docs/research_sessions/eval1_persistence/evidence_gap_v1/`).

@@ -254,7 +254,12 @@ that name the model and its hash - never as observed evidence. Nothing is added 
 
 `dependencies` list what each final value was computed from (rules, clamps, inputs, initial
 values). That is not a cause, the only cause or a minimal cause, and the evidence ids on a rule
-are carried, not validated. `view: "full"` adds every case path and the rule-application trace.
+are carried, not validated. Against a baseline, `baseline_dependencies` and
+`relative_dependencies` trace the baseline's side too, and a draft cites the rules of both
+sides. `repetition` is reported only for fully computed states and only once no declared input
+or clamp changes again, including changes declared after the last step; otherwise it is
+`not_assessed` with a reason. `view: "full"` adds every case path and the rule-application
+trace.
 Relay `limits` with the result.\
 """
 

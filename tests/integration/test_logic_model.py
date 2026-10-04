@@ -474,3 +474,171 @@ def test_the_published_schema_states_operators_and_limits(server):
     for word in ('"const"', '"var"', '"not"', '"and"', '"or"', "synchronous", "inclusive"):
         assert word in schema, word
     assert "$ref" not in schema
+
+
+# --- review r2 (915eb4f): repetition and the baseline side of a relative prediction ------- #
+#
+# Each was reproduced on the product path first (docs/research_sessions/logic_model_v0/
+# review_r2/). Expected values follow from what each input states, not from engine output.
+
+
+def test_r1_a_repeat_of_not_computed_states_is_not_a_fixed_point(server):
+    model = {"id": "r1", "components": [{"id": "P", "kind": "internal"}], "rules": []}
+    out = _run(server, model, {"name": "r1", "initial": {"P": True}}, steps=3)
+    assert [s["status"] for s in out["summary"]] == ["same_in_all_explored"] + ["not_computed"] * 3
+    [rep] = out["repetition"]
+    assert rep["status"] == "not_assessed" and rep["from_step"] is None
+    assert "not-computed" in rep["reason"]
+
+
+def test_a_computed_component_does_not_make_a_partly_computed_state_stable(server):
+    # Y keeps itself; Z has no rule. Y's summary stays valid; the state is still not stable.
+    model = _model([{"id": "RY", "target": "Y", "expr": {"var": "Y"}}])
+    out = _run(server, model, _sc({"Y": True, "Z": False}), steps=3)
+    assert all(s["value"] is True for s in _summary(out, "Y"))
+    assert out["repetition"][0]["status"] == "not_assessed"
+
+
+def test_a_complete_cycle_is_still_recognised(server):
+    # Y(next) = not Y from Y = true: true, false, true, false, true. Period 2 from index 0.
+    model = _model(
+        [
+            {"id": "RY", "target": "Y", "expr": {"not": {"var": "Y"}}},
+            {"id": "RZ", "target": "Z", "expr": {"const": False}},
+        ]
+    )
+    [rep] = _run(server, model, _sc({"Y": True, "Z": False}), steps=4)["repetition"]
+    assert (rep["status"], rep["from_step"], rep["period"]) == ("cycle", 0, 2)
+
+
+R2_MODEL = {
+    "id": "r2",
+    "components": [{"id": "U", "kind": "input"}, {"id": "P", "kind": "internal"}],
+    "rules": [{"id": "R", "target": "P", "expr": {"var": "U"}}],
+}
+R2_SCENARIO = {
+    "name": "r2",
+    "initial": {"P": True},
+    "inputs": {
+        "U": [
+            {"start": 0, "end": 10, "value": True},
+            {"start": 11, "end": None, "value": False},
+        ]
+    },
+}
+
+
+def test_r2_a_change_declared_after_the_run_blocks_the_repeat_claim(server):
+    out = _run(server, R2_MODEL, R2_SCENARIO, steps=3, view="full")
+    # The computed path itself is kept: U and P active at every computed index.
+    assert [(p["U"], p["P"]) for p in out["cases"][0]["path"]] == [(True, True)] * 4
+    [rep] = out["repetition"]
+    assert (rep["status"], rep["constant_from"]) == ("not_assessed", 11)
+    assert "index 11" in rep["reason"]
+
+
+def test_r2_the_same_scenario_run_past_the_change_is_assessed(server):
+    # U is false from 11, so P (which reads U one update earlier) is false from 12.
+    [rep] = _run(server, R2_MODEL, R2_SCENARIO, steps=13)["repetition"]
+    assert (rep["status"], rep["constant_from"], rep["from_step"]) == ("fixed_point", 11, 12)
+
+
+def test_a_clamp_released_after_the_run_blocks_the_repeat_claim(server):
+    scenario = {
+        **_scenario("s1_input_on"),
+        "clamps": [{"target": "U", "value": False, "start": 1, "end": 8}],
+    }
+    [rep] = _run(server, MODELS["A_input_dependent"], scenario, steps=6)["repetition"]
+    assert (rep["status"], rep["constant_from"]) == ("not_assessed", 9)
+
+
+R3_MODEL = {
+    "id": "r3",
+    "components": [{"id": "U", "kind": "input"}, {"id": "P", "kind": "internal"}],
+    "rules": [
+        {
+            "id": "R",
+            "target": "P",
+            "expr": {"var": "U"},
+            # A synthetic contract-test label, not a literature source.
+            "evidence_ids": ["synthetic-contract-test-ev1"],
+            "assumptions": ["Synthetic contract-test assumption: P follows U."],
+        }
+    ],
+}
+R3_BASE = {
+    "name": "base",
+    "initial": {"P": True},
+    "inputs": {"U": [{"start": 0, "end": None, "value": True}]},
+}
+R3_CLAMPED = {**R3_BASE, "name": "P_off", "clamps": [{"target": "P", "value": False, "start": 0}]}
+R3_READOUT = [{"readout": "R_P", "state": "P", "mapping": "identity", "basis": "test"}]
+
+
+def _r3(server, model=R3_MODEL):
+    return _run(
+        server,
+        model,
+        R3_CLAMPED,
+        baseline=R3_BASE,
+        steps=3,
+        readouts=R3_READOUT,
+        hypothesis_id="H_test",
+    )
+
+
+def test_r3_a_relative_draft_carries_the_baseline_rule(server):
+    out = _r3(server)
+    [draft] = out["prediction_drafts"]
+    # P is clamped off in the scenario and follows U (active) in the baseline: a decrease.
+    assert draft["expected"] == "decrease" and draft["basis"] == "assumption"
+    assert draft["evidence_ids"] == ["synthetic-contract-test-ev1"]
+    assert "Synthetic contract-test assumption: P follows U." in draft["assumptions"]
+    assert "baseline 'base' from rules ['R']" in draft["assumptions"][0]
+    # The scenario's own dependencies still show only the clamp: it used no rule for P.
+    p = next(d for d in out["dependencies"] if d["component"] == "P")
+    assert p["computed_from"] == ["clamp:P[0:end]"] and p["rules"] == []
+    [rel] = out["relative_dependencies"]
+    assert rel["scenario_computed_from"] == ["clamp:P[0:end]"]
+    assert rel["baseline_computed_from"] == ["input:U[0:end]", "rule:R"]
+    assert [(r["rule_id"], r["sides"], r["validated"]) for r in rel["rules"]] == [
+        ("R", ["baseline"], False)
+    ]
+
+
+def test_a_rule_used_on_both_sides_is_listed_once(server):
+    out = _run(
+        server,
+        MODELS["A_input_dependent"],
+        _scenario("s2_input_off"),
+        baseline=_scenario("s1_input_on"),
+        readouts=SPEC["readouts"],
+        hypothesis_id="H",
+    )
+    [rel] = out["relative_dependencies"]
+    assert [(r["rule_id"], r["sides"]) for r in rel["rules"]] == [
+        ("R1", ["scenario", "baseline"]),
+        ("R2", ["scenario", "baseline"]),
+    ]
+
+
+def test_without_a_baseline_the_result_is_as_before(server):
+    out = _run(
+        server,
+        MODELS["A_input_dependent"],
+        _scenario("s2_input_off"),
+        readouts=SPEC["readouts"],
+        hypothesis_id="H",
+    )
+    assert out["baseline_dependencies"] == [] and out["relative_dependencies"] == []
+    [draft] = out["prediction_drafts"]
+    assert draft["expected"] == "absent" and "versus" not in draft
+    assert "from rules ['R1', 'R2'] stated by ['host']" in draft["assumptions"][0]
+
+
+def test_relative_tracing_does_not_depend_on_listing_order(server):
+    reordered = copy.deepcopy(R3_MODEL)
+    reordered["components"].reverse()
+    a, b = _r3(server), _r3(server, reordered)
+    for key in ("relative_dependencies", "baseline_dependencies", "prediction_drafts"):
+        assert a[key] == b[key], key

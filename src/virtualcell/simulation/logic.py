@@ -329,11 +329,17 @@ class Repetition(BaseModel):
 
     case: str
     constant_from: int | None = Field(
-        description="Index from which inputs and clamps no longer change; null if they never do."
+        description=(
+            "Index from which the declared inputs and clamps no longer change, even if it lies "
+            "after the last computed step; null if an input may change at every index without end."
+        )
     )
     status: Literal["fixed_point", "cycle", "no_repeat_within_steps", "not_assessed"]
     from_step: int | None = None
     period: int | None = None
+    reason: str | None = Field(
+        default=None, description="Why repetition was not assessed, when it was not."
+    )
 
 
 class CaseRun(BaseModel):
@@ -366,6 +372,10 @@ class RuleUse(BaseModel):
     evidence_ids: list[str] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
     validated: Literal[False] = False
+    sides: list[str] = Field(
+        default_factory=list,
+        description="In a relative dependency: which runs used the rule (scenario, baseline).",
+    )
 
 
 class Dependency(BaseModel):
@@ -376,6 +386,24 @@ class Dependency(BaseModel):
     component: str
     t: int
     computed_from: list[str]
+    rules: list[RuleUse] = Field(default_factory=list)
+
+
+class RelativeDependency(BaseModel):
+    """What a readout's comparison with the baseline was computed from, on both sides.
+
+    The scenario's value and the baseline's value are each traced on their own, so a rule the
+    baseline used is listed even when the scenario clamped its target and used none. Not a
+    cause, an only cause or a minimal cause.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    readout: str
+    state: str
+    t: int
+    scenario_computed_from: list[str]
+    baseline_computed_from: list[str]
     rules: list[RuleUse] = Field(default_factory=list)
 
 
@@ -438,7 +466,18 @@ class LogicRun(BaseModel):
     repetition: list[Repetition]
     differences: list[Difference] = Field(default_factory=list)
     paired_differences: list[PairedDifference] = Field(default_factory=list)
-    dependencies: list[Dependency] = Field(default_factory=list)
+    dependencies: list[Dependency] = Field(
+        default_factory=list,
+        description="What the scenario's own final values were computed from.",
+    )
+    baseline_dependencies: list[Dependency] = Field(
+        default_factory=list,
+        description="What the baseline's final values were computed from. Empty without one.",
+    )
+    relative_dependencies: list[RelativeDependency] = Field(
+        default_factory=list,
+        description="Per readout, both sides of the comparison. Empty without a baseline.",
+    )
     readouts: list[ReadoutState] = Field(default_factory=list)
     readouts_not_derivable: list[str] = Field(default_factory=list)
     prediction_drafts: list[dict[str, Any]] = Field(default_factory=list)
@@ -552,9 +591,15 @@ def _unknown_labels(s: Scenario, steps: int) -> list[str]:
     return sorted(labels)
 
 
-def _constant_from(s: Scenario, steps: int) -> int | None:
-    # An input that may change at every index never becomes constant while it lasts; a bounded
-    # one becomes constant after its end, like any other segment boundary.
+def _constant_from(s: Scenario) -> int | None:
+    """The index after which the declared inputs and clamps no longer change.
+
+    Change points after the last computed step are kept: a change the scenario declares at
+    index 11 still matters to a run of 3 steps, which just cannot see it. (An earlier version
+    dropped them, and a 3-step run reported a fixed point the scenario itself ends at 11.)
+    An input that may change at every index never becomes constant while it lasts; a bounded
+    one becomes constant after its end, like any other segment boundary.
+    """
     if any(
         g.value == "unknown_each_step" and g.end is None for gs in s.inputs.values() for g in gs
     ):
@@ -569,8 +614,7 @@ def _constant_from(s: Scenario, steps: int) -> int | None:
         points.append(c.start)
         if c.end is not None:
             points.append(c.end + 1)
-    k = max(p for p in points if p <= steps + 1)
-    return k if k <= steps else None
+    return max(points)
 
 
 class _Case:
@@ -669,11 +713,37 @@ def _summaries(
 
 
 def _repetition(s: Scenario, steps: int, case: _Case) -> Repetition:
-    k = _constant_from(s, steps)
+    """A repeat of a fully computed state, inside a range where nothing declared changes.
+
+    Not computed (None) marks a value that could not be computed, so a state holding one is
+    not a known state: two of them comparing equal is not a Boolean fixed point or cycle. Only
+    states with every component computed are compared, and a repeat is looked for only from
+    the index after which the declared inputs and clamps stop changing. When that index lies
+    after the last computed step, nothing is assessed: the computed path is kept as it is.
+    """
+    k = _constant_from(s)
     if k is None:
-        return Repetition(case=case.label, constant_from=None, status="not_assessed")
+        return Repetition(
+            case=case.label,
+            constant_from=None,
+            status="not_assessed",
+            reason="an input may change at every index without end",
+        )
+    if k > steps:
+        return Repetition(
+            case=case.label,
+            constant_from=k,
+            status="not_assessed",
+            reason=(
+                f"the scenario declares a change at index {k}, after the last computed step "
+                f"{steps}; a repeat inside the computed range says nothing about the scenario"
+            ),
+        )
     path = case.path
+    complete = [None not in state.values() for state in path]
     for start in range(k, steps + 1):
+        if not complete[start]:
+            continue
         for period in range(1, steps - start + 1):
             if path[start] == path[start + period]:
                 if period == 1:
@@ -687,6 +757,16 @@ def _repetition(s: Scenario, steps: int, case: _Case) -> Repetition:
                     from_step=start,
                     period=period,
                 )
+    if not all(complete[k:]):
+        return Repetition(
+            case=case.label,
+            constant_from=k,
+            status="not_assessed",
+            reason=(
+                "states after the inputs stop changing contain not-computed values; a repeat "
+                "among them is not a known fixed point or cycle"
+            ),
+        )
     return Repetition(case=case.label, constant_from=k, status="no_repeat_within_steps")
 
 
@@ -801,30 +881,8 @@ def run_logic(
                                 )
                             )
 
-    rules_by_id = {r.id: r for r in model.rules}
-    dependencies = []
-    for cid in sorted(declared):
-        sources: set[str] = set()
-        for case in cases:
-            sources |= _computed_from(model, case, cid, steps, set())
-        used = sorted(s.split(":", 1)[1] for s in sources if s.startswith("rule:"))
-        dependencies.append(
-            Dependency(
-                component=cid,
-                t=steps,
-                computed_from=sorted(sources),
-                rules=[
-                    RuleUse(
-                        rule_id=rid,
-                        target=rules_by_id[rid].target,
-                        stated_by=rules_by_id[rid].stated_by,
-                        evidence_ids=list(rules_by_id[rid].evidence_ids),
-                        assumptions=list(rules_by_id[rid].assumptions),
-                    )
-                    for rid in used
-                ],
-            )
-        )
+    dependencies = _dependencies(model, cases, steps)
+    baseline_dependencies = _dependencies(model, base_cases, steps) if baseline else []
 
     readout_states: list[ReadoutState] = []
     by_summary = {(s.component, s.t): s for s in summary}
@@ -880,6 +938,9 @@ def run_logic(
             "max_cases": max_cases,
         }
     )
+    relative = (
+        _relative(model, readouts, dependencies, baseline_dependencies, steps) if baseline else []
+    )
     drafts = (
         _drafts(
             model,
@@ -891,6 +952,7 @@ def run_logic(
             readout_states,
             hypothesis_id,
             dependencies,
+            relative,
         )
         if hypothesis_id
         else []
@@ -914,6 +976,8 @@ def run_logic(
         differences=differences,
         paired_differences=paired,
         dependencies=dependencies,
+        baseline_dependencies=baseline_dependencies,
+        relative_dependencies=relative,
         readouts=readout_states,
         readouts_not_derivable=sorted(
             set(readouts_requested or []) - {m.readout for m in readouts}
@@ -934,6 +998,60 @@ def run_logic(
             "case, step and component. Call again with view='full'.",
         ],
     )
+
+
+def _rule_use(rule: Rule, sides: list[str] | None = None) -> RuleUse:
+    return RuleUse(
+        rule_id=rule.id,
+        target=rule.target,
+        stated_by=rule.stated_by,
+        evidence_ids=list(rule.evidence_ids),
+        assumptions=list(rule.assumptions),
+        sides=sides or [],
+    )
+
+
+def _dependencies(model: LogicModel, cases: list[_Case], steps: int) -> list[Dependency]:
+    rules_by_id = {r.id: r for r in model.rules}
+    out = []
+    for cid in sorted(c.id for c in model.components):
+        sources: set[str] = set()
+        for case in cases:
+            sources |= _computed_from(model, case, cid, steps, set())
+        used = sorted(s.split(":", 1)[1] for s in sources if s.startswith("rule:"))
+        out.append(
+            Dependency(
+                component=cid,
+                t=steps,
+                computed_from=sorted(sources),
+                rules=[_rule_use(rules_by_id[rid]) for rid in used],
+            )
+        )
+    return out
+
+
+def _relative(model, readouts, deps, base_deps, steps) -> list[RelativeDependency]:
+    rules_by_id = {r.id: r for r in model.rules}
+    mine = {d.component: d for d in deps}
+    theirs = {d.component: d for d in base_deps}
+    out = []
+    for m in sorted(readouts, key=lambda r: r.readout):
+        a, b = mine[m.state], theirs[m.state]
+        sides: dict[str, list[str]] = {}
+        for side, dep in (("scenario", a), ("baseline", b)):
+            for u in dep.rules:
+                sides.setdefault(u.rule_id, []).append(side)
+        out.append(
+            RelativeDependency(
+                readout=m.readout,
+                state=m.state,
+                t=steps,
+                scenario_computed_from=list(a.computed_from),
+                baseline_computed_from=list(b.computed_from),
+                rules=[_rule_use(rules_by_id[rid], sides[rid]) for rid in sorted(sides)],
+            )
+        )
+    return out
 
 
 def _case_run(case: _Case) -> CaseRun:
@@ -959,22 +1077,44 @@ def _trace(cases: list[_Case]) -> list[TraceEntry]:
     return out
 
 
-def _drafts(model, model_hash, scenario, baseline, steps, readouts, states, hypothesis_id, deps):
-    """Prediction drafts for the final step. Basis `assumption`; never observed evidence."""
+def _drafts(
+    model, model_hash, scenario, baseline, steps, readouts, states, hypothesis_id, deps, relative
+):
+    """Prediction drafts for the final step. Basis `assumption`; never observed evidence.
+
+    Against a baseline, the draft rests on both sides: the rules, evidence ids and assumptions
+    behind the scenario's value and behind the baseline's value. A rule only the baseline used
+    (its target clamped in the scenario, say) is still a rule the comparison rests on.
+    """
     out = []
     final = {(r.readout, r.t): r for r in states}
     by_dep = {d.component: d for d in deps}
+    by_rel = {d.readout: d for d in relative}
     for m in sorted(readouts, key=lambda r: r.readout):
         r = final[(m.readout, steps)]
-        dep = by_dep[m.state]
-        computed = (
-            f"Computed by logic model {model.id} {model.version} (sha256 {model_hash[:12]}), "
-            f"synchronous update, logical step {steps}, from rules "
-            f"{[u.rule_id for u in dep.rules]} stated by "
-            f"{sorted({u.stated_by for u in dep.rules}) or ['nobody']}; not observed."
-        )
+        if baseline is None:
+            rules = by_dep[m.state].rules
+            computed = (
+                f"Computed by logic model {model.id} {model.version} (sha256 "
+                f"{model_hash[:12]}), synchronous update, logical step {steps}, from rules "
+                f"{[u.rule_id for u in rules]} stated by "
+                f"{sorted({u.stated_by for u in rules}) or ['nobody']}; not observed."
+            )
+        else:
+            rules = by_rel[m.readout].rules
+            side = {
+                name: [u.rule_id for u in rules if name in u.sides]
+                for name in ("scenario", "baseline")
+            }
+            computed = (
+                f"Computed by logic model {model.id} {model.version} (sha256 "
+                f"{model_hash[:12]}), synchronous update, logical step {steps}: scenario "
+                f"{scenario.name!r} from rules {side['scenario']}, baseline {baseline.name!r} "
+                f"from rules {side['baseline']}, stated by "
+                f"{sorted({u.stated_by for u in rules}) or ['nobody']}; not observed."
+            )
         assumptions = [computed, *m.assumptions]
-        for u in dep.rules:
+        for u in rules:
             assumptions.extend(a for a in u.assumptions if a not in assumptions)
         if baseline is not None:
             expected = (
@@ -992,7 +1132,7 @@ def _drafts(model, model_hash, scenario, baseline, steps, readouts, states, hypo
             "expected": expected,
             "condition": f"scenario {scenario.name!r}, logical step {steps}",
             "basis": "assumption",
-            "evidence_ids": sorted({e for u in dep.rules for e in u.evidence_ids}),
+            "evidence_ids": sorted({e for u in rules for e in u.evidence_ids}),
             "assumptions": assumptions,
             "note": f"Computed from a candidate model, not observed. Readout basis: {m.basis}",
         }

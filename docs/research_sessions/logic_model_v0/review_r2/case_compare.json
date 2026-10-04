@@ -1,0 +1,658 @@
+{
+ "comparisons": {
+  "A_input_dependent/s2_input_off_vs_s1_input_on": {
+   "differences_unchanged": true,
+   "draft_assumptions_before": [
+    [
+     "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6, from rules ['R1', 'R2'] stated by ['host']; not observed.",
+     "The readout reads P without loss.",
+     "S responds to U within one update.",
+     "P needs S at the previous update."
+    ]
+   ],
+   "draft_evidence_and_assumptions_now": [
+    {
+     "assumptions": [
+      "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6: scenario 's2_input_off' from rules ['R1', 'R2'], baseline 's1_input_on' from rules ['R1', 'R2'], stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "P needs S at the previous update."
+     ],
+     "evidence_ids": []
+    }
+   ],
+   "draft_expected_unchanged": true,
+   "readout_unchanged": true,
+   "relative_rules_now": [
+    [
+     [
+      "R1",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ],
+     [
+      "R2",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ]
+    ]
+   ]
+  },
+  "A_input_dependent/s3_S_off_vs_s1_input_on": {
+   "differences_unchanged": true,
+   "draft_assumptions_before": [
+    [
+     "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6, from rules ['R2'] stated by ['host']; not observed.",
+     "The readout reads P without loss.",
+     "P needs S at the previous update."
+    ]
+   ],
+   "draft_evidence_and_assumptions_now": [
+    {
+     "assumptions": [
+      "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6: scenario 's3_S_off' from rules ['R2'], baseline 's1_input_on' from rules ['R1', 'R2'], stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "P needs S at the previous update."
+     ],
+     "evidence_ids": []
+    }
+   ],
+   "draft_expected_unchanged": true,
+   "readout_unchanged": true,
+   "relative_rules_now": [
+    [
+     [
+      "R1",
+      [
+       "baseline"
+      ]
+     ],
+     [
+      "R2",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ]
+    ]
+   ]
+  },
+  "A_input_dependent/s4_input_off_then_released_vs_s1_input_on": {
+   "differences_unchanged": true,
+   "draft_assumptions_before": [
+    [
+     "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6, from rules ['R1', 'R2'] stated by ['host']; not observed.",
+     "The readout reads P without loss.",
+     "S responds to U within one update.",
+     "P needs S at the previous update."
+    ]
+   ],
+   "draft_evidence_and_assumptions_now": [
+    {
+     "assumptions": [
+      "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6: scenario 's4_input_off_then_released' from rules ['R1', 'R2'], baseline 's1_input_on' from rules ['R1', 'R2'], stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "P needs S at the previous update."
+     ],
+     "evidence_ids": []
+    }
+   ],
+   "draft_expected_unchanged": true,
+   "readout_unchanged": true,
+   "relative_rules_now": [
+    [
+     [
+      "R1",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ],
+     [
+      "R2",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ]
+    ]
+   ]
+  },
+  "A_input_dependent/s5c_S_off_from_0_P_unknown_vs_s5c_base_P_unknown": {
+   "differences_unchanged": true,
+   "draft_assumptions_before": [
+    [
+     "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6, from rules ['R2'] stated by ['host']; not observed.",
+     "The readout reads P without loss.",
+     "P needs S at the previous update."
+    ]
+   ],
+   "draft_evidence_and_assumptions_now": [
+    {
+     "assumptions": [
+      "Computed by logic model A_input_dependent v0 (sha256 3779a1ca97bc), synchronous update, logical step 6: scenario 's5c_S_off_from_0_P_unknown' from rules ['R2'], baseline 's5c_base_P_unknown' from rules ['R1', 'R2'], stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "P needs S at the previous update."
+     ],
+     "evidence_ids": []
+    }
+   ],
+   "draft_expected_unchanged": true,
+   "readout_unchanged": true,
+   "relative_rules_now": [
+    [
+     [
+      "R1",
+      [
+       "baseline"
+      ]
+     ],
+     [
+      "R2",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ]
+    ]
+   ]
+  },
+  "B_self_maintaining/s2_input_off_vs_s1_input_on": {
+   "differences_unchanged": true,
+   "draft_assumptions_before": [
+    [
+     "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6, from rules ['R1', 'R2'] stated by ['host']; not observed.",
+     "The readout reads P without loss.",
+     "S responds to U within one update.",
+     "Self-maintenance of P is stated as a candidate rule, not observed."
+    ]
+   ],
+   "draft_evidence_and_assumptions_now": [
+    {
+     "assumptions": [
+      "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6: scenario 's2_input_off' from rules ['R1', 'R2'], baseline 's1_input_on' from rules ['R1', 'R2'], stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "Self-maintenance of P is stated as a candidate rule, not observed."
+     ],
+     "evidence_ids": []
+    }
+   ],
+   "draft_expected_unchanged": true,
+   "readout_unchanged": true,
+   "relative_rules_now": [
+    [
+     [
+      "R1",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ],
+     [
+      "R2",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ]
+    ]
+   ]
+  },
+  "B_self_maintaining/s3_S_off_vs_s1_input_on": {
+   "differences_unchanged": true,
+   "draft_assumptions_before": [
+    [
+     "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6, from rules ['R2'] stated by ['host']; not observed.",
+     "The readout reads P without loss.",
+     "Self-maintenance of P is stated as a candidate rule, not observed."
+    ]
+   ],
+   "draft_evidence_and_assumptions_now": [
+    {
+     "assumptions": [
+      "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6: scenario 's3_S_off' from rules ['R2'], baseline 's1_input_on' from rules ['R1', 'R2'], stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "Self-maintenance of P is stated as a candidate rule, not observed."
+     ],
+     "evidence_ids": []
+    }
+   ],
+   "draft_expected_unchanged": true,
+   "readout_unchanged": true,
+   "relative_rules_now": [
+    [
+     [
+      "R1",
+      [
+       "baseline"
+      ]
+     ],
+     [
+      "R2",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ]
+    ]
+   ]
+  },
+  "B_self_maintaining/s4_input_off_then_released_vs_s1_input_on": {
+   "differences_unchanged": true,
+   "draft_assumptions_before": [
+    [
+     "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6, from rules ['R1', 'R2'] stated by ['host']; not observed.",
+     "The readout reads P without loss.",
+     "S responds to U within one update.",
+     "Self-maintenance of P is stated as a candidate rule, not observed."
+    ]
+   ],
+   "draft_evidence_and_assumptions_now": [
+    {
+     "assumptions": [
+      "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6: scenario 's4_input_off_then_released' from rules ['R1', 'R2'], baseline 's1_input_on' from rules ['R1', 'R2'], stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "Self-maintenance of P is stated as a candidate rule, not observed."
+     ],
+     "evidence_ids": []
+    }
+   ],
+   "draft_expected_unchanged": true,
+   "readout_unchanged": true,
+   "relative_rules_now": [
+    [
+     [
+      "R1",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ],
+     [
+      "R2",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ]
+    ]
+   ]
+  },
+  "B_self_maintaining/s5c_S_off_from_0_P_unknown_vs_s5c_base_P_unknown": {
+   "differences_unchanged": true,
+   "draft_assumptions_before": [
+    [
+     "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6, from rules ['R2'] stated by ['host']; not observed.",
+     "The readout reads P without loss.",
+     "Self-maintenance of P is stated as a candidate rule, not observed."
+    ]
+   ],
+   "draft_evidence_and_assumptions_now": [
+    {
+     "assumptions": [
+      "Computed by logic model B_self_maintaining v0 (sha256 509b67a44675), synchronous update, logical step 6: scenario 's5c_S_off_from_0_P_unknown' from rules ['R2'], baseline 's5c_base_P_unknown' from rules ['R1', 'R2'], stated by ['host']; not observed.",
+      "The readout reads P without loss.",
+      "S responds to U within one update.",
+      "Self-maintenance of P is stated as a candidate rule, not observed."
+     ],
+     "evidence_ids": []
+    }
+   ],
+   "draft_expected_unchanged": true,
+   "readout_unchanged": true,
+   "relative_rules_now": [
+    [
+     [
+      "R1",
+      [
+       "baseline"
+      ]
+     ],
+     [
+      "R2",
+      [
+       "scenario",
+       "baseline"
+      ]
+     ]
+    ]
+   ]
+  }
+ },
+ "hand": {
+  "checked": 24,
+  "mismatched": []
+ },
+ "runs": {
+  "A_input_dependent/s1_input_on": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "all",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "A_input_dependent/s2_input_off": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "all",
+     "constant_from": 1,
+     "from_step": 3,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "A_input_dependent/s3_S_off": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "all",
+     "constant_from": 1,
+     "from_step": 2,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "A_input_dependent/s4_input_off_then_released": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "all",
+     "constant_from": 3,
+     "from_step": 5,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "A_input_dependent/s5a_P_unknown_input_off": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "P=0",
+     "constant_from": 1,
+     "from_step": 3,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 1,
+     "from_step": 3,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "A_input_dependent/s5b_U_unknown": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "U[0:end]=0",
+     "constant_from": 0,
+     "from_step": 2,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "U[0:end]=1",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "A_input_dependent/s5c_S_off_from_0_P_unknown": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "P=0",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 0,
+     "from_step": 1,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "A_input_dependent/s5c_base_P_unknown": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "P=0",
+     "constant_from": 0,
+     "from_step": 1,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "B_self_maintaining/s1_input_on": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "all",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "B_self_maintaining/s2_input_off": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "all",
+     "constant_from": 1,
+     "from_step": 2,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "B_self_maintaining/s3_S_off": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "all",
+     "constant_from": 1,
+     "from_step": 1,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "B_self_maintaining/s4_input_off_then_released": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "all",
+     "constant_from": 3,
+     "from_step": 4,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "B_self_maintaining/s5a_P_unknown_input_off": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "P=0",
+     "constant_from": 1,
+     "from_step": 2,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 1,
+     "from_step": 2,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "B_self_maintaining/s5b_U_unknown": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "U[0:end]=0",
+     "constant_from": 0,
+     "from_step": 1,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "U[0:end]=1",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "B_self_maintaining/s5c_S_off_from_0_P_unknown": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "P=0",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  },
+  "B_self_maintaining/s5c_base_P_unknown": {
+   "dependencies_unchanged": true,
+   "final_unchanged": true,
+   "paths_unchanged": true,
+   "repetition_now": [
+    {
+     "case": "P=0",
+     "constant_from": 0,
+     "from_step": 1,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    },
+    {
+     "case": "P=1",
+     "constant_from": 0,
+     "from_step": 0,
+     "period": null,
+     "reason": null,
+     "status": "fixed_point"
+    }
+   ],
+   "repetition_unchanged": true
+  }
+ }
+}
