@@ -1,0 +1,159 @@
+{
+ "about": "Candidate Boolean model of ERK-dependent negative feedback in the RAS-RAF-MEK-ERK cascade, applied to MEK inhibition in colorectal cancer cell lines as reported by Fritsche-Guenther et al. 2011 (doi 10.1038/msb.2011.27). Fixed before the results sections of that paper were read. A retrospective reproduction and applicability assessment of published observations, not a holdout, blinded or independent test: the paper's title and section titles were seen before the model was fixed (see PREREG.md, category C).",
+ "version": "logic_biology_v1/prereg-1",
+ "models": [
+  {
+   "id": "M1_feedback_on_RAF",
+   "version": "v1",
+   "description": "Base model. ERK-dependent negative feedback acts on RAF; a BRAF V600E-type RAF is insensitive to it; KRAS-mutant RAS is active regardless of input.",
+   "components": [
+    {"id": "GF", "kind": "input", "description": "growth-factor input from 10% fetal calf serum in culture"},
+    {"id": "KRASmut", "kind": "input", "description": "activating KRAS mutation present (genotype, assumed from the cell line)"},
+    {"id": "BRAFmut", "kind": "input", "description": "BRAF V600E present (genotype, assumed from the cell line)"},
+    {"id": "MEKi", "kind": "input", "description": "MEK inhibitor (U0126 or AZD6244) present"},
+    {"id": "RAS", "kind": "internal", "description": "active (GTP-bound) RAS"},
+    {"id": "RAF", "kind": "internal", "description": "RAF kinase activity toward MEK (Raf-1 and B-Raf not separated)"},
+    {"id": "pMEK", "kind": "internal", "description": "MEK1 phosphorylated at its activating sites"},
+    {"id": "pERK", "kind": "internal", "description": "ERK1/2 phosphorylated at T202/Y204 (active ERK)"},
+    {"id": "pRaf1fb", "kind": "internal", "description": "Raf-1 phosphorylated at S289/S296/S301 (a readout node only; no rule reads it)"}
+   ],
+   "rules": [
+    {"id": "M1_R_RAS", "target": "RAS", "expr": {"or": [{"var": "GF"}, {"var": "KRASmut"}]}, "stated_by": "host",
+     "evidence_ids": ["lit-cfe8783d78f4"],
+     "assumptions": [
+      "10% fetal calf serum is a continuous growth-factor input that activates wild-type RAS (the cited span states the culture medium only).",
+      "An activating KRAS mutation keeps RAS active regardless of input (general knowledge, not read in any source here).",
+      "RAS receives no ERK-dependent feedback in this model; this is the key unknown that M2 changes."
+     ]},
+    {"id": "M1_R_RAF", "target": "RAF", "expr": {"or": [{"and": [{"var": "RAS"}, {"not": {"var": "pERK"}}]}, {"var": "BRAFmut"}]}, "stated_by": "host",
+     "evidence_ids": ["lit-8c8245921a71"],
+     "assumptions": [
+      "The source reports RAF signaling as feedback down-regulated in RTK-driven tumour cells; stating active ERK as a complete veto on RAS-driven RAF activity (NOT pERK) is a host strengthening, not what the source says.",
+      "The source reports BRAF-mutant RAF signaling as insensitive to that feedback; stating BRAF V600E as sufficient for RAF activity on its own (OR) is a host strengthening.",
+      "The source is a different system (RTK-driven and BRAF-mutant tumour lines); its applicability to KRAS-mutant colorectal lines is assumed.",
+      "RAS active is treated as sufficient for RAF activity when ERK is inactive; RAS binding RAF is not shown to activate it in any span read here."
+     ]},
+    {"id": "R_MEK", "target": "pMEK", "expr": {"var": "RAF"}, "stated_by": "host",
+     "evidence_ids": [],
+     "assumptions": [
+      "MEK1 activating-site phosphorylation needs RAF activity and nothing else in this model.",
+      "The MEK inhibitor does not prevent RAF from phosphorylating MEK; it blocks only MEK's own kinase activity (intervention-mapping assumption, not read in any source here)."
+     ]},
+    {"id": "R_ERK", "target": "pERK", "expr": {"and": [{"var": "pMEK"}, {"not": {"var": "MEKi"}}]}, "stated_by": "host",
+     "evidence_ids": [],
+     "assumptions": [
+      "Phosphorylated MEK is sufficient for ERK phosphorylation unless a MEK inhibitor is present.",
+      "The MEK inhibitor, at the doses used, blocks MEK kinase activity completely (a Boolean veto); partial inhibition is not represented."
+     ]},
+    {"id": "R_FB", "target": "pRaf1fb", "expr": {"var": "pERK"}, "stated_by": "host",
+     "evidence_ids": ["lit-b23dff1044ed"],
+     "assumptions": [
+      "Phosphorylation of Raf-1 at S289/S296/S301 depends on active ERK (general knowledge; the cited span only names it feedback phosphorylation of Raf-1 and says the MEK inhibitor has an effect on it, without a direction).",
+      "Phosphorylation at these sites is a readout here, not the mechanism of the feedback; the feedback rule (M1_R_RAF or M2_R_RAS) reads pERK, not pRaf1fb."
+     ]}
+   ],
+   "update": "synchronous"
+  },
+  {
+   "id": "M2_feedback_on_RAS",
+   "version": "v1",
+   "description": "Alternative for one key unknown rule: where the ERK-dependent feedback acts. Here it acts on wild-type RAS activation by the growth-factor input, and RAF follows RAS (or BRAF V600E) without feedback of its own. Every other rule is as in M1. A sensitivity check, fixed with M1 and not tuned afterwards.",
+   "components": [
+    {"id": "GF", "kind": "input", "description": "growth-factor input from 10% fetal calf serum in culture"},
+    {"id": "KRASmut", "kind": "input", "description": "activating KRAS mutation present (genotype, assumed from the cell line)"},
+    {"id": "BRAFmut", "kind": "input", "description": "BRAF V600E present (genotype, assumed from the cell line)"},
+    {"id": "MEKi", "kind": "input", "description": "MEK inhibitor (U0126 or AZD6244) present"},
+    {"id": "RAS", "kind": "internal", "description": "active (GTP-bound) RAS"},
+    {"id": "RAF", "kind": "internal", "description": "RAF kinase activity toward MEK (Raf-1 and B-Raf not separated)"},
+    {"id": "pMEK", "kind": "internal", "description": "MEK1 phosphorylated at its activating sites"},
+    {"id": "pERK", "kind": "internal", "description": "ERK1/2 phosphorylated at T202/Y204 (active ERK)"},
+    {"id": "pRaf1fb", "kind": "internal", "description": "Raf-1 phosphorylated at S289/S296/S301 (a readout node only; no rule reads it)"}
+   ],
+   "rules": [
+    {"id": "M2_R_RAS", "target": "RAS", "expr": {"or": [{"and": [{"var": "GF"}, {"not": {"var": "pERK"}}]}, {"var": "KRASmut"}]}, "stated_by": "host",
+     "evidence_ids": ["lit-cfe8783d78f4", "lit-453db638b05b"],
+     "assumptions": [
+      "10% fetal calf serum is a continuous growth-factor input that activates wild-type RAS (the first cited span states the culture medium only).",
+      "The second source reports that ERK-dependent feedback suppresses ligand-dependent signaling and Ras function in BRAF V600E melanoma; stating active ERK as a complete veto on input-driven RAS activation is a host strengthening, and the system (melanoma) differs.",
+      "An activating KRAS mutation keeps RAS active regardless of input and of feedback (general knowledge, not read in any source here)."
+     ]},
+    {"id": "M2_R_RAF", "target": "RAF", "expr": {"or": [{"var": "RAS"}, {"var": "BRAFmut"}]}, "stated_by": "host",
+     "evidence_ids": [],
+     "assumptions": [
+      "RAF receives no ERK-dependent feedback of its own in this alternative.",
+      "RAS active, or BRAF V600E, is sufficient for RAF activity (host strengthening; binding is not activation, and no span read here shows sufficiency)."
+     ]},
+    {"id": "R_MEK", "target": "pMEK", "expr": {"var": "RAF"}, "stated_by": "host",
+     "evidence_ids": [],
+     "assumptions": [
+      "MEK1 activating-site phosphorylation needs RAF activity and nothing else in this model.",
+      "The MEK inhibitor does not prevent RAF from phosphorylating MEK; it blocks only MEK's own kinase activity (intervention-mapping assumption, not read in any source here)."
+     ]},
+    {"id": "R_ERK", "target": "pERK", "expr": {"and": [{"var": "pMEK"}, {"not": {"var": "MEKi"}}]}, "stated_by": "host",
+     "evidence_ids": [],
+     "assumptions": [
+      "Phosphorylated MEK is sufficient for ERK phosphorylation unless a MEK inhibitor is present.",
+      "The MEK inhibitor, at the doses used, blocks MEK kinase activity completely (a Boolean veto); partial inhibition is not represented."
+     ]},
+    {"id": "R_FB", "target": "pRaf1fb", "expr": {"var": "pERK"}, "stated_by": "host",
+     "evidence_ids": ["lit-b23dff1044ed"],
+     "assumptions": [
+      "Phosphorylation of Raf-1 at S289/S296/S301 depends on active ERK (general knowledge; the cited span only names it feedback phosphorylation of Raf-1 and says the MEK inhibitor has an effect on it, without a direction).",
+      "Phosphorylation at these sites is a readout here, not the mechanism of the feedback; the feedback rule (M1_R_RAF or M2_R_RAS) reads pERK, not pRaf1fb."
+     ]}
+   ],
+   "update": "synchronous"
+  }
+ ],
+ "steps": 24,
+ "window": {"first": 18, "last": 24, "why": "Fixed before computing. Late enough for any transient of a five-node model to have passed, and seven steps long, so it covers a whole period of any cycle up to period 7 (a three-node negative loop under synchronous update has periods 1, 2 or 6). Steps are logical updates, not time."},
+ "initial": {"RAS": "unknown", "RAF": "unknown", "pMEK": "unknown", "pERK": "unknown", "pRaf1fb": "unknown"},
+ "initial_why": "No internal state at the start is known; all five are left unknown and every one of the 32 combinations is run. Scenario and baseline share the initial state, so each case is paired.",
+ "max_cases": 256,
+ "scenarios": {
+  "KRAS_control": {"inputs": {"GF": [{"start": 0, "end": null, "value": true}], "KRASmut": [{"start": 0, "end": null, "value": true}], "BRAFmut": [{"start": 0, "end": null, "value": false}], "MEKi": [{"start": 0, "end": null, "value": false}]}, "clamps": []},
+  "KRAS_MEKi": {"inputs": {"GF": [{"start": 0, "end": null, "value": true}], "KRASmut": [{"start": 0, "end": null, "value": true}], "BRAFmut": [{"start": 0, "end": null, "value": false}], "MEKi": [{"start": 0, "end": null, "value": true}]}, "clamps": []},
+  "BRAF_control": {"inputs": {"GF": [{"start": 0, "end": null, "value": true}], "KRASmut": [{"start": 0, "end": null, "value": false}], "BRAFmut": [{"start": 0, "end": null, "value": true}], "MEKi": [{"start": 0, "end": null, "value": false}]}, "clamps": []},
+  "BRAF_MEKi": {"inputs": {"GF": [{"start": 0, "end": null, "value": true}], "KRASmut": [{"start": 0, "end": null, "value": false}], "BRAFmut": [{"start": 0, "end": null, "value": true}], "MEKi": [{"start": 0, "end": null, "value": true}]}, "clamps": []}
+ },
+ "comparisons": {
+  "KRAS": {"scenario": "KRAS_MEKi", "baseline": "KRAS_control"},
+  "BRAF": {"scenario": "BRAF_MEKi", "baseline": "BRAF_control"}
+ },
+ "genotype_groups": {
+  "KRAS": {"cell_lines": ["SW480", "HCT116"], "basis": "KRAS-mutant status is general knowledge, not read in any source here (assumption)."},
+  "BRAF": {"cell_lines": ["HT29", "RKO"], "basis": "BRAF V600E status is general knowledge, not read in any source here (assumption)."},
+  "no_scenario": {"cell_lines": ["LIM1215", "Caco2 with inducible HA-B-Raf", "HEK Raf-ER"], "basis": "No scenario was fixed for these systems; observations in them are not comparable."}
+ },
+ "readouts": [
+  {"readout": "pMEK1_S217_S221_BioPlex", "state": "pMEK", "mapping": "identity", "basis": "Bio-Plex beads for P-Mek1 (S217/S221), lit-12e26e4913bb.", "assumptions": ["The bead signal reads activating-site MEK1 phosphorylation; a change in the cell population's signal is read as the direction of the model state."]},
+  {"readout": "pERK1_2_T202_Y204_WB", "state": "pERK", "mapping": "identity", "basis": "Immunoblot with anti-phospho-p44/42 MAPK Thr202/Tyr204, lit-e9c4f50cc489.", "assumptions": ["The immunoblot reads ERK1/2 phosphorylation at T202/Y204; a change in the population's signal is read as the direction of the model state."]},
+  {"readout": "pRaf1_S289_S296_S301_WB", "state": "pRaf1fb", "mapping": "identity", "basis": "Immunoblot with anti-phospho-Raf-1 (S289/S296/S301), lit-e9c4f50cc489.", "assumptions": ["The immunoblot reads Raf-1 phosphorylation at these sites; a change in the population's signal is read as the direction of the model state."]},
+  {"readout": "RasGTP_RBD_pulldown", "state": "RAS", "mapping": "identity", "basis": "Active Ras pulldown with GST-Raf-1-RBD after 2 h AZD6244, lit-6100b8bafe2d.", "assumptions": ["The pulldown reads GTP-bound RAS of all isoforms; a change in the population's signal is read as the direction of the model state."]}
+ ],
+ "questions": [
+  {"id": "O1", "readout": "pMEK1_S217_S221_BioPlex", "group": "KRAS", "intervention": "MEK inhibitor vs untreated"},
+  {"id": "O2", "readout": "pMEK1_S217_S221_BioPlex", "group": "BRAF", "intervention": "MEK inhibitor vs untreated"},
+  {"id": "O3", "readout": "pERK1_2_T202_Y204_WB", "group": "KRAS", "intervention": "MEK inhibitor vs untreated"},
+  {"id": "O4", "readout": "pRaf1_S289_S296_S301_WB", "group": "KRAS", "intervention": "MEK inhibitor vs untreated"},
+  {"id": "O5", "readout": "RasGTP_RBD_pulldown", "group": "KRAS", "intervention": "AZD6244 (2 h) vs untreated"},
+  {"id": "O6", "readout": "pMEK1_S217_S221_BioPlex", "group": "any", "intervention": "MEK inhibitor with cycloheximide or actinomycin D vs MEK inhibitor alone", "precommitted_class": "비교 불가", "why": "The models have no translation or transcription node; neither drug can be mapped to an input or clamp."}
+ ],
+ "readings": {
+  "strict": {"primary": true, "rule": "For the question's comparison, take the engine's per-case paired direction (readouts[].paired) for the readout at every step of the window. If every case at every window step gives the same direction (increase, decrease or no_change), that is the model's direction. Anything else (mixed directions, undetermined, a not-computed value) is undetermined."},
+  "ordinal": {"primary": false, "rule": "Host aggregation, declared here before computing. Per case and per side, classify the readout's state over the window: always_active (true at every window step), always_inactive (false at every window step), intermittent (both values occur). A window containing a not-computed value is undetermined. Order always_inactive < intermittent < always_active; the case's direction is increase, decrease or no_change by that order. If every case gives the same direction, that is the model's direction; otherwise undetermined.", "assumption": "An intermittent model state is read as an intermediate population level. That cells in a population are out of phase, or that the population signal averages over them, is not shown."}
+ },
+ "classification": {
+  "부합": "The text read states a direction (increase, decrease or no change versus untreated) for the question's readout in a cell line of the question's group, and the model's direction under the reading is the same.",
+  "불일치": "Both directions are determinate and differ.",
+  "미결정": "The text states a direction, but the model's direction under the reading is undetermined.",
+  "비교 불가": "No direction for the question is stated in the text read (a figure, table or supplement not read counts as not read); or the cell system has no scenario; or the intervention or the readout has no mapping (O6).",
+  "rules": [
+   "Each observation statement found is one row. Several statements for one question are several rows; none is merged or dropped.",
+   "A statement about magnitude (e.g. how strongly, how efficiently, at which dose) is compared for direction only; its magnitude part is recorded as not comparable, because the model is Boolean.",
+   "Time points in the text (minutes, hours) are recorded beside the row. They are not converted to steps and do not change the class; a mismatch of timing is listed as a limit.",
+   "A statement found in the results that answers no question here is listed as unregistered and not scored.",
+   "Every row stays in every denominator, including 미결정 and 비교 불가."
+  ]
+ }
+}
