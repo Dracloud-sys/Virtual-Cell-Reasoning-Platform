@@ -73,6 +73,7 @@ from virtualcell.research.contracts import (
 )
 from virtualcell.research.observe import ObservationComparison, compare_observations
 from virtualcell.research.plan import PlanAnalysis, WhatIf, analyze_plan
+from virtualcell.research.revision import PlanRevision, RevisionDecision, compare_revision
 from virtualcell.research.service import check_integrity, validate_report_payload
 
 #: How much of an abstract travels back as a verifiable span. Enough to check the claim
@@ -312,6 +313,20 @@ class DraftCheckResult(BaseModel):
     input_file: DraftInput | None = Field(
         default=None,
         description="Set by check_research_draft_file: the file checked and its SHA-256.",
+    )
+
+    # 5. set beside an earlier draft, when one was sent
+    revision: PlanRevision | None = Field(
+        default=None,
+        description=(
+            "Only when prior_draft (or prior_path) was sent: what changed from that draft, which "
+            "new evidence each change cites, what rests on the new evidence, and whether each "
+            "stated decision matches what changed. Kept whole in both views. It judges nothing."
+        ),
+    )
+    prior_input_file: DraftInput | None = Field(
+        default=None,
+        description="Set by check_research_draft_file when prior_path was sent.",
     )
 
 
@@ -589,6 +604,8 @@ def draft_check(
     store: Any = None,
     what_if: dict[str, Any] | None = None,
     view: Literal["full", "compact"] = "full",
+    prior: ResearchReport | None = None,
+    revision_decisions: list[dict[str, Any]] | None = None,
 ) -> DraftCheckResult:
     """Validate the draft, then assemble it, then check it. In that order.
 
@@ -630,7 +647,20 @@ def draft_check(
     plan = analyze_plan(report, evidence, store=store, what_if=scenario)
     flat = [_finding(f) for f in findings] + [_finding(f) for f in plan.findings]
     groups = group_findings(flat, plan)
+    revision = None
+    if prior is not None:
+        revision = compare_revision(
+            prior,
+            report,
+            TypeAdapter(list[RevisionDecision]).validate_python(revision_decisions or []),
+        )
+    elif revision_decisions:
+        raise ValueError(
+            "revision_decisions were sent without prior_draft; a decision is checked against "
+            "what changed, which needs the draft it revises"
+        )
     common = {
+        "revision": revision,
         "not_checked": list(NOT_CHECKED),
         "evidence_origins": origins,
         "view": view,

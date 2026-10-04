@@ -27,7 +27,7 @@ the host's argument and the researcher's decision.
 
 from __future__ import annotations
 
-from itertools import combinations
+from itertools import combinations, product
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -163,6 +163,12 @@ class ReadoutDifference(BaseModel):
 
     readout: str
     expected: dict[str, str]
+    condition: str | None = Field(
+        default=None, description="The condition both predictions are stated for, as written."
+    )
+    versus: str | None = Field(
+        default=None, description="The reference of a change, when either prediction names one."
+    )
 
 
 class SeparatedPair(BaseModel):
@@ -191,8 +197,12 @@ class ReadoutExclusion(BaseModel):
 
     pair: list[str]
     readout: str
-    reason: Literal["different_prediction_kinds", "different_reference"]
+    reason: Literal["different_prediction_kinds", "different_reference", "different_condition"]
     detail: str
+    condition: str | None = Field(
+        default=None,
+        description="The condition the excluded comparison was for; null for different_condition.",
+    )
 
 
 class OutcomeRow(BaseModel):
@@ -202,6 +212,8 @@ class OutcomeRow(BaseModel):
 
     readout: str
     by_expected: dict[str, list[str]]
+    condition: str | None = None
+    versus: str | None = None
 
 
 class ExperimentDiscrimination(BaseModel):
@@ -820,13 +832,39 @@ def _coexistence(a: str, b: str, readout: str, ea: Expectation, eb: Expectation)
     ]
 
 
+def _slot(p: Prediction) -> tuple[str, str]:
+    """Where a prediction is compared: its readout under its condition, both as written.
+
+    The condition is where a plan states the arm and the time point, so two predictions on one
+    readout under different conditions are different claims and are never compared with each
+    other. Matched as written (case and spacing aside), never by synonym.
+    """
+    return _norm(p.readout), _norm(p.condition or "")
+
+
+def _reference(p: Prediction) -> str:
+    return _norm(p.versus or "")
+
+
 def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimination:
+    """Which hypothesis pairs the predicted values separate, slot by slot.
+
+    A slot is a readout under a condition. Within it, a hypothesis may state several changes
+    against different references; each is kept, and only predictions of the same kind against
+    the same reference are compared (a change with no stated reference is compared as before).
+    Every prediction is kept: an earlier version kept one per hypothesis and readout, so of two
+    conditions only the last-listed was compared (found on eval1_persistence/evidence_gap_v1).
+
+    Two different values from one hypothesis for the same readout, condition and reference are
+    reported as conflicting and compared with nothing, rather than resolved by order.
+    Iteration is over sorted keys, so reordering the predictions does not change the result.
+    """
     known = {h.id for h in report.hypotheses}
     measured = {_norm(m) for m in exp.measurements}
-    # hypothesis -> readout -> expected (and the prediction, for its kind and reference)
-    table: dict[str, dict[str, Expectation]] = {}
-    preds: dict[str, dict[str, Prediction]] = {}
     labels: dict[str, str] = {}
+    conditions: dict[str, str | None] = {}
+    # slot -> hypothesis -> reference -> the predictions stated there
+    slots: dict[tuple[str, str], dict[str, dict[str, list[Prediction]]]] = {}
     for p in exp.predictions:
         if p.hypothesis_id not in known:
             findings.append(
@@ -841,6 +879,7 @@ def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimina
             continue
         key = _norm(p.readout)
         labels.setdefault(key, p.readout)
+        conditions.setdefault(_slot(p)[1], p.condition)
         if key not in measured:
             findings.append(
                 PlanFinding(
@@ -849,9 +888,33 @@ def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimina
                     detail=f"{p.readout!r} is predicted but is not among the measurements.",
                 )
             )
-        table.setdefault(p.hypothesis_id, {})[key] = p.expected
-        preds.setdefault(p.hypothesis_id, {})[key] = p
+        by_ref = slots.setdefault(_slot(p), {}).setdefault(p.hypothesis_id, {})
+        by_ref.setdefault(_reference(p), []).append(p)
 
+    # one value per (slot, hypothesis, reference); a disagreement is reported, not resolved
+    value: dict[tuple[str, str], dict[str, dict[str, Prediction]]] = {}
+    for slot in sorted(slots):
+        for hid in sorted(slots[slot]):
+            for ref in sorted(slots[slot][hid]):
+                stated = slots[slot][hid][ref]
+                if len({q.expected for q in stated}) > 1:
+                    findings.append(
+                        PlanFinding(
+                            code="conflicting_predictions",
+                            where=f"experiment:{exp.id}:{hid}:{stated[0].readout}",
+                            detail=(
+                                f"predicts {sorted({q.expected.value for q in stated})} for the "
+                                f"same readout, condition {stated[0].condition!r} and reference "
+                                f"{stated[0].versus!r}; none of them is compared."
+                            ),
+                            field="experiments[].predictions[].expected",
+                            value=hid,
+                        )
+                    )
+                    continue
+                value.setdefault(slot, {}).setdefault(hid, {})[ref] = stated[0]
+
+    predicted_by = {hid for s in slots.values() for hid in s}
     if exp.predictions and not exp.controls:
         findings.append(
             PlanFinding(
@@ -861,7 +924,7 @@ def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimina
             )
         )
     for hid in exp.discriminates if exp.predictions else []:
-        if hid not in table:
+        if hid not in predicted_by:
             findings.append(
                 PlanFinding(
                     code="discrimination_claimed_without_predictions",
@@ -879,63 +942,92 @@ def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimina
                 )
             )
 
-    order = [h.id for h in report.hypotheses if h.id in table]
+    def stated(hid: str, slot: tuple[str, str]) -> list[Prediction]:
+        return [
+            q
+            for _, q in sorted(value.get(slot, {}).get(hid, {}).items())
+            if q.expected is not Expectation.NOT_PREDICTED
+        ]
+
+    order = [h.id for h in report.hypotheses if h.id in predicted_by]
     separated: list[SeparatedPair] = []
     unseparated: list[UnseparatedPair] = []
     exclusions: list[ReadoutExclusion] = []
     for a, b in combinations(order, 2):
         if not _comparable(report, a, b):
             continue
-        predicted = [
-            r
-            for r in table[a]
-            if r in table[b] and Expectation.NOT_PREDICTED not in (table[a][r], table[b][r])
-        ]
-        if not predicted:
-            unseparated.append(UnseparatedPair(pair=[a, b], reason="no_shared_predicted_readout"))
-            continue
-        shared = []
-        for r in predicted:
-            pa, pb = preds[a][r], preds[b][r]
-            kind_a, kind_b = (
-                expectation_kind(pa.expected.value),
-                expectation_kind(pb.expected.value),
+        compared: list[tuple[Prediction, Prediction]] = []
+        any_predicted = False
+        readouts_a = {r for r, c in value if stated(a, (r, c))}
+        readouts_b = {r for r, c in value if stated(b, (r, c))}
+        for slot in sorted(value):
+            pas, pbs = stated(a, slot), stated(b, slot)
+            if not pas or not pbs:
+                continue
+            any_predicted = True
+            matched = False
+            first_reason: tuple[str, str] | None = None
+            for pa, pb in product(pas, pbs):
+                kind_a = expectation_kind(pa.expected.value)
+                kind_b = expectation_kind(pb.expected.value)
+                if kind_a != kind_b:
+                    first_reason = first_reason or (
+                        "different_prediction_kinds",
+                        f"{a} predicts a {kind_a} ({pa.expected.value}) and {b} a {kind_b} "
+                        f"({pb.expected.value}); a state and a change are different claims.",
+                    )
+                    continue
+                if (
+                    kind_a == "change"
+                    and pa.versus
+                    and pb.versus
+                    and _reference(pa) != _reference(pb)
+                ):
+                    first_reason = first_reason or (
+                        "different_reference",
+                        f"changes against {pa.versus!r} and {pb.versus!r}.",
+                    )
+                    continue
+                compared.append((pa, pb))
+                matched = True
+            if not matched and first_reason is not None:
+                exclusions.append(
+                    ReadoutExclusion(
+                        pair=[a, b],
+                        readout=labels[slot[0]],
+                        reason=first_reason[0],
+                        detail=first_reason[1],
+                        condition=conditions[slot[1]],
+                    )
+                )
+        shared_slots = {r for r, c in value if stated(a, (r, c)) and stated(b, (r, c))}
+        for r in sorted((readouts_a & readouts_b) - shared_slots):
+            any_predicted = True
+            ca = sorted(
+                {str(q.condition) for (rr, c) in value if rr == r for q in stated(a, (rr, c))}
             )
-            if kind_a != kind_b:
-                exclusions.append(
-                    ReadoutExclusion(
-                        pair=[a, b],
-                        readout=labels[r],
-                        reason="different_prediction_kinds",
-                        detail=(
-                            f"{a} predicts a {kind_a} ({pa.expected.value}) and {b} a {kind_b} "
-                            f"({pb.expected.value}); a state and a change are different claims."
-                        ),
-                    )
+            cb = sorted(
+                {str(q.condition) for (rr, c) in value if rr == r for q in stated(b, (rr, c))}
+            )
+            exclusions.append(
+                ReadoutExclusion(
+                    pair=[a, b],
+                    readout=labels[r],
+                    reason="different_condition",
+                    detail=f"{a} is predicted under {ca} and {b} under {cb}; no shared condition.",
                 )
-                continue
-            if (
-                kind_a == "change"
-                and pa.versus
-                and pb.versus
-                and _norm(pa.versus) != _norm(pb.versus)
-            ):
-                exclusions.append(
-                    ReadoutExclusion(
-                        pair=[a, b],
-                        readout=labels[r],
-                        reason="different_reference",
-                        detail=f"changes against {pa.versus!r} and {pb.versus!r}.",
-                    )
-                )
-                continue
-            shared.append(r)
-        if not shared:
+            )
+        if not compared:
             unseparated.append(
-                UnseparatedPair(pair=[a, b], reason="not_comparable_on_shared_readouts")
+                UnseparatedPair(
+                    pair=[a, b],
+                    reason="not_comparable_on_shared_readouts"
+                    if any_predicted
+                    else "no_shared_predicted_readout",
+                )
             )
             continue
-        differing = [r for r in shared if table[a][r] != table[b][r]]
+        differing = [(pa, pb) for pa, pb in compared if pa.expected != pb.expected]
         if not differing:
             unseparated.append(
                 UnseparatedPair(pair=[a, b], reason="same_prediction_on_every_shared_readout")
@@ -943,29 +1035,43 @@ def _discriminate(exp, report: ResearchReport, findings) -> ExperimentDiscrimina
             continue
         notes: list[str] = []
         if not _exclusive(report, a, b):
-            for r in differing:
-                notes.extend(_coexistence(a, b, labels[r], table[a][r], table[b][r]))
+            for pa, pb in differing:
+                notes.extend(_coexistence(a, b, pa.readout, pa.expected, pb.expected))
         separated.append(
             SeparatedPair(
                 pair=[a, b],
                 readouts=[
                     ReadoutDifference(
-                        readout=labels[r], expected={a: table[a][r].value, b: table[b][r].value}
+                        readout=labels[_norm(pa.readout)],
+                        expected={a: pa.expected.value, b: pb.expected.value},
+                        condition=pa.condition,
+                        versus=pa.versus or pb.versus,
                     )
-                    for r in differing
+                    for pa, pb in differing
                 ],
-                coexistence_notes=notes,
+                coexistence_notes=list(dict.fromkeys(notes)),
             )
         )
 
     outcome: list[OutcomeRow] = []
-    for key, label in labels.items():
-        by_expected: dict[str, list[str]] = {}
-        for hid in order:
-            value = table[hid].get(key)
-            if value is not None and value is not Expectation.NOT_PREDICTED:
-                by_expected.setdefault(value.value, []).append(hid)
-        outcome.append(OutcomeRow(readout=label, by_expected=by_expected))
+    for slot in sorted(value):
+        refs = sorted({ref for hid in value[slot] for ref in value[slot][hid]})
+        for ref in refs:
+            by_expected: dict[str, list[str]] = {}
+            versus = None
+            for hid in order:
+                q = value[slot].get(hid, {}).get(ref)
+                if q is not None and q.expected is not Expectation.NOT_PREDICTED:
+                    by_expected.setdefault(q.expected.value, []).append(hid)
+                    versus = versus or q.versus
+            outcome.append(
+                OutcomeRow(
+                    readout=labels[slot[0]],
+                    by_expected=by_expected,
+                    condition=conditions[slot[1]],
+                    versus=versus,
+                )
+            )
 
     return ExperimentDiscrimination(
         experiment_id=exp.id,
@@ -1154,7 +1260,12 @@ def _traces(report, by_id, mechanisms, experiments, findings) -> list[Prediction
                 pair.pair
                 for pair in discrimination[exp.id].separated_pairs
                 if p.hypothesis_id in pair.pair
-                and any(_norm(d.readout) == _norm(p.readout) for d in pair.readouts)
+                and any(
+                    _norm(d.readout) == _norm(p.readout)
+                    and _norm(d.condition or "") == _norm(p.condition or "")
+                    and (not p.versus or not d.versus or _norm(d.versus) == _norm(p.versus))
+                    for d in pair.readouts
+                )
             ]
             out.append(
                 PredictionTrace(

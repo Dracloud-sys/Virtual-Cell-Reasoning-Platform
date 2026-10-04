@@ -1,0 +1,22 @@
+[
+ {
+  "target_id": "E1",
+  "decision": "revise",
+  "reason": "Correction, no new evidence: H2's day-5 vs day-1 pSmad2 value was not observed and is now not_predicted; the latent readout is a candidate, its assumptions split into a tested dose check and an untested origin assumption, H3 added as not_predicted; branches 2-5 narrowed; mRNA note made specific."
+ },
+ {
+  "target_id": "ML15",
+  "decision": "revise",
+  "reason": "Narrowed to what the span shows: HA needed with pSmad2/3 unchanged."
+ },
+ {
+  "target_id": "H4",
+  "decision": "hold",
+  "reason": "Still held. The chronically activated human study is read as a different origin and culture, not as a ligand-free state."
+ },
+ {
+  "target_id": "H5",
+  "decision": "keep",
+  "reason": "One reading reworded ('no TGF-beta added in that study'); H5 unchanged."
+ }
+]

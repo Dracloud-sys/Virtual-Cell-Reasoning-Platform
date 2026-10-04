@@ -1,0 +1,92 @@
+{
+ "original_to_r2": {
+  "added": [
+   "E1|H1|TGFB1_mRNA_cells|arm a (vehicle, cells), d3|arm e (never-treated), same day",
+   "E1|H2|TGFB1_mRNA_cells|arm a (vehicle, cells), d3|arm e (never-treated), same day",
+   "E1|H3|TGFB1_mRNA_cells|arm a (vehicle, cells), d3|arm e (never-treated), same day",
+   "E1|H8|TGFB1_mRNA_cells|arm a (vehicle, cells), d3|arm e (never-treated), same day",
+   "E1|H1|latent_TGFb1_in_CM|arm a (vehicle, cells), d3|arm f (cell-free), d3",
+   "E1|H2|latent_TGFb1_in_CM|arm a (vehicle, cells), d3|arm f (cell-free), d3",
+   "E1|H1|pSmad2_nuclear|arm a (vehicle, cells), d5|arm a (vehicle, cells), d1",
+   "E1|H2|pSmad2_nuclear|arm a (vehicle, cells), d5|arm a (vehicle, cells), d1",
+   "E1|H3|latent_TGFb1_in_CM|arm a (vehicle, cells), d3|arm f (cell-free), d3"
+  ],
+  "other_fields": [
+   {
+    "fields": [
+     "evidence_ids",
+     "mechanism_link_ids"
+    ],
+    "id": "E1|H2|pSmad2_nuclear|arm a (vehicle, cells), d3|arm e (never-treated), same day"
+   },
+   {
+    "fields": [
+     "unresolved"
+    ],
+    "id": "E1|H4|aSMA_stress_fibre_fraction|arm c (SB431542 continuous), d5|arm a (vehicle), d5"
+   }
+  ],
+  "removed": [],
+  "value_changed": [],
+  "value_changes": []
+ },
+ "r1_to_r2": {
+  "added": [
+   "E1|H3|latent_TGFb1_in_CM|arm a (vehicle, cells), d3|arm f (cell-free), d3"
+  ],
+  "other_fields": [
+   {
+    "fields": [
+     "unresolved"
+    ],
+    "id": "E1|H4|aSMA_stress_fibre_fraction|arm c (SB431542 continuous), d5|arm a (vehicle), d5"
+   },
+   {
+    "fields": [
+     "note"
+    ],
+    "id": "E1|H1|TGFB1_mRNA_cells|arm a (vehicle, cells), d3|arm e (never-treated), same day"
+   },
+   {
+    "fields": [
+     "note"
+    ],
+    "id": "E1|H2|TGFB1_mRNA_cells|arm a (vehicle, cells), d3|arm e (never-treated), same day"
+   },
+   {
+    "fields": [
+     "note"
+    ],
+    "id": "E1|H3|TGFB1_mRNA_cells|arm a (vehicle, cells), d3|arm e (never-treated), same day"
+   },
+   {
+    "fields": [
+     "assumptions",
+     "evidence_ids"
+    ],
+    "id": "E1|H1|latent_TGFb1_in_CM|arm a (vehicle, cells), d3|arm f (cell-free), d3"
+   },
+   {
+    "fields": [
+     "assumptions",
+     "evidence_ids",
+     "note",
+     "unresolved"
+    ],
+    "id": "E1|H2|latent_TGFb1_in_CM|arm a (vehicle, cells), d3|arm f (cell-free), d3"
+   }
+  ],
+  "removed": [],
+  "value_changed": [
+   "E1|H2|pSmad2_nuclear|arm a (vehicle, cells), d5|arm a (vehicle, cells), d1"
+  ],
+  "value_changes": [
+   {
+    "after": "not_predicted",
+    "before": "no_change",
+    "cites_new_evidence": [],
+    "prediction": "E1|H2|pSmad2_nuclear|arm a (vehicle, cells), d5|arm a (vehicle, cells), d1"
+   }
+  ]
+ }
+}

@@ -7,6 +7,41 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **A revised research draft is set beside the one it revises** (`revision` on
+  `check_research_draft` / `check_research_draft_file`;
+  `docs/research_sessions/eval1_persistence/evidence_gap_v1/`).
+  - The case:
+    - one gap in the eval1 plan (carried-over vs cell-made TGF-β1 after washout);
+    - 4 searches and 3 papers read (two abstracts, results sections of one);
+    - E1 revised: a latent TGF-β1/LAP readout with its own assumption check; TGFB1 mRNA
+      stated not to mark the source; branch 3 no longer reads a blockade null as H4;
+    - H1 and ML11 stay unsupported.
+  - What the code showed:
+    - E2-E6 are unchanged, and no predicted value moved;
+    - each change traces to a new id or a decision;
+    - the ten new spans are three studies;
+    - the computed separations of E1 did not change.
+  - `prior_draft` / `prior_path` + `prior_sha256` and `revision_decisions` are optional. Without
+    them every result is as before, plus `revision: null`.
+  - Pair analysis now keeps every condition. It used to keep one prediction per hypothesis
+    and readout, so of several conditions only the last-listed was compared.
+    - Predictions are compared per readout and condition, then per reference, and the result
+      does not depend on their order.
+    - A pair with no shared condition is a `different_condition` exclusion.
+    - One hypothesis giving two values for the same readout, condition and reference is a
+      `conflicting_predictions` finding, and neither value is compared.
+    - On the eval1 drafts every experiment's separated pairs are unchanged. More conditions now
+      carry them (E1 42 → 64 in the original), and revision 1's 10 exclusions were an artefact
+      of the old behaviour.
+  - Case revision 2 (`evidence_gap_v1/r2/`) narrows revision 1's readings to the spans read,
+    with no new evidence:
+    - an unobserved pSmad2 time comparison is now `not_predicted`;
+    - the latent/LAP readout is a candidate that does not separate H2 from H3;
+    - ML15 (HA) is limited to "with pSmad present";
+    - the chronically activated cardiac study is read as a different origin and culture.
+    - Revision 1 is kept. The gap itself is still open.
+  - The live host ran `a1dfca9` and checked both drafts by file. The 10 new spans came back
+    `server_retrieved`. The revision itself ran only on the product path.
 - **`check_research_draft_file`: check a draft by file on the local stdio server.**
   - A real host wrote a 130 KB draft out as tool arguments to check it, and again after a
     two-field fix (353,823 tokens for the trial context).

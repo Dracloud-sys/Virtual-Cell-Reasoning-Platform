@@ -1,0 +1,17 @@
+{
+ "code": {
+  "git_head": "7ae68af86225ec8dc62f9ce0d284bad0c0895dce",
+  "src_uncommitted_changes": false
+ },
+ "inputs": {
+  "records/condition_B_payload_2.json": "dda23951ce8bc4c9fa40f61b7b98a34af71181377f3a5b18922a8538f2599bb0",
+  "evidence_gap_v1/draft_revised.json": "663eaf84fc89f15e82936a42c9e8dcdce6bf3f73bcce679e529727ed66e9cabe",
+  "evidence_gap_v1/r2/draft_revised_r2.json": "69f7dcaabf3f346961e686034912f0e703cc4de8bbae1da6baa1c9e875c4fc36",
+  "evidence_gap_v1/r2/decisions_r2.json": "a680f3ecf5b89d1948417d4f41d131a0c5675fedf2211ba41a625756dbfe0dab"
+ },
+ "outputs": {
+  "revision_r1_to_r2.json": "2f37c9071b111e5caa30c4518baab12b420d591728b54e34f2664149d71e4681",
+  "revision_original_to_r2.json": "9f32a5ff3068d4a336a753398f8240829e9147cbbbf5652992f841e2aba65a9b",
+  "prediction_changes.json": "711c31a6306e845568cb7bdeba2081672215b2447a3a48a04f9ae5891e2c8f54"
+ }
+}

@@ -1,0 +1,2336 @@
+{
+ "code": "28c4933",
+ "src": "(redacted path)",
+ "original": {
+  "finding_codes": [
+   "understated_evidence_link"
+  ],
+  "E1": {
+   "separated_pairs": {
+    "H1|H2": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H1|H3": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H1|H4": [
+     "aSMA_stress_fibre_fraction @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H1|H5": [
+     "aSMA_stress_fibre_fraction @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H1|H6": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H1|H7": [
+     "aSMA_stress_fibre_fraction @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H1|H8": [
+     "aSMA_stress_fibre_fraction @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H2|H4": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H2|H5": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H2|H6": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H2|H7": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H2|H8": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H3|H4": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H3|H5": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H3|H6": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H3|H7": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H3|H8": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H4|H6": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H5|H6": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H6|H7": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H6|H8": [
+     "active_TGFb1_in_CM @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H7",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 3
+  },
+  "E2": {
+   "separated_pairs": {
+    "H1|H2": [
+     "IL6_in_donor_CM @ None"
+    ],
+    "H1|H4": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H5": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H6": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H8": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H3": [
+     "IL6_in_donor_CM @ None"
+    ],
+    "H2|H4": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H5": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H6": [
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H8": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H3|H4": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H3|H5": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H3|H6": [
+     "IL6_in_donor_CM @ None"
+    ],
+    "H3|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H3|H8": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H4|H6": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H5|H6": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H6|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H6|H8": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H7",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 3
+  },
+  "E3": {
+   "separated_pairs": {
+    "H1|H4": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H1|H5": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H1|H6": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H1|H7": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H2|H4": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H2|H5": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H2|H6": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H2|H7": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H3|H4": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H3|H5": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H3|H6": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H3|H7": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H4|H6": [
+     "clonal_bimodality @ None"
+    ],
+    "H4|H7": [
+     "clonal_bimodality @ None"
+    ],
+    "H4|H8": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H5|H6": [
+     "clonal_bimodality @ None"
+    ],
+    "H5|H7": [
+     "clonal_bimodality @ None"
+    ],
+    "H5|H8": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H6|H8": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H7|H8": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 2
+  },
+  "E4": {
+   "separated_pairs": {
+    "H1|H3": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H1|H4": [
+     "GATA6_protein @ None"
+    ],
+    "H1|H5": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H1|H8": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H2|H3": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H2|H5": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H2|H8": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H3|H4": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H3|H6": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H3|H7": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H4|H5": [
+     "GATA6_protein @ None",
+     "aSMA_on_substrate @ None"
+    ],
+    "H4|H8": [
+     "GATA6_protein @ None",
+     "aSMA_on_substrate @ None"
+    ],
+    "H5|H6": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H5|H7": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H6|H8": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H7|H8": [
+     "aSMA_on_substrate @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 2
+  },
+  "E5": {
+   "separated_pairs": {
+    "H1|H4": [
+     "ACTA2_accessibility_under_receptor_block @ None",
+     "aSMA_after_HDACi @ None"
+    ],
+    "H1|H5": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H1|H6": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H1|H7": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H1|H8": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H4": [
+     "ACTA2_accessibility_under_receptor_block @ None",
+     "aSMA_after_HDACi @ None"
+    ],
+    "H2|H5": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H6": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H7": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H8": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H4": [
+     "ACTA2_accessibility_under_receptor_block @ None",
+     "aSMA_after_HDACi @ None"
+    ],
+    "H3|H5": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H6": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H7": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H8": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H4|H7": [
+     "aSMA_after_HDACi @ None"
+    ],
+    "H4|H8": [
+     "aSMA_after_HDACi @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H7",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 2
+  },
+  "E6": {
+   "separated_pairs": {
+    "H1|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H1|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H2|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H2|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H3|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H3|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H4|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H4|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H5|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H5|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H6|H7": [
+     "aSMA_SAbgal_colocalisation @ None"
+    ],
+    "H6|H8": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H7|H8": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 3
+  }
+ },
+ "revision_1": {
+  "finding_codes": [
+   "understated_evidence_link"
+  ],
+  "E1": {
+   "separated_pairs": {
+    "H1|H2": [
+     "active_TGFb1_in_CM @ None",
+     "latent_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H1|H3": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H1|H4": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H1|H5": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H1|H6": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H1|H7": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H1|H8": [
+     "TGFB1_mRNA_cells @ None",
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H2|H4": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H2|H5": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H2|H6": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H2|H7": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H2|H8": [
+     "TGFB1_mRNA_cells @ None",
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H3|H4": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H3|H5": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H3|H6": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H3|H7": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H3|H8": [
+     "TGFB1_mRNA_cells @ None",
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H4|H6": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H5|H6": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H6|H7": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H6|H8": [
+     "active_TGFb1_in_CM @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H7",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [
+    [
+     "H1",
+     "H3",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H1",
+     "H4",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H1",
+     "H5",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H1",
+     "H7",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H1",
+     "H8",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H2",
+     "H3",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H2",
+     "H4",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H2",
+     "H5",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H2",
+     "H7",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H2",
+     "H8",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ]
+   ],
+   "outcome_rows": 5
+  },
+  "E2": {
+   "separated_pairs": {
+    "H1|H2": [
+     "IL6_in_donor_CM @ None"
+    ],
+    "H1|H4": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H5": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H6": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H8": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H3": [
+     "IL6_in_donor_CM @ None"
+    ],
+    "H2|H4": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H5": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H6": [
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H8": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H3|H4": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H3|H5": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H3|H6": [
+     "IL6_in_donor_CM @ None"
+    ],
+    "H3|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H3|H8": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H4|H6": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H5|H6": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H6|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H6|H8": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H7",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 3
+  },
+  "E3": {
+   "separated_pairs": {
+    "H1|H4": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H1|H5": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H1|H6": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H1|H7": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H2|H4": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H2|H5": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H2|H6": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H2|H7": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H3|H4": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H3|H5": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H3|H6": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H3|H7": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H4|H6": [
+     "clonal_bimodality @ None"
+    ],
+    "H4|H7": [
+     "clonal_bimodality @ None"
+    ],
+    "H4|H8": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H5|H6": [
+     "clonal_bimodality @ None"
+    ],
+    "H5|H7": [
+     "clonal_bimodality @ None"
+    ],
+    "H5|H8": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H6|H8": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H7|H8": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 2
+  },
+  "E4": {
+   "separated_pairs": {
+    "H1|H3": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H1|H4": [
+     "GATA6_protein @ None"
+    ],
+    "H1|H5": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H1|H8": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H2|H3": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H2|H5": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H2|H8": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H3|H4": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H3|H6": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H3|H7": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H4|H5": [
+     "GATA6_protein @ None",
+     "aSMA_on_substrate @ None"
+    ],
+    "H4|H8": [
+     "GATA6_protein @ None",
+     "aSMA_on_substrate @ None"
+    ],
+    "H5|H6": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H5|H7": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H6|H8": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H7|H8": [
+     "aSMA_on_substrate @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 2
+  },
+  "E5": {
+   "separated_pairs": {
+    "H1|H4": [
+     "ACTA2_accessibility_under_receptor_block @ None",
+     "aSMA_after_HDACi @ None"
+    ],
+    "H1|H5": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H1|H6": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H1|H7": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H1|H8": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H4": [
+     "ACTA2_accessibility_under_receptor_block @ None",
+     "aSMA_after_HDACi @ None"
+    ],
+    "H2|H5": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H6": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H7": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H8": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H4": [
+     "ACTA2_accessibility_under_receptor_block @ None",
+     "aSMA_after_HDACi @ None"
+    ],
+    "H3|H5": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H6": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H7": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H8": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H4|H7": [
+     "aSMA_after_HDACi @ None"
+    ],
+    "H4|H8": [
+     "aSMA_after_HDACi @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H7",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 2
+  },
+  "E6": {
+   "separated_pairs": {
+    "H1|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H1|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H2|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H2|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H3|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H3|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H4|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H4|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H5|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H5|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H6|H7": [
+     "aSMA_SAbgal_colocalisation @ None"
+    ],
+    "H6|H8": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H7|H8": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 3
+  }
+ },
+ "revision_2": {
+  "finding_codes": [
+   "understated_evidence_link"
+  ],
+  "E1": {
+   "separated_pairs": {
+    "H1|H2": [
+     "active_TGFb1_in_CM @ None",
+     "latent_TGFb1_in_CM @ None"
+    ],
+    "H1|H3": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H1|H4": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H1|H5": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H1|H6": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H1|H7": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H1|H8": [
+     "TGFB1_mRNA_cells @ None",
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H2|H4": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H2|H5": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H2|H6": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H2|H7": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H2|H8": [
+     "TGFB1_mRNA_cells @ None",
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H3|H4": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H3|H5": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H3|H6": [
+     "aSMA_stress_fibre_fraction @ None"
+    ],
+    "H3|H7": [
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H3|H8": [
+     "TGFB1_mRNA_cells @ None",
+     "aSMA_stress_fibre_fraction @ None",
+     "active_TGFb1_in_CM @ None",
+     "pSmad2_nuclear @ None"
+    ],
+    "H4|H6": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H5|H6": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H6|H7": [
+     "active_TGFb1_in_CM @ None"
+    ],
+    "H6|H8": [
+     "active_TGFb1_in_CM @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H7",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [
+    [
+     "H1",
+     "H3",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H1",
+     "H4",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H1",
+     "H5",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H1",
+     "H7",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ],
+    [
+     "H1",
+     "H8",
+     "pSmad2_nuclear",
+     null,
+     "different_reference"
+    ]
+   ],
+   "outcome_rows": 5
+  },
+  "E2": {
+   "separated_pairs": {
+    "H1|H2": [
+     "IL6_in_donor_CM @ None"
+    ],
+    "H1|H4": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H5": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H6": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H1|H8": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H3": [
+     "IL6_in_donor_CM @ None"
+    ],
+    "H2|H4": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H5": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H6": [
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H2|H8": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None",
+     "aSMA_in_naive_recipient @ None"
+    ],
+    "H3|H4": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H3|H5": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H3|H6": [
+     "IL6_in_donor_CM @ None"
+    ],
+    "H3|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H3|H8": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H4|H6": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H5|H6": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H6|H7": [
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ],
+    "H6|H8": [
+     "IL6_in_donor_CM @ None",
+     "aSMA_in_labelled_naive_cocultured_cells @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H7",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 3
+  },
+  "E3": {
+   "separated_pairs": {
+    "H1|H4": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H1|H5": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H1|H6": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H1|H7": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H2|H4": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H2|H5": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H2|H6": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H2|H7": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H3|H4": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H3|H5": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H3|H6": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H3|H7": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H4|H6": [
+     "clonal_bimodality @ None"
+    ],
+    "H4|H7": [
+     "clonal_bimodality @ None"
+    ],
+    "H4|H8": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H5|H6": [
+     "clonal_bimodality @ None"
+    ],
+    "H5|H7": [
+     "clonal_bimodality @ None"
+    ],
+    "H5|H8": [
+     "aSMA_per_cell_after_replating @ None"
+    ],
+    "H6|H8": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ],
+    "H7|H8": [
+     "aSMA_per_cell_after_replating @ None",
+     "clonal_bimodality @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 2
+  },
+  "E4": {
+   "separated_pairs": {
+    "H1|H3": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H1|H4": [
+     "GATA6_protein @ None"
+    ],
+    "H1|H5": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H1|H8": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H2|H3": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H2|H5": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H2|H8": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H3|H4": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H3|H6": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H3|H7": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H4|H5": [
+     "GATA6_protein @ None",
+     "aSMA_on_substrate @ None"
+    ],
+    "H4|H8": [
+     "GATA6_protein @ None",
+     "aSMA_on_substrate @ None"
+    ],
+    "H5|H6": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H5|H7": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H6|H8": [
+     "aSMA_on_substrate @ None"
+    ],
+    "H7|H8": [
+     "aSMA_on_substrate @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 2
+  },
+  "E5": {
+   "separated_pairs": {
+    "H1|H4": [
+     "ACTA2_accessibility_under_receptor_block @ None",
+     "aSMA_after_HDACi @ None"
+    ],
+    "H1|H5": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H1|H6": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H1|H7": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H1|H8": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H4": [
+     "ACTA2_accessibility_under_receptor_block @ None",
+     "aSMA_after_HDACi @ None"
+    ],
+    "H2|H5": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H6": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H7": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H2|H8": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H4": [
+     "ACTA2_accessibility_under_receptor_block @ None",
+     "aSMA_after_HDACi @ None"
+    ],
+    "H3|H5": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H6": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H7": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H3|H8": [
+     "ACTA2_accessibility_under_receptor_block @ None"
+    ],
+    "H4|H7": [
+     "aSMA_after_HDACi @ None"
+    ],
+    "H4|H8": [
+     "aSMA_after_HDACi @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H6",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H7",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H6",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H7",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 2
+  },
+  "E6": {
+   "separated_pairs": {
+    "H1|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H1|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H2|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H2|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H3|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H3|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H4|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H4|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H5|H6": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H5|H7": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H6|H7": [
+     "aSMA_SAbgal_colocalisation @ None"
+    ],
+    "H6|H8": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_SAbgal_colocalisation @ None",
+     "aSMA_after_senolytic @ None"
+    ],
+    "H7|H8": [
+     "SA_b_gal_fraction @ None",
+     "aSMA_after_senolytic @ None"
+    ]
+   },
+   "unseparated_pairs": [
+    [
+     "H1",
+     "H2",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H1",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H3",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H2",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H4",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H3",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H5",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H4",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ],
+    [
+     "H5",
+     "H8",
+     "same_prediction_on_every_shared_readout"
+    ]
+   ],
+   "readout_exclusions": [],
+   "outcome_rows": 3
+  }
+ }
+}

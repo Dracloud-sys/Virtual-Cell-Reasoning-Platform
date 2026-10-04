@@ -501,6 +501,15 @@ targets that name nothing in the plan are findings.
    span supporting other predictions.
 5. **Assays, conditions and units are matched as written.** "absorbance" is not "DTNB
    absorbance". This is deliberate, and it is visible in S4.
+6. **Pair analysis kept one prediction per hypothesis and readout — fixed.** Of several
+   predictions on one readout under different conditions or references, only the last-listed
+   was compared. Found while revising the eval1 plan (`eval1_persistence/evidence_gap_v1/`) and
+   pinned at `25c3af3`. Now predictions are compared within a readout under a condition (both
+   as written), per reference, and the result is the same whatever their order. A pair with no
+   shared condition is excluded as `different_condition`. Conflicting values for one condition
+   are a `conflicting_predictions` finding, never resolved by order. On the eval1 drafts, every
+   experiment's separated pairs were unchanged by the fix; the conditions carrying them were not
+   (`evidence_gap_v1/r2/`).
 
 ### B1.1: the same reference, declared pairs, and assumption checks
 
@@ -569,6 +578,30 @@ ingestion and the tools. It exposed two product gaps:
 
 Deliberately still not built: file input, saving and resuming a session, statistics, unit
 conversion, synonym handling, study-level withdrawal, and any automatic update of a prediction.
+
+### A revision set beside the draft it revises
+
+`check_research_draft` checks one draft, and `what_if` says what in it rests on an evidence id.
+Neither says what a rewrite **changed** after the host read new sources. Found on
+`eval1_persistence/evidence_gap_v1/`, the first case that carried one gap from the plan,
+through searches and reads, back into the plan.
+
+- **How to call it.** Send `prior_draft` (or, on the file tool, `prior_path` + `prior_sha256`)
+  and, optionally, `revision_decisions`. The result gains `revision`
+  (`research/revision.py`), the same in both views. No new tool, no new input schema for the
+  draft.
+- **What it reports:**
+  - evidence added, removed or edited (same id, other hash), counted by study;
+  - every changed hypothesis, mechanism link, experiment, prediction and evidence link, with
+    the new ids it cites;
+  - dropped assumptions and conditions as removals;
+  - every moved predicted value;
+  - changes that cite no new evidence and that no decision covers;
+  - `what_if` with the new ids withdrawn, reused for "what rests on the new evidence".
+- **Decisions** are `keep` (new grounds only), `revise`, `hold` or
+  `unchanged_no_new_evidence`, recorded as the host's. A decision that contradicts what
+  changed is a finding, and so is a non-supporting role listed as support.
+- **What it does not do.** It judges nothing, moves no value and ranks nothing.
 
 ### What has and has not been exercised
 

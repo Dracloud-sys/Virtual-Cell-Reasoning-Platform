@@ -1,0 +1,133 @@
+[
+  {
+    "id": "lit-e60fafae0030",
+    "kind": "retrieved_source",
+    "statement": "Hyaluronan orchestrates transforming growth factor-beta1-dependent maintenance of myofibroblast phenotype.",
+    "locator": {
+      "article": {"doi": "10.1074/jbc.m806989200", "pmid": "19193641", "pmcid": "PMC2666557", "provider_id": "19193641"},
+      "source_kind": "abstract",
+      "source_text": "The differentiation of resident fibroblasts to myofibroblasts is central to wound healing. In the context of organ fibrosis, however, persistence of these myofibroblasts is associated with progressive disease. This study examines mechanisms controlling the maintenance of the myofibroblast phenotype. Myofibroblasts were induced by adding transforming growth factor-beta1 (TGF-beta1) (10 ng/ml) to fibroblasts for 72 h. The phenotype was maintained for up to 120 h following removal of TGF-beta1. Western blot for pSmad2 and -3 demonstrated persistent phosphorylation despite removal of exogenous TGF-beta1. This persistence was because of autocrine synthesis of TGF-beta1, which was inhibited by both anti-TGF-beta1 antibody and the ALK5 inhibitor SB431542. Persistence of phenotype was also associated with increased hyaluronan (HA) generation, synthesis of the hyaladherin TSG6, and HA pericellular coat formation. These were all inhibited by TGF-beta receptor blockade. To further investigate the importance of HA synthesis, 4-methylumbelliferone was used to deplete the cytoplasmic pool of UDP-glucuronic acid, essential for HA chain elongation. This prevented formation of the pericellular HA",
+      "source_text_hash": "e15a2599642f20cd9a32582f5243bf2d523c74b4704993bab83f34a1749ddd65"
+    },
+    "content_hash": "e60fafae003094a41deaa1bd74dbcec0f80d23ecc6ff0edad5f6767a6a809c3e"
+  },
+  {
+    "id": "lit-0650a4586f10",
+    "kind": "retrieved_source",
+    "statement": "Hyaluronan orchestrates transforming growth factor-beta1-dependent maintenance of myofibroblast phenotype.",
+    "locator": {
+      "article": {"doi": "10.1074/jbc.m806989200", "pmid": "19193641", "pmcid": "PMC2666557", "provider_id": "19193641"},
+      "source_kind": "abstract",
+      "source_text": "matrix and decreased expression of alpha-SMA. 4-Methylumbelliferone had no effect, however, on Smad2 and -3 phosphorylation. Similarly inhibition of HAS2 by short interfering RNA prevented phenotypic activation without altering TGF-beta1-dependent Smad phosphorylation, thus suggesting that HA-dependent regulation of cell phenotype was independent of Smad activation. These data suggest that myofibroblasts in areas of fibrosis maintain their own phenotype through autocrine TGF-beta1 action and that extracellular HA matrices are an essential mediator of this. We propose a model in which the formation of the pericellular HA matrix regulates the outcome of Smad-dependent autocrine TGF-beta1-activated signaling, and therefore persistence of the myofibroblast phenotype.",
+      "source_text_hash": "d6b031fb99400d7dac3ba94f20e46b12d537b060a01c318bac08ebd81936be01"
+    },
+    "content_hash": "0650a4586f104de66ef3a5d4bf296520ecc247b60a38815295563686ed5d44d6"
+  },
+  {
+    "id": "lit-fcd84996ed09",
+    "kind": "retrieved_source",
+    "statement": "ERK, p38, and Smad signaling pathways differentially regulate transforming growth factor-beta1 autoinduction in proximal tubular epithelial cells.",
+    "locator": {
+      "article": {"doi": "10.2353/ajpath.2006.050921", "pmid": "17003485", "pmcid": "PMC1698849", "provider_id": "17003485"},
+      "source_kind": "abstract",
+      "source_text": "Transforming growth factor (TGF)-beta1 is a mediator of the final common pathway of fibrosis associated with progressive renal disease, a process in which proximal tubular cells (PTCs) are known to play an important part. The aim of the current study was to examine the mechanism of PTC TGF-beta1 autoinduction. The addition of TGF-beta1 led to increased amounts of TGF-beta1 mRNA and increased de novo protein synthesis. The addition of TGF-beta1 led to increased phosphorylation of R-Smads and activation of extracellular signal-regulated kinase mitogen-activated protein (MAP) kinase and p38 MAP kinase pathways. Use of a dominant-negative Smad3 (Smad3 DN) expression vector, Smad3 small interfering RNA, and inhibition of extracellular signal-regulated kinase and p38 MAP kinase pathways with the chemical inhibitors PD98059 or SB203580 suggested that activation of these signaling pathways occurred independently. Smad3 DN expression, Smad3 small interfering RNA, or the addition of PD98059 inhibited TGF-beta1-dependent stimulation of TGF-beta1 mRNA. Furthermore, Smad3 blockade specifically inhibited activation of the transcription factor AP-1 by TGF-beta1, whereas PD98059 prevented",
+      "source_text_hash": "717b90207abe016e09613e4fbc88be192bb236bdcd7706510c254eab0a5fbbc4"
+    },
+    "content_hash": "fcd84996ed09c715805878c64175f318ec885c1496d137fe34b53bcff5b920a6"
+  },
+  {
+    "id": "lit-bc7c597aaca4",
+    "kind": "retrieved_source",
+    "statement": "ERK, p38, and Smad signaling pathways differentially regulate transforming growth factor-beta1 autoinduction in proximal tubular epithelial cells.",
+    "locator": {
+      "article": {"doi": "10.2353/ajpath.2006.050921", "pmid": "17003485", "pmcid": "PMC1698849", "provider_id": "17003485"},
+      "source_kind": "abstract",
+      "source_text": "TGF-beta1-dependent nuclear factor-kappaB activation. In contrast inhibition of p38 MAP kinase inhibited de novo TGF-beta1 protein synthesis but did not influence TGF-beta1 mRNA expression or activation of either transcription factor. In summary, in PTCs, TGF-beta1 autoinduction requires the coordinated action of independently regulated Smad and non-Smad pathways. Furthermore these pathways regulate distinct transcriptional and translational components of TGF-beta1 synthesis.",
+      "source_text_hash": "6ef2a5297027231c494cf6da9ff73cfcd1865098913a883cb9495d55764a1e21"
+    },
+    "content_hash": "bc7c597aaca4829f138762071649ec5f6aefc4699c7ead5393e22da87f0ebc95"
+  },
+  {
+    "id": "lit-a0b6b0ba4b51",
+    "kind": "retrieved_source",
+    "statement": "Chronic activation of human cardiac fibroblasts in vitro attenuates the reversibility of the myofibroblast phenotype.",
+    "locator": {
+      "article": {"doi": "10.1038/s41598-023-39369-y", "pmid": "37495732", "pmcid": "PMC10372150", "provider_id": "37495732"},
+      "source_kind": "section",
+      "section_title": "In vitro treatments",
+      "source_text": "The following drugs were added to the respective culture media as summarised in Table 1: 10 ng/mL recombinant human TGF-β1 protein expressed from a CHO cell line (R&D Systems, 240-B)35, 30 nM TGF-β receptor 1 inhibitor SD208 (Tocris, 3269)36, 10 μM TGF-β receptor inhibitor SB43154234.",
+      "source_text_hash": "bf00de8ae6bb367617a50f2a31274506877feab45c2d54eb901e80fc098a1029"
+    },
+    "content_hash": "a0b6b0ba4b516c7b07a0ecb1a8edc78e33240fcf9d510009ef4dc6cc17065d7f"
+  },
+  {
+    "id": "lit-2f2b31039dc0",
+    "kind": "retrieved_source",
+    "statement": "Chronic activation of human cardiac fibroblasts in vitro attenuates the reversibility of the myofibroblast phenotype.",
+    "locator": {
+      "article": {"doi": "10.1038/s41598-023-39369-y", "pmid": "37495732", "pmcid": "PMC10372150", "provider_id": "37495732"},
+      "source_kind": "section",
+      "section_title": "Long-term culture of human cardiac fibroblasts leads to myofibroblast transition",
+      "source_text": "Myocardium stiffness has been associated with activation of cardiac fibroblasts to myofibroblasts24. Culture of primary healthy murine cardiac fibroblasts on stiff plastic plates is shown to induce myofibroblast activation30. HCFs were obtained from the explanted hearts of patients undergoing cardiac transplantation and cultured in a 2D monolayer on “stiff” polystyrene plates (E = 3 GPa) for up to 10 passages in order to chronically activate HCFs. These cells were then exposed to 10 ng/mL TGF-β, a well-established inducer of the myofibroblast phenotype, for 2–4 days to assess their ability to further activate—2 days for immunofluorescence and proliferation experiments (to avoid high confluency) and 4 days for qPCR and western blotting. α-SMA and collagen 1 were utilised as markers of fibroblast activation and transition to myofibroblasts. Vimentin was used as a marker for cardiac fibroblasts. Following long term culture on stiff substrates, α-SMA was detected by western blot and immunofluorescence staining in HCF cultured on 3 GPa polystyrene plates indicating baseline activation (Fig. 2, panels b, d and e). Treatment with TGF-β for 4 days did not lead to significant increase in",
+      "source_text_hash": "a398595fad95228180c876196b63526fcfddf57f5f50989b31248baf2ff3fedc"
+    },
+    "content_hash": "2f2b31039dc007f91a19d7a62377b94e36259a74b0a32c8417e2e9bde72d91e4"
+  },
+  {
+    "id": "lit-8ad9688ecbdd",
+    "kind": "retrieved_source",
+    "statement": "Chronic activation of human cardiac fibroblasts in vitro attenuates the reversibility of the myofibroblast phenotype.",
+    "locator": {
+      "article": {"doi": "10.1038/s41598-023-39369-y", "pmid": "37495732", "pmcid": "PMC10372150", "provider_id": "37495732"},
+      "source_kind": "section",
+      "section_title": "Long-term culture of human cardiac fibroblasts leads to myofibroblast transition",
+      "source_text": "α-SMA and Collagen 1 expression at the mRNA level (Fig. 2a) or protein level (Fig. 2b) when compared to vehicle control. TGF-β also had no detectable effect on proliferation (Fig. 2c) or cell size (Fig. S1). ~ 70% of HCFs displayed positive staining for α-SMA when assessed by immunofluorescence (Fig. S2). TGF-β treatment did not significantly affect α-SMA expression, as assessed by immunofluorescence (Figs. 2d and f, Fig. S2). Secondary antibody only controls show that this was not due to non-specific binding or background fluorescence staining (Fig. S3). This lack of TGF-β-induced response was maintained at each passage tested post thaw (p6-p9), when assessed by immunofluorescence (Fig. 2f and Fig. S4a). Total α-SMA expression as measured by relative integrated density did not significantly change from passage 6 to 9 (Fig. S4a). Similarly, percentage of cells positive for α-SMA fibres did not significantly change during long term culture from p6-p9 (Fig. 2f). Interestingly, long term culture indicated a non-significant decrease % of α-SMA positive cells (p = > 0.05) with long term culture indicating possible de-differentiation of HCF. These results clearly demonstrate that",
+      "source_text_hash": "ee93f09790484e73494e477badc5176abf3e3a03a8d54724bce1620ae1c8e583"
+    },
+    "content_hash": "8ad9688ecbdd3b6486a0b9a301c610c0d82736f07d5c5000d92b9f442fd0ecc1"
+  },
+  {
+    "id": "lit-436033cdfec3",
+    "kind": "retrieved_source",
+    "statement": "Chronic activation of human cardiac fibroblasts in vitro attenuates the reversibility of the myofibroblast phenotype.",
+    "locator": {
+      "article": {"doi": "10.1038/s41598-023-39369-y", "pmid": "37495732", "pmcid": "PMC10372150", "provider_id": "37495732"},
+      "source_kind": "section",
+      "section_title": "Chronically activated human fibroblasts cannot transition back to quiescent phenotype",
+      "source_text": "We then investigated whether the established myofibroblast phenotype can be reversed. Two approaches for myofibroblast de-activation were employed, via reduction in mechanical stress (using sub-culture on softer substrates, 25 and 2 kPa) or via TGF-β receptor inhibition (using small molecule inhibitor SD208). Culture on 25 kPa or 2 kPa soft substrates did not result in significant reduction in α-SMA expression in myofibroblasts, as measured by immunofluorescence (Fig. 3a). These findings were supported by RT-PCR analysis of ACTA2 and COL1A1 mRNA transcripts, which showed comparable levels of mRNA expression between myofibroblasts cultured on the stiff and soft substrates (Fig. 3b). When proliferation was assessed over a 48-h period, no significant difference was seen between myofibroblasts grown on 3 GPa and 25 kPa (Fig. 3c). A trend towards non-significant reduction in proliferation of myofibroblasts grown on 2 kPa when compared with 3 GPa was observed (Fig. 3c). Cell size was unchanged on 25 kPa (Fig. S1) but significantly decreased for myofibroblasts grown on 2 kPa substrates (Fig. S1) compared with 3 GPa. TGF-β receptor inhibitor SD208 (30 nM) had no discernible effect on",
+      "source_text_hash": "55a80c4f5d3720166ceacf88a6eff208384aed534e3be6dde1611b1565e3866b"
+    },
+    "content_hash": "436033cdfec3979b3e17aa043d20f51153c7e78d579c33f7281f589819f8d99a"
+  },
+  {
+    "id": "lit-1ba98dbcd8f3",
+    "kind": "retrieved_source",
+    "statement": "Chronic activation of human cardiac fibroblasts in vitro attenuates the reversibility of the myofibroblast phenotype.",
+    "locator": {
+      "article": {"doi": "10.1038/s41598-023-39369-y", "pmid": "37495732", "pmcid": "PMC10372150", "provider_id": "37495732"},
+      "source_kind": "section",
+      "section_title": "Chronically activated human fibroblasts cannot transition back to quiescent phenotype",
+      "source_text": "proliferation of myofibroblasts grown on 3 GPa (Fig. S5). There was also no significant effect on α-SMA expression, as measured by immunofluorescence, following treatment with SD208 (Fig. S5b). Similarly, percentage of cells positive for α-SMA was also unchanged in the presence of SD208 (Fig. S2). We next assessed whether a dual approach of myofibroblast deactivation, via both subculture on soft substrates and in the presence of TGF-β inhibitors, can reverse myofibroblasts to their quiescent phenotype. Culture of myofibroblasts on 25 kPa substrate, in the presence of SD208, demonstrated no significant effect on proliferation (Fig. S6c), nor change in expression of α-SMA, as assessed by immunofluorescence (Fig. S6d and e). As demonstrated in Fig. S6, mRNA and protein expression of α-SMA and Collagen 1 were also unaffected by addition of TGF-β, when cultured on 25 kPa (Fig. S6a and b, summarised in Table 4). Culture on 2 kPa in the presence of SD208 similarly yielded no significant differences in proliferation (Fig. S7c), nor expression of α-SMA (Fig. S7d and e). Expression of α-SMA and Collagen 1 were also unaffected at the mRNA transcript or protein level (Fig. S7a and b,",
+      "source_text_hash": "30da83dc342a967441d5320f674b147c138ac32b94dd967ea84ac7f6559d55e9"
+    },
+    "content_hash": "1ba98dbcd8f3b15ffbfefb6fd4f3741216e49eda0e06fa3ea858c527a45c98ce"
+  },
+  {
+    "id": "lit-758a014077fb",
+    "kind": "retrieved_source",
+    "statement": "Chronic activation of human cardiac fibroblasts in vitro attenuates the reversibility of the myofibroblast phenotype.",
+    "locator": {
+      "article": {"doi": "10.1038/s41598-023-39369-y", "pmid": "37495732", "pmcid": "PMC10372150", "provider_id": "37495732"},
+      "source_kind": "section",
+      "section_title": "Chronically activated human fibroblasts cannot transition back to quiescent phenotype",
+      "source_text": "summarised in Table 4). To examine whether longer-term TGF-β receptor inhibition is required to reverse chronically activated HCF, myofibroblasts were cultured from p5 to p9 in the presence or absence of TGF-β receptor inhibitor SB431542 (SB). At each passage, α-SMA expression was assessed by immunofluorescence. Total α-SMA expression as measured by relative integrated density did not significantly change from passage 6 to 9 (Fig. S4a). Similarly, % cells positive for α-SMA fibres did not significantly change compared to myofibroblasts cultured in the presence of SB (Fig. S4b). Our data also demonstrate that HCF are unresponsive to TGF-β at each passage tested (p6-p9) regardless of whether they are cultured in the presence or absence of SB (Fig. S4c). These data show that myofibroblasts cannot be de-activated when subsequently cultured on softer substrates (25 kPa or 2 kPa) that more closely reflect that of the human myocardium. These data further demonstrate that human myofibroblasts do not respond to TGF-β treatment and cannot transition back to quiescent state when cultured on soft substrates, in the presence or absence of a TGF-β inhibitor.",
+      "source_text_hash": "dfbe0ef860f4e8352760a58a9954c743abf456c797397c2bbdb475f2020f27e6"
+    },
+    "content_hash": "758a014077fbd74b893246721d958e5be14aef05aa964097427934cab921f395"
+  },
+  {
+    "id": "prior-latent-vs-active",
+    "kind": "model_prior",
+    "statement": "Host's general knowledge, not read in any source here: recombinant TGF-beta1 is commonly supplied as the mature active dimer without its latency-associated peptide (LAP), while cells secrete TGF-beta1 mostly as a latent LAP-bound complex. If both hold for the lot and cells used, latent (acid-activatable) TGF-beta1 and LAP in the medium after washout would mark newly secreted ligand rather than carryover. A search target: searches 1 and 4 of this session did not return a source stating it."
+  }
+]
