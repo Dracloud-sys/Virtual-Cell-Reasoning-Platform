@@ -69,6 +69,7 @@ RESEARCH_TOOLS = (
     "read_evidence_source",
     "check_research_draft",
     "compare_research_observations",
+    "run_logic_model",
 )
 TOOL_NAMES = VERDICT_TOOLS + RESEARCH_TOOLS
 

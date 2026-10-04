@@ -2,13 +2,13 @@
 
     API / CLI / MCP  ->  ReasoningService.query()  ->  DomainRegistry  ->  DomainPack
 
-This module registers seven tools and does nothing else. It re-derives no
+This module registers eight tools and does nothing else. It re-derives no
 scientific value, owns no vocabulary, branches on no domain, and names no
 vertical - everything domain-specific arrives through ``DomainRegistry`` and
 ``DomainDescription``. Adding a fourth domain must change zero lines in this
 package; a test asserts it.
 
-Four of those seven are the **domainless door**, and they invert who reasons. The
+Four of those eight are the **domainless door**, and they invert who reasons. The
 final shape of this product is a host LLM with VCRP plugged into it: the host
 understands the question, proposes the hypotheses, designs the experiment and
 writes the explanation; this server looks evidence up, walks mechanism paths,
@@ -18,6 +18,9 @@ anything matching; the researcher decides and approves. So ``research_evidence``
 no model and need no API
 key, and they live on this server rather than a second one - a separate server would
 double what a host must configure and split the guidance a model reads in two.
+The eighth, ``run_logic_model``, also calls no model: it computes what a small Boolean
+candidate model the host states would give under an intervention
+(:mod:`virtualcell.simulation.logic`), and claims nothing about any cell.
 
 The MCP SDK is an optional dependency (``pip install "virtualcell[mcp]"``). It is
 imported here and, for the HTTP transport only, in :mod:`virtualcell.mcp.remote`, so the
@@ -85,6 +88,7 @@ from virtualcell.research.contracts import (
 )
 from virtualcell.research.plan import WhatIf
 from virtualcell.research.revision import RevisionDecision
+from virtualcell.simulation import logic
 
 SERVER_NAME = "virtualcell"
 
@@ -112,6 +116,10 @@ from a vocabulary built for something else is worse than no verdict. You do the
 reasoning on this door: the hypotheses, the design and the interpretation are
 yours, this server looks things up and checks what you wrote, and the experiment
 is the researcher's to approve.
+
+**A candidate model, run.** run_logic_model computes what a small Boolean model you
+state would give under an intervention. It is a calculation from your rules, not a finding
+about any cell.
 
 Whatever this server returns, relay its limitations and overinterpretation risks
 with its status. Never report a status on its own.
@@ -168,6 +176,7 @@ _WhatIfParam = Annotated[
     WithJsonSchema({"anyOf": [research_payloads.contract_schema(WhatIf), {"type": "null"}]}),
 ]
 _RevisionDecisionsParam = _published(RevisionDecision)
+_ReadoutMappingsParam = _published(logic.ReadoutMapping)
 _PriorDraftParam = Annotated[
     dict[str, Any] | None,
     Field(
@@ -637,6 +646,70 @@ def build_server(
                 raise ToolError(" ".join(getattr(c, "text", "") for c in result.content))
             checked = research_payloads.DraftCheckResult.model_validate(result.structured_content)
             return checked.model_copy(update={"input_file": read, "prior_input_file": prior_read})
+
+    @server.tool(
+        name="run_logic_model",
+        description=guidance.RUN_LOGIC_MODEL,
+        annotations=_READ_ONLY,
+    )
+    def _run_logic_model(
+        model: Annotated[
+            dict[str, Any],
+            WithJsonSchema(research_payloads.contract_schema(logic.LogicModel)),
+        ],
+        scenario: Annotated[
+            dict[str, Any], WithJsonSchema(research_payloads.contract_schema(logic.Scenario))
+        ],
+        steps: Annotated[
+            int, Field(description=f"Logical updates to run, 1-{logic.MAX_STEPS}. Not time.")
+        ],
+        baseline: Annotated[
+            dict[str, Any] | None,
+            WithJsonSchema(
+                {"anyOf": [research_payloads.contract_schema(logic.Scenario), {"type": "null"}]}
+            ),
+        ] = None,
+        readouts: _ReadoutMappingsParam = None,
+        readouts_requested: Annotated[
+            list[str] | None,
+            Field(description="Readout names you need; any without a mapping is not_derivable."),
+        ] = None,
+        hypothesis_id: Annotated[
+            str | None,
+            Field(description="If set, final-step readouts come back as Prediction drafts."),
+        ] = None,
+        max_cases: Annotated[
+            int,
+            Field(
+                description=(
+                    f"Cases from unknowns to run, 1-{logic.MAX_CASES} (default "
+                    f"{logic.DEFAULT_MAX_CASES}). An operational limit."
+                )
+            ),
+        ] = logic.DEFAULT_MAX_CASES,
+        view: Annotated[
+            Literal["summary", "full"],
+            Field(description="summary (default), or full with every case path and the trace."),
+        ] = "summary",
+    ) -> logic.LogicRun:
+        try:
+            return logic.run_logic(
+                logic.LogicModel.model_validate(model),
+                logic.Scenario.model_validate(scenario),
+                steps,
+                baseline=logic.Scenario.model_validate(baseline) if baseline else None,
+                readouts=[logic.ReadoutMapping.model_validate(r) for r in readouts or []],
+                readouts_requested=readouts_requested,
+                hypothesis_id=hypothesis_id,
+                max_cases=max_cases,
+                view=view,
+            )
+        except (ValueError, ValidationError) as exc:
+            raise _refuse(
+                "malformed_logic_model",
+                str(exc),
+                "Fix the model or scenario as the message says; nothing was run.",
+            ) from exc
 
     @server.tool(
         name="compare_research_observations",

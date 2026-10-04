@@ -1,0 +1,87 @@
+{
+ "about": "Abstract reference case for the logic engine. U is an effective external input, S an intermediate state, P a state of interest. Not a model of any named molecule; the rules are candidates stated by the host for testing the engine.",
+ "models": [
+  {
+   "id": "A_input_dependent",
+   "version": "v0",
+   "description": "P follows S, S follows U. No self-maintenance.",
+   "components": [
+    {"id": "U", "kind": "input", "description": "effective external input (abstract)"},
+    {"id": "S", "kind": "internal", "description": "intermediate state responding to U"},
+    {"id": "P", "kind": "internal", "description": "state of interest"}
+   ],
+   "rules": [
+    {"id": "R1", "target": "S", "expr": {"var": "U"}, "stated_by": "host", "assumptions": ["S responds to U within one update."]},
+    {"id": "R2", "target": "P", "expr": {"var": "S"}, "stated_by": "host", "assumptions": ["P needs S at the previous update."]}
+   ],
+   "update": "synchronous"
+  },
+  {
+   "id": "B_self_maintaining",
+   "version": "v0",
+   "description": "As A, but P, once active, keeps itself active.",
+   "components": [
+    {"id": "U", "kind": "input", "description": "effective external input (abstract)"},
+    {"id": "S", "kind": "internal", "description": "intermediate state responding to U"},
+    {"id": "P", "kind": "internal", "description": "state of interest"}
+   ],
+   "rules": [
+    {"id": "R1", "target": "S", "expr": {"var": "U"}, "stated_by": "host", "assumptions": ["S responds to U within one update."]},
+    {"id": "R2", "target": "P", "expr": {"or": [{"var": "S"}, {"var": "P"}]}, "stated_by": "host", "assumptions": ["Self-maintenance of P is stated as a candidate rule, not observed."]}
+   ],
+   "update": "synchronous"
+  }
+ ],
+ "steps": 6,
+ "scenarios": {
+  "s1_input_on": {
+   "initial": {"S": true, "P": true},
+   "inputs": {"U": [{"start": 0, "end": null, "value": true}]},
+   "clamps": []
+  },
+  "s2_input_off": {
+   "initial": {"S": true, "P": true},
+   "inputs": {"U": [{"start": 0, "end": null, "value": true}]},
+   "clamps": [{"target": "U", "value": false, "start": 1, "end": null}]
+  },
+  "s3_S_off": {
+   "initial": {"S": true, "P": true},
+   "inputs": {"U": [{"start": 0, "end": null, "value": true}]},
+   "clamps": [{"target": "S", "value": false, "start": 1, "end": null}]
+  },
+  "s4_input_off_then_released": {
+   "initial": {"S": true, "P": true},
+   "inputs": {"U": [{"start": 0, "end": null, "value": true}]},
+   "clamps": [{"target": "U", "value": false, "start": 1, "end": 2}]
+  },
+  "s5a_P_unknown_input_off": {
+   "initial": {"S": true, "P": "unknown"},
+   "inputs": {"U": [{"start": 0, "end": null, "value": true}]},
+   "clamps": [{"target": "U", "value": false, "start": 1, "end": null}]
+  },
+  "s5b_U_unknown": {
+   "initial": {"S": true, "P": true},
+   "inputs": {"U": [{"start": 0, "end": null, "value": "unknown"}]},
+   "clamps": []
+  },
+  "s5c_base_P_unknown": {
+   "initial": {"S": true, "P": "unknown"},
+   "inputs": {"U": [{"start": 0, "end": null, "value": true}]},
+   "clamps": []
+  },
+  "s5c_S_off_from_0_P_unknown": {
+   "initial": {"S": true, "P": "unknown"},
+   "inputs": {"U": [{"start": 0, "end": null, "value": true}]},
+   "clamps": [{"target": "S", "value": false, "start": 0, "end": null}]
+  }
+ },
+ "comparisons": [
+  ["s2_input_off", "s1_input_on"],
+  ["s3_S_off", "s1_input_on"],
+  ["s4_input_off_then_released", "s1_input_on"],
+  ["s5c_S_off_from_0_P_unknown", "s5c_base_P_unknown"]
+ ],
+ "readouts": [
+  {"readout": "R_P", "state": "P", "mapping": "identity", "basis": "Abstract test mapping: P read as itself. Not a validated assay.", "assumptions": ["The readout reads P without loss."]}
+ ]
+}

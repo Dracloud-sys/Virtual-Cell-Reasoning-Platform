@@ -7,6 +7,42 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`run_logic_model`: compute what a small Boolean candidate model gives under an
+  intervention** (`simulation/logic.py`; `docs/research_sessions/logic_model_v0/`).
+  - Inputs are components (input or internal), one structured rule per internal component
+    (`const`, `var`, `not`, `and`, `or`, no eval), an initial state (true, false or unknown),
+    input segments and clamps.
+  - Clamps are inclusive ranges of state indices: rules for `start+1` read the clamped value,
+    and from `end+1` the target's own rule applies again. Conflicting clamps are refused.
+  - Synchronous update only; another mode is refused, not converted. A step is a logical
+    update, not time.
+  - Unknown initial values and input segments are expanded into cases (one choice per segment,
+    or per index for `unknown_each_step`).
+    - Results say same-in-all, differs-by-case, not computed, or exploration incomplete
+      (limits: 32 components, 100 steps, 256-4096 cases). Case counts are not probabilities.
+    - A missing rule or input is not computed. Kleene logic decides only what it can.
+  - Also returned:
+    - repetition after inputs stop changing;
+    - differences from a same-start baseline, also per paired case;
+    - what each final value was computed from, with the rules' stated evidence and
+      assumptions, not validated;
+    - readouts through an explicit mapping (`identity` only), otherwise `not_derivable`;
+    - optional Prediction drafts with basis `assumption` naming the model hash.
+  - Reference case: two candidate models (input-dependent, self-maintaining) across eight
+    scenarios. Every value was traced by hand first; 24 of 24 match.
+  - `SimulationEngine` is unchanged: its float layers, `time` and `dt` cannot carry unknown or
+    a non-time step.
+  - Review r2 (`logic_model_v0/review_r2/`), both items reproduced on the product path first:
+    - **Repetition.** It is now assessed only between fully computed states, and only once no
+      declared input or clamp changes again, including changes declared after the last step.
+      Otherwise it is `not_assessed`, with a reason. At `915eb4f`, equal not-computed states
+      read as a fixed point, and a 3-step run ignored an input change declared at index 11.
+    - **Relative predictions.** A draft against a baseline now carries both sides' rules, with
+      their evidence ids and assumptions. New `baseline_dependencies` and
+      `relative_dependencies` trace each side apart. A rule only the baseline used (its target
+      clamped in the scenario) had been left out.
+    - The reference case's state paths, repetition, readouts and draft directions are unchanged
+      (24/24 hand checks). Four of its drafts gain R1's assumption.
 - **A revised research draft is set beside the one it revises** (`revision` on
   `check_research_draft` / `check_research_draft_file`;
   `docs/research_sessions/eval1_persistence/evidence_gap_v1/`).

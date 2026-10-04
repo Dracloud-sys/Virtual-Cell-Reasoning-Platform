@@ -1,0 +1,168 @@
+{
+ "R1": {
+  "P_status_by_step": [
+   "same_in_all_explored",
+   "not_computed",
+   "not_computed",
+   "not_computed"
+  ],
+  "path": [
+   {
+    "P": true
+   },
+   {
+    "P": null
+   },
+   {
+    "P": null
+   },
+   {
+    "P": null
+   }
+  ],
+  "repetition": [
+   {
+    "case": "all",
+    "constant_from": 0,
+    "from_step": 1,
+    "period": null,
+    "status": "fixed_point"
+   }
+  ]
+ },
+ "R2_steps_13": {
+  "path": [
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": false
+   },
+   {
+    "P": false,
+    "U": false
+   },
+   {
+    "P": false,
+    "U": false
+   }
+  ],
+  "repetition": [
+   {
+    "case": "all",
+    "constant_from": 11,
+    "from_step": 12,
+    "period": null,
+    "status": "fixed_point"
+   }
+  ]
+ },
+ "R2_steps_3": {
+  "path": [
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   }
+  ],
+  "repetition": [
+   {
+    "case": "all",
+    "constant_from": 0,
+    "from_step": 0,
+    "period": null,
+    "status": "fixed_point"
+   }
+  ]
+ },
+ "R3": {
+  "baseline_dependencies": null,
+  "dependencies_P": {
+   "component": "P",
+   "computed_from": [
+    "clamp:P[0:end]"
+   ],
+   "rules": [],
+   "t": 3
+  },
+  "prediction_drafts": [
+   {
+    "assumptions": [
+     "Computed by logic model r3 v0 (sha256 cab95f8264b8), synchronous update, logical step 3, from rules [] stated by ['nobody']; not observed."
+    ],
+    "basis": "assumption",
+    "condition": "scenario 'P_off', logical step 3",
+    "evidence_ids": [],
+    "expected": "decrease",
+    "hypothesis_id": "H_test",
+    "note": "Computed from a candidate model, not observed. Readout basis: test",
+    "readout": "R_P",
+    "versus": "scenario 'base' at logical step 3"
+   }
+  ],
+  "readout_final": {
+   "paired": {
+    "all": "decrease"
+   },
+   "readout": "R_P",
+   "state": "absent",
+   "t": 3,
+   "versus_baseline": "decrease"
+  },
+  "relative_dependencies": null
+ },
+ "code": "915eb4f"
+}

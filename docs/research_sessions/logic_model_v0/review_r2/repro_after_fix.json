@@ -1,0 +1,236 @@
+{
+ "R1": {
+  "P_status_by_step": [
+   "same_in_all_explored",
+   "not_computed",
+   "not_computed",
+   "not_computed"
+  ],
+  "path": [
+   {
+    "P": true
+   },
+   {
+    "P": null
+   },
+   {
+    "P": null
+   },
+   {
+    "P": null
+   }
+  ],
+  "repetition": [
+   {
+    "case": "all",
+    "constant_from": 0,
+    "from_step": null,
+    "period": null,
+    "reason": "states after the inputs stop changing contain not-computed values; a repeat among them is not a known fixed point or cycle",
+    "status": "not_assessed"
+   }
+  ]
+ },
+ "R2_steps_13": {
+  "path": [
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": false
+   },
+   {
+    "P": false,
+    "U": false
+   },
+   {
+    "P": false,
+    "U": false
+   }
+  ],
+  "repetition": [
+   {
+    "case": "all",
+    "constant_from": 11,
+    "from_step": 12,
+    "period": null,
+    "reason": null,
+    "status": "fixed_point"
+   }
+  ]
+ },
+ "R2_steps_3": {
+  "path": [
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   },
+   {
+    "P": true,
+    "U": true
+   }
+  ],
+  "repetition": [
+   {
+    "case": "all",
+    "constant_from": 11,
+    "from_step": null,
+    "period": null,
+    "reason": "the scenario declares a change at index 11, after the last computed step 3; a repeat inside the computed range says nothing about the scenario",
+    "status": "not_assessed"
+   }
+  ]
+ },
+ "R3": {
+  "baseline_dependencies": [
+   {
+    "component": "P",
+    "computed_from": [
+     "input:U[0:end]",
+     "rule:R"
+    ],
+    "rules": [
+     {
+      "assumptions": [
+       "Synthetic contract-test assumption: P follows U."
+      ],
+      "evidence_ids": [
+       "synthetic-contract-test-ev1"
+      ],
+      "rule_id": "R",
+      "sides": [],
+      "stated_by": "host",
+      "target": "P",
+      "validated": false
+     }
+    ],
+    "t": 3
+   },
+   {
+    "component": "U",
+    "computed_from": [
+     "input:U[0:end]"
+    ],
+    "rules": [],
+    "t": 3
+   }
+  ],
+  "dependencies_P": {
+   "component": "P",
+   "computed_from": [
+    "clamp:P[0:end]"
+   ],
+   "rules": [],
+   "t": 3
+  },
+  "prediction_drafts": [
+   {
+    "assumptions": [
+     "Computed by logic model r3 v0 (sha256 cab95f8264b8), synchronous update, logical step 3: scenario 'P_off' from rules [], baseline 'base' from rules ['R'], stated by ['host']; not observed.",
+     "Synthetic contract-test assumption: P follows U."
+    ],
+    "basis": "assumption",
+    "condition": "scenario 'P_off', logical step 3",
+    "evidence_ids": [
+     "synthetic-contract-test-ev1"
+    ],
+    "expected": "decrease",
+    "hypothesis_id": "H_test",
+    "note": "Computed from a candidate model, not observed. Readout basis: test",
+    "readout": "R_P",
+    "versus": "scenario 'base' at logical step 3"
+   }
+  ],
+  "readout_final": {
+   "paired": {
+    "all": "decrease"
+   },
+   "readout": "R_P",
+   "state": "absent",
+   "t": 3,
+   "versus_baseline": "decrease"
+  },
+  "relative_dependencies": [
+   {
+    "baseline_computed_from": [
+     "input:U[0:end]",
+     "rule:R"
+    ],
+    "readout": "R_P",
+    "rules": [
+     {
+      "assumptions": [
+       "Synthetic contract-test assumption: P follows U."
+      ],
+      "evidence_ids": [
+       "synthetic-contract-test-ev1"
+      ],
+      "rule_id": "R",
+      "sides": [
+       "baseline"
+      ],
+      "stated_by": "host",
+      "target": "P",
+      "validated": false
+     }
+    ],
+    "scenario_computed_from": [
+     "clamp:P[0:end]"
+    ],
+    "state": "P",
+    "t": 3
+   }
+  ]
+ },
+ "code": "after_fix"
+}
