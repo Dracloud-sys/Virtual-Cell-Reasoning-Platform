@@ -16,6 +16,7 @@ import copy
 import hashlib
 import json
 import shutil
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -376,11 +377,13 @@ def test_the_case_revision_replays(tmp_path):
     assert rev["evidence"]["new_studies"] == 3 and rev["evidence"]["new_spans"] == 10
 
 
-def test_the_case_revised_draft_rebuilds_byte_for_byte():
+def test_the_case_revised_draft_rebuilds_byte_for_byte(monkeypatch):
     import importlib.util
 
     spec = importlib.util.spec_from_file_location("build_revised", CASE / "build_revised.py")
     module = importlib.util.module_from_spec(spec)
+    # Importing it would otherwise leave a __pycache__ inside the case record.
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
     spec.loader.exec_module(module)
     draft, decisions = module.build()
     text = json.dumps(draft, indent=1, ensure_ascii=False) + "\n"
