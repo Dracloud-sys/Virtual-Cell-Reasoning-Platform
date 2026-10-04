@@ -1,0 +1,12 @@
+{
+ "code": {
+  "git_head": "b70c3f6f1b6b133aefd98538e3ebfb4d04477142",
+  "src_uncommitted_changes": false
+ },
+ "note": "repro_915eb4f.json was produced at 915eb4f before the fix; repro_after_fix.json and case_compare.json reproduced byte for byte at this head.",
+ "outputs": {
+  "repro_915eb4f.json": "21df47e448d6d42c5c2a4b9d8ffd32b8441e777d22223d88abeb2b541196500a",
+  "repro_after_fix.json": "3de33695813efc80dfae779230db055fdbdf86945bf96df8e342cbd71bfd8f2d",
+  "case_compare.json": "44513efd14b3aaf36eb71fa73175e9d295157565fdb01270c1182bc56ae65821"
+ }
+}
