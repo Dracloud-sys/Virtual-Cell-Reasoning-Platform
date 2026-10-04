@@ -1,0 +1,79 @@
+[
+ {
+  "target_id": "H1",
+  "decision": "unchanged_no_new_evidence",
+  "reason": "No source measuring residual exogenous TGF-beta1 after washout was returned in 4 searches. H1 stays an unverified candidate; what changed is how E1 reads it."
+ },
+ {
+  "target_id": "ML11",
+  "decision": "unchanged_no_new_evidence",
+  "reason": "Still no source; the link keeps carrying no evidence id, on purpose."
+ },
+ {
+  "target_id": "H2",
+  "decision": "keep",
+  "reason": "A pulse-washout study now stands behind it, at abstract level and with the carryover question unread.",
+  "evidence_ids": [
+   "lit-e60fafae0030"
+  ]
+ },
+ {
+  "target_id": "H4",
+  "decision": "hold",
+  "reason": "Contradicting and scope-limiting sources were added; the prediction values stay, and a blockade null is no longer read as picking H4.",
+  "evidence_ids": [
+   "lit-e60fafae0030",
+   "lit-436033cdfec3",
+   "lit-1ba98dbcd8f3",
+   "lit-758a014077fb"
+  ]
+ },
+ {
+  "target_id": "H5",
+  "decision": "keep",
+  "reason": "E4 still tests it; the new spans limit where one null applies.",
+  "evidence_ids": [
+   "lit-436033cdfec3",
+   "lit-8ad9688ecbdd"
+  ]
+ },
+ {
+  "target_id": "E1",
+  "decision": "revise",
+  "reason": "Adds the latent TGF-beta1/LAP readout with its LAP-free check, TGFB1 mRNA (predicted equal for H1-H3, so not a source marker), a day-1 to day-5 pSmad2 comparison, and rewrites branches 2 and 3.",
+  "evidence_ids": [
+   "lit-e60fafae0030",
+   "lit-0650a4586f10",
+   "lit-fcd84996ed09",
+   "lit-bc7c597aaca4",
+   "lit-436033cdfec3",
+   "lit-1ba98dbcd8f3",
+   "lit-758a014077fb"
+  ]
+ },
+ {
+  "target_id": "ML13",
+  "decision": "revise",
+  "reason": "New case-local link for the pulse-washout autocrine reading.",
+  "evidence_ids": [
+   "lit-e60fafae0030"
+  ]
+ },
+ {
+  "target_id": "ML14",
+  "decision": "revise",
+  "reason": "New case-local link: autoinduction, epithelial cells.",
+  "evidence_ids": [
+   "lit-fcd84996ed09",
+   "lit-bc7c597aaca4"
+  ]
+ },
+ {
+  "target_id": "ML15",
+  "decision": "revise",
+  "reason": "New case-local link: HA coat independent of Smad phosphorylation.",
+  "evidence_ids": [
+   "lit-0650a4586f10"
+  ]
+ }
+]

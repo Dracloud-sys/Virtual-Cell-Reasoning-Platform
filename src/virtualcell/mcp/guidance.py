@@ -168,6 +168,13 @@ could not be computed (`not_computed`), and the plan analysis without per-trace 
 `not_computed` is not a pass, and a compact result has no flat `findings` list - read
 `finding_count` and `finding_groups`, not an empty list.
 
+After reading new sources, send the earlier draft as `prior_draft` (its own arguments, as it
+was checked) and, optionally, `revision_decisions` (per hypothesis, mechanism link or
+experiment: keep, revise, hold or unchanged_no_new_evidence, with a reason and the evidence ids
+it rests on). `revision` then lists what changed, which new evidence each change cites, the
+changes that cite none, every moved predicted value, and what rests on the new evidence. It
+judges nothing and moves no value: a decision is checked only against what changed.
+
 `authored_by` is `host_llm` and `internal_model_calls` is 0. This draft is your work, and
 the result must not be reported as this platform's reasoning.\
 """
@@ -227,7 +234,8 @@ directory (links followed), a non-.json or non-regular file, or more than 2 MB i
 and nothing is checked. The file holds one JSON object with check_research_draft's
 arguments (question, hypotheses, experiments, evidence, what_if, ...), without `view`.
 `view` defaults to "compact" here. The server never writes the file: to revise, write a new
-file (edit only the fields you change) and check that one.
+file (edit only the fields you change) and check that one. Send that earlier file as
+`prior_path` with `prior_sha256` to get `revision`, as described in check_research_draft.
 
 Available only on this local stdio server when its operator configured a draft directory.
 It is not an upload: a path names a file on the machine running this server.\
@@ -269,6 +277,7 @@ REQUIRED_PHRASES: tuple[tuple[str, str], ...] = (
     ("check_research_draft", "must not be reported as this platform's reasoning"),
     ("check_research_draft", "A connected path is not a verified causal chain"),
     ("check_research_draft", "a withdrawn source never reverses a prediction"),
+    ("check_research_draft", "It judges nothing and moves no value"),
     ("compare_research_observations", "calls no model"),
     ("compare_research_observations", "Comparability is checked before any value is read"),
     ("compare_research_observations", "No rule, no classification"),

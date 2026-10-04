@@ -1,0 +1,16 @@
+{
+ "code": {
+  "git_head": "a1dfca94874e8d97269e6835d997dc59e449a482",
+  "src_uncommitted_changes": true
+ },
+ "inputs": {
+  "records/condition_B_payload_2.json": "dda23951ce8bc4c9fa40f61b7b98a34af71181377f3a5b18922a8538f2599bb0",
+  "evidence_gap_v1/draft_revised.json": "663eaf84fc89f15e82936a42c9e8dcdce6bf3f73bcce679e529727ed66e9cabe",
+  "evidence_gap_v1/decisions.json": "c36b3ab7f74cd31ca3589100733569a4ec48409acb7b17269eef7baa6f8dac48"
+ },
+ "outputs": {
+  "revision_file_route.json": "bdc3e8331c998d3d3d40af3024056371521743823e51b5df53a71c5a1b130361",
+  "revision_with_decisions.json": "c2b67051d30ad6b734c37c7c2bc7612e3cec2465503c5fd378926d5ba3379792"
+ },
+ "revision_same_on_both_routes_apart_from_decisions": true
+}

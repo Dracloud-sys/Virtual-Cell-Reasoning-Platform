@@ -80,9 +80,11 @@ from virtualcell.research.contracts import (
     Objective,
     ObservationMapping,
     ProposedExperiment,
+    ResearchReport,
     SubQuestion,
 )
 from virtualcell.research.plan import WhatIf
+from virtualcell.research.revision import RevisionDecision
 
 SERVER_NAME = "virtualcell"
 
@@ -165,6 +167,20 @@ _WhatIfParam = Annotated[
     dict[str, Any] | None,
     WithJsonSchema({"anyOf": [research_payloads.contract_schema(WhatIf), {"type": "null"}]}),
 ]
+_RevisionDecisionsParam = _published(RevisionDecision)
+_PriorDraftParam = Annotated[
+    dict[str, Any] | None,
+    Field(
+        description=(
+            "The earlier draft this one revises: one object with check_research_draft's own "
+            "arguments (question, hypotheses, experiments, evidence, ...), without view, "
+            "what_if, prior_draft or revision_decisions. It is not checked again; it is set "
+            "beside this draft and the result's `revision` says what changed."
+        )
+    ),
+]
+#: Arguments a prior draft may carry: the draft itself, not the instructions about checking it.
+_NOT_IN_PRIOR = frozenset({"view", "what_if", "prior_draft", "revision_decisions"})
 
 
 def _refuse(error: str, detail: str, remedy: str) -> ToolError:
@@ -528,8 +544,11 @@ def build_server(
                 )
             ),
         ] = "full",
+        prior_draft: _PriorDraftParam = None,
+        revision_decisions: _RevisionDecisionsParam = None,
     ) -> research_payloads.DraftCheckResult:
         items = _evidence_items(evidence)
+        prior = _prior_report(prior_draft) if prior_draft is not None else None
         try:
             return research_payloads.draft_check(
                 question=question,
@@ -550,6 +569,8 @@ def build_server(
                 store=store,
                 what_if=what_if,
                 view=view,
+                prior=prior,
+                revision_decisions=revision_decisions,
             )
         except (ValueError, ValidationError, ResearchBackendError) as exc:
             # `validate_report_payload` raises the research path's own typed failure, whose
@@ -576,26 +597,46 @@ def build_server(
                 Literal["full", "compact"],
                 Field(description="As in check_research_draft. compact unless asked otherwise."),
             ] = "compact",
+            prior_path: Annotated[
+                str | None,
+                Field(
+                    description=(
+                        "The earlier draft this one revises, a .json file in the same "
+                        "directory. The result's `revision` says what changed."
+                    )
+                ),
+            ] = None,
+            prior_sha256: Annotated[
+                str | None, Field(description="The SHA-256 (hex) of the prior file.")
+            ] = None,
         ) -> research_payloads.DraftCheckResult:
-            try:
-                draft, read = draft_file.read_draft_file(root, path, sha256)
-            except draft_file.DraftFileRefused as refused:
-                raise _refuse(refused.error, refused.detail, refused.remedy) from refused
             allowed = set(inspect.signature(_check_research_draft).parameters) - {"view"}
-            extra = sorted(set(draft) - allowed)
-            if extra:
-                raise _refuse(
-                    "malformed_draft_file",
-                    f"{read.path!r} has keys check_research_draft does not take: {extra}.",
-                    "Keep only check_research_draft's arguments in the file, without view.",
+            draft, read = _read_checked(root, path, sha256, allowed)
+            prior_read = None
+            if prior_path is not None or prior_sha256 is not None:
+                if prior_path is None or prior_sha256 is None:
+                    raise _refuse(
+                        "malformed_draft_file",
+                        "prior_path and prior_sha256 go together.",
+                        "Send both, or neither.",
+                    )
+                if "prior_draft" in draft:
+                    raise _refuse(
+                        "malformed_draft_file",
+                        f"{read.path!r} carries prior_draft and prior_path was also sent.",
+                        "Name the earlier draft once: by prior_path, or inside the file.",
+                    )
+                prior, prior_read = _read_checked(
+                    root, prior_path, prior_sha256, allowed - _NOT_IN_PRIOR
                 )
+                draft = {**draft, "prior_draft": prior}
             # The inline tool, called through the server: the same argument validation, the
             # same checks and the same evidence classification. Only the transport differs.
             result = await server.call_tool("check_research_draft", {**draft, "view": view})
             if result.is_error:
                 raise ToolError(" ".join(getattr(c, "text", "") for c in result.content))
             checked = research_payloads.DraftCheckResult.model_validate(result.structured_content)
-            return checked.model_copy(update={"input_file": read})
+            return checked.model_copy(update={"input_file": read, "prior_input_file": prior_read})
 
     @server.tool(
         name="compare_research_observations",
@@ -638,6 +679,79 @@ def build_server(
             raise _malformed_draft(exc) from exc
 
     return server
+
+
+def _read_checked(
+    root: Path, path: str, sha256: str, allowed: set[str]
+) -> tuple[dict[str, Any], Any]:
+    """Read one draft file and refuse keys the inline tool would not take."""
+    try:
+        draft, read = draft_file.read_draft_file(root, path, sha256)
+    except draft_file.DraftFileRefused as refused:
+        raise _refuse(refused.error, refused.detail, refused.remedy) from refused
+    extra = sorted(set(draft) - allowed)
+    if extra:
+        raise _refuse(
+            "malformed_draft_file",
+            f"{read.path!r} has keys check_research_draft does not take here: {extra}.",
+            "Keep only check_research_draft's arguments in the file, without view.",
+        )
+    return draft, read
+
+
+def _prior_report(prior_draft: dict[str, Any]) -> ResearchReport:
+    """The earlier draft as a report, assembled exactly as the draft being checked is.
+
+    Its own findings are not reported: it was checked when it was written, and this call is
+    about the draft in hand. Only its content is set beside the revision.
+    """
+    allowed = {
+        "question",
+        "restated_question",
+        "assumptions",
+        "hypotheses",
+        "experiments",
+        "open_items",
+        "evidence_used",
+        "evidence",
+        "objectives",
+        "sub_questions",
+        "confirmed_conditions",
+        "open_conditions",
+        "evidence_links",
+        "mechanism_links",
+    }
+    extra = sorted(set(prior_draft) - allowed)
+    if extra or "question" not in prior_draft:
+        raise _refuse(
+            "malformed_prior_draft",
+            f"prior_draft needs a question and takes only the draft's own fields; got {extra}.",
+            "Send the earlier draft as it was checked, without view, what_if or revision fields.",
+        )
+    try:
+        report, _ = research_payloads.assemble_draft(
+            question=prior_draft["question"],
+            restated_question=prior_draft.get("restated_question", ""),
+            assumptions=prior_draft.get("assumptions") or [],
+            hypotheses=prior_draft.get("hypotheses") or [],
+            experiments=prior_draft.get("experiments") or [],
+            open_items=prior_draft.get("open_items") or [],
+            evidence_used=prior_draft.get("evidence_used") or [],
+            evidence=_evidence_items(prior_draft.get("evidence")),
+            objectives=prior_draft.get("objectives"),
+            sub_questions=prior_draft.get("sub_questions"),
+            confirmed_conditions=prior_draft.get("confirmed_conditions"),
+            open_conditions=prior_draft.get("open_conditions"),
+            evidence_links=prior_draft.get("evidence_links"),
+            mechanism_links=prior_draft.get("mechanism_links"),
+        )
+    except (ValueError, ValidationError, ResearchBackendError) as exc:
+        raise _refuse(
+            "malformed_prior_draft",
+            str(exc),
+            "The prior draft is assembled exactly as a draft is; fix it as you would one.",
+        ) from exc
+    return report
 
 
 def _evidence_items(evidence: list[dict[str, Any]] | None) -> list[EvidenceItem]:

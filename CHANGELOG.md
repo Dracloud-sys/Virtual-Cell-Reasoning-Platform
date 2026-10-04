@@ -7,6 +7,25 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **A revised research draft is set beside the one it revises** (`revision` on
+  `check_research_draft` / `check_research_draft_file`;
+  `docs/research_sessions/eval1_persistence/evidence_gap_v1/`).
+  - The case:
+    - one gap in the eval1 plan (carried-over vs cell-made TGF-β1 after washout);
+    - 4 searches and 3 papers read (two abstracts, results sections of one);
+    - E1 revised: a latent TGF-β1/LAP readout with its own assumption check; TGFB1 mRNA
+      stated not to mark the source; branch 3 no longer reads a blockade null as H4;
+    - H1 and ML11 stay unsupported.
+  - What the code showed:
+    - E2-E6 are unchanged, and no predicted value moved;
+    - each change traces to a new id or a decision;
+    - the ten new spans are three studies;
+    - the computed separations of E1 did not change.
+  - `prior_draft` / `prior_path` + `prior_sha256` and `revision_decisions` are optional. Without
+    them every result is as before, plus `revision: null`.
+  - Finding, pinned not fixed: pair analysis keeps one prediction per hypothesis and readout.
+  - The live host ran `a1dfca9` and checked both drafts by file. The 10 new spans came back
+    `server_retrieved`. The revision itself ran only on the product path.
 - **`check_research_draft_file`: check a draft by file on the local stdio server.**
   - A real host wrote a 130 KB draft out as tool arguments to check it, and again after a
     two-field fix (353,823 tokens for the trial context).
