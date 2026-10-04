@@ -1,0 +1,474 @@
+{
+ "rows": [
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "부합",
+    "model": "increase",
+    "why": "same direction"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "미결정",
+    "model": "undetermined",
+    "why": "the model's direction under this reading is undetermined"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "불일치",
+    "model": "no_change",
+    "why": "model no_change, text increase"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "불일치",
+    "model": "no_change",
+    "why": "model no_change, text increase"
+   },
+   "cells": "B-Raf wild-type cells; HCT116 and SW480 named in the next span (lit-56693f038783)",
+   "evidence_id": "lit-69aab6e67fdb",
+   "question": "O1",
+   "row": "B01",
+   "text_direction": "increase",
+   "time_in_text": "24 h"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "cells": "B-Raf-mutated cells (lines not named in the span)",
+   "evidence_id": "lit-69aab6e67fdb",
+   "question": "O2",
+   "row": "B02",
+   "text_direction": "no_change",
+   "time_in_text": "24 h"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "비교 불가",
+    "model": "increase",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "비교 불가",
+    "model": "undetermined",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "비교 불가",
+    "model": "no_change",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "비교 불가",
+    "model": "no_change",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "cells": "all cell lines",
+   "evidence_id": "lit-56693f038783",
+   "question": "O1",
+   "row": "B03",
+   "text_direction": null,
+   "time_in_text": "not stated in the span"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "비교 불가",
+    "model": "no_change",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "비교 불가",
+    "model": "no_change",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "비교 불가",
+    "model": "no_change",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "비교 불가",
+    "model": "no_change",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "cells": "all cell lines",
+   "evidence_id": "lit-56693f038783",
+   "question": "O2",
+   "row": "B04",
+   "text_direction": null,
+   "time_in_text": "not stated in the span"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "부합",
+    "model": "decrease",
+    "why": "same direction"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "미결정",
+    "model": "undetermined",
+    "why": "the model's direction under this reading is undetermined"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "부합",
+    "model": "decrease",
+    "why": "same direction"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "부합",
+    "model": "decrease",
+    "why": "same direction"
+   },
+   "cells": "HCT116",
+   "evidence_id": "lit-5064dfff5a42",
+   "question": "O4",
+   "row": "B05",
+   "text_direction": "decrease",
+   "time_in_text": "24 h"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "cells": "Ras-mutated cells",
+   "evidence_id": "lit-4a9493f38afd",
+   "question": "O5",
+   "row": "B06",
+   "text_direction": "no_change",
+   "time_in_text": "2 h"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "비교 불가",
+    "model": "decrease",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "비교 불가",
+    "model": "undetermined",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "비교 불가",
+    "model": "decrease",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "비교 불가",
+    "model": "decrease",
+    "why": "no direction versus untreated stated in the text read"
+   },
+   "cells": "HT29, HCT116",
+   "evidence_id": "lit-5064dfff5a42",
+   "question": "O3",
+   "row": "B07",
+   "text_direction": null,
+   "time_in_text": "24 h"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "cells": "not named in the span",
+   "evidence_id": "lit-e87187c7b35e",
+   "question": "O1",
+   "row": "B08",
+   "text_direction": "increase",
+   "time_in_text": "within 1 h"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "부합",
+    "model": "no_change",
+    "why": "same direction"
+   },
+   "cells": "B-Raf-mutated cells",
+   "evidence_id": "lit-1fd73f7e342a",
+   "question": "O2",
+   "row": "B09",
+   "text_direction": "no_change",
+   "time_in_text": "time series (points not stated in the span)"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "부합",
+    "model": "increase",
+    "why": "same direction"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "미결정",
+    "model": "undetermined",
+    "why": "the model's direction under this reading is undetermined"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "불일치",
+    "model": "no_change",
+    "why": "model no_change, text increase"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "불일치",
+    "model": "no_change",
+    "why": "model no_change, text increase"
+   },
+   "cells": "Ras-mutated cells",
+   "evidence_id": "lit-1fd73f7e342a",
+   "question": "O1",
+   "row": "B10",
+   "text_direction": "increase",
+   "time_in_text": "time series (points not stated in the span)"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "The models have no translation or transcription node; neither drug can be mapped to an input or clamp."
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "The models have no translation or transcription node; neither drug can be mapped to an input or clamp."
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "The models have no translation or transcription node; neither drug can be mapped to an input or clamp."
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "The models have no translation or transcription node; neither drug can be mapped to an input or clamp."
+   },
+   "cells": "Ras-mutated cells",
+   "evidence_id": "lit-1fd73f7e342a",
+   "question": "O6",
+   "row": "B11",
+   "text_direction": "no_change",
+   "time_in_text": "time series"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "The models have no translation or transcription node; neither drug can be mapped to an input or clamp."
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "The models have no translation or transcription node; neither drug can be mapped to an input or clamp."
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "The models have no translation or transcription node; neither drug can be mapped to an input or clamp."
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "The models have no translation or transcription node; neither drug can be mapped to an input or clamp."
+   },
+   "cells": "B-Raf-mutated cells",
+   "evidence_id": "lit-1fd73f7e342a",
+   "question": "O6",
+   "row": "B12",
+   "text_direction": "no_change",
+   "time_in_text": "time series"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "cells": "HEK Raf-ER, 4OHT-stimulated",
+   "evidence_id": "lit-4a9493f38afd",
+   "question": "O1",
+   "row": "B13",
+   "text_direction": "no_change",
+   "time_in_text": "not stated in the span"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "cells": "HEK Raf-ER, FGF-stimulated",
+   "evidence_id": "lit-faa620143614",
+   "question": "O1",
+   "row": "B14",
+   "text_direction": "increase",
+   "time_in_text": "not stated in the span"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "cells": "Caco2 with inducible B-Raf V600E",
+   "evidence_id": "lit-faa620143614",
+   "question": "O2",
+   "row": "B15",
+   "text_direction": "no_change",
+   "time_in_text": "not stated in the span"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "class": "비교 불가",
+    "model": null,
+    "why": "no scenario for this cell system"
+   },
+   "cells": "Caco2 with empty vector or wild-type B-Raf",
+   "evidence_id": "lit-faa620143614",
+   "question": "O1",
+   "row": "B16",
+   "text_direction": "increase",
+   "time_in_text": "not stated in the span"
+  }
+ ],
+ "rows_total": 16,
+ "tally_of_all_rows": {
+  "M1_feedback_on_RAF/ordinal": {
+   "부합": 6,
+   "비교 불가": 10
+  },
+  "M1_feedback_on_RAF/strict": {
+   "미결정": 3,
+   "부합": 3,
+   "비교 불가": 10
+  },
+  "M2_feedback_on_RAS/ordinal": {
+   "부합": 4,
+   "불일치": 2,
+   "비교 불가": 10
+  },
+  "M2_feedback_on_RAS/strict": {
+   "부합": 4,
+   "불일치": 2,
+   "비교 불가": 10
+  }
+ }
+}

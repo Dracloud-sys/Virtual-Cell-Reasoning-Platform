@@ -1,0 +1,20 @@
+{
+ "about": "Whether the live MCP host ran the same code as this branch. Two calls were made on the host's run_logic_model and the same arguments were run locally on build_server() at d37c0b4. The comparison runs themselves (24 steps, view full) were run locally only: their responses are large and the host had already been shown to match.",
+ "checked_between_utc": ["2026-10-04T13:22:27Z", "2026-10-04T13:25:59Z"],
+ "calls": [
+  {
+   "what": "review-r2 R1 probe: internal P, initial true, no rule, 3 steps",
+   "why": "Before the review-r2 fix, repetition said fixed_point; after it, not_assessed with a reason.",
+   "host": {"model_sha256": "6eff4f4195d4aea5d04ffb06c25ddf7edbabc909dc29b6e4636be9566191e34d", "run_sha256": "f3c0fb8d8866eaa2451be0d99a579ecf2000b34b4e67c983c55860e85c006921", "repetition_status": "not_assessed", "has_reason": true, "has_baseline_dependencies_field": true},
+   "local": {"model_sha256": "6eff4f4195d4aea5d04ffb06c25ddf7edbabc909dc29b6e4636be9566191e34d", "run_sha256": "f3c0fb8d8866eaa2451be0d99a579ecf2000b34b4e67c983c55860e85c006921", "repetition_status": "not_assessed", "has_reason": true},
+   "match": true
+  },
+  {
+   "what": "M1_feedback_on_RAF, scenario KRAS_MEKi, 3 steps, max_cases 256, summary view",
+   "host": {"model_sha256": "8c80ebbc4ca7df71b897e26e8f6c4e3b972c1fc887598eb660e34706df5c8c9e", "run_sha256": "14c68272519efd0f033801f6e9f129f059b6fa8c75193d207b2c5602c2dc1cb2", "final": {"RAS": true, "RAF": true, "pMEK": true, "pERK": false, "pRaf1fb": false}, "cases_explored": 32},
+   "local": {"model_sha256": "8c80ebbc4ca7df71b897e26e8f6c4e3b972c1fc887598eb660e34706df5c8c9e", "run_sha256": "14c68272519efd0f033801f6e9f129f059b6fa8c75193d207b2c5602c2dc1cb2", "final": {"RAS": true, "RAF": true, "pMEK": true, "pERK": false, "pRaf1fb": false}, "cases_explored": 32},
+   "match": true
+  }
+ ],
+ "conclusion": "The host is current with the review-r2 code for what was checked. The 24-step comparison runs were not repeated on the host."
+}

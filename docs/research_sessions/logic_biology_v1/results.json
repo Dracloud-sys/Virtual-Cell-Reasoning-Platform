@@ -1,0 +1,937 @@
+{
+ "M1_feedback_on_RAF/BRAF": {
+  "cases_explored": 32,
+  "cases_total": 32,
+  "draft_basis": [
+   "assumption"
+  ],
+  "exploration_complete": true,
+  "limits_reached": [],
+  "model_sha256": "8c80ebbc4ca7df71b897e26e8f6c4e3b972c1fc887598eb660e34706df5c8c9e",
+  "readouts": {
+   "RasGTP_RBD_pulldown": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_active": 32
+     },
+     "direction": "no_change"
+    },
+    "rules": [
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4"
+      ],
+      "rule_id": "M1_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "RAS",
+    "strict": {
+     "counts": {
+      "no_change": 224
+     },
+     "direction": "no_change"
+    }
+   },
+   "pERK1_2_T202_Y204_WB": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_inactive": 32
+     },
+     "direction": "decrease"
+    },
+    "rules": [
+     {
+      "evidence_ids": [
+       "lit-8c8245921a71"
+      ],
+      "rule_id": "M1_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4"
+      ],
+      "rule_id": "M1_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pERK",
+    "strict": {
+     "counts": {
+      "decrease": 224
+     },
+     "direction": "decrease"
+    }
+   },
+   "pMEK1_S217_S221_BioPlex": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_active": 32
+     },
+     "direction": "no_change"
+    },
+    "rules": [
+     {
+      "evidence_ids": [
+       "lit-8c8245921a71"
+      ],
+      "rule_id": "M1_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4"
+      ],
+      "rule_id": "M1_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pMEK",
+    "strict": {
+     "counts": {
+      "no_change": 224
+     },
+     "direction": "no_change"
+    }
+   },
+   "pRaf1_S289_S296_S301_WB": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_inactive": 32
+     },
+     "direction": "decrease"
+    },
+    "rules": [
+     {
+      "evidence_ids": [
+       "lit-8c8245921a71"
+      ],
+      "rule_id": "M1_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4"
+      ],
+      "rule_id": "M1_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-b23dff1044ed"
+      ],
+      "rule_id": "R_FB",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pRaf1fb",
+    "strict": {
+     "counts": {
+      "decrease": 224
+     },
+     "direction": "decrease"
+    }
+   }
+  },
+  "repetition_baseline": [
+   [
+    "fixed_point",
+    null
+   ]
+  ],
+  "repetition_scenario": [
+   [
+    "fixed_point",
+    null
+   ]
+  ],
+  "run_sha256": "4ba0b18eadbf93971ef2f532c759ac9ae1b8ca1b60a5bf1bc68d046e104a5279"
+ },
+ "M1_feedback_on_RAF/KRAS": {
+  "cases_explored": 32,
+  "cases_total": 32,
+  "draft_basis": [
+   "assumption"
+  ],
+  "exploration_complete": true,
+  "limits_reached": [],
+  "model_sha256": "8c80ebbc4ca7df71b897e26e8f6c4e3b972c1fc887598eb660e34706df5c8c9e",
+  "readouts": {
+   "RasGTP_RBD_pulldown": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_active": 32
+     },
+     "direction": "no_change"
+    },
+    "rules": [
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4"
+      ],
+      "rule_id": "M1_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "RAS",
+    "strict": {
+     "counts": {
+      "no_change": 224
+     },
+     "direction": "no_change"
+    }
+   },
+   "pERK1_2_T202_Y204_WB": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "intermittent -> always_inactive": 32
+     },
+     "direction": "decrease"
+    },
+    "rules": [
+     {
+      "evidence_ids": [
+       "lit-8c8245921a71"
+      ],
+      "rule_id": "M1_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4"
+      ],
+      "rule_id": "M1_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pERK",
+    "strict": {
+     "counts": {
+      "decrease": 120,
+      "no_change": 104
+     },
+     "direction": "undetermined"
+    }
+   },
+   "pMEK1_S217_S221_BioPlex": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "intermittent -> always_active": 32
+     },
+     "direction": "increase"
+    },
+    "rules": [
+     {
+      "evidence_ids": [
+       "lit-8c8245921a71"
+      ],
+      "rule_id": "M1_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4"
+      ],
+      "rule_id": "M1_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pMEK",
+    "strict": {
+     "counts": {
+      "increase": 112,
+      "no_change": 112
+     },
+     "direction": "undetermined"
+    }
+   },
+   "pRaf1_S289_S296_S301_WB": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "intermittent -> always_inactive": 32
+     },
+     "direction": "decrease"
+    },
+    "rules": [
+     {
+      "evidence_ids": [
+       "lit-8c8245921a71"
+      ],
+      "rule_id": "M1_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4"
+      ],
+      "rule_id": "M1_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-b23dff1044ed"
+      ],
+      "rule_id": "R_FB",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pRaf1fb",
+    "strict": {
+     "counts": {
+      "decrease": 112,
+      "no_change": 112
+     },
+     "direction": "undetermined"
+    }
+   }
+  },
+  "repetition_baseline": [
+   [
+    "cycle",
+    2
+   ],
+   [
+    "cycle",
+    6
+   ]
+  ],
+  "repetition_scenario": [
+   [
+    "fixed_point",
+    null
+   ]
+  ],
+  "run_sha256": "6b324d1aa7f9f3f2bbbfd891406645fdd23e2892e337fb1eb989f39055bd0a23"
+ },
+ "M2_feedback_on_RAS/BRAF": {
+  "cases_explored": 32,
+  "cases_total": 32,
+  "draft_basis": [
+   "assumption"
+  ],
+  "exploration_complete": true,
+  "limits_reached": [],
+  "model_sha256": "cd141d175cf91e265b969fe77e9eb63156c7ff438d60823f6c1a5d0b75ccd6f4",
+  "readouts": {
+   "RasGTP_RBD_pulldown": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_inactive -> always_active": 32
+     },
+     "direction": "increase"
+    },
+    "rules": [
+     {
+      "evidence_ids": [],
+      "rule_id": "M2_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4",
+       "lit-453db638b05b"
+      ],
+      "rule_id": "M2_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "RAS",
+    "strict": {
+     "counts": {
+      "increase": 224
+     },
+     "direction": "increase"
+    }
+   },
+   "pERK1_2_T202_Y204_WB": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_inactive": 32
+     },
+     "direction": "decrease"
+    },
+    "rules": [
+     {
+      "evidence_ids": [],
+      "rule_id": "M2_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4",
+       "lit-453db638b05b"
+      ],
+      "rule_id": "M2_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pERK",
+    "strict": {
+     "counts": {
+      "decrease": 224
+     },
+     "direction": "decrease"
+    }
+   },
+   "pMEK1_S217_S221_BioPlex": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_active": 32
+     },
+     "direction": "no_change"
+    },
+    "rules": [
+     {
+      "evidence_ids": [],
+      "rule_id": "M2_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4",
+       "lit-453db638b05b"
+      ],
+      "rule_id": "M2_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pMEK",
+    "strict": {
+     "counts": {
+      "no_change": 224
+     },
+     "direction": "no_change"
+    }
+   },
+   "pRaf1_S289_S296_S301_WB": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_inactive": 32
+     },
+     "direction": "decrease"
+    },
+    "rules": [
+     {
+      "evidence_ids": [],
+      "rule_id": "M2_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4",
+       "lit-453db638b05b"
+      ],
+      "rule_id": "M2_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-b23dff1044ed"
+      ],
+      "rule_id": "R_FB",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pRaf1fb",
+    "strict": {
+     "counts": {
+      "decrease": 224
+     },
+     "direction": "decrease"
+    }
+   }
+  },
+  "repetition_baseline": [
+   [
+    "fixed_point",
+    null
+   ]
+  ],
+  "repetition_scenario": [
+   [
+    "fixed_point",
+    null
+   ]
+  ],
+  "run_sha256": "67cc14a3cd402a60aa3b436d73e58e5559ca9f3b12178637687766290790103d"
+ },
+ "M2_feedback_on_RAS/KRAS": {
+  "cases_explored": 32,
+  "cases_total": 32,
+  "draft_basis": [
+   "assumption"
+  ],
+  "exploration_complete": true,
+  "limits_reached": [],
+  "model_sha256": "cd141d175cf91e265b969fe77e9eb63156c7ff438d60823f6c1a5d0b75ccd6f4",
+  "readouts": {
+   "RasGTP_RBD_pulldown": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_active": 32
+     },
+     "direction": "no_change"
+    },
+    "rules": [
+     {
+      "evidence_ids": [],
+      "rule_id": "M2_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4",
+       "lit-453db638b05b"
+      ],
+      "rule_id": "M2_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "RAS",
+    "strict": {
+     "counts": {
+      "no_change": 224
+     },
+     "direction": "no_change"
+    }
+   },
+   "pERK1_2_T202_Y204_WB": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_inactive": 32
+     },
+     "direction": "decrease"
+    },
+    "rules": [
+     {
+      "evidence_ids": [],
+      "rule_id": "M2_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4",
+       "lit-453db638b05b"
+      ],
+      "rule_id": "M2_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pERK",
+    "strict": {
+     "counts": {
+      "decrease": 224
+     },
+     "direction": "decrease"
+    }
+   },
+   "pMEK1_S217_S221_BioPlex": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_active": 32
+     },
+     "direction": "no_change"
+    },
+    "rules": [
+     {
+      "evidence_ids": [],
+      "rule_id": "M2_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4",
+       "lit-453db638b05b"
+      ],
+      "rule_id": "M2_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pMEK",
+    "strict": {
+     "counts": {
+      "no_change": 224
+     },
+     "direction": "no_change"
+    }
+   },
+   "pRaf1_S289_S296_S301_WB": {
+    "ordinal": {
+     "baseline_to_scenario": {
+      "always_active -> always_inactive": 32
+     },
+     "direction": "decrease"
+    },
+    "rules": [
+     {
+      "evidence_ids": [],
+      "rule_id": "M2_R_RAF",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-cfe8783d78f4",
+       "lit-453db638b05b"
+      ],
+      "rule_id": "M2_R_RAS",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_ERK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [
+       "lit-b23dff1044ed"
+      ],
+      "rule_id": "R_FB",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     },
+     {
+      "evidence_ids": [],
+      "rule_id": "R_MEK",
+      "sides": [
+       "scenario",
+       "baseline"
+      ]
+     }
+    ],
+    "state": "pRaf1fb",
+    "strict": {
+     "counts": {
+      "decrease": 224
+     },
+     "direction": "decrease"
+    }
+   }
+  },
+  "repetition_baseline": [
+   [
+    "fixed_point",
+    null
+   ]
+  ],
+  "repetition_scenario": [
+   [
+    "fixed_point",
+    null
+   ]
+  ],
+  "run_sha256": "b9a06b4bcc5ab259b177745ae38b03b95416f8916a2ad06e3540bdfd623d254f"
+ }
+}
