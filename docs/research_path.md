@@ -501,11 +501,15 @@ targets that name nothing in the plan are findings.
    span supporting other predictions.
 5. **Assays, conditions and units are matched as written.** "absorbance" is not "DTNB
    absorbance". This is deliberate, and it is visible in S4.
-6. **Pair analysis keeps one prediction per hypothesis and readout.** `_discriminate` keys
-   predicted values by hypothesis and readout, so of several predictions on one readout under
-   different conditions or references, only the last is compared. Found while revising the
-   eval1 plan (`eval1_persistence/evidence_gap_v1/`); pinned by
-   `test_finding_pair_analysis_keeps_one_prediction_per_readout`.
+6. **Pair analysis kept one prediction per hypothesis and readout — fixed.** Of several
+   predictions on one readout under different conditions or references, only the last-listed
+   was compared. Found while revising the eval1 plan (`eval1_persistence/evidence_gap_v1/`) and
+   pinned at `25c3af3`. Now predictions are compared within a readout under a condition (both
+   as written), per reference, and the result is the same whatever their order. A pair with no
+   shared condition is excluded as `different_condition`. Conflicting values for one condition
+   are a `conflicting_predictions` finding, never resolved by order. On the eval1 drafts, every
+   experiment's separated pairs were unchanged by the fix; the conditions carrying them were not
+   (`evidence_gap_v1/r2/`).
 
 ### B1.1: the same reference, declared pairs, and assumption checks
 

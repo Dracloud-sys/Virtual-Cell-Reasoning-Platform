@@ -393,23 +393,160 @@ def test_the_case_revised_draft_rebuilds_byte_for_byte(monkeypatch):
     ).read_text(encoding="utf-8")
 
 
-def test_finding_pair_analysis_keeps_one_prediction_per_readout(server):
-    """A recorded finding, not a desired property (see the case README).
+# --- conditions in the pair analysis ------------------------------------------------------ #
+#
+# Recorded first at 25c3af3 as a pinned finding: `plan._discriminate` kept one prediction per
+# hypothesis and readout, so of two conditions only the last-listed was compared (the eval1 E1
+# plan already had two conditions per readout). At 25c3af3 this draft returned no separated
+# pair. The tests below are the behaviour required after the fix.
 
-    `plan._discriminate` keys predicted values by hypothesis and readout only, so of two
-    predictions on one readout under different conditions, the last one is the one compared.
-    The eval1 plan already had two conditions per readout in E1. This test pins the behaviour
-    so a fix has to change it on purpose; it is not fixed inside the milestone that found it.
-    """
+
+def _conditioned(*extra: dict[str, Any]) -> dict[str, Any]:
     draft = _draft()
     first, second = draft["experiments"][0]["predictions"]
-    extra = [
-        {**first, "condition": "early", "expected": "decrease"},
-        {**second, "condition": "early", "expected": "decrease"},
+    late = [{**first, "condition": "day 5"}, {**second, "condition": "day 5"}]
+    draft["experiments"][0]["predictions"] = [*late, *extra]
+    return draft
+
+
+def _x1(server, draft) -> dict[str, Any]:
+    return _check(server, draft, view="full")["plan_analysis"]["experiments"][0]
+
+
+def test_every_condition_is_kept_and_compared_on_its_own(server):
+    """Was the pinned defect: the 'day 1' pair used to hide the 'day 5' separation."""
+    first, second = _draft()["experiments"][0]["predictions"]
+    early = [
+        {**first, "condition": "day 1", "expected": "decrease"},
+        {**second, "condition": "day 1", "expected": "decrease"},
     ]
-    draft["experiments"][0]["predictions"] = [first, second, *extra]
-    out = _check(server, draft, view="full")
-    x1 = out["plan_analysis"]["experiments"][0]
-    # Under "early" both predict decrease, so the last-written pair reads as not separated,
-    # although the first condition separates them.
+    x1 = _x1(server, _conditioned(*early))
+    [pair] = x1["separated_pairs"]
+    assert [(d["readout"], d["condition"]) for d in pair["readouts"]] == [
+        ("stored_nutrient", "day 5")
+    ]
+    rows = {(r["condition"], tuple(sorted(r["by_expected"]))) for r in x1["outcome_table"]}
+    assert rows == {("day 1", ("decrease",)), ("day 5", ("increase", "no_change"))}
+
+
+def test_a_timepoint_written_in_the_condition_is_not_merged(server):
+    first, second = _draft()["experiments"][0]["predictions"]
+    x1 = _x1(
+        server,
+        _conditioned({**first, "condition": "day 1", "expected": "no_change"}),
+    )
+    # HA's day-1 value does not meet HB's day-5 value; HA's day-5 value does.
+    [pair] = x1["separated_pairs"]
+    assert {d["condition"] for d in pair["readouts"]} == {"day 5"}
+
+
+def test_only_predictions_on_the_same_reference_are_compared(server):
+    first, second = _draft()["experiments"][0]["predictions"]
+    x1 = _x1(
+        server,
+        _conditioned(
+            {**first, "condition": "day 5", "versus": "day 1", "expected": "decrease"},
+            {**second, "condition": "day 5", "versus": "day 1", "expected": "decrease"},
+        ),
+    )
+    [pair] = x1["separated_pairs"]
+    assert [(d["versus"], d["expected"]) for d in pair["readouts"]] == [
+        ("no pulse", {"HA": "increase", "HB": "no_change"})
+    ]
+    assert x1["readout_exclusions"] == []
+
+
+def test_conditions_that_do_not_match_are_listed_with_their_reason(server):
+    first, second = _draft()["experiments"][0]["predictions"]
+    draft = _draft()
+    draft["experiments"][0]["predictions"] = [
+        {**first, "condition": "day 1"},
+        {**second, "condition": "day 5"},
+    ]
+    x1 = _x1(server, draft)
     assert x1["separated_pairs"] == []
+    assert x1["unseparated_pairs"] == [
+        {"pair": ["HA", "HB"], "reason": "not_comparable_on_shared_readouts"}
+    ]
+    [excluded] = x1["readout_exclusions"]
+    assert excluded["reason"] == "different_condition"
+
+
+def test_reordering_the_predictions_changes_nothing(server):
+    first, second = _draft()["experiments"][0]["predictions"]
+    extra = [
+        {**first, "condition": "day 1", "expected": "decrease"},
+        {**second, "condition": "day 1", "expected": "no_change"},
+    ]
+    one = _conditioned(*extra)
+    two = copy.deepcopy(one)
+    two["experiments"][0]["predictions"].reverse()
+    a, b = _x1(server, one), _x1(server, two)
+    for key in ("separated_pairs", "unseparated_pairs", "readout_exclusions", "outcome_table"):
+        assert a[key] == b[key], key
+
+
+def test_conflicting_values_for_one_condition_are_reported_not_chosen(server):
+    first, _ = _draft()["experiments"][0]["predictions"]
+    for order in ("increase_last", "decrease_last"):
+        clash = {**first, "condition": "day 5", "expected": "decrease"}
+        draft = _conditioned(clash)
+        if order == "decrease_last":
+            preds = draft["experiments"][0]["predictions"]
+            preds.insert(0, preds.pop())
+        out = _check(server, draft, view="full")
+        x1 = out["plan_analysis"]["experiments"][0]
+        assert x1["separated_pairs"] == [], order
+        codes = [f["code"] for f in out["findings"]]
+        assert codes.count("conflicting_predictions") == 1, order
+
+
+def test_a_single_condition_draft_is_compared_as_before(server):
+    x1 = _x1(server, _draft())
+    [pair] = x1["separated_pairs"]
+    assert pair["readouts"][0]["expected"] == {"HA": "increase", "HB": "no_change"}
+    assert pair["readouts"][0]["condition"] is None
+
+
+# --- revision 2 of the case: readings narrowed, no new evidence -------------------------- #
+
+R2 = CASE / "r2"
+
+
+def test_revision_2_rebuilds_from_revision_1_byte_for_byte(monkeypatch):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("build_r2", R2 / "build_r2.py")
+    module = importlib.util.module_from_spec(spec)
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
+    spec.loader.exec_module(module)
+    draft, decisions = module.build()
+    assert json.dumps(draft, indent=1, ensure_ascii=False) + "\n" == (
+        R2 / "draft_revised_r2.json"
+    ).read_text(encoding="utf-8")
+    assert json.dumps(decisions, indent=1, ensure_ascii=False) + "\n" == (
+        R2 / "decisions_r2.json"
+    ).read_text(encoding="utf-8")
+
+
+def test_revision_2_replays_and_moves_only_what_it_says(server):
+    revised = json.loads((R2 / "draft_revised_r2.json").read_text(encoding="utf-8"))
+    prior = json.loads((CASE / "draft_revised.json").read_text(encoding="utf-8"))
+    decisions = json.loads((R2 / "decisions_r2.json").read_text(encoding="utf-8"))
+    rev = _check(server, revised, prior=prior, decisions=decisions)["revision"]
+    recorded = json.loads((R2 / "revision_r1_to_r2.json").read_text(encoding="utf-8"))
+    assert rev == recorded["with_decisions"]["revision"]
+    assert rev["value_changes"] == [
+        {
+            "prediction": (
+                "E1|H2|pSmad2_nuclear|arm a (vehicle, cells), d5|arm a (vehicle, cells), d1"
+            ),
+            "before": "no_change",
+            "after": "not_predicted",
+            "cites_new_evidence": [],
+        }
+    ]
+    assert rev["unchanged_experiments"] == ["E2", "E3", "E4", "E5", "E6"]
+    assert rev["untraced_changes"] == [] and rev["undecided_changes"] == []
+    # The overstated LAP sentence and the unobserved pSmad2 assumption are reported as dropped.
+    assert [f["code"] for f in rev["findings"]] == ["prediction_assumption_removed"] * 3
