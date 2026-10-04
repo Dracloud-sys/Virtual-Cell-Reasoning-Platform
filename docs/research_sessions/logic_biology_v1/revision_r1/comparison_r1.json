@@ -1,0 +1,893 @@
+{
+ "about": "Revision r1 of the logic_biology_v1 comparison. Rows are statements in the text, not independent experiments; several rows share a series. The tallies count rows, and are not hit rates or a ranking of the models.",
+ "limit_causes_of_rows": {
+  "no_scenario_or_mapping": 6,
+  "not_secured_in_spans_read": 4,
+  "out_of_model_scope": 2
+ },
+ "rows": [
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "an intermittent window (the state changes along one logical path) is read as an intermediate measured level; unverified, and the 32 cases are not cells or weights"
+    ],
+    "computed": {
+     "model_direction": "increase",
+     "strict_paired_counts": {
+      "increase": 112,
+      "no_change": 112
+     },
+     "window_classes_baseline_to_scenario": {
+      "intermittent -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "assumptions": [],
+    "computed": {
+     "model_direction": "undetermined",
+     "strict_paired_counts": {
+      "increase": 112,
+      "no_change": 112
+     },
+     "window_classes_baseline_to_scenario": {
+      "intermittent -> always_active": 32
+     }
+    },
+    "r0_class": "미결정",
+    "relation": "미결정"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "불일치",
+    "relation": "불일치 (현 모형·판독 규칙 하)"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "불일치",
+    "relation": "불일치 (현 모형·판독 규칙 하)"
+   },
+   "question": "O1",
+   "recorded_direction_r0": "increase",
+   "row": "B01",
+   "series": "sec-14 / Fig 6B, MEK inhibitor 24 h",
+   "stated": "increase",
+   "wording": "pMek levels rise sharply"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels",
+     "the text rules out only an increase; it does not state no change"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels",
+     "the text rules out only an increase; it does not state no change"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels",
+     "the text rules out only an increase; it does not state no change"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels",
+     "the text rules out only an increase; it does not state no change"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "question": "O2",
+   "recorded_direction_r0": "no_change",
+   "row": "B02",
+   "series": "sec-14 / Fig 6B, MEK inhibitor 24 h",
+   "stated": "no_increase",
+   "wording": "contrasted by no increase in B-Raf-mutated cells"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping",
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping",
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping",
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping",
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "question": "O1",
+   "recorded_direction_r0": null,
+   "row": "B03",
+   "series": "sec-14 / Fig 6B, MEK inhibitor 24 h",
+   "stated": "none",
+   "wording": "At inhibitor levels exceeding 20 uM, phospho-Mek levels drop in all cell lines"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping",
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping",
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping",
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping",
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "question": "O2",
+   "recorded_direction_r0": null,
+   "row": "B04",
+   "series": "sec-14 / Fig 6B, MEK inhibitor 24 h",
+   "stated": "none",
+   "wording": "as B03, for the B-Raf-mutated lines"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "an intermittent window (the state changes along one logical path) is read as an intermediate measured level; unverified, and the 32 cases are not cells or weights"
+    ],
+    "computed": {
+     "model_direction": "decrease",
+     "strict_paired_counts": {
+      "decrease": 112,
+      "no_change": 112
+     },
+     "window_classes_baseline_to_scenario": {
+      "intermittent -> always_inactive": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "assumptions": [],
+    "computed": {
+     "model_direction": "undetermined",
+     "strict_paired_counts": {
+      "decrease": 112,
+      "no_change": 112
+     },
+     "window_classes_baseline_to_scenario": {
+      "intermittent -> always_inactive": 32
+     }
+    },
+    "r0_class": "미결정",
+    "relation": "미결정"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent"
+    ],
+    "computed": {
+     "model_direction": "decrease",
+     "strict_paired_counts": {
+      "decrease": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_inactive": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "일치"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent"
+    ],
+    "computed": {
+     "model_direction": "decrease",
+     "strict_paired_counts": {
+      "decrease": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_inactive": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "일치"
+   },
+   "question": "O4",
+   "recorded_direction_r0": "decrease",
+   "row": "B05",
+   "series": "sec-11 / Fig 4A, U0126 24 h",
+   "stated": "decrease",
+   "wording": "prominent phosphorylation ... in the control samples, but not in U0126-treated cells"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels",
+     "the text rules out only an increase; it does not state no change"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels",
+     "the text rules out only an increase; it does not state no change"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels",
+     "the text rules out only an increase; it does not state no change"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels",
+     "the text rules out only an increase; it does not state no change"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "question": "O5",
+   "recorded_direction_r0": "no_change",
+   "row": "B06",
+   "series": "sec-11 / Fig 4B, AZD6244 2 h",
+   "stated": "no_increase",
+   "wording": "there is no increase of Ras activation"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "limit_cause": [
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "limit_cause": [
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "limit_cause": [
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "limit_cause": [
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "question": "O3",
+   "recorded_direction_r0": null,
+   "row": "B07",
+   "series": "sec-11 / Fig 4A, U0126 24 h",
+   "stated": "none",
+   "wording": "to abrogate Erk activity"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "limit_cause": [
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "limit_cause": [
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "limit_cause": [
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "limit_cause": [
+     "not_secured_in_spans_read"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "question": "O1",
+   "recorded_direction_r0": "increase",
+   "row": "B08",
+   "series": "sec-15 / Fig 6C, AZD6244 time series",
+   "stated": "increase",
+   "wording": "Mek phosphorylation rises within 1 h post-inhibition"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "question": "O2",
+   "recorded_direction_r0": "no_change",
+   "row": "B09",
+   "series": "sec-15 / Fig 6D, AZD6244 +/- ActD or CHX time series",
+   "stated": "no_change_observed",
+   "wording": "in B-Raf-mutated cells no change of Mek phosphorylation is observed"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "an intermittent window (the state changes along one logical path) is read as an intermediate measured level; unverified, and the 32 cases are not cells or weights"
+    ],
+    "computed": {
+     "model_direction": "increase",
+     "strict_paired_counts": {
+      "increase": 112,
+      "no_change": 112
+     },
+     "window_classes_baseline_to_scenario": {
+      "intermittent -> always_active": 32
+     }
+    },
+    "r0_class": "부합",
+    "relation": "조건부 양립"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "assumptions": [],
+    "computed": {
+     "model_direction": "undetermined",
+     "strict_paired_counts": {
+      "increase": 112,
+      "no_change": 112
+     },
+     "window_classes_baseline_to_scenario": {
+      "intermittent -> always_active": 32
+     }
+    },
+    "r0_class": "미결정",
+    "relation": "미결정"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "불일치",
+    "relation": "불일치 (현 모형·판독 규칙 하)"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "assumptions": [
+     "identity readout: an active state reads as present, an inactive one as absent",
+     "two equal Boolean states (both active, or both inactive) are read as no measured change; a change within the active state cannot be represented, so this is an assumption, not a computed equality of levels"
+    ],
+    "computed": {
+     "model_direction": "no_change",
+     "strict_paired_counts": {
+      "no_change": 224
+     },
+     "window_classes_baseline_to_scenario": {
+      "always_active -> always_active": 32
+     }
+    },
+    "r0_class": "불일치",
+    "relation": "불일치 (현 모형·판독 규칙 하)"
+   },
+   "question": "O1",
+   "recorded_direction_r0": "increase",
+   "row": "B10",
+   "series": "sec-15 / Fig 6D, AZD6244 +/- ActD or CHX time series",
+   "stated": "increase",
+   "wording": "phosphorylation of Mek increases once the Mek inhibitor is applied"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "limit_cause": [
+     "out_of_model_scope"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "limit_cause": [
+     "out_of_model_scope"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "limit_cause": [
+     "out_of_model_scope"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "limit_cause": [
+     "out_of_model_scope"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "question": "O6",
+   "recorded_direction_r0": "no_change",
+   "row": "B11",
+   "series": "sec-15 / Fig 6D, AZD6244 +/- ActD or CHX time series",
+   "stated": "no_change_observed",
+   "wording": "Block of either transcription or translation does not change the increase"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "limit_cause": [
+     "out_of_model_scope"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "limit_cause": [
+     "out_of_model_scope"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "limit_cause": [
+     "out_of_model_scope"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "limit_cause": [
+     "out_of_model_scope"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "question": "O6",
+   "recorded_direction_r0": "no_change",
+   "row": "B12",
+   "series": "sec-15 / Fig 6D, AZD6244 +/- ActD or CHX time series",
+   "stated": "no_change_observed",
+   "wording": "treatment with inhibitors of transcription and translation do not influence pMek levels"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "question": "O1",
+   "recorded_direction_r0": "no_change",
+   "row": "B13",
+   "series": "sec-11 / Fig 4C, HEK Raf-ER",
+   "stated": "no_increase",
+   "wording": "do not increase strongly"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "question": "O1",
+   "recorded_direction_r0": "increase",
+   "row": "B14",
+   "series": "sec-11 / Fig 4C, HEK Raf-ER",
+   "stated": "increase",
+   "wording": "pMek increases strongly once the Mek inhibitor is applied"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "question": "O2",
+   "recorded_direction_r0": "no_change",
+   "row": "B15",
+   "series": "sec-11, Caco2 inducible B-Raf (panel not named in the span)",
+   "stated": "no_increase",
+   "wording": "Mek inhibition does not lead to an increase of pMek"
+  },
+  {
+   "M1_feedback_on_RAF/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M1_feedback_on_RAF/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/ordinal": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "M2_feedback_on_RAS/strict": {
+    "limit_cause": [
+     "no_scenario_or_mapping"
+    ],
+    "r0_class": "비교 불가",
+    "relation": "비교 제한"
+   },
+   "question": "O1",
+   "recorded_direction_r0": "increase",
+   "row": "B16",
+   "series": "sec-11, Caco2 inducible B-Raf (panel not named in the span)",
+   "stated": "none",
+   "wording": "show strong feedback regulation"
+  }
+ ],
+ "rows_by_series": {
+  "sec-11 / Fig 4A, U0126 24 h": [
+   "B05",
+   "B07"
+  ],
+  "sec-11 / Fig 4B, AZD6244 2 h": [
+   "B06"
+  ],
+  "sec-11 / Fig 4C, HEK Raf-ER": [
+   "B13",
+   "B14"
+  ],
+  "sec-11, Caco2 inducible B-Raf (panel not named in the span)": [
+   "B15",
+   "B16"
+  ],
+  "sec-14 / Fig 6B, MEK inhibitor 24 h": [
+   "B01",
+   "B02",
+   "B03",
+   "B04"
+  ],
+  "sec-15 / Fig 6C, AZD6244 time series": [
+   "B08"
+  ],
+  "sec-15 / Fig 6D, AZD6244 +/- ActD or CHX time series": [
+   "B09",
+   "B10",
+   "B11",
+   "B12"
+  ]
+ },
+ "rows_total": 16,
+ "tally_of_rows": {
+  "M1_feedback_on_RAF/ordinal": {
+   "비교 제한": 10,
+   "조건부 양립": 6
+  },
+  "M1_feedback_on_RAF/strict": {
+   "미결정": 3,
+   "비교 제한": 10,
+   "조건부 양립": 3
+  },
+  "M2_feedback_on_RAS/ordinal": {
+   "불일치 (현 모형·판독 규칙 하)": 2,
+   "비교 제한": 10,
+   "일치": 1,
+   "조건부 양립": 3
+  },
+  "M2_feedback_on_RAS/strict": {
+   "불일치 (현 모형·판독 규칙 하)": 2,
+   "비교 제한": 10,
+   "일치": 1,
+   "조건부 양립": 3
+  }
+ }
+}

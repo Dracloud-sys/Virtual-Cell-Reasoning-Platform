@@ -174,3 +174,71 @@ def test_the_ordinal_reading_orders_window_classes(run_case):
     assert run_case.ordinal_reading(out, "X", range(3))["direction"] == "undetermined"
     out["baseline_cases"][1] = case("b", [True, None, True])
     assert run_case.ordinal_reading(out, "X", range(3))["direction"] == "undetermined"
+
+
+# --- revision r1: the text, the recorded direction and the computation kept apart --------- #
+
+R1 = CASE / "revision_r1"
+
+
+def _load(monkeypatch, name: str):
+    spec = importlib.util.spec_from_file_location(f"logic_biology_{name}", R1 / f"{name}.py")
+    module = importlib.util.module_from_spec(spec)
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_r0_is_kept_byte_for_byte():
+    for line in (CASE / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
+        digest, name = line.split()
+        assert hashlib.sha256((CASE / name).read_bytes()).hexdigest() == digest, name
+
+
+def test_r1_rebuilds_and_keeps_every_r0_class(monkeypatch):
+    out = _load(monkeypatch, "compare_r1").build()
+    dump = json.dumps(out, indent=1, ensure_ascii=False, sort_keys=True) + "\n"
+    assert dump == (R1 / "comparison_r1.json").read_text(encoding="utf-8")
+    r0 = {r["row"]: r for r in _json("comparison.json")["rows"]}
+    observations = {r["id"]: r for r in _json("observations.json")["rows"]}
+    for row in out["rows"]:
+        assert row["recorded_direction_r0"] == observations[row["row"]]["direction"]
+        for col, cell in row.items():
+            if "/" in col:
+                assert cell["r0_class"] == r0[row["row"]][col]["class"]
+                assert (cell["relation"] == "비교 제한") == (cell["r0_class"] == "비교 불가")
+                if cell["relation"] == "비교 제한":
+                    assert cell["limit_cause"]
+    for counts in out["tally_of_rows"].values():
+        assert sum(counts.values()) == out["rows_total"] == 16
+
+
+def test_r1_never_reads_no_increase_or_equal_states_as_an_exact_match(monkeypatch):
+    relate = _load(monkeypatch, "compare_r1").relate
+    both_on = {"always_active -> always_active": 32}
+    on_off = {"always_active -> always_inactive": 32}
+    flicker = {"intermittent -> always_active": 32}
+    assert relate("decrease", "decrease", "strict", on_off)[0] == "일치"
+    assert relate("no_increase", "no_change", "strict", both_on)[0] == "조건부 양립"
+    assert relate("no_increase", "decrease", "strict", on_off)[0] == "조건부 양립"
+    assert relate("no_increase", "increase", "strict", flicker)[0].startswith("불일치")
+    assert relate("no_change_observed", "no_change", "strict", both_on)[0] == "조건부 양립"
+    assert relate("increase", "increase", "ordinal", flicker)[0] == "조건부 양립"
+    relation, needs = relate("increase", "no_change", "strict", both_on)
+    assert relation.startswith("불일치") and any("equal Boolean states" in n for n in needs)
+    assert relate("increase", "undetermined", "strict", flicker) == ("미결정", [])
+
+
+def test_fixed_points_do_not_depend_on_a_paper(monkeypatch):
+    module = _load(monkeypatch, "fixed_points")
+    case = _json("prereg/case.json")
+    from virtualcell.mcp.server import build_server
+
+    server = build_server()
+    m1, m2 = case["models"]
+    # With KRAS on and no inhibitor, M1 reduces to pERK = NOT pERK: no state is fixed.
+    assert module.fixed_points(server, case, m1, "KRAS_control") == []
+    assert len(module.fixed_points(server, case, m2, "KRAS_control")) == 1
+    recorded = _json("revision_r1/fixed_points.json")
+    assert recorded["M1_feedback_on_RAF/KRAS_control"] == []
+    assert all(len(v) == 1 for k, v in recorded.items() if k != "M1_feedback_on_RAF/KRAS_control")

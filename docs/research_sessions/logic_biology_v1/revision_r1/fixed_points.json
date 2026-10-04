@@ -1,0 +1,66 @@
+{
+ "M1_feedback_on_RAF/BRAF_MEKi": [
+  {
+   "RAF": true,
+   "RAS": true,
+   "pERK": false,
+   "pMEK": true,
+   "pRaf1fb": false
+  }
+ ],
+ "M1_feedback_on_RAF/BRAF_control": [
+  {
+   "RAF": true,
+   "RAS": true,
+   "pERK": true,
+   "pMEK": true,
+   "pRaf1fb": true
+  }
+ ],
+ "M1_feedback_on_RAF/KRAS_MEKi": [
+  {
+   "RAF": true,
+   "RAS": true,
+   "pERK": false,
+   "pMEK": true,
+   "pRaf1fb": false
+  }
+ ],
+ "M1_feedback_on_RAF/KRAS_control": [],
+ "M2_feedback_on_RAS/BRAF_MEKi": [
+  {
+   "RAF": true,
+   "RAS": true,
+   "pERK": false,
+   "pMEK": true,
+   "pRaf1fb": false
+  }
+ ],
+ "M2_feedback_on_RAS/BRAF_control": [
+  {
+   "RAF": true,
+   "RAS": false,
+   "pERK": true,
+   "pMEK": true,
+   "pRaf1fb": true
+  }
+ ],
+ "M2_feedback_on_RAS/KRAS_MEKi": [
+  {
+   "RAF": true,
+   "RAS": true,
+   "pERK": false,
+   "pMEK": true,
+   "pRaf1fb": false
+  }
+ ],
+ "M2_feedback_on_RAS/KRAS_control": [
+  {
+   "RAF": true,
+   "RAS": true,
+   "pERK": true,
+   "pMEK": true,
+   "pRaf1fb": true
+  }
+ ]
+}
