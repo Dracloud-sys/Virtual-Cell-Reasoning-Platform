@@ -1,0 +1,172 @@
+{
+ "code": {
+  "git_head": "8ebb3038b288c355aa5b66339dc027b21b635d18",
+  "src_uncommitted_changes": false
+ },
+ "input_sha256": "9889c2a1b35eed13742c69d14e658d497c711d48c7ecb54c87422d203e3da4bb",
+ "note": "Seconds vary between runs and machines. Bytes are of this code and this input; they are not tokens or cost.",
+ "runs": {
+  "M1_feedback_on_RAF/BRAF": {
+   "exploration_complete": true,
+   "full": {
+    "seconds": 0.2069,
+    "structured_bytes": 1810340,
+    "text_block_bytes": 2560310
+   },
+   "pairing": "paired",
+   "run_sha256": {
+    "full": "4ba0b18eadbf93971ef2f532c759ac9ae1b8ca1b60a5bf1bc68d046e104a5279",
+    "summary": "4ba0b18eadbf93971ef2f532c759ac9ae1b8ca1b60a5bf1bc68d046e104a5279",
+    "window": "4ba0b18eadbf93971ef2f532c759ac9ae1b8ca1b60a5bf1bc68d046e104a5279"
+   },
+   "summary": {
+    "seconds": 0.081,
+    "structured_bytes": 521773,
+    "text_block_bytes": 676351
+   },
+   "window": {
+    "seconds": 0.1136,
+    "structured_bytes": 40683,
+    "text_block_bytes": 60839
+   },
+   "window_agrees_with_full_paths": {
+    "RasGTP_RBD_pulldown": true,
+    "pERK1_2_T202_Y204_WB": true,
+    "pMEK1_S217_S221_BioPlex": true,
+    "pRaf1_S289_S296_S301_WB": true
+   },
+   "window_over_full": 0.02247,
+   "window_over_summary": 0.07797,
+   "window_request_sha256": "44fda3b1969797a4c6853bcabb70054a4743e4c1cc89537d12593f5125120898"
+  },
+  "M1_feedback_on_RAF/KRAS": {
+   "exploration_complete": true,
+   "full": {
+    "seconds": 0.1997,
+    "structured_bytes": 1812604,
+    "text_block_bytes": 2562910
+   },
+   "pairing": "paired",
+   "run_sha256": {
+    "full": "6b324d1aa7f9f3f2bbbfd891406645fdd23e2892e337fb1eb989f39055bd0a23",
+    "summary": "6b324d1aa7f9f3f2bbbfd891406645fdd23e2892e337fb1eb989f39055bd0a23",
+    "window": "6b324d1aa7f9f3f2bbbfd891406645fdd23e2892e337fb1eb989f39055bd0a23"
+   },
+   "summary": {
+    "seconds": 0.1145,
+    "structured_bytes": 522445,
+    "text_block_bytes": 677359
+   },
+   "window": {
+    "seconds": 0.1789,
+    "structured_bytes": 40786,
+    "text_block_bytes": 61074
+   },
+   "window_agrees_with_full_paths": {
+    "RasGTP_RBD_pulldown": true,
+    "pERK1_2_T202_Y204_WB": true,
+    "pMEK1_S217_S221_BioPlex": true,
+    "pRaf1_S289_S296_S301_WB": true
+   },
+   "window_over_full": 0.0225,
+   "window_over_summary": 0.07807,
+   "window_request_sha256": "56b1e4f35adbba95e4a5f5cba6e77e75ab9f10dcf170b88b4d0fea555964898d"
+  },
+  "M2_feedback_on_RAS/BRAF": {
+   "exploration_complete": true,
+   "full": {
+    "seconds": 0.1946,
+    "structured_bytes": 1892787,
+    "text_block_bytes": 2671949
+   },
+   "pairing": "paired",
+   "run_sha256": {
+    "full": "67cc14a3cd402a60aa3b436d73e58e5559ca9f3b12178637687766290790103d",
+    "summary": "67cc14a3cd402a60aa3b436d73e58e5559ca9f3b12178637687766290790103d",
+    "window": "67cc14a3cd402a60aa3b436d73e58e5559ca9f3b12178637687766290790103d"
+   },
+   "summary": {
+    "seconds": 0.0834,
+    "structured_bytes": 603452,
+    "text_block_bytes": 787222
+   },
+   "window": {
+    "seconds": 0.1163,
+    "structured_bytes": 42742,
+    "text_block_bytes": 63994
+   },
+   "window_agrees_with_full_paths": {
+    "RasGTP_RBD_pulldown": true,
+    "pERK1_2_T202_Y204_WB": true,
+    "pMEK1_S217_S221_BioPlex": true,
+    "pRaf1_S289_S296_S301_WB": true
+   },
+   "window_over_full": 0.02258,
+   "window_over_summary": 0.07083,
+   "window_request_sha256": "c1bff483227e38522e54ebf953caea4d832aabb85bb8d6f615bad0cc296c2e27"
+  },
+  "M2_feedback_on_RAS/KRAS": {
+   "exploration_complete": true,
+   "full": {
+    "seconds": 0.2441,
+    "structured_bytes": 1808398,
+    "text_block_bytes": 2558128
+   },
+   "pairing": "paired",
+   "run_sha256": {
+    "full": "b9a06b4bcc5ab259b177745ae38b03b95416f8916a2ad06e3540bdfd623d254f",
+    "summary": "b9a06b4bcc5ab259b177745ae38b03b95416f8916a2ad06e3540bdfd623d254f",
+    "window": "b9a06b4bcc5ab259b177745ae38b03b95416f8916a2ad06e3540bdfd623d254f"
+   },
+   "summary": {
+    "seconds": 0.1111,
+    "structured_bytes": 519671,
+    "text_block_bytes": 674009
+   },
+   "window": {
+    "seconds": 0.182,
+    "structured_bytes": 42741,
+    "text_block_bytes": 63993
+   },
+   "window_agrees_with_full_paths": {
+    "RasGTP_RBD_pulldown": true,
+    "pERK1_2_T202_Y204_WB": true,
+    "pMEK1_S217_S221_BioPlex": true,
+    "pRaf1_S289_S296_S301_WB": true
+   },
+   "window_over_full": 0.02363,
+   "window_over_summary": 0.08225,
+   "window_request_sha256": "f992eb0214bf188d2351676d01d79c13b3942d13900b96cea1fd495d5efd51d1"
+  }
+ },
+ "totals": {
+  "full": {
+   "calls": 4,
+   "seconds": 0.8453,
+   "structured_bytes": 7324129,
+   "text_block_bytes": 10353297
+  },
+  "summary": {
+   "calls": 4,
+   "seconds": 0.39,
+   "structured_bytes": 2167341,
+   "text_block_bytes": 2814941
+  },
+  "window": {
+   "calls": 4,
+   "seconds": 0.5908,
+   "structured_bytes": 166952,
+   "text_block_bytes": 249900
+  }
+ },
+ "window": {
+  "first": 18,
+  "last": 24,
+  "targets": [
+   "RasGTP_RBD_pulldown",
+   "pERK1_2_T202_Y204_WB",
+   "pMEK1_S217_S221_BioPlex",
+   "pRaf1_S289_S296_S301_WB"
+  ]
+ }
+}
