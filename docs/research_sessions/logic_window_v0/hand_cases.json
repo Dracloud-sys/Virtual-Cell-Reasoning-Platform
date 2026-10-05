@@ -1,0 +1,139 @@
+{
+ "about": "Hand-computed window summaries, written with SPEC.md before the implementation. Each case gives the run arguments (as for run_logic_model, view 'window') and the expected values, traced by hand from the rules. Paths are written as value sequences over t = 0..steps (1 active, 0 inactive, ? not computed). Case labels follow the engine's existing format: sorted unknown labels joined as name=0/1, or 'all' with no unknowns.",
+ "models": {
+  "UAB": {"id": "UAB", "components": [{"id": "U", "kind": "input"}, {"id": "A", "kind": "internal"}, {"id": "B", "kind": "internal"}], "rules": [{"id": "rA", "target": "A", "expr": {"var": "U"}}, {"id": "rB", "target": "B", "expr": {"not": {"var": "U"}}}]},
+  "FLIP": {"id": "FLIP", "components": [{"id": "X", "kind": "internal"}], "rules": [{"id": "rX", "target": "X", "expr": {"not": {"var": "X"}}}]},
+  "HOLD": {"id": "HOLD", "components": [{"id": "Y", "kind": "internal"}], "rules": [{"id": "rY", "target": "Y", "expr": {"var": "Y"}}]},
+  "HOLD2": {"id": "HOLD2", "components": [{"id": "Y", "kind": "internal"}, {"id": "Q", "kind": "internal"}], "rules": [{"id": "rY", "target": "Y", "expr": {"var": "Y"}}, {"id": "rQ", "target": "Q", "expr": {"var": "Q"}}]},
+  "NORULE": {"id": "NORULE", "components": [{"id": "Z", "kind": "internal"}], "rules": []}
+ },
+ "cases": [
+  {
+   "id": "H1_constant",
+   "question": "Always active and always inactive in the window; a readout target is read through its state.",
+   "model": "UAB", "steps": 4,
+   "scenario": {"name": "on", "initial": {"A": false, "B": false}, "inputs": {"U": [{"start": 0, "end": null, "value": true}]}},
+   "readouts": [{"readout": "R_A", "state": "A", "basis": "test"}],
+   "window": {"first": 2, "last": 4, "targets": ["B", "R_A"]},
+   "trace": "A: 0 1 1 1 1; B: 0 0 0 0 0",
+   "expected": {
+    "pairing_status": "no_baseline",
+    "constant_from": 0, "declared_change_after_window": false,
+    "targets": {
+     "B": {"kind": "component", "state": "B", "scenario_groups": [["all_inactive", [false], [], ["all"]]], "across_cases": "same_class", "identical_paths": true, "applies_to": "all_cases", "paired": null},
+     "R_A": {"kind": "readout", "state": "A", "scenario_groups": [["all_active", [true], [], ["all"]]], "across_cases": "same_class", "identical_paths": true, "applies_to": "all_cases", "paired": null}
+    }
+   }
+  },
+  {
+   "id": "H2_changes_within_path",
+   "question": "One path changes inside the window.",
+   "model": "FLIP", "steps": 4,
+   "scenario": {"name": "s", "initial": {"X": false}},
+   "window": {"first": 1, "last": 4, "targets": ["X"]},
+   "trace": "X: 0 1 0 1 0",
+   "expected": {"pairing_status": "no_baseline", "targets": {"X": {"scenario_groups": [["both_values", [false, true], [], ["all"]]], "across_cases": "same_class", "identical_paths": true, "applies_to": "all_cases", "paired": null}}}
+  },
+  {
+   "id": "H8a_one_step",
+   "question": "A one-step window is constant by definition.",
+   "model": "FLIP", "steps": 4,
+   "scenario": {"name": "s", "initial": {"X": false}},
+   "window": {"first": 0, "last": 0, "targets": ["X"]},
+   "trace": "X: 0 1 0 1 0; window holds t0 only",
+   "expected": {"targets": {"X": {"scenario_groups": [["all_inactive", [false], [], ["all"]]], "across_cases": "same_class", "identical_paths": true, "applies_to": "all_cases", "paired": null}}}
+  },
+  {
+   "id": "H3_constant_paths_differ_by_case",
+   "question": "Each path is constant; the cases differ.",
+   "model": "HOLD", "steps": 3,
+   "scenario": {"name": "s", "initial": {"Y": "unknown"}},
+   "window": {"first": 0, "last": 3, "targets": ["Y"]},
+   "trace": "Y=0: 0 0 0 0; Y=1: 1 1 1 1",
+   "expected": {"targets": {"Y": {"scenario_groups": [["all_inactive", [false], [], ["Y=0"]], ["all_active", [true], [], ["Y=1"]]], "across_cases": "differs_by_case", "identical_paths": false, "applies_to": "all_cases", "paired": null}}}
+  },
+  {
+   "id": "H4a_paired_out_of_phase",
+   "question": "Both sides change in the window; paired by step they give increase and decrease.",
+   "model": "FLIP", "steps": 4,
+   "scenario": {"name": "shifted", "initial": {"X": false}, "clamps": [{"target": "X", "value": true, "start": 0, "end": 0}]},
+   "baseline": {"name": "base", "initial": {"X": false}},
+   "window": {"first": 1, "last": 4, "targets": ["X"]},
+   "trace": "baseline X: 0 1 0 1 0; scenario X: 1 0 1 0 1; window t1-4: baseline 1010, scenario 0101; t1 decrease, t2 increase, t3 decrease, t4 increase",
+   "expected": {
+    "pairing_status": "paired", "constant_from": 1, "baseline_constant_from": 0, "declared_change_after_window": false,
+    "targets": {"X": {"scenario_groups": [["both_values", [false, true], [], ["all"]]], "baseline_groups": [["both_values", [false, true], [], ["all"]]], "paired": {"groups": [[["decrease", "increase"], ["all"]]], "directions": ["decrease", "increase"], "applies_to": "all_cases"}}}
+   }
+  },
+  {
+   "id": "H4b_paired_in_phase",
+   "question": "Same classes as H4a, but the paths are equal: only no_change.",
+   "model": "FLIP", "steps": 4,
+   "scenario": {"name": "same", "initial": {"X": false}, "clamps": [{"target": "X", "value": false, "start": 0, "end": 0}]},
+   "baseline": {"name": "base", "initial": {"X": false}},
+   "window": {"first": 1, "last": 4, "targets": ["X"]},
+   "trace": "baseline X: 0 1 0 1 0; scenario X: 0 1 0 1 0",
+   "expected": {"pairing_status": "paired", "targets": {"X": {"scenario_groups": [["both_values", [false, true], [], ["all"]]], "baseline_groups": [["both_values", [false, true], [], ["all"]]], "paired": {"groups": [[["no_change"], ["all"]]], "directions": ["no_change"], "applies_to": "all_cases"}}}}
+  },
+  {
+   "id": "H5a_partly_not_computed",
+   "question": "Known values all true but others not computed: not all_active.",
+   "model": "NORULE", "steps": 2,
+   "scenario": {"name": "s", "initial": {"Z": true}},
+   "window": {"first": 0, "last": 2, "targets": ["Z"]},
+   "trace": "Z: 1 ? ?",
+   "expected": {"targets": {"Z": {"scenario_groups": [["partly_not_computed", [true], [1, 2], ["all"]]], "across_cases": "same_class", "identical_paths": true, "applies_to": "all_cases", "paired": null}}}
+  },
+  {
+   "id": "H5b_not_computed_and_paired_undetermined",
+   "question": "A wholly not-computed window, and a paired direction that is undetermined where a value is missing.",
+   "model": "NORULE", "steps": 2,
+   "scenario": {"name": "s", "initial": {"Z": true}, "clamps": [{"target": "Z", "value": false, "start": 0, "end": 0}]},
+   "baseline": {"name": "b", "initial": {"Z": true}},
+   "window": {"first": 0, "last": 2, "targets": ["Z"]},
+   "trace": "baseline Z: 1 ? ?; scenario Z: 0 ? ?; t0 decrease, t1-2 undetermined",
+   "expected": {"pairing_status": "paired", "targets": {"Z": {"scenario_groups": [["partly_not_computed", [false], [1, 2], ["all"]]], "baseline_groups": [["partly_not_computed", [true], [1, 2], ["all"]]], "paired": {"groups": [[["decrease", "undetermined"], ["all"]]], "directions": ["decrease", "undetermined"], "applies_to": "all_cases"}}}},
+   "also": {"window": {"first": 1, "last": 2, "targets": ["Z"]}, "scenario_groups": [["not_computed", [], [1, 2], ["all"]]], "paired_directions": ["undetermined"]}
+  },
+  {
+   "id": "H6_exploration_limit",
+   "question": "Only one of four cases explored: the answers are about that case only.",
+   "model": "HOLD2", "steps": 2, "max_cases": 1,
+   "scenario": {"name": "s", "initial": {"Y": "unknown", "Q": "unknown"}, "clamps": [{"target": "Y", "value": true, "start": 1, "end": null}]},
+   "baseline": {"name": "b", "initial": {"Y": "unknown", "Q": "unknown"}},
+   "window": {"first": 1, "last": 2, "targets": ["Y"]},
+   "trace": "unknowns sorted [Q, Y]; first assignment Q=0,Y=0. baseline Y: 0 0 0; scenario Y: 0 1 1",
+   "expected": {"pairing_status": "paired", "cases_explored": 1, "cases_total": 4, "targets": {"Y": {"scenario_groups": [["all_active", [true], [], ["Q=0,Y=0"]]], "baseline_groups": [["all_inactive", [false], [], ["Q=0,Y=0"]]], "applies_to": "explored_cases_only", "paired": {"groups": [[["increase"], ["Q=0,Y=0"]]], "directions": ["increase"], "applies_to": "explored_cases_only"}}}}
+  },
+  {
+   "id": "H7_not_paired",
+   "question": "The baseline expands an unknown the scenario does not: no pairs are made; each side is still summarised.",
+   "model": "UAB", "steps": 2,
+   "scenario": {"name": "s", "initial": {"A": false, "B": false}, "inputs": {"U": [{"start": 0, "end": null, "value": true}]}},
+   "baseline": {"name": "b", "initial": {"A": false, "B": false}, "inputs": {"U": [{"start": 0, "end": null, "value": "unknown"}]}},
+   "window": {"first": 1, "last": 2, "targets": ["A"]},
+   "trace": "scenario (all): A 0 1 1; baseline U[0:end]=0: A 0 0 0; U[0:end]=1: A 0 1 1",
+   "expected": {"pairing_status": "not_paired", "targets": {"A": {"scenario_groups": [["all_active", [true], [], ["all"]]], "baseline_groups": [["all_inactive", [false], [], ["U[0:end]=0"]], ["all_active", [true], [], ["U[0:end]=1"]]], "paired": null}}}
+  },
+  {
+   "id": "H9_change_declared_after_window",
+   "question": "Constant in the window, with an input change declared after it.",
+   "model": "UAB", "steps": 4,
+   "scenario": {"name": "s", "initial": {"A": false, "B": false}, "inputs": {"U": [{"start": 0, "end": 5, "value": true}, {"start": 6, "end": null, "value": false}]}},
+   "window": {"first": 2, "last": 4, "targets": ["A"]},
+   "trace": "A: 0 1 1 1 1; U changes at index 6 > last 4",
+   "expected": {"constant_from": 6, "declared_change_after_window": true, "repetition_status": "not_assessed", "targets": {"A": {"scenario_groups": [["all_active", [true], [], ["all"]]], "paired": null}}}
+  }
+ ],
+ "refused": [
+  {"id": "R_reversed", "model": "FLIP", "steps": 4, "window": {"first": 3, "last": 1, "targets": ["X"]}},
+  {"id": "R_past_steps", "model": "FLIP", "steps": 4, "window": {"first": 0, "last": 5, "targets": ["X"]}},
+  {"id": "R_negative", "model": "FLIP", "steps": 4, "window": {"first": -1, "last": 2, "targets": ["X"]}},
+  {"id": "R_unknown_target", "model": "FLIP", "steps": 4, "window": {"first": 0, "last": 2, "targets": ["Nope"]}},
+  {"id": "R_repeated_target", "model": "FLIP", "steps": 4, "window": {"first": 0, "last": 2, "targets": ["X", "X"]}},
+  {"id": "R_no_targets", "model": "FLIP", "steps": 4, "window": {"first": 0, "last": 2, "targets": []}},
+  {"id": "R_ambiguous_target", "model": "FLIP", "steps": 4, "readouts": [{"readout": "X", "state": "X", "basis": "test"}], "window": {"first": 0, "last": 2, "targets": ["X"]}},
+  {"id": "R_window_without_view", "model": "FLIP", "steps": 4, "view": "summary", "window": {"first": 0, "last": 2, "targets": ["X"]}},
+  {"id": "R_view_without_window", "model": "FLIP", "steps": 4, "view": "window", "window": null}
+ ]
+}
