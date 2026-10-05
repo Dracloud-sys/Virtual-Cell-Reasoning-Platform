@@ -285,7 +285,9 @@ class ReadoutMapping(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    readout: str
+    readout: str = Field(
+        description="The readout's id. Unique within `readouts`: a repeated id is refused."
+    )
     state: str = Field(description="The component the readout reads.")
     mapping: str = Field(
         default="identity",
@@ -482,8 +484,14 @@ class WindowGroup(BaseModel):
 class WindowSide(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    groups: list[WindowGroup]
-    across_cases: Literal["same_class", "differs_by_case"]
+    groups: list[WindowGroup] = Field(
+        description="Split on class, known values and not-computed steps, so two groups can "
+        "share a class."
+    )
+    across_cases: Literal["same_class", "differs_by_case"] = Field(
+        description="Whether every explored case has the same window_class. Groups and "
+        "identical_paths carry the finer detail."
+    )
     identical_paths: bool = Field(
         description="Every explored case has the same value sequence in the window. Same class "
         "is not same path: 0101 and 1010 are both both_values."
@@ -956,6 +964,7 @@ def run_logic(
         raise LogicModelError(f"max_cases must be between 1 and {MAX_CASES}")
     readouts = list(readouts or [])
     declared = {c.id for c in model.components}
+    _unique_readouts(readouts)
     targets = _window_targets(window, view, steps, declared, readouts)
     for m in readouts:
         if m.state not in declared:
@@ -1173,6 +1182,19 @@ WINDOW_OMITTED: tuple[str, ...] = (
 )
 
 
+def _unique_readouts(readouts: list[ReadoutMapping]) -> None:
+    """Refuse a readout id declared twice; nothing is renamed and no declaration is chosen."""
+    seen: dict[str, int] = {}
+    for position, m in enumerate(readouts):
+        if m.readout in seen:
+            raise LogicModelError(
+                f"readout id {m.readout!r} is declared at positions {seen[m.readout]} and "
+                f"{position} of `readouts` (counting from 0); readout ids must be unique. Rename "
+                "or remove one; neither is chosen"
+            )
+        seen[m.readout] = position
+
+
 def _window_targets(
     window: WindowRequest | None,
     view: str,
@@ -1250,7 +1272,8 @@ def _window_side(
             )
             for (cls, known, gaps), labels in groups.items()
         ],
-        across_cases="same_class" if len(groups) == 1 else "differs_by_case",
+        # The class alone decides: groups also split on known values and gaps, which is detail.
+        across_cases="same_class" if len({key[0] for key in groups}) == 1 else "differs_by_case",
         identical_paths=len(sequences) == 1,
         applies_to="all_cases" if complete else "explored_cases_only",
     )

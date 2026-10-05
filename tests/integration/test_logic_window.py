@@ -335,3 +335,157 @@ def test_drafts_are_the_same_with_or_without_a_window(server):
         plain["prediction_drafts"] and windowed["prediction_drafts"] == plain["prediction_drafts"]
     )
     assert windowed["run_sha256"] == plain["run_sha256"]
+
+
+# --- PR #39 review r1: class vs detailed group; unique readout ids ------------------------- #
+#
+# Reproduced on the product path at a7fd559: across_cases said differs_by_case for two cases of
+# one class split only by not-computed steps (R1), and a repeated readout id read the state of
+# its last declaration (R2). Expected values are traced by hand from the rules below.
+
+R1_MODEL = {
+    "id": "R1",
+    "components": [
+        {"id": "Q", "kind": "internal"},
+        {"id": "Z", "kind": "internal"},
+        {"id": "P", "kind": "internal"},
+    ],
+    "rules": [
+        {"id": "rQ", "target": "Q", "expr": {"not": {"var": "Q"}}},
+        {"id": "rP", "target": "P", "expr": {"or": [{"var": "Q"}, {"var": "Z"}]}},
+    ],
+}
+
+
+def _side(server, model, initial, steps, first, last, target, **extra):
+    w = _call(
+        server,
+        {
+            "model": model,
+            "scenario": {"name": "s", "initial": initial},
+            "steps": steps,
+            "view": "window",
+            "window": {"first": first, "last": last, "targets": [target]},
+            **extra,
+        },
+    )["window"]
+    return w, w["targets"][0]
+
+
+def test_same_class_with_different_not_computed_steps(server):
+    # Q=0: Q 0101, Z 1???, P 1 1 1 ?  (t3 = Q2 OR Z2 = 0 OR ? = ?)
+    # Q=1: Q 1010, Z 1???, P 1 1 ? 1  (t2 = Q1 OR Z1 = 0 OR ? = ?)
+    w, t = _side(server, R1_MODEL, {"Q": "unknown", "Z": True, "P": True}, 3, 0, 3, "P")
+    assert _groups(w, t, "scenario") == [
+        ["partly_not_computed", [True], [3], ["Q=0"]],
+        ["partly_not_computed", [True], [2], ["Q=1"]],
+    ]
+    assert t["scenario"]["across_cases"] == "same_class"
+    assert t["scenario"]["identical_paths"] is False
+
+
+def test_same_class_with_different_known_values(server):
+    # W has no rule: W=0 gives 0 ?, W=1 gives 1 ?.
+    model = {"id": "W", "components": [{"id": "W", "kind": "internal"}], "rules": []}
+    w, t = _side(server, model, {"W": "unknown"}, 1, 0, 1, "W")
+    assert _groups(w, t, "scenario") == [
+        ["partly_not_computed", [False], [1], ["W=0"]],
+        ["partly_not_computed", [True], [1], ["W=1"]],
+    ]
+    assert t["scenario"]["across_cases"] == "same_class"
+    assert t["scenario"]["identical_paths"] is False
+
+
+def test_same_class_with_different_paths(server):
+    # X=0: 0101; X=1: 1010. One group, one class, two paths.
+    w, t = _side(server, HAND["models"]["FLIP"], {"X": "unknown"}, 3, 0, 3, "X")
+    assert _groups(w, t, "scenario") == [["both_values", [False, True], [], ["X=0", "X=1"]]]
+    assert t["scenario"]["across_cases"] == "same_class"
+    assert t["scenario"]["identical_paths"] is False
+
+
+def test_different_classes_still_differ(server):
+    # Y holds its initial value: Y=0 gives all_inactive, Y=1 all_active.
+    w, t = _side(server, HAND["models"]["HOLD"], {"Y": "unknown"}, 2, 0, 2, "Y")
+    assert t["scenario"]["across_cases"] == "differs_by_case"
+    # Partly not computed in one case, all active in the other: still different classes.
+    model = {
+        "id": "MIX",
+        "components": [
+            {"id": "Y", "kind": "internal"},
+            {"id": "Z", "kind": "internal"},
+            {"id": "P", "kind": "internal"},
+        ],
+        "rules": [
+            {"id": "rY", "target": "Y", "expr": {"var": "Y"}},
+            {"id": "rP", "target": "P", "expr": {"or": [{"var": "Y"}, {"var": "Z"}]}},
+        ],
+    }
+    # Y=0: P 1 1 ? (t2 = 0 OR ?); Y=1: P 1 1 1.
+    w, t = _side(server, model, {"Y": "unknown", "Z": True, "P": True}, 2, 0, 2, "P")
+    assert _groups(w, t, "scenario") == [
+        ["partly_not_computed", [True], [2], ["Y=0"]],
+        ["all_active", [True], [], ["Y=1"]],
+    ]
+    assert t["scenario"]["across_cases"] == "differs_by_case"
+
+
+R2_MODEL = {
+    "id": "R2",
+    "components": [{"id": "X", "kind": "internal"}, {"id": "Y", "kind": "internal"}],
+    "rules": [
+        {"id": "rX", "target": "X", "expr": {"const": True}},
+        {"id": "rY", "target": "Y", "expr": {"const": False}},
+    ],
+}
+R2_SCENARIO = {"name": "s", "initial": {"X": True, "Y": False}}
+R2_READOUTS = [
+    {"readout": "R", "state": "X", "basis": "synthetic contract test"},
+    {"readout": "R", "state": "Y", "basis": "synthetic contract test"},
+]
+
+
+@pytest.mark.parametrize("view", ["window", "summary", "full"])
+@pytest.mark.parametrize("readouts", [R2_READOUTS, R2_READOUTS[::-1], [R2_READOUTS[0]] * 2])
+def test_a_repeated_readout_id_is_refused_in_any_order(server, view, readouts):
+    args = {
+        "model": R2_MODEL,
+        "scenario": R2_SCENARIO,
+        "steps": 1,
+        "readouts": readouts,
+        "view": view,
+    }
+    if view == "window":
+        args["window"] = {"first": 0, "last": 1, "targets": ["R"]}
+    with pytest.raises(sdk_errors.ToolError) as caught:
+        asyncio.run(server.call_tool("run_logic_model", args))
+    refusal = ToolRefusal.parse(str(caught.value))
+    assert refusal.error == "malformed_logic_model"
+    assert "'R'" in refusal.detail and "positions 0 and 1" in refusal.detail
+
+
+def test_unique_readout_ids_in_any_order_mean_the_same(server):
+    readouts = [
+        {"readout": "RX", "state": "X", "basis": "synthetic contract test"},
+        {"readout": "RY", "state": "Y", "basis": "synthetic contract test"},
+    ]
+
+    def run(order):
+        return _call(
+            server,
+            {
+                "model": R2_MODEL,
+                "scenario": R2_SCENARIO,
+                "steps": 1,
+                "readouts": order,
+                "view": "window",
+                "window": {"first": 0, "last": 1, "targets": ["RY", "RX"]},
+            },
+        )["window"]
+
+    a, b = run(readouts), run(readouts[::-1])
+    assert a == b
+    got = {
+        t["target"]: (t["state"], t["scenario"]["groups"][0]["window_class"]) for t in a["targets"]
+    }
+    assert got == {"RX": ("X", "all_active"), "RY": ("Y", "all_inactive")}

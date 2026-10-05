@@ -247,7 +247,8 @@ be computed. Case counts are not probabilities. Past `max_cases` the run says th
 incomplete and claims nothing about all cases.
 
 `baseline` (same initial state) gives the difference at each step, and per case when both have
-the same unknowns. `readouts` map one state to one readout (`identity`: active reads present);
+the same unknowns. `readouts` map one state to one readout (`identity`: active reads present), each
+with a unique id (a repeated id is refused);
 without a mapping a requested readout is `not_derivable` and the run still completes. With
 `hypothesis_id`, the final-step readouts come back as Prediction drafts with basis `assumption`
 that name the model and its hash - never as observed evidence. Nothing is added to any plan.
@@ -264,8 +265,9 @@ trace.
 `view: "window"` with `window: {first, last, targets}` (state indices, both inclusive, `last`
 at most `steps`; targets are component or readout ids) summarises the same run over that window
 instead of sending every step. Per target and side, cases are grouped by class (`all_active`,
-`all_inactive`, `both_values`, `partly_not_computed`, `not_computed`), each group naming its
-cases by position in `window.cases`; `identical_paths` says whether the paths are the same,
+`all_inactive`, `both_values`, `partly_not_computed`, `not_computed`) and by known values and
+not-computed steps, each group naming its cases by position in `window.cases`. `across_cases`
+says whether the class is the same in every case; `identical_paths` says whether the paths are,
 which a shared class does not. Against a baseline with the same unknowns, each case's
 directions over the window's steps are given as a set, never as one chosen direction; with
 different unknowns nothing is paired. A class is a computation, not a measured level:
