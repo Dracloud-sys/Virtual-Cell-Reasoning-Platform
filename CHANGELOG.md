@@ -7,6 +7,28 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **A candidate Boolean model applied to published observations**
+  (`docs/research_sessions/logic_biology_v1/`).
+  - The model is ERK→RAF negative feedback under MEK inhibition, compared with
+    Fritsche-Guenther et al. 2011.
+  - This is a retrospective reproduction and applicability assessment, not an independent
+    test.
+  - The model, one alternative (feedback on RAS), scenarios, readouts, questions, readings and
+    classes were committed before the results text was read.
+  - There are 16 observation rows:
+    - M1 strict: 3 부합, 3 미결정, 10 비교 불가;
+    - M1 ordinal: 6 부합;
+    - M2: 4 부합, 2 불일치.
+  - Finding: a synchronous negative loop oscillates, so the per-step relative direction is
+    undetermined; reading it needs a host-side window aggregation over every case path.
+  - No product code changed.
+  - Revision r1 (`revision_r1/`, `CORRECTIONS.md`) narrows how r0 is read; r0 is unchanged.
+    - M1 has no fixed point under these inputs, under any update scheme. Only the periodic
+      path comes from the synchronous scheme.
+    - "No increase" and equal Boolean states are 조건부 양립, not exact matches.
+    - M2's 불일치 holds under the current model and readout only; it is not a refutation.
+    - The next step is split into a computed-path summary (output) and a separate
+      measurement model.
 - **`run_logic_model`: compute what a small Boolean candidate model gives under an
   intervention** (`simulation/logic.py`; `docs/research_sessions/logic_model_v0/`).
   - Inputs are components (input or internal), one structured rule per internal component

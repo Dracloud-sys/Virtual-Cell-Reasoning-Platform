@@ -1,0 +1,61 @@
+{
+ "code": {
+  "git_head": "a677c62a91384adb2e69a6cd23f605232f3437e2",
+  "src_uncommitted_changes": false
+ },
+ "inputs": {
+  "prereg/case.json": "9889c2a1b35eed13742c69d14e658d497c711d48c7ecb54c87422d203e3da4bb",
+  "prereg/PREREG.md": "f2b7d52137cce8640cfa332395ae1810d7c9ef285e82a78672a7afd99d62fc0c",
+  "observations.json": "6ff2f8c5823df4c7168c2c0f4de262b4761cb26d5282f67ccc948ab421f6e605"
+ },
+ "outputs": {
+  "results.json": "d108d2fafacef1948afa127b904ab299ebb2b6f5150c2d88a1c8e6195987b532",
+  "comparison.json": "e3c70be9847c412b74079f9966c25006a86790b266021686403f38bd52c19e07"
+ },
+ "tool_calls": 8,
+ "calls": [
+  {
+   "run": "M1_feedback_on_RAF/KRAS",
+   "seconds": 0.2739,
+   "bytes": 1821776
+  },
+  {
+   "run": "M1_feedback_on_RAF/KRAS/baseline_only",
+   "seconds": 0.0924,
+   "bytes": 44759
+  },
+  {
+   "run": "M1_feedback_on_RAF/BRAF",
+   "seconds": 0.3136,
+   "bytes": 1819159
+  },
+  {
+   "run": "M1_feedback_on_RAF/BRAF/baseline_only",
+   "seconds": 0.0777,
+   "bytes": 44327
+  },
+  {
+   "run": "M2_feedback_on_RAS/KRAS",
+   "seconds": 0.192,
+   "bytes": 1817420
+  },
+  {
+   "run": "M2_feedback_on_RAS/KRAS/baseline_only",
+   "seconds": 0.0278,
+   "bytes": 44733
+  },
+  {
+   "run": "M2_feedback_on_RAS/BRAF",
+   "seconds": 0.1764,
+   "bytes": 1901808
+  },
+  {
+   "run": "M2_feedback_on_RAS/BRAF/baseline_only",
+   "seconds": 0.033,
+   "bytes": 44769
+  }
+ ],
+ "seconds_total": 1.1868,
+ "response_bytes_total": 7538751,
+ "note": "Seconds and bytes vary between runs and machines; they are not outputs."
+}
