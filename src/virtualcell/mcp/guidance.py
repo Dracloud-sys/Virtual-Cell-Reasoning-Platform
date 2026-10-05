@@ -260,6 +260,20 @@ sides. `repetition` is reported only for fully computed states and only once no 
 or clamp changes again, including changes declared after the last step; otherwise it is
 `not_assessed` with a reason. `view: "full"` adds every case path and the rule-application
 trace.
+
+`view: "window"` with `window: {first, last, targets}` (state indices, both inclusive, `last`
+at most `steps`; targets are component or readout ids) summarises the same run over that window
+instead of sending every step. Per target and side, cases are grouped by class (`all_active`,
+`all_inactive`, `both_values`, `partly_not_computed`, `not_computed`), each group naming its
+cases by position in `window.cases`; `identical_paths` says whether the paths are the same,
+which a shared class does not. Against a baseline with the same unknowns, each case's
+directions over the window's steps are given as a set, never as one chosen direction; with
+different unknowns nothing is paired. A class is a computation, not a measured level:
+`both_values` is not an intermediate level or a cycle, a constant window is not a fixed point,
+and group sizes are not probabilities. The per-step fields come back null and are named in
+`omitted`; dependencies are kept for the targets only, and they, `final` and drafts still
+describe the last step, not the window. `run_sha256` is the same under every view;
+`window.request_sha256` names the window.
 Relay `limits` with the result.\
 """
 

@@ -144,3 +144,24 @@ These come back as `null`, not as empty lists, so that "not sent" is not mistake
 - Case counts are counts of combinations, not probabilities.
 - Classes and directions are Boolean computations, not measured levels.
 - Dependencies and drafts describe the final step only.
+
+## Amendment after the first measurement (same day, before the PR)
+
+The text above was committed before the code, at `ec31994`. The first implementation followed it
+and was measured on the ERK case (`measure_erk.py`): each window response was about 59 kB,
+against about 1.8 MB for `view: "full"`. Two parts made up most of it:
+
+- Case labels were repeated in every group: 4 targets, 3 lists each, 32 labels of about 50
+  bytes, about 17 kB. Now `window.cases` lists the scenario's explored labels once, in the
+  engine's order. Groups name cases by position in it. An unpaired baseline gets its own
+  `window.baseline_cases`. No label is dropped; a position resolves to exactly one label.
+- `dependencies`, `baseline_dependencies` and `relative_dependencies` were sent for every
+  component, about 31 kB. In the window view they are kept for the window's targets only:
+  - dependencies for the components the targets read;
+  - relative dependencies for the readout targets.
+
+  These are unchanged entries, still at the final step. The rest is named in `omitted`, with
+  `view: "summary"` to get it.
+
+The meaning of every class, group, pairing and direction is unchanged. The hand cases still hold
+as written: the tests read positions back into labels.

@@ -688,9 +688,26 @@ def build_server(
             ),
         ] = logic.DEFAULT_MAX_CASES,
         view: Annotated[
-            Literal["summary", "full"],
-            Field(description="summary (default), or full with every case path and the trace."),
+            Literal["summary", "full", "window"],
+            Field(
+                description=(
+                    "summary (default); full, with every case path and the trace; or window, "
+                    "with `window`, which returns a window summary in place of the per-step "
+                    "fields."
+                )
+            ),
         ] = "summary",
+        window: Annotated[
+            dict[str, Any] | None,
+            WithJsonSchema(
+                {
+                    "anyOf": [
+                        research_payloads.contract_schema(logic.WindowRequest),
+                        {"type": "null"},
+                    ]
+                }
+            ),
+        ] = None,
     ) -> logic.LogicRun:
         try:
             return logic.run_logic(
@@ -703,6 +720,7 @@ def build_server(
                 hypothesis_id=hypothesis_id,
                 max_cases=max_cases,
                 view=view,
+                window=logic.WindowRequest.model_validate(window) if window is not None else None,
             )
         except (ValueError, ValidationError) as exc:
             raise _refuse(
