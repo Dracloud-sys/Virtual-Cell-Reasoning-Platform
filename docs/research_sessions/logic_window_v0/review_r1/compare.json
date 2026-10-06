@@ -1,0 +1,33 @@
+{
+ "all_same": true,
+ "rows": {
+  "M1_feedback_on_RAF/BRAF": {
+   "cases_same": true,
+   "pairing_same": true,
+   "request_sha256_same": true,
+   "run_sha256_same": true,
+   "targets_same": true
+  },
+  "M1_feedback_on_RAF/KRAS": {
+   "cases_same": true,
+   "pairing_same": true,
+   "request_sha256_same": true,
+   "run_sha256_same": true,
+   "targets_same": true
+  },
+  "M2_feedback_on_RAS/BRAF": {
+   "cases_same": true,
+   "pairing_same": true,
+   "request_sha256_same": true,
+   "run_sha256_same": true,
+   "targets_same": true
+  },
+  "M2_feedback_on_RAS/KRAS": {
+   "cases_same": true,
+   "pairing_same": true,
+   "request_sha256_same": true,
+   "run_sha256_same": true,
+   "targets_same": true
+  }
+ }
+}

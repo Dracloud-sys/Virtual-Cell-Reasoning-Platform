@@ -285,7 +285,9 @@ class ReadoutMapping(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    readout: str
+    readout: str = Field(
+        description="The readout's id. Unique within `readouts`: a repeated id is refused."
+    )
     state: str = Field(description="The component the readout reads.")
     mapping: str = Field(
         default="identity",
@@ -441,6 +443,146 @@ class ReadoutState(BaseModel):
     )
 
 
+class WindowRequest(BaseModel):
+    """Which logical steps and which components or readouts a window summary reads."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    first: int = Field(ge=0, description="First state index read (inclusive).")
+    last: int = Field(
+        ge=0, description="Last state index read (inclusive); at most `steps`. first <= last."
+    )
+    targets: list[str] = Field(
+        min_length=1,
+        description=(
+            "Component ids or readout ids (from `readouts`). A name that is neither, a name "
+            "that is both, or a repeated name is refused."
+        ),
+    )
+
+
+class WindowGroup(BaseModel):
+    """Cases whose window falls in one class, with the same known values and gaps."""
+
+    model_config = ConfigDict(frozen=True)
+
+    window_class: Literal[
+        "all_active", "all_inactive", "both_values", "partly_not_computed", "not_computed"
+    ]
+    known_values: list[bool] = Field(description="The computed values seen in the window.")
+    not_computed_steps: list[int] = Field(
+        default_factory=list, description="State indices in the window with no computed value."
+    )
+    cases: list[int] = Field(
+        description=(
+            "Positions in `window.cases` (or, for an unpaired baseline, `window.baseline_cases`). "
+            "How many there are counts combinations; it is not a weight."
+        )
+    )
+
+
+class WindowSide(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    groups: list[WindowGroup] = Field(
+        description="Split on class, known values and not-computed steps, so two groups can "
+        "share a class."
+    )
+    across_cases: Literal["same_class", "differs_by_case"] = Field(
+        description="Whether every explored case has the same window_class. Groups and "
+        "identical_paths carry the finer detail."
+    )
+    identical_paths: bool = Field(
+        description="Every explored case has the same value sequence in the window. Same class "
+        "is not same path: 0101 and 1010 are both both_values."
+    )
+    applies_to: Literal["all_cases", "explored_cases_only"]
+
+
+class DirectionGroup(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    directions: list[str] = Field(
+        description="The directions the case gives over the window's steps, all of them."
+    )
+    cases: list[int] = Field(description="Positions in `window.cases`.")
+
+
+class WindowPaired(BaseModel):
+    """Per-case, per-step directions against the baseline, gathered over the window."""
+
+    model_config = ConfigDict(frozen=True)
+
+    groups: list[DirectionGroup]
+    directions: list[str] = Field(description="Every direction seen in the explored cases.")
+    applies_to: Literal["all_cases", "explored_cases_only"]
+
+
+class WindowPairing(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    status: Literal["paired", "not_paired", "no_baseline"]
+    basis: str
+
+
+class WindowTarget(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    target: str
+    kind: Literal["component", "readout"]
+    state: str = Field(description="The component read; a readout reads its state (identity).")
+    scenario: WindowSide
+    baseline: WindowSide | None = None
+    paired: WindowPaired | None = None
+
+
+class WindowRun(BaseModel):
+    """A summary of the run's own case paths over a window. Not a measurement model."""
+
+    model_config = ConfigDict(frozen=True)
+
+    request: WindowRequest
+    request_sha256: str = Field(description="Of the run hash and this request (targets sorted).")
+    run_sha256: str
+    constant_from: int | None = Field(
+        description="The scenario's index after which declared inputs and clamps stop changing."
+    )
+    baseline_constant_from: int | None = None
+    declared_change_after_window: bool = Field(
+        description="Either side declares a change after `last`; a constant window then says "
+        "nothing about what follows."
+    )
+    pairing: WindowPairing
+    cases: list[str] = Field(
+        description="The scenario's explored case labels, in the engine's order. A paired "
+        "baseline has the same labels."
+    )
+    baseline_cases: list[str] | None = Field(
+        default=None, description="The baseline's explored case labels, when they differ."
+    )
+    targets: list[WindowTarget]
+    final_step_only: list[str] = Field(
+        default_factory=list,
+        description="Fields of this response that describe the last step, not the window.",
+    )
+    limits: list[str] = Field(default_factory=list)
+
+
+WINDOW_LIMITS: tuple[str, ...] = (
+    "A window class summarises the run's own computed values. It is not a measured level: "
+    "both_values is not an intermediate level and not a cycle, and a constant window is not a "
+    "fixed point (a one-step window is constant by definition).",
+    "Steps are logical updates, not time; the share of steps a state is active is not a share "
+    "of time, a concentration or a probability.",
+    "Groups list case labels. Their sizes count logical combinations, not cells, weights or "
+    "probabilities.",
+    "Directions are paired per case and per step from the same case labels; two classes are "
+    "never compared to make a direction. With exploration incomplete, they describe the "
+    "explored cases only.",
+    "Two equal Boolean states give no_change. That is not a computed equality of measured levels.",
+)
+
+
 class LogicRun(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -461,11 +603,13 @@ class LogicRun(BaseModel):
     cases_total: int
     cases_explored: int
     exploration_complete: bool
-    summary: list[StepSummary]
+    summary: list[StepSummary] | None = Field(
+        description="Every component at every step. null in the window view (not sent)."
+    )
     final: list[StepSummary]
     repetition: list[Repetition]
-    differences: list[Difference] = Field(default_factory=list)
-    paired_differences: list[PairedDifference] = Field(default_factory=list)
+    differences: list[Difference] | None = Field(default_factory=list)
+    paired_differences: list[PairedDifference] | None = Field(default_factory=list)
     dependencies: list[Dependency] = Field(
         default_factory=list,
         description="What the scenario's own final values were computed from.",
@@ -478,13 +622,14 @@ class LogicRun(BaseModel):
         default_factory=list,
         description="Per readout, both sides of the comparison. Empty without a baseline.",
     )
-    readouts: list[ReadoutState] = Field(default_factory=list)
+    readouts: list[ReadoutState] | None = Field(default_factory=list)
     readouts_not_derivable: list[str] = Field(default_factory=list)
     prediction_drafts: list[dict[str, Any]] = Field(default_factory=list)
     not_computed: list[str] = Field(default_factory=list)
     limits_reached: list[str] = Field(default_factory=list)
     limits: list[str] = Field(default_factory=list)
-    view: Literal["summary", "full"] = "summary"
+    view: Literal["summary", "full", "window"] = "summary"
+    window: WindowRun | None = None
     cases: list[CaseRun] | None = None
     baseline_cases: list[CaseRun] | None = None
     trace: list[TraceEntry] | None = None
@@ -809,7 +954,8 @@ def run_logic(
     readouts_requested: list[str] | None = None,
     hypothesis_id: str | None = None,
     max_cases: int = DEFAULT_MAX_CASES,
-    view: Literal["summary", "full"] = "summary",
+    view: Literal["summary", "full", "window"] = "summary",
+    window: WindowRequest | None = None,
 ) -> LogicRun:
     """Run `scenario` (and `baseline`, if given) on `model`. Neither is modified."""
     if not 1 <= steps <= MAX_STEPS:
@@ -818,6 +964,8 @@ def run_logic(
         raise LogicModelError(f"max_cases must be between 1 and {MAX_CASES}")
     readouts = list(readouts or [])
     declared = {c.id for c in model.components}
+    _unique_readouts(readouts)
+    targets = _window_targets(window, view, steps, declared, readouts)
     for m in readouts:
         if m.state not in declared:
             raise LogicModelError(f"readout {m.readout!r} reads undeclared {m.state!r}")
@@ -958,6 +1106,22 @@ def run_logic(
         else []
     )
     full = view == "full"
+    window_run = None
+    if window is not None:
+        window_run = _window(
+            window,
+            targets,
+            run_hash,
+            scenario,
+            baseline,
+            cases,
+            base_cases,
+            complete,
+            base_complete,
+        )
+    windowed = window_run is not None
+    window_states = {state for _, _, state in targets} if windowed else None
+    window_readouts = {name for name, kind, _ in targets if kind == "readout"} if windowed else None
     return LogicRun(
         model_id=model.id,
         model_version=model.version,
@@ -970,15 +1134,15 @@ def run_logic(
         cases_total=total,
         cases_explored=len(cases),
         exploration_complete=complete,
-        summary=summary,
+        summary=None if windowed else summary,
         final=[s for s in summary if s.t == steps],
         repetition=[_repetition(scenario, steps, c) for c in cases],
-        differences=differences,
-        paired_differences=paired,
-        dependencies=dependencies,
-        baseline_dependencies=baseline_dependencies,
-        relative_dependencies=relative,
-        readouts=readout_states,
+        differences=None if windowed else differences,
+        paired_differences=None if windowed else paired,
+        dependencies=_only(dependencies, window_states, "component"),
+        baseline_dependencies=_only(baseline_dependencies, window_states, "component"),
+        relative_dependencies=_only(relative, window_readouts, "readout"),
+        readouts=None if windowed else readout_states,
         readouts_not_derivable=sorted(
             set(readouts_requested or []) - {m.readout for m in readouts}
         ),
@@ -987,16 +1151,225 @@ def run_logic(
         limits_reached=limits_reached,
         limits=list(LIMITS),
         view=view,
+        window=window_run,
         cases=[_case_run(c) for c in cases] if full else None,
         baseline_cases=[_case_run(c) for c in base_cases] if full and baseline else None,
         trace=_trace(cases) if full else None,
         omitted=[]
         if full
+        else list(WINDOW_OMITTED)
+        if windowed
         else [
             "cases: each case's state path. Call again with view='full'.",
             "baseline_cases and trace: the rule applied, the values it read and its result, per "
             "case, step and component. Call again with view='full'.",
         ],
+    )
+
+
+def _only(items: list, keep: set[str] | None, field: str) -> list:
+    """In the window view, the final-step traces of the window's targets only."""
+    return items if keep is None else [i for i in items if getattr(i, field) in keep]
+
+
+WINDOW_OMITTED: tuple[str, ...] = (
+    "summary, differences, paired_differences and readouts (every component or readout at "
+    "every step, with per-case directions): null here. Call again with view='summary'.",
+    "cases, baseline_cases and trace (every case path and the rule-application trace): call "
+    "again with view='full'.",
+    "dependencies, baseline_dependencies and relative_dependencies of components and readouts "
+    "outside the window's targets: call again with view='summary'.",
+)
+
+
+def _unique_readouts(readouts: list[ReadoutMapping]) -> None:
+    """Refuse a readout id declared twice; nothing is renamed and no declaration is chosen."""
+    seen: dict[str, int] = {}
+    for position, m in enumerate(readouts):
+        if m.readout in seen:
+            raise LogicModelError(
+                f"readout id {m.readout!r} is declared at positions {seen[m.readout]} and "
+                f"{position} of `readouts` (counting from 0); readout ids must be unique. Rename "
+                "or remove one; neither is chosen"
+            )
+        seen[m.readout] = position
+
+
+def _window_targets(
+    window: WindowRequest | None,
+    view: str,
+    steps: int,
+    declared: set[str],
+    readouts: list[ReadoutMapping],
+) -> list[tuple[str, str, str]]:
+    """Check a window request against the run; refuse what it cannot read, never adjust it."""
+    if view == "window" and window is None:
+        raise LogicModelError("view 'window' needs a `window` {first, last, targets}")
+    if window is None:
+        return []
+    if view != "window":
+        raise LogicModelError(
+            "a `window` is read only with view 'window', so that a summary is never mistaken "
+            "for a full result"
+        )
+    if window.first > window.last:
+        raise LogicModelError(f"window first {window.first} is after last {window.last}")
+    if window.last > steps:
+        raise LogicModelError(f"window last {window.last} is after the last step {steps}")
+    by_readout = {m.readout: m.state for m in readouts}
+    out = []
+    for name in window.targets:
+        if window.targets.count(name) > 1:
+            raise LogicModelError(f"window target {name!r} is repeated")
+        if name in declared and name in by_readout:
+            raise LogicModelError(
+                f"window target {name!r} is both a component and a readout; rename the readout"
+            )
+        if name in declared:
+            out.append((name, "component", name))
+        elif name in by_readout:
+            out.append((name, "readout", by_readout[name]))
+        else:
+            raise LogicModelError(
+                f"window target {name!r} is neither a declared component nor a readout"
+            )
+    return sorted(out)
+
+
+def _window_class(values: list[Value]) -> tuple[str, list[bool], list[int]]:
+    known = sorted({v for v in values if v is not None})
+    gaps = [i for i, v in enumerate(values) if v is None]
+    if len(gaps) == len(values):
+        return "not_computed", known, gaps
+    if gaps:
+        return "partly_not_computed", known, gaps
+    if known == [True]:
+        return "all_active", known, gaps
+    if known == [False]:
+        return "all_inactive", known, gaps
+    return "both_values", known, gaps
+
+
+def _window_side(
+    cases: list[_Case], state: str, first: int, last: int, complete: bool
+) -> WindowSide:
+    """Group cases by window class; a group names its cases by position, so no label is lost."""
+    groups: dict[tuple, list[str]] = {}
+    sequences = set()
+    for index, case in enumerate(cases):
+        values = [case.path[t][state] for t in range(first, last + 1)]
+        sequences.add(tuple(values))
+        cls, known, gaps = _window_class(values)
+        key = (cls, tuple(known), tuple(first + i for i in gaps))
+        groups.setdefault(key, []).append(index)
+    return WindowSide(
+        groups=[
+            WindowGroup(
+                window_class=cls,
+                known_values=list(known),
+                not_computed_steps=list(gaps),
+                cases=labels,
+            )
+            for (cls, known, gaps), labels in groups.items()
+        ],
+        # The class alone decides: groups also split on known values and gaps, which is detail.
+        across_cases="same_class" if len({key[0] for key in groups}) == 1 else "differs_by_case",
+        identical_paths=len(sequences) == 1,
+        applies_to="all_cases" if complete else "explored_cases_only",
+    )
+
+
+def _window(
+    window: WindowRequest,
+    targets: list[tuple[str, str, str]],
+    run_hash: str,
+    scenario: Scenario,
+    baseline: Scenario | None,
+    cases: list[_Case],
+    base_cases: list[_Case],
+    complete: bool,
+    base_complete: bool,
+) -> WindowRun:
+    request = WindowRequest(
+        first=window.first, last=window.last, targets=[name for name, _, _ in targets]
+    )
+    first, last = request.first, request.last
+    if baseline is None:
+        pairing = WindowPairing(status="no_baseline", basis="no baseline was given")
+    elif [c.label for c in base_cases] == [c.label for c in cases]:
+        pairing = WindowPairing(
+            status="paired",
+            basis=(
+                "scenario and baseline expanded the same unknowns, so each explored case is "
+                "paired with the baseline case of the same label (as for per-case readout "
+                "directions)"
+            ),
+        )
+    else:
+        pairing = WindowPairing(
+            status="not_paired",
+            basis=(
+                "the explored cases of scenario and baseline do not carry the same labels (the "
+                "unknowns differ), so no case is paired; no direction is given"
+            ),
+        )
+    both_complete = complete and (baseline is None or base_complete)
+    out = []
+    for name, kind, state in targets:
+        paired = None
+        if pairing.status == "paired":
+            groups: dict[tuple[str, ...], list[str]] = {}
+            for index, (ca, cb) in enumerate(zip(cases, base_cases, strict=True)):
+                found = tuple(
+                    sorted(
+                        {
+                            _direction(ca.path[t][state], cb.path[t][state])
+                            for t in range(first, last + 1)
+                        }
+                    )
+                )
+                groups.setdefault(found, []).append(index)
+            paired = WindowPaired(
+                groups=[DirectionGroup(directions=list(d), cases=c) for d, c in groups.items()],
+                directions=sorted({d for found in groups for d in found}),
+                applies_to="all_cases" if both_complete else "explored_cases_only",
+            )
+        out.append(
+            WindowTarget(
+                target=name,
+                kind=kind,
+                state=state,
+                scenario=_window_side(cases, state, first, last, complete),
+                baseline=_window_side(base_cases, state, first, last, base_complete)
+                if baseline is not None
+                else None,
+                paired=paired,
+            )
+        )
+    constant = _constant_from(scenario)
+    base_constant = _constant_from(baseline) if baseline is not None else None
+    sides = [constant] + ([base_constant] if baseline is not None else [])
+    return WindowRun(
+        request=request,
+        request_sha256=_sha({"run": run_hash, "window": request.model_dump(mode="json")}),
+        run_sha256=run_hash,
+        constant_from=constant,
+        baseline_constant_from=base_constant,
+        declared_change_after_window=any(k is None or k > last for k in sides),
+        pairing=pairing,
+        cases=[c.label for c in cases],
+        baseline_cases=[c.label for c in base_cases]
+        if baseline is not None and pairing.status != "paired"
+        else None,
+        targets=out,
+        final_step_only=[
+            "final",
+            "dependencies",
+            "baseline_dependencies",
+            "relative_dependencies",
+            "prediction_drafts",
+        ],
+        limits=list(WINDOW_LIMITS),
     )
 
 

@@ -1,0 +1,2683 @@
+{
+ "M1_feedback_on_RAF/BRAF": {
+  "model_sha256": "8c80ebbc4ca7df71b897e26e8f6c4e3b972c1fc887598eb660e34706df5c8c9e",
+  "run_sha256": "4ba0b18eadbf93971ef2f532c759ac9ae1b8ca1b60a5bf1bc68d046e104a5279",
+  "window": {
+   "baseline_cases": null,
+   "baseline_constant_from": 0,
+   "cases": [
+    "RAF=0,RAS=0,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=1,pMEK=1,pRaf1fb=1"
+   ],
+   "constant_from": 0,
+   "declared_change_after_window": false,
+   "final_step_only": [
+    "final",
+    "dependencies",
+    "baseline_dependencies",
+    "relative_dependencies",
+    "prediction_drafts"
+   ],
+   "limits": [
+    "A window class summarises the run's own computed values. It is not a measured level: both_values is not an intermediate level and not a cycle, and a constant window is not a fixed point (a one-step window is constant by definition).",
+    "Steps are logical updates, not time; the share of steps a state is active is not a share of time, a concentration or a probability.",
+    "Groups list case labels. Their sizes count logical combinations, not cells, weights or probabilities.",
+    "Directions are paired per case and per step from the same case labels; two classes are never compared to make a direction. With exploration incomplete, they describe the explored cases only.",
+    "Two equal Boolean states give no_change. That is not a computed equality of measured levels."
+   ],
+   "pairing": {
+    "basis": "scenario and baseline expanded the same unknowns, so each explored case is paired with the baseline case of the same label (as for per-case readout directions)",
+    "status": "paired"
+   },
+   "request": {
+    "first": 18,
+    "last": 24,
+    "targets": [
+     "RasGTP_RBD_pulldown",
+     "pERK1_2_T202_Y204_WB",
+     "pMEK1_S217_S221_BioPlex",
+     "pRaf1_S289_S296_S301_WB"
+    ]
+   },
+   "request_sha256": "44fda3b1969797a4c6853bcabb70054a4743e4c1cc89537d12593f5125120898",
+   "run_sha256": "4ba0b18eadbf93971ef2f532c759ac9ae1b8ca1b60a5bf1bc68d046e104a5279",
+   "targets": [
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "no_change"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "no_change"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "RAS",
+     "target": "RasGTP_RBD_pulldown"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "decrease"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "decrease"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_inactive"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pERK",
+     "target": "pERK1_2_T202_Y204_WB"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "no_change"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "no_change"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pMEK",
+     "target": "pMEK1_S217_S221_BioPlex"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "decrease"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "decrease"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_inactive"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pRaf1fb",
+     "target": "pRaf1_S289_S296_S301_WB"
+    }
+   ]
+  }
+ },
+ "M1_feedback_on_RAF/KRAS": {
+  "model_sha256": "8c80ebbc4ca7df71b897e26e8f6c4e3b972c1fc887598eb660e34706df5c8c9e",
+  "run_sha256": "6b324d1aa7f9f3f2bbbfd891406645fdd23e2892e337fb1eb989f39055bd0a23",
+  "window": {
+   "baseline_cases": null,
+   "baseline_constant_from": 0,
+   "cases": [
+    "RAF=0,RAS=0,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=1,pMEK=1,pRaf1fb=1"
+   ],
+   "constant_from": 0,
+   "declared_change_after_window": false,
+   "final_step_only": [
+    "final",
+    "dependencies",
+    "baseline_dependencies",
+    "relative_dependencies",
+    "prediction_drafts"
+   ],
+   "limits": [
+    "A window class summarises the run's own computed values. It is not a measured level: both_values is not an intermediate level and not a cycle, and a constant window is not a fixed point (a one-step window is constant by definition).",
+    "Steps are logical updates, not time; the share of steps a state is active is not a share of time, a concentration or a probability.",
+    "Groups list case labels. Their sizes count logical combinations, not cells, weights or probabilities.",
+    "Directions are paired per case and per step from the same case labels; two classes are never compared to make a direction. With exploration incomplete, they describe the explored cases only.",
+    "Two equal Boolean states give no_change. That is not a computed equality of measured levels."
+   ],
+   "pairing": {
+    "basis": "scenario and baseline expanded the same unknowns, so each explored case is paired with the baseline case of the same label (as for per-case readout directions)",
+    "status": "paired"
+   },
+   "request": {
+    "first": 18,
+    "last": 24,
+    "targets": [
+     "RasGTP_RBD_pulldown",
+     "pERK1_2_T202_Y204_WB",
+     "pMEK1_S217_S221_BioPlex",
+     "pRaf1_S289_S296_S301_WB"
+    ]
+   },
+   "request_sha256": "56b1e4f35adbba95e4a5f5cba6e77e75ab9f10dcf170b88b4d0fea555964898d",
+   "run_sha256": "6b324d1aa7f9f3f2bbbfd891406645fdd23e2892e337fb1eb989f39055bd0a23",
+   "targets": [
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "no_change"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "no_change"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "RAS",
+     "target": "RasGTP_RBD_pulldown"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false,
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "both_values"
+       }
+      ],
+      "identical_paths": false
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "decrease",
+       "no_change"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "decrease",
+         "no_change"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_inactive"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pERK",
+     "target": "pERK1_2_T202_Y204_WB"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false,
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "both_values"
+       }
+      ],
+      "identical_paths": false
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "increase",
+       "no_change"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "increase",
+         "no_change"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pMEK",
+     "target": "pMEK1_S217_S221_BioPlex"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false,
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "both_values"
+       }
+      ],
+      "identical_paths": false
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "decrease",
+       "no_change"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "decrease",
+         "no_change"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_inactive"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pRaf1fb",
+     "target": "pRaf1_S289_S296_S301_WB"
+    }
+   ]
+  }
+ },
+ "M2_feedback_on_RAS/BRAF": {
+  "model_sha256": "cd141d175cf91e265b969fe77e9eb63156c7ff438d60823f6c1a5d0b75ccd6f4",
+  "run_sha256": "67cc14a3cd402a60aa3b436d73e58e5559ca9f3b12178637687766290790103d",
+  "window": {
+   "baseline_cases": null,
+   "baseline_constant_from": 0,
+   "cases": [
+    "RAF=0,RAS=0,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=1,pMEK=1,pRaf1fb=1"
+   ],
+   "constant_from": 0,
+   "declared_change_after_window": false,
+   "final_step_only": [
+    "final",
+    "dependencies",
+    "baseline_dependencies",
+    "relative_dependencies",
+    "prediction_drafts"
+   ],
+   "limits": [
+    "A window class summarises the run's own computed values. It is not a measured level: both_values is not an intermediate level and not a cycle, and a constant window is not a fixed point (a one-step window is constant by definition).",
+    "Steps are logical updates, not time; the share of steps a state is active is not a share of time, a concentration or a probability.",
+    "Groups list case labels. Their sizes count logical combinations, not cells, weights or probabilities.",
+    "Directions are paired per case and per step from the same case labels; two classes are never compared to make a direction. With exploration incomplete, they describe the explored cases only.",
+    "Two equal Boolean states give no_change. That is not a computed equality of measured levels."
+   ],
+   "pairing": {
+    "basis": "scenario and baseline expanded the same unknowns, so each explored case is paired with the baseline case of the same label (as for per-case readout directions)",
+    "status": "paired"
+   },
+   "request": {
+    "first": 18,
+    "last": 24,
+    "targets": [
+     "RasGTP_RBD_pulldown",
+     "pERK1_2_T202_Y204_WB",
+     "pMEK1_S217_S221_BioPlex",
+     "pRaf1_S289_S296_S301_WB"
+    ]
+   },
+   "request_sha256": "c1bff483227e38522e54ebf953caea4d832aabb85bb8d6f615bad0cc296c2e27",
+   "run_sha256": "67cc14a3cd402a60aa3b436d73e58e5559ca9f3b12178637687766290790103d",
+   "targets": [
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_inactive"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "increase"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "increase"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "RAS",
+     "target": "RasGTP_RBD_pulldown"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "decrease"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "decrease"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_inactive"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pERK",
+     "target": "pERK1_2_T202_Y204_WB"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "no_change"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "no_change"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pMEK",
+     "target": "pMEK1_S217_S221_BioPlex"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "decrease"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "decrease"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_inactive"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pRaf1fb",
+     "target": "pRaf1_S289_S296_S301_WB"
+    }
+   ]
+  }
+ },
+ "M2_feedback_on_RAS/KRAS": {
+  "model_sha256": "cd141d175cf91e265b969fe77e9eb63156c7ff438d60823f6c1a5d0b75ccd6f4",
+  "run_sha256": "b9a06b4bcc5ab259b177745ae38b03b95416f8916a2ad06e3540bdfd623d254f",
+  "window": {
+   "baseline_cases": null,
+   "baseline_constant_from": 0,
+   "cases": [
+    "RAF=0,RAS=0,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=0,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=0,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=0,RAS=1,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=0,RAS=1,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=0,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=0,pERK=1,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=0,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=0,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=0,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=0,pMEK=1,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=1,pMEK=0,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=1,pMEK=0,pRaf1fb=1",
+    "RAF=1,RAS=1,pERK=1,pMEK=1,pRaf1fb=0",
+    "RAF=1,RAS=1,pERK=1,pMEK=1,pRaf1fb=1"
+   ],
+   "constant_from": 0,
+   "declared_change_after_window": false,
+   "final_step_only": [
+    "final",
+    "dependencies",
+    "baseline_dependencies",
+    "relative_dependencies",
+    "prediction_drafts"
+   ],
+   "limits": [
+    "A window class summarises the run's own computed values. It is not a measured level: both_values is not an intermediate level and not a cycle, and a constant window is not a fixed point (a one-step window is constant by definition).",
+    "Steps are logical updates, not time; the share of steps a state is active is not a share of time, a concentration or a probability.",
+    "Groups list case labels. Their sizes count logical combinations, not cells, weights or probabilities.",
+    "Directions are paired per case and per step from the same case labels; two classes are never compared to make a direction. With exploration incomplete, they describe the explored cases only.",
+    "Two equal Boolean states give no_change. That is not a computed equality of measured levels."
+   ],
+   "pairing": {
+    "basis": "scenario and baseline expanded the same unknowns, so each explored case is paired with the baseline case of the same label (as for per-case readout directions)",
+    "status": "paired"
+   },
+   "request": {
+    "first": 18,
+    "last": 24,
+    "targets": [
+     "RasGTP_RBD_pulldown",
+     "pERK1_2_T202_Y204_WB",
+     "pMEK1_S217_S221_BioPlex",
+     "pRaf1_S289_S296_S301_WB"
+    ]
+   },
+   "request_sha256": "f992eb0214bf188d2351676d01d79c13b3942d13900b96cea1fd495d5efd51d1",
+   "run_sha256": "b9a06b4bcc5ab259b177745ae38b03b95416f8916a2ad06e3540bdfd623d254f",
+   "targets": [
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "no_change"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "no_change"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "RAS",
+     "target": "RasGTP_RBD_pulldown"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "decrease"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "decrease"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_inactive"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pERK",
+     "target": "pERK1_2_T202_Y204_WB"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "no_change"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "no_change"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pMEK",
+     "target": "pMEK1_S217_S221_BioPlex"
+    },
+    {
+     "baseline": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         true
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_active"
+       }
+      ],
+      "identical_paths": true
+     },
+     "kind": "readout",
+     "paired": {
+      "applies_to": "all_cases",
+      "directions": [
+       "decrease"
+      ],
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "directions": [
+         "decrease"
+        ]
+       }
+      ]
+     },
+     "scenario": {
+      "across_cases": "same_class",
+      "applies_to": "all_cases",
+      "groups": [
+       {
+        "cases": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6,
+         7,
+         8,
+         9,
+         10,
+         11,
+         12,
+         13,
+         14,
+         15,
+         16,
+         17,
+         18,
+         19,
+         20,
+         21,
+         22,
+         23,
+         24,
+         25,
+         26,
+         27,
+         28,
+         29,
+         30,
+         31
+        ],
+        "known_values": [
+         false
+        ],
+        "not_computed_steps": [],
+        "window_class": "all_inactive"
+       }
+      ],
+      "identical_paths": true
+     },
+     "state": "pRaf1fb",
+     "target": "pRaf1_S289_S296_S301_WB"
+    }
+   ]
+  }
+ }
+}

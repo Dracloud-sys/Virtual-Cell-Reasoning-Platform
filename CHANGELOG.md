@@ -7,6 +7,23 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`run_logic_model` window view** (`simulation/logic.py`; `docs/research_sessions/logic_window_v0/`).
+  - `view: "window"` with `window: {first, last, targets}` summarises the same run over a range
+    of logical steps, instead of sending every step.
+  - Per target and side, cases are grouped by window class (all active, all inactive, both
+    values, partly or wholly not computed) and named by position in `window.cases`.
+    `identical_paths` keeps "same class" apart from "same path".
+  - Against a baseline with the same unknowns, each case's set of per-step directions is given;
+    no case is paired otherwise.
+  - Range information: `constant_from` and `declared_change_after_window`.
+  - Per-step fields come back null and are named in `omitted`. Final-step dependencies are kept
+    for the targets only.
+  - `run_sha256` is shared across views; `window.request_sha256` names the request.
+  - Bad windows are refused, never clipped. Calls without a window are unchanged.
+  - Not a measurement model: no ordinal reading, levels, time fractions or probabilities.
+  - ERK case, same input and code: 166,952 structured bytes against 7,324,129 for the full view
+    (2.28%). The window gives the same answers as an independent recomputation from the full
+    paths.
 - **A candidate Boolean model applied to published observations**
   (`docs/research_sessions/logic_biology_v1/`).
   - The model is ERK→RAF negative feedback under MEK inhibition, compared with
