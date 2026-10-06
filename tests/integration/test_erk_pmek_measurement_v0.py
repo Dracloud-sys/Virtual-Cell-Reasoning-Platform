@@ -113,3 +113,49 @@ def test_extraction_reruns_byte_for_byte(monkeypatch, tmp_path):
     )
     module.main()
     assert (tmp_path / "extracted.json").read_bytes() == (CASE / "extracted.json").read_bytes()
+
+
+# --- review r1: normalisation reference vs comparison group ------------------------------- #
+
+R1 = CASE / "review_r1"
+
+
+def test_r1_checksums_hold():
+    for line in (R1 / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
+        digest, name = line.split()
+        assert hashlib.sha256((R1 / name).read_bytes()).hexdigest() == digest, name
+
+
+def test_baselines_rebuild_from_the_extracted_values(monkeypatch):
+    spec = importlib.util.spec_from_file_location("erk_pmek_baselines", R1 / "check_baselines.py")
+    module = importlib.util.module_from_spec(spec)
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
+    spec.loader.exec_module(module)
+    dump = json.dumps(module.build(), indent=1, ensure_ascii=False, sort_keys=True) + "\n"
+    assert dump == (R1 / "baselines.json").read_text(encoding="utf-8")
+
+
+def test_reference_and_comparison_groups_stay_separate_and_linked():
+    e = _json(CASE / "extracted.json")
+    by_line = {r["line"]: r for r in e["fig6B"]["rows"]}
+    b = _json(R1 / "baselines.json")
+    for cell, s in b["lines"].items():
+        ref = s["normalisation_reference"]
+        assert ref["value"] == "1" and by_line[ref["line"]]["agent"].lower() == "pbs"
+        # Untreated and DMSO are their own rows, with their own values, not the reference.
+        for group, agent in (("untreated", "--"), ("DMSO", "DMSO")):
+            for item in s[group]:
+                row = by_line[item["line"]]
+                assert row["cell_line"] == cell and row["agent"] == agent
+                assert row["value"] == item["value"] != "1"
+        for item in s["U0126"]:
+            row = by_line[item["line"]]
+            # The authors' number, as written: no rescaling to untreated or DMSO.
+            assert row["value"] == item["value_vs_PBS"] and row["agent"] == "U0126"
+            assert item["vs_untreated_values"] in {
+                "below_each",
+                "above_each",
+                "between",
+                "equal_to_one",
+            }
+            assert item["vs_DMSO_value"] in {"below_each", "above_each", "between", "equal_to_one"}

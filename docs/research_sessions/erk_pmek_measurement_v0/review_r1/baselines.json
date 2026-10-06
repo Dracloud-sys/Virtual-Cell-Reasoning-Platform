@@ -1,0 +1,358 @@
+{
+ "about": "Fig 6B, per value. 'value_vs_PBS' is the authors' number: relative to PBS-treated cells (= 1). Untreated and DMSO are separate rows with their own values, so neither is 1. Each U0126 value is placed against the untreated values and against the DMSO value separately; they are not pooled. 'below_each' and 'above_each' mean below or above every reference value of that kind. Single recorded values (one or two per dose); no mean, rescaling or test.",
+ "lines": {
+  "HCT116": {
+   "DMSO": [
+    {
+     "line": 6,
+     "value": "1.109195402"
+    }
+   ],
+   "U0126": [
+    {
+     "concentration_uM": "0.5",
+     "line": 7,
+     "value_vs_PBS": "0.900169205",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "0.5",
+     "line": 8,
+     "value_vs_PBS": "1.070881226",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "1",
+     "line": 9,
+     "value_vs_PBS": "0.778341794",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "5",
+     "line": 10,
+     "value_vs_PBS": "2.10321489",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "5",
+     "line": 11,
+     "value_vs_PBS": "1.16091954",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "10",
+     "line": 12,
+     "value_vs_PBS": "3.614213198",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "20",
+     "line": 13,
+     "value_vs_PBS": "4.915708812",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "50",
+     "line": 14,
+     "value_vs_PBS": "6.00862069",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "100",
+     "line": 15,
+     "value_vs_PBS": "0.084291188",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    }
+   ],
+   "normalisation_reference": {
+    "agent": "PBS",
+    "line": 19,
+    "value": "1"
+   },
+   "untreated": [
+    {
+     "line": 4,
+     "value": "0.859560068"
+    },
+    {
+     "line": 5,
+     "value": "0.786419753"
+    }
+   ]
+  },
+  "HT29": {
+   "DMSO": [
+    {
+     "line": 22,
+     "value": "1.071099744"
+    }
+   ],
+   "U0126": [
+    {
+     "concentration_uM": "0.5",
+     "line": 23,
+     "value_vs_PBS": "1.48",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "0.5",
+     "line": 24,
+     "value_vs_PBS": "1.051662404",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "1",
+     "line": 25,
+     "value_vs_PBS": "1.002105263",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "5",
+     "line": 26,
+     "value_vs_PBS": "1.023157895",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "5",
+     "line": 27,
+     "value_vs_PBS": "1.072122762",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "10",
+     "line": 28,
+     "value_vs_PBS": "0.976842105",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "20",
+     "line": 29,
+     "value_vs_PBS": "0.403069054",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "50",
+     "line": 30,
+     "value_vs_PBS": "0.072634271",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "100",
+     "line": 31,
+     "value_vs_PBS": "0.026598465",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    }
+   ],
+   "normalisation_reference": {
+    "agent": "PBS",
+    "line": 35,
+    "value": "1"
+   },
+   "untreated": [
+    {
+     "line": 20,
+     "value": "0.791578947"
+    },
+    {
+     "line": 21,
+     "value": "0.682261209"
+    }
+   ]
+  },
+  "RKO": {
+   "DMSO": [
+    {
+     "line": 38,
+     "value": "1.078161456"
+    }
+   ],
+   "U0126": [
+    {
+     "concentration_uM": "0.5",
+     "line": 39,
+     "value_vs_PBS": "0.63390286",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "0.5",
+     "line": 40,
+     "value_vs_PBS": "0.542930471",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "1",
+     "line": 41,
+     "value_vs_PBS": "0.596851603",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "5",
+     "line": 42,
+     "value_vs_PBS": "0.466500288",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "5",
+     "line": 43,
+     "value_vs_PBS": "0.387540831",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "10",
+     "line": 44,
+     "value_vs_PBS": "0.555960837",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "20",
+     "line": 45,
+     "value_vs_PBS": "0.148390107",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "50",
+     "line": 46,
+     "value_vs_PBS": "0.012132524",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "100",
+     "line": 47,
+     "value_vs_PBS": "0.00419972",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    }
+   ],
+   "normalisation_reference": {
+    "agent": "PBS",
+    "line": 51,
+    "value": "1"
+   },
+   "untreated": [
+    {
+     "line": 36,
+     "value": "1.03820311"
+    },
+    {
+     "line": 37,
+     "value": "1.171428571"
+    }
+   ]
+  },
+  "SW480": {
+   "DMSO": [
+    {
+     "line": 54,
+     "value": "1.01340861"
+    }
+   ],
+   "U0126": [
+    {
+     "concentration_uM": "0.5",
+     "line": 55,
+     "value_vs_PBS": "0.717056856",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "0.5",
+     "line": 56,
+     "value_vs_PBS": "1.091037403",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "between"
+    },
+    {
+     "concentration_uM": "1",
+     "line": 57,
+     "value_vs_PBS": "0.917056856",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "between"
+    },
+    {
+     "concentration_uM": "5",
+     "line": 58,
+     "value_vs_PBS": "1.226755853",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "5",
+     "line": 59,
+     "value_vs_PBS": "2.183486239",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "10",
+     "line": 60,
+     "value_vs_PBS": "1.573244147",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "20",
+     "line": 61,
+     "value_vs_PBS": "3.808750882",
+     "vs_DMSO_value": "above_each",
+     "vs_untreated_values": "above_each"
+    },
+    {
+     "concentration_uM": "50",
+     "line": 62,
+     "value_vs_PBS": "0.254057869",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    },
+    {
+     "concentration_uM": "100",
+     "line": 63,
+     "value_vs_PBS": "0.019760056",
+     "vs_DMSO_value": "below_each",
+     "vs_untreated_values": "below_each"
+    }
+   ],
+   "normalisation_reference": {
+    "agent": "PBS",
+    "line": 67,
+    "value": "1"
+   },
+   "untreated": [
+    {
+     "line": 52,
+     "value": "0.882943144"
+    },
+    {
+     "line": 53,
+     "value": "1.116813294"
+    }
+   ]
+  }
+ },
+ "source": "../extracted.json (from msb201127-df6B.txt)"
+}
