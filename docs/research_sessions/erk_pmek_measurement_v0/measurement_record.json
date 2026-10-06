@@ -1,0 +1,236 @@
+{
+ "about": "The pMek measurements behind Fig 6B, 6C and 6D of Fritsche-Guenther et al. 2011, by data level. Levels: A raw readings or per-replicate source data as measured; B author-processed data; C summary values reported in a table; D values read off a figure (estimates); E qualitative statements in text or legend. Numbers marked B are copied from the authors' files with their line numbers (extracted.json). Numbers marked D are the host's readings of the rendered PDF page and are estimates. Nothing here is level A.",
+ "panels": {
+  "6B": {
+   "levels": [
+    "B (source data file, normalised)",
+    "E (legend and text)"
+   ],
+   "what": "pMek (Bio-Plex beads for P-Mek1 S217/S221; the file header says 'Phosphoplex measurements') in HCT116, SW480, HT29, RKO after U0126 at 0.5, 1, 5, 10, 20, 50 and 100 uM; controls untreated, DMSO and PBS.",
+   "time": "24 h in the results text ('we measured pMek levels 24 h post-inhibition'); neither the legend nor the source data file states a time.",
+   "unit": "Dimensionless ratio. The file header: 'normalised to PBS treated cells'; column: 'Measurement relative to PBS'. Each line's PBS row is 1 by definition. The axis reads 'pMek (relative)', log-scaled inhibitor axis.",
+   "values_per_condition": "1 value at 1, 10, 20, 50 and 100 uM; 2 values at 0.5 and 5 uM; untreated 2, DMSO 1, PBS 1 (the reference). Each line's three control rows appear a second time, verbatim, at the end of its block; these are repeats in the file, not further measurements, and are not counted. In the SW480 block the repeated rows carry concentration 0.3 instead of 0 (not interpreted).",
+   "error_bars": "None in the panel. The legend's 'mean and s.d. of three replicates' follows the description of panel D; with one or two values per condition, it does not describe 6B.",
+   "statistics": "None reported.",
+   "file_header_calls_it": "Raw data of Figure 6B. It is level B: the values are ratios to PBS, not instrument readings."
+  },
+  "6C": {
+   "levels": [
+    "B (source data file, normalised)",
+    "E (legend and text)"
+   ],
+   "what": "pMek in SW480 and HCT116 at 0, 30, 60, 120, 180 and 240 min after AZD6244.",
+   "concentration": "1 uM AZD6244 per the Bio-Plex methods; neither the legend nor the file states it for this panel.",
+   "unit": "Ratio 'normalised by one 0-timepoint' (file column label). Three rows at t=0; one of them is 1.0 by definition. The legend says the t=0 controls are untreated and DMSO-treated samples; the file does not say which row is which.",
+   "values_per_condition": "one value per time point after 0.",
+   "error_bars": "none",
+   "statistics": "none reported"
+  },
+  "6D": {
+   "levels": [
+    "D (host reading of the rendered figure)",
+    "E (legend and text)"
+   ],
+   "source_data": "None in the open-access package: the manifest lists df6B and df6C only. The review process file says 6D was added during revision ('new Figure 6D').",
+   "what": "pMek in RKO, HT29 (B-Raf V600E) and HCT116, SW480 (B-Raf WT) at 30, 60 and 120 min with (filled) or without (open) AZD6244, alone (squares), with cycloheximide (circles) or with actinomycin D (triangles).",
+   "concentrations": "AZD6244 1 uM, cycloheximide 10 ug/ml, actinomycin D 5 ug/ml (Bio-Plex methods, not the legend).",
+   "unit": "'mean and s.d. of three replicates relative to untreated samples at 0 time point' (legend). Axis 'pMEK', 0-8, linear.",
+   "replicate_unit": "not stated (biological or technical unknown)",
+   "statistics": "'No significant difference between feedback action in cells with non-inhibited gene expression ... and cells with inhibited expression' (legend); the test is not named. No test is reported for inhibitor against no inhibitor.",
+   "readings": {
+    "method": "Looked at page 9 of the PMC PDF rendered at 300 dpi (crops of the four panels). Values are read against the axis ticks (0, 2, 4, 6, 8); the reading uncertainty is about +/-0.3 near 1 and +/-0.5 above 2, larger for error-bar ends. One decimal is the most the rendering supports.",
+    "HCT116": {
+     "AZD6244_alone_mean": {
+      "30": 2.1,
+      "60": 3.6,
+      "120": 4.8
+     },
+     "AZD6244_alone_sd_range": {
+      "30": "about 1.4 to 2.9",
+      "60": "about 2.8 to 4.4",
+      "120": "about 1.9 to 7.7"
+     },
+     "no_AZD6244_alone_mean": {
+      "30": 1.4,
+      "60": 1.3,
+      "120": 1.3
+     }
+    },
+    "SW480": {
+     "AZD6244_alone_mean": {
+      "30": 3.1,
+      "60": 5.7,
+      "120": 5.0
+     },
+     "AZD6244_alone_sd_range": {
+      "30": "about 1.9 to 4.4",
+      "60": "about 3.2 to 8.2",
+      "120": "about 1.5 to beyond the axis top (8)"
+     },
+     "no_AZD6244_alone_mean": {
+      "30": 1.2,
+      "60": 1.2,
+      "120": 1.3
+     }
+    },
+    "RKO": {
+     "all_symbols": "about 1.0 to 1.2 at every time, with and without AZD6244; error bars small at this scale"
+    },
+    "HT29": {
+     "all_symbols": "about 0.7 to 1.1 at every time, with and without AZD6244"
+    }
+   }
+  }
+ },
+ "checklist": [
+  {
+   "item": "cell lines and genotype source",
+   "status": "confirmed in the paper",
+   "detail": "HCT116 and SW480 K-Ras exon 2 (D13E, G12V); HT29 and RKO B-Raf V600E (Results, lit-03d068babab3). 6B has all four lines; 6C only SW480 and HCT116; 6D all four.",
+   "affects": "group assignment"
+  },
+  {
+   "item": "treatment, dose, time, vehicle",
+   "status": "partly confirmed",
+   "detail": "6B: U0126 0.5-100 uM, 24 h (text only), untreated/DMSO/PBS, values relative to PBS. 6C: AZD6244 1 uM (methods), 0-240 min. 6D: AZD6244 1 uM, 30-120 min, +/- CHX or ActD, relative to untreated at t0.",
+   "affects": "which condition the model's single 'MEKi on' may stand for; it is not fixed by the data"
+  },
+  {
+   "item": "measured species",
+   "status": "confirmed",
+   "detail": "MEK1 phosphorylated at S217/S221 (Bio-Plex bead). Not total MEK, not MEK activity.",
+   "affects": "pMek is the model's pMEK only under the identity readout; MEK kinase activity under the inhibitor is a different quantity"
+  },
+  {
+   "item": "assay, instrument, kit identity",
+   "status": "partly confirmed",
+   "detail": "Bio-Plex Protein Array system (Bio-Rad), Bio-Plex Manager software, beads and detection antibodies diluted 1:5. No catalogue or lot number.",
+   "affects": "no manufacturer range can be tied to this kit"
+  },
+  {
+   "item": "signal unit and axis",
+   "status": "confirmed",
+   "detail": "ratios: to PBS (6B), to one t0 sample (6C), to untreated t0 (6D).",
+   "affects": "no absolute level; the untreated level is 1 by construction, not a measured position on the assay's range"
+  },
+  {
+   "item": "blank and background handling",
+   "status": "unconfirmed",
+   "detail": "not in methods, legend, supplement or source data.",
+   "affects": "whether untreated pMek is clearly above background (present) or near it (absent) cannot be decided"
+  },
+  {
+   "item": "normalisation to protein, cell number or loading",
+   "status": "unconfirmed",
+   "detail": "lysate protein measured by BCA; whether readings were adjusted to it, or equal protein loaded, is not stated.",
+   "affects": "small differences near 1 (e.g. RKO 0.4-0.6 in 6B) could partly reflect loading"
+  },
+  {
+   "item": "raw signal or ratio",
+   "status": "confirmed: ratio",
+   "detail": "every available value is a ratio.",
+   "affects": "as above"
+  },
+  {
+   "item": "replicate number and unit",
+   "status": "partly confirmed",
+   "detail": "6B: 1-2 values per condition, no error bars; 6C: one series; 6D: three replicates, unit unstated.",
+   "affects": "6B and 6C directions are single or duplicate measurements; 6D gives a spread"
+  },
+  {
+   "item": "error bar definition",
+   "status": "confirmed for 6D",
+   "detail": "s.d. (6D). 6B and 6C have none.",
+   "affects": "-"
+  },
+  {
+   "item": "statistical comparison",
+   "status": "partly confirmed",
+   "detail": "only 'no significant difference' between expression-inhibited and non-inhibited feedback action in 6D, test unnamed.",
+   "affects": "no tested statement that the inhibitor increased pMek; the increase is a direction read from the values"
+  },
+  {
+   "item": "detection or quantification range, saturation, dilution, standard curve",
+   "status": "unconfirmed",
+   "detail": "only the 1:5 dilution of beads and detection antibodies is stated.",
+   "affects": "whether the treated maximum (about 6x in HCT116) is inside a linear range, and where untreated sits in it"
+  },
+  {
+   "item": "time course: same system",
+   "status": "partly confirmed",
+   "detail": "6C and 6D are separate experiments (6C has no CHX/ActD arms and different time points); 6B is a separate dose experiment at 24 h.",
+   "affects": "the panels are not one series and are not pooled"
+  }
+ ],
+ "observations": [
+  {
+   "id": "P1",
+   "panel": "6B",
+   "level": "B",
+   "group": "KRAS",
+   "statement": "pMek relative to PBS rises above the line's control values at 5-50 uM U0126 in HCT116 (2.10 and 1.16 at 5; 3.61 at 10; 4.92 at 20; 6.01 at 50) and at 5-20 uM in SW480 (1.23 and 2.18 at 5; 1.57 at 10; 3.81 at 20). Controls: HCT116 0.79-1.11, SW480 0.88-1.12.",
+   "lines": "df6B lines 4-6, 10-14 (HCT116); 52-54, 58-61 (SW480)"
+  },
+  {
+   "id": "P2",
+   "panel": "6B",
+   "level": "B",
+   "group": "KRAS",
+   "statement": "At 0.5 and 1 uM U0126 the values lie within or near the control values (HCT116 0.90, 1.07, 0.78; SW480 0.72, 1.09, 0.92).",
+   "lines": "df6B lines 7-9, 55-57"
+  },
+  {
+   "id": "P3",
+   "panel": "6B",
+   "level": "B",
+   "group": "KRAS",
+   "statement": "At the highest doses the values fall far below the controls: HCT116 0.084 at 100 uM; SW480 0.25 at 50 and 0.020 at 100 uM. HCT116 is at its maximum at 50 uM, so 'exceeding 20 uM, phospho-Mek levels drop in all cell lines' (text) holds for SW480 but not for HCT116 at 50 uM.",
+   "lines": "df6B lines 14-15 (HCT116); 62-63 (SW480)"
+  },
+  {
+   "id": "P4",
+   "panel": "6B",
+   "level": "B",
+   "group": "BRAF",
+   "statement": "HT29: 0.98-1.48 at 0.5-10 uM against controls 0.68-1.07; then 0.40, 0.073, 0.027 at 20, 50, 100 uM. No increase is seen beyond the 1.48 single value at 0.5 uM.",
+   "lines": "df6B lines 20-31"
+  },
+  {
+   "id": "P5",
+   "panel": "6B",
+   "level": "B",
+   "group": "BRAF",
+   "statement": "RKO: 0.39-0.63 at every dose from 0.5 to 10 uM, against controls 1.04-1.17; 0.15, 0.012, 0.004 at 20, 50, 100 uM. Every U0126 value is below every RKO control value (one or two values per dose, no statistics).",
+   "lines": "df6B lines 36-47"
+  },
+  {
+   "id": "P6",
+   "panel": "6C",
+   "level": "B",
+   "group": "KRAS",
+   "statement": "After AZD6244, SW480 rises from 1 at t0 to 1.96 (30 min), 3.36 (60), 4.69 (120), 5.34 (180), 5.43 (240); HCT116 to 1.84, 2.83, 3.47, 2.29, 2.92. One series each.",
+   "lines": "df6C lines 4-11"
+  },
+  {
+   "id": "P7",
+   "panel": "6D",
+   "level": "D",
+   "group": "KRAS",
+   "statement": "With AZD6244 alone, mean pMek in HCT116 and SW480 is above the no-inhibitor means at 30, 60 and 120 min (about 2-6 against about 1.2-1.4). At 120 min the s.d. is wide (HCT116 about 1.9-7.7; SW480 lower end about 1.5)."
+  },
+  {
+   "id": "P8",
+   "panel": "6D",
+   "level": "D",
+   "group": "BRAF",
+   "statement": "RKO and HT29 stay at about 0.7-1.2 with and without AZD6244 up to 120 min."
+  },
+  {
+   "id": "P9",
+   "panel": "6D",
+   "level": "D and E",
+   "group": "KRAS",
+   "statement": "Without AZD6244, mean pMek in HCT116 and SW480 stays at about 1.2-1.4 at 30, 60 and 120 min; the text says pMek 'remains constant under vehicle control'. These are population means of three replicates at three time points."
+  }
+ ]
+}
