@@ -57,6 +57,7 @@ from virtualcell.research.contracts import (
     ObservationMapping,
     Prediction,
     ProposedExperiment,
+    ReadoutSpec,
     ReferenceCorrespondence,
     ResearchReport,
     expectation_kind,
@@ -450,6 +451,50 @@ def compare_observations(
     )
 
 
+def read_mapping(
+    runs: list[ExperimentRun],
+    mapping: ObservationMapping,
+    spec: ReadoutSpec | None = None,
+) -> tuple[ReadoutComparison, list[PlanFinding], list[str]]:
+    """Read one mapping's observations without a plan: the same selection, quality handling,
+    reference link and classification as :func:`compare_observations`, with no prediction read.
+
+    Returns the comparison row (``by_hypothesis`` stays empty), the findings, and the run ids
+    used after duplicate runs are collapsed. `spec` gives the readout's assay and unit, as a
+    plan's readout spec would.
+    """
+    findings: list[PlanFinding] = []
+    dedup = deduplicate_runs(list(runs))
+    for dropped in dedup.collapsed:
+        findings.append(
+            PlanFinding(
+                code="duplicate_run",
+                where=f"run:{dropped}",
+                detail="reports the same observations as an earlier run; read once.",
+            )
+        )
+    m = mapping
+    row = ReadoutComparison(
+        experiment_id=m.experiment_id,
+        readout=m.readout,
+        measurement_name=m.measurement_name,
+        versus=m.versus,
+        reference_link=_reference_link(m),
+        reference_correspondence=m.reference_correspondence,
+        rule=m.rule,
+        status="not_comparable",
+    )
+    kind: Literal["state", "change"] = "change" if m.reference is not None else "state"
+    row.kind = kind
+    unit = m.unit if m.unit is not None else (spec.unit if spec else None)
+    if spec and spec.unit and m.unit and spec.unit != m.unit:
+        row.reasons.append("rule_unit_differs_from_readout_spec")
+    _read_arms(
+        row, dedup.runs, m, spec, unit, kind, findings, f"mapping:{m.experiment_id}:{m.readout}"
+    )
+    return row, findings, [r.run_id for r in dedup.runs]
+
+
 # --- one mapping ---------------------------------------------------------------------------- #
 
 
@@ -514,6 +559,30 @@ def _compare(
     expected_values += [c.expected_if_holds.value for c in checks]
     if kind == "change" and not any(expectation_kind(v) == "change" for v in expected_values):
         row.reasons.append("reference_given_but_no_change_prediction")
+    if not _read_arms(row, runs, m, spec, unit, kind, findings, where):
+        _read_all(row, predictions, checks, kind, None, "not comparable", m)
+        return row
+    _read_all(
+        row, predictions, checks, kind, row.observed if row.status == "compared" else None, None, m
+    )
+    return row
+
+
+def _read_arms(
+    row: ReadoutComparison,
+    runs: list[ExperimentRun],
+    m: ObservationMapping,
+    spec: ReadoutSpec | None,
+    unit: str | None,
+    kind: Literal["state", "change"],
+    findings: list[PlanFinding],
+    where: str,
+) -> bool:
+    """Select one mapping's observations and classify them; no prediction is read here.
+
+    Returns False when the readings are not comparable (``row.reasons`` says why). Shared by
+    :func:`compare_observations` and :func:`read_mapping`, so there is one observation reader.
+    """
     if kind == "state" and m.pairs:
         row.reasons.append("pairs_need_a_reference_arm")
     if spec and spec.reference and m.versus and _norm(spec.reference) != _norm(m.versus):
@@ -632,8 +701,7 @@ def _compare(
     if row.reasons:
         row.status = "not_comparable"
         row.reasons = list(dict.fromkeys(row.reasons))
-        _read_all(row, predictions, checks, kind, None, "not comparable", m)
-        return row
+        return False
 
     if kind == "state":
         _classify_state(row, t_values, t_below, t_zero)
@@ -641,10 +709,7 @@ def _compare(
         _classify_pairs(row, paired, m.rule, findings, where)
     else:
         _classify_combinations(row, t_values, r_values, m.rule, findings, where)
-    _read_all(
-        row, predictions, checks, kind, row.observed if row.status == "compared" else None, None, m
-    )
-    return row
+    return True
 
 
 def _add(reasons: list[str], reason: str) -> None:

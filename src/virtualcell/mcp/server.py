@@ -2,13 +2,13 @@
 
     API / CLI / MCP  ->  ReasoningService.query()  ->  DomainRegistry  ->  DomainPack
 
-This module registers eight tools and does nothing else. It re-derives no
+This module registers nine tools and does nothing else. It re-derives no
 scientific value, owns no vocabulary, branches on no domain, and names no
 vertical - everything domain-specific arrives through ``DomainRegistry`` and
 ``DomainDescription``. Adding a fourth domain must change zero lines in this
 package; a test asserts it.
 
-Four of those eight are the **domainless door**, and they invert who reasons. The
+Four of those nine are the **domainless door**, and they invert who reasons. The
 final shape of this product is a host LLM with VCRP plugged into it: the host
 understands the question, proposes the hypotheses, designs the experiment and
 writes the explanation; this server looks evidence up, walks mechanism paths,
@@ -20,7 +20,10 @@ key, and they live on this server rather than a second one - a separate server w
 double what a host must configure and split the guidance a model reads in two.
 The eighth, ``run_logic_model``, also calls no model: it computes what a small Boolean
 candidate model the host states would give under an intervention
-(:mod:`virtualcell.simulation.logic`), and claims nothing about any cell.
+(:mod:`virtualcell.simulation.logic`), and claims nothing about any cell. The ninth,
+``compare_model_observation``, sets one claim of such a run against one claim of observed
+results, only under a correspondence the host or researcher states
+(:mod:`virtualcell.research.model_observation`); it, too, calls no model.
 
 The MCP SDK is an optional dependency (``pip install "virtualcell[mcp]"``). It is
 imported here and, for the HTTP transport only, in :mod:`virtualcell.mcp.remote`, so the
@@ -73,6 +76,7 @@ from virtualcell.platform.domains import (
     UnsupportedTaskError,
 )
 from virtualcell.platform.service import ReasoningService
+from virtualcell.research import model_observation
 from virtualcell.research.backend import ResearchBackendError
 from virtualcell.research.contracts import (
     EvidenceItem,
@@ -768,6 +772,47 @@ def build_server(
             )
         except (ValueError, ValidationError, ResearchBackendError) as exc:
             raise _malformed_draft(exc) from exc
+
+    @server.tool(
+        name="compare_model_observation",
+        description=guidance.COMPARE_MODEL_OBSERVATION,
+        annotations=_READ_ONLY,
+    )
+    def _compare_model_observation(
+        model_result: Annotated[
+            dict[str, Any],
+            WithJsonSchema(
+                {
+                    "anyOf": [
+                        research_payloads.contract_schema(model_observation.ModelWindowResult),
+                        {
+                            "type": "object",
+                            "description": "A full run_logic_model response with view 'window'.",
+                        },
+                    ]
+                }
+            ),
+        ],
+        runs: _RunsParam,
+        link: Annotated[
+            dict[str, Any],
+            WithJsonSchema(
+                research_payloads.contract_schema(model_observation.ModelObservationLink)
+            ),
+        ],
+    ) -> model_observation.ModelObservationComparison:
+        try:
+            return model_observation.compare_model_observation(
+                model_observation.parse_model_result(model_result),
+                [ExperimentRun.model_validate(r) for r in runs or []],
+                model_observation.ModelObservationLink.model_validate(link),
+            )
+        except (ValueError, ValidationError) as exc:
+            raise _refuse(
+                "malformed_model_observation_link",
+                str(exc),
+                "Fix the field the message names; nothing was compared.",
+            ) from exc
 
     return server
 

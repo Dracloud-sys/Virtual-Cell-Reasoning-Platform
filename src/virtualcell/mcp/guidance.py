@@ -280,6 +280,49 @@ Relay `limits` with the result.\
 """
 
 
+COMPARE_MODEL_OBSERVATION = """\
+Set one claim a run_logic_model window result computes against one claim observed results
+measure, under a correspondence you state. This calls no model and re-runs nothing.
+
+`model_result`: the run_logic_model response with view "window", or its fields model_id,
+model_sha256, run_sha256, scenario (the scenario's name), baseline (its name or null),
+cases_explored, cases_total, exploration_complete and window. `runs`: ExperimentRun records, as
+for compare_research_observations. `link`:
+- `model`: run_sha256, model_sha256, scenario, baseline and window {first, last} must equal the
+  result's; `target` must be exactly one window target; `claim` is `state` (the scenario's window
+  class per case) or `change` (per-case, per-step paired directions against the baseline).
+- `observation`: one ObservationMapping, read exactly as compare_research_observations reads it
+  (arms, time point, assay, unit, quality, pairs, reference, DecisionRule), plus an optional
+  `readout_spec` for assay and unit. A normalisation reference is part of the unit, not an arm.
+- `correspondence`: `table` of {model_value, observed_value} entries (state: active/inactive to
+  present/absent; change: increase/decrease/no_change to the same three as classified by the
+  rule). Nothing maps to a same-named value unless an entry says so. `asks` is category or
+  magnitude; `window_correspondence` (why the window may be read as the observation's time
+  point); `baseline_stands_for` (change: the plan reference the baseline stands for, as the
+  mapping's `versus`); `applies_to_experiment_ids`, `basis`, `evidence_ids`, `assumptions`,
+  `stated_by`, `accepted_by`.
+- `hypothesis_ids`, `experiment_ids`, `decision_ids` are echoed back; nothing is changed.
+
+A link that does not select exactly one claim is refused, naming the field. Otherwise
+`comparability` is checked before any value: outside_model_representation (a magnitude asked of
+a Boolean model), correspondence_unresolved (claim forms differ, the correspondence does not
+cover this experiment, the window or baseline correspondence is unstated or differs, the
+observation's reference is held, or a model value has no table entry), insufficient (the
+observation is not classified, or model values are not computed), or comparable. Only when
+comparable does it give `relation` and `result`: consistent when every model value maps to the
+observed class, inconsistent when none does, undecided when only some do or the class is
+between the rule's bands. With exploration incomplete, `explored_result` is given and `result`
+is undecided. `needs` says what would move it: check_record, state_or_review_correspondence,
+richer_model or more_measurement; which to pursue is yours.
+
+Observed present/absent is analytical (a valid non-zero reading, or one recorded below the
+producer's detection limit), not biological presence or a model state. Every result holds
+under the stated correspondence only: `scientific_validity_checked` is false, a host-stated
+correspondence is not a validated one, and an inconsistent result does not refute a hypothesis.
+Keep, revise and hold stay yours to propose. Relay `limits` with the result.\
+"""
+
+
 def flatten(text: str) -> str:
     """Collapse wrapping so a phrase check does not depend on where a line broke."""
     return " ".join(text.split())
