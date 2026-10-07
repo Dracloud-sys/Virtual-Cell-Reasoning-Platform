@@ -1,0 +1,109 @@
+{
+ "about": "Every location tried for the pMek measurements of Fritsche-Guenther et al. 2011 (doi 10.1038/msb.2011.27, PMC3130559), with what came back, in order. Accessed 2026-10-06. All reads are host reads of official sources (NCBI PMC Cloud open-data bucket, Europe PMC), not spans issued by the VCRP server; the VCRP spans the earlier records cite (lit-*) are listed separately. No search queries were used: each location was fetched directly. The paper is CC BY-NC-SA 3.0; the files themselves are not committed here, only identifiers, checksums and the values extract.py copies with their line numbers.",
+ "license": "CC BY-NC-SA 3.0 (PMC Cloud metadata license_code; Europe PMC XML license element)",
+ "accessed": [
+  {
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3130559/",
+   "status": "not read: the response was a reCAPTCHA challenge page (HTTP 200, 21,311 bytes), not the article",
+   "used": false
+  },
+  {
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3130559/fullTextXML",
+   "status": "ok, 148,715 bytes, JATS XML",
+   "used_for": [
+    "Figure 6 and Figure 4 captions",
+    "Bio-Plex assay methods (1 uM AZD6244; P-Mek1 S217/S221 beads; BCA protein measurement; 1:5 dilution)",
+    "list of supplementary files"
+   ]
+  },
+  {
+   "url": "https://europepmc.org/articles/PMC3130559/bin/msb201127-f6.jpg",
+   "status": "HTTP 403",
+   "used": false
+  },
+  {
+   "url": "https://europepmc.org/api/fulltextRepo?pprId=PMC3130559&type=FILE&fileName=msb201127-f6.jpg",
+   "status": "HTTP 500",
+   "used": false
+  },
+  {
+   "url": "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC3130559",
+   "status": "HTTP 404 (service not at this address)",
+   "used": false
+  },
+  {
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/PMC3130559.1.json",
+   "status": "ok; package manifest with md5 per file; license_code CC BY-NC-SA; version 2 of the path returned 404",
+   "used_for": [
+    "file list and checksums"
+   ]
+  },
+  {
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/msb201127-df6B.txt",
+   "md5": "ecff68be1f1d494db058e3b2c4da1a74",
+   "status": "ok, md5 matches manifest",
+   "used_for": [
+    "Fig 6B values (extract.py)"
+   ]
+  },
+  {
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/msb201127-df6C.txt",
+   "md5": "61e0dfc1b367d6eda897b03d638d5faa",
+   "status": "ok, md5 matches manifest",
+   "used_for": [
+    "Fig 6C values (extract.py)"
+   ]
+  },
+  {
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/PMC3130559.1.pdf",
+   "md5": "11d44b88fbafeaad8c7c420c4b44320a",
+   "status": "ok, md5 matches manifest",
+   "used_for": [
+    "page 9 rendered with pdftoppm at 200 dpi (whole page) and 300 dpi (Fig 6D crops) and looked at, to read Fig 6B-D and compare 6B/6C with the source data"
+   ]
+  },
+  {
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/msb201127-f6.jpg",
+   "md5": "a86502d2158f2cc592667c33f98e0835",
+   "status": "ok, 767x389 px; too small to read 6D error bars, so the PDF page was rendered instead",
+   "used": false
+  },
+  {
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/msb201127-df4B.txt",
+   "status": "ok (downloaded with the others; Fig 4B, Ras activity), not used here",
+   "used": false
+  },
+  {
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/msb201127-s1.pdf",
+   "md5": "a752c216558df005d3b1185d59996621",
+   "status": "ok; text searched for Bio-Plex, pMek, Figure 6, standard curve, blank, background, fluorescence: no match about the pMek assay",
+   "used": false
+  },
+  {
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/msb201127-s3.pdf",
+   "md5": "eb86f3ab56d96e7a070b13967172bd02",
+   "status": "ok; review process file",
+   "used_for": [
+    "Fig 6D was added during revision ('new Figure 6D')"
+   ]
+  }
+ ],
+ "not_in_package": [
+  "No source data file for Fig 6D: the manifest lists df6B and df6C only, although the Figure 6 caption says source data are available for the figure.",
+  "No raw instrument readings (Bio-Plex fluorescence intensities), blanks, standard curves or plate layouts in any file listed."
+ ],
+ "assay_documents": "Not consulted. The methods name the Bio-Plex Protein Array system (Bio-Rad) with beads for P-Mek1 (S217/S221) but no catalogue or lot number, so no current manufacturer document could be tied to the kit used; a general range would not say whether these samples were inside it.",
+ "vcrp_spans_used_earlier": [
+  "lit-69aab6e67fdb",
+  "lit-56693f038783",
+  "lit-e87187c7b35e",
+  "lit-1fd73f7e342a",
+  "lit-12e26e4913bb"
+ ],
+ "counts": {
+  "search_queries": 0,
+  "direct_fetches": 14,
+  "assay_documents": 0,
+  "note": "PMC HTML 1, Europe PMC XML 1, Europe PMC image 2, NCBI OA service 1, PMC Cloud manifest 2 (versions 1 and 2), PMC Cloud files 7"
+ }
+}

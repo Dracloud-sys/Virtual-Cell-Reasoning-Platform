@@ -1,0 +1,795 @@
+{
+ "about": "Values as given in the authors' source data files for Fig 6B and 6C of Fritsche-Guenther et al. 2011 (doi 10.1038/msb.2011.27; PMC3130559; CC BY-NC-SA 3.0), with file and line. Strings are copied, not converted. The authors call the files raw data; their own headers say the values are normalised (6B: relative to PBS-treated cells; 6C: to one 0-timepoint), so they are level B (author-processed), not raw instrument readings.",
+ "fig6B": {
+  "by_cell_line": {
+   "HCT116": {
+    "U0126_by_concentration_uM": {
+     "0.5": [
+      "0.900169205",
+      "1.070881226"
+     ],
+     "1": [
+      "0.778341794"
+     ],
+     "10": [
+      "3.614213198"
+     ],
+     "100": [
+      "0.084291188"
+     ],
+     "20": [
+      "4.915708812"
+     ],
+     "5": [
+      "2.10321489",
+      "1.16091954"
+     ],
+     "50": [
+      "6.00862069"
+     ]
+    },
+    "control_rows_repeated_verbatim": [
+     {
+      "line": 16,
+      "repeats_line": 4
+     },
+     {
+      "line": 17,
+      "repeats_line": 5
+     },
+     {
+      "line": 18,
+      "repeats_line": 6
+     }
+    ],
+    "controls": {
+     "DMSO": [
+      "1.109195402"
+     ],
+     "PBS (reference, defined as 1)": [
+      "1"
+     ],
+     "untreated": [
+      "0.859560068",
+      "0.786419753"
+     ]
+    },
+    "values_per_U0126_concentration": {
+     "0.5": 2,
+     "1": 1,
+     "10": 1,
+     "100": 1,
+     "20": 1,
+     "5": 2,
+     "50": 1
+    }
+   },
+   "HT29": {
+    "U0126_by_concentration_uM": {
+     "0.5": [
+      "1.48",
+      "1.051662404"
+     ],
+     "1": [
+      "1.002105263"
+     ],
+     "10": [
+      "0.976842105"
+     ],
+     "100": [
+      "0.026598465"
+     ],
+     "20": [
+      "0.403069054"
+     ],
+     "5": [
+      "1.023157895",
+      "1.072122762"
+     ],
+     "50": [
+      "0.072634271"
+     ]
+    },
+    "control_rows_repeated_verbatim": [
+     {
+      "line": 32,
+      "repeats_line": 20
+     },
+     {
+      "line": 33,
+      "repeats_line": 21
+     },
+     {
+      "line": 34,
+      "repeats_line": 22
+     }
+    ],
+    "controls": {
+     "DMSO": [
+      "1.071099744"
+     ],
+     "PBS (reference, defined as 1)": [
+      "1"
+     ],
+     "untreated": [
+      "0.791578947",
+      "0.682261209"
+     ]
+    },
+    "values_per_U0126_concentration": {
+     "0.5": 2,
+     "1": 1,
+     "10": 1,
+     "100": 1,
+     "20": 1,
+     "5": 2,
+     "50": 1
+    }
+   },
+   "RKO": {
+    "U0126_by_concentration_uM": {
+     "0.5": [
+      "0.63390286",
+      "0.542930471"
+     ],
+     "1": [
+      "0.596851603"
+     ],
+     "10": [
+      "0.555960837"
+     ],
+     "100": [
+      "0.00419972"
+     ],
+     "20": [
+      "0.148390107"
+     ],
+     "5": [
+      "0.466500288",
+      "0.387540831"
+     ],
+     "50": [
+      "0.012132524"
+     ]
+    },
+    "control_rows_repeated_verbatim": [
+     {
+      "line": 48,
+      "repeats_line": 36
+     },
+     {
+      "line": 49,
+      "repeats_line": 37
+     },
+     {
+      "line": 50,
+      "repeats_line": 38
+     }
+    ],
+    "controls": {
+     "DMSO": [
+      "1.078161456"
+     ],
+     "PBS (reference, defined as 1)": [
+      "1"
+     ],
+     "untreated": [
+      "1.03820311",
+      "1.171428571"
+     ]
+    },
+    "values_per_U0126_concentration": {
+     "0.5": 2,
+     "1": 1,
+     "10": 1,
+     "100": 1,
+     "20": 1,
+     "5": 2,
+     "50": 1
+    }
+   },
+   "SW480": {
+    "U0126_by_concentration_uM": {
+     "0.5": [
+      "0.717056856",
+      "1.091037403"
+     ],
+     "1": [
+      "0.917056856"
+     ],
+     "10": [
+      "1.573244147"
+     ],
+     "100": [
+      "0.019760056"
+     ],
+     "20": [
+      "3.808750882"
+     ],
+     "5": [
+      "1.226755853",
+      "2.183486239"
+     ],
+     "50": [
+      "0.254057869"
+     ]
+    },
+    "control_rows_repeated_verbatim": [
+     {
+      "line": 64,
+      "repeats_line": 52
+     },
+     {
+      "line": 65,
+      "repeats_line": 53
+     },
+     {
+      "line": 66,
+      "repeats_line": 54
+     }
+    ],
+    "controls": {
+     "DMSO": [
+      "1.01340861"
+     ],
+     "PBS (reference, defined as 1)": [
+      "1"
+     ],
+     "untreated": [
+      "0.882943144",
+      "1.116813294"
+     ]
+    },
+    "values_per_U0126_concentration": {
+     "0.5": 2,
+     "1": 1,
+     "10": 1,
+     "100": 1,
+     "20": 1,
+     "5": 2,
+     "50": 1
+    }
+   }
+  },
+  "column_labels": [
+   [
+    "cellline",
+    "treatment",
+    "concentration",
+    "measurement"
+   ],
+   [
+    "Cell line",
+    "Agent used for treatment",
+    "Concentration",
+    "Measurement relative to PBS"
+   ]
+  ],
+  "header": "% Raw data of Figure 6B. Phosphoplex measurements of 4 cell lines for different concentrations of the Mek inhibitor U0126, normalised to PBS treated cells. Controls are untreated or DMSO-treated cells.",
+  "rows": [
+   {
+    "agent": "--",
+    "cell_line": "HCT116",
+    "concentration_uM": "0",
+    "line": 4,
+    "value": "0.859560068"
+   },
+   {
+    "agent": "--",
+    "cell_line": "HCT116",
+    "concentration_uM": "0",
+    "line": 5,
+    "value": "0.786419753"
+   },
+   {
+    "agent": "DMSO",
+    "cell_line": "HCT116",
+    "concentration_uM": "0",
+    "line": 6,
+    "value": "1.109195402"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HCT116",
+    "concentration_uM": "0.5",
+    "line": 7,
+    "value": "0.900169205"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HCT116",
+    "concentration_uM": "0.5",
+    "line": 8,
+    "value": "1.070881226"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HCT116",
+    "concentration_uM": "1",
+    "line": 9,
+    "value": "0.778341794"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HCT116",
+    "concentration_uM": "5",
+    "line": 10,
+    "value": "2.10321489"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HCT116",
+    "concentration_uM": "5",
+    "line": 11,
+    "value": "1.16091954"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HCT116",
+    "concentration_uM": "10",
+    "line": 12,
+    "value": "3.614213198"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HCT116",
+    "concentration_uM": "20",
+    "line": 13,
+    "value": "4.915708812"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HCT116",
+    "concentration_uM": "50",
+    "line": 14,
+    "value": "6.00862069"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HCT116",
+    "concentration_uM": "100",
+    "line": 15,
+    "value": "0.084291188"
+   },
+   {
+    "agent": "--",
+    "cell_line": "HCT116",
+    "concentration_uM": "0",
+    "line": 16,
+    "value": "0.859560068"
+   },
+   {
+    "agent": "--",
+    "cell_line": "HCT116",
+    "concentration_uM": "0",
+    "line": 17,
+    "value": "0.786419753"
+   },
+   {
+    "agent": "DMSO",
+    "cell_line": "HCT116",
+    "concentration_uM": "0",
+    "line": 18,
+    "value": "1.109195402"
+   },
+   {
+    "agent": "pbs",
+    "cell_line": "HCT116",
+    "concentration_uM": "0",
+    "line": 19,
+    "value": "1"
+   },
+   {
+    "agent": "--",
+    "cell_line": "HT29",
+    "concentration_uM": "0",
+    "line": 20,
+    "value": "0.791578947"
+   },
+   {
+    "agent": "--",
+    "cell_line": "HT29",
+    "concentration_uM": "0",
+    "line": 21,
+    "value": "0.682261209"
+   },
+   {
+    "agent": "DMSO",
+    "cell_line": "HT29",
+    "concentration_uM": "0",
+    "line": 22,
+    "value": "1.071099744"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HT29",
+    "concentration_uM": "0.5",
+    "line": 23,
+    "value": "1.48"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HT29",
+    "concentration_uM": "0.5",
+    "line": 24,
+    "value": "1.051662404"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HT29",
+    "concentration_uM": "1",
+    "line": 25,
+    "value": "1.002105263"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HT29",
+    "concentration_uM": "5",
+    "line": 26,
+    "value": "1.023157895"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HT29",
+    "concentration_uM": "5",
+    "line": 27,
+    "value": "1.072122762"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HT29",
+    "concentration_uM": "10",
+    "line": 28,
+    "value": "0.976842105"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HT29",
+    "concentration_uM": "20",
+    "line": 29,
+    "value": "0.403069054"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HT29",
+    "concentration_uM": "50",
+    "line": 30,
+    "value": "0.072634271"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "HT29",
+    "concentration_uM": "100",
+    "line": 31,
+    "value": "0.026598465"
+   },
+   {
+    "agent": "--",
+    "cell_line": "HT29",
+    "concentration_uM": "0",
+    "line": 32,
+    "value": "0.791578947"
+   },
+   {
+    "agent": "--",
+    "cell_line": "HT29",
+    "concentration_uM": "0",
+    "line": 33,
+    "value": "0.682261209"
+   },
+   {
+    "agent": "DMSO",
+    "cell_line": "HT29",
+    "concentration_uM": "0",
+    "line": 34,
+    "value": "1.071099744"
+   },
+   {
+    "agent": "pbs",
+    "cell_line": "HT29",
+    "concentration_uM": "0",
+    "line": 35,
+    "value": "1"
+   },
+   {
+    "agent": "--",
+    "cell_line": "RKO",
+    "concentration_uM": "0",
+    "line": 36,
+    "value": "1.03820311"
+   },
+   {
+    "agent": "--",
+    "cell_line": "RKO",
+    "concentration_uM": "0",
+    "line": 37,
+    "value": "1.171428571"
+   },
+   {
+    "agent": "DMSO",
+    "cell_line": "RKO",
+    "concentration_uM": "0",
+    "line": 38,
+    "value": "1.078161456"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "RKO",
+    "concentration_uM": "0.5",
+    "line": 39,
+    "value": "0.63390286"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "RKO",
+    "concentration_uM": "0.5",
+    "line": 40,
+    "value": "0.542930471"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "RKO",
+    "concentration_uM": "1",
+    "line": 41,
+    "value": "0.596851603"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "RKO",
+    "concentration_uM": "5",
+    "line": 42,
+    "value": "0.466500288"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "RKO",
+    "concentration_uM": "5",
+    "line": 43,
+    "value": "0.387540831"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "RKO",
+    "concentration_uM": "10",
+    "line": 44,
+    "value": "0.555960837"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "RKO",
+    "concentration_uM": "20",
+    "line": 45,
+    "value": "0.148390107"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "RKO",
+    "concentration_uM": "50",
+    "line": 46,
+    "value": "0.012132524"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "RKO",
+    "concentration_uM": "100",
+    "line": 47,
+    "value": "0.00419972"
+   },
+   {
+    "agent": "--",
+    "cell_line": "RKO",
+    "concentration_uM": "0",
+    "line": 48,
+    "value": "1.03820311"
+   },
+   {
+    "agent": "--",
+    "cell_line": "RKO",
+    "concentration_uM": "0",
+    "line": 49,
+    "value": "1.171428571"
+   },
+   {
+    "agent": "DMSO",
+    "cell_line": "RKO",
+    "concentration_uM": "0",
+    "line": 50,
+    "value": "1.078161456"
+   },
+   {
+    "agent": "pbs",
+    "cell_line": "RKO",
+    "concentration_uM": "0",
+    "line": 51,
+    "value": "1"
+   },
+   {
+    "agent": "--",
+    "cell_line": "SW480",
+    "concentration_uM": "0",
+    "line": 52,
+    "value": "0.882943144"
+   },
+   {
+    "agent": "--",
+    "cell_line": "SW480",
+    "concentration_uM": "0",
+    "line": 53,
+    "value": "1.116813294"
+   },
+   {
+    "agent": "DMSO",
+    "cell_line": "SW480",
+    "concentration_uM": "0",
+    "line": 54,
+    "value": "1.01340861"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "SW480",
+    "concentration_uM": "0.5",
+    "line": 55,
+    "value": "0.717056856"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "SW480",
+    "concentration_uM": "0.5",
+    "line": 56,
+    "value": "1.091037403"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "SW480",
+    "concentration_uM": "1",
+    "line": 57,
+    "value": "0.917056856"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "SW480",
+    "concentration_uM": "5",
+    "line": 58,
+    "value": "1.226755853"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "SW480",
+    "concentration_uM": "5",
+    "line": 59,
+    "value": "2.183486239"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "SW480",
+    "concentration_uM": "10",
+    "line": 60,
+    "value": "1.573244147"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "SW480",
+    "concentration_uM": "20",
+    "line": 61,
+    "value": "3.808750882"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "SW480",
+    "concentration_uM": "50",
+    "line": 62,
+    "value": "0.254057869"
+   },
+   {
+    "agent": "U0126",
+    "cell_line": "SW480",
+    "concentration_uM": "100",
+    "line": 63,
+    "value": "0.019760056"
+   },
+   {
+    "agent": "--",
+    "cell_line": "SW480",
+    "concentration_uM": "0.3",
+    "line": 64,
+    "value": "0.882943144"
+   },
+   {
+    "agent": "--",
+    "cell_line": "SW480",
+    "concentration_uM": "0.3",
+    "line": 65,
+    "value": "1.116813294"
+   },
+   {
+    "agent": "DMSO",
+    "cell_line": "SW480",
+    "concentration_uM": "0.3",
+    "line": 66,
+    "value": "1.01340861"
+   },
+   {
+    "agent": "pbs",
+    "cell_line": "SW480",
+    "concentration_uM": "0.3",
+    "line": 67,
+    "value": "1"
+   }
+  ]
+ },
+ "fig6C": {
+  "column_labels": [
+   [
+    "t",
+    "SW480",
+    "HCT116"
+   ],
+   [
+    "time in min",
+    "measurement of pMek for SW480, normalised by one 0-timepoint",
+    "measurement of pMek for HCT116, normalised by one 0-timepoint"
+   ]
+  ],
+  "header": "% Raw data for Figure 6C",
+  "rows": [
+   {
+    "HCT116": "1.195384019",
+    "SW480": "1.052211272",
+    "line": 4,
+    "time_min": "0"
+   },
+   {
+    "HCT116": "0.913563486",
+    "SW480": "0.999927181",
+    "line": 5,
+    "time_min": "0"
+   },
+   {
+    "HCT116": "1",
+    "SW480": "1",
+    "line": 6,
+    "time_min": "0"
+   },
+   {
+    "HCT116": "1.841724851",
+    "SW480": "1.960677703",
+    "line": 7,
+    "time_min": "30"
+   },
+   {
+    "HCT116": "2.832363589",
+    "SW480": "3.363488519",
+    "line": 8,
+    "time_min": "60"
+   },
+   {
+    "HCT116": "3.471153349",
+    "SW480": "4.691489878",
+    "line": 9,
+    "time_min": "120"
+   },
+   {
+    "HCT116": "2.286669253",
+    "SW480": "5.341836982",
+    "line": 10,
+    "time_min": "180"
+   },
+   {
+    "HCT116": "2.919459529",
+    "SW480": "5.432375358",
+    "line": 11,
+    "time_min": "240"
+   }
+  ]
+ },
+ "source": {
+  "msb201127-df6B.txt": {
+   "md5": "ecff68be1f1d494db058e3b2c4da1a74",
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/msb201127-df6B.txt"
+  },
+  "msb201127-df6C.txt": {
+   "md5": "61e0dfc1b367d6eda897b03d638d5faa",
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/msb201127-df6C.txt"
+  }
+ }
+}
