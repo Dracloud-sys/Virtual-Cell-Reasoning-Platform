@@ -7,6 +7,25 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`compare_model_observation`: one model claim against one observed claim, under a stated
+  correspondence** (`research/model_observation.py`;
+  `docs/research_sessions/model_observation_link_v0/`).
+  - **Inputs:**
+    - a `run_logic_model` window result (or its identifying subset);
+    - `ExperimentRun`s read through one `ObservationMapping` by `observe.read_mapping`, the
+      arm-reading part of `compare_observations`, moved out with its behaviour unchanged;
+    - a link with an explicit model-value → observed-value table, `asks`, window and baseline
+      correspondences, and who stated them.
+  - **Refused:** selections that are not exactly one claim.
+  - **Before any value is compared:** `outside_model_representation`,
+    `correspondence_unresolved` or `insufficient`.
+  - **Comparable inputs** give consistent, inconsistent or undecided:
+    - several model values containing the observed one give undecided;
+    - with incomplete exploration, `explored_result` is given and `result` is undecided.
+  - **Not done:** no same-word mapping, no below-detection → absence → inactive, no new
+    threshold.
+  - **Tests:** synthetic contract cases T1–T8 and the ERK regression (M2: magnitude outside the
+    model; category unresolved).
 - **`run_logic_model` window view** (`simulation/logic.py`; `docs/research_sessions/logic_window_v0/`).
   - `view: "window"` with `window: {first, last, targets}` summarises the same run over a range
     of logical steps, instead of sending every step.
