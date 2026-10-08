@@ -143,6 +143,15 @@ class LinkCorrespondence(BaseModel):
             "value only if an entry says so."
         ),
     )
+    observed_vocabulary: list[str] | None = Field(
+        default=None,
+        description=(
+            "For a state claim read from recorded categorical values: the categories the "
+            "observation may take, as written in the data. The table's observed values are then "
+            "these instead of present/absent. Values are compared as written; nothing is "
+            "converted, binned or inferred."
+        ),
+    )
     asks: Literal["category", "magnitude"] = Field(
         default="category",
         description="magnitude asks how much; a Boolean model does not compute that.",
@@ -188,8 +197,20 @@ class ModelObservationLink(BaseModel):
     @model_validator(mode="after")
     def _table_well_formed(self) -> ModelObservationLink:
         claim = self.model.claim
+        vocabulary = self.correspondence.observed_vocabulary
         model_vocab = STATE_MODEL_VALUES if claim == "state" else CHANGE_VALUES
         observed_vocab = STATE_OBSERVED_VALUES if claim == "state" else CHANGE_VALUES
+        if vocabulary is not None:
+            if claim != "state":
+                raise ValueError(
+                    "correspondence.observed_vocabulary is for a state claim read from "
+                    f"categorical values; link.model.claim is {claim!r}"
+                )
+            if not vocabulary or len(set(vocabulary)) != len(vocabulary):
+                raise ValueError(
+                    "correspondence.observed_vocabulary must list distinct categories, at least one"
+                )
+            observed_vocab = frozenset(vocabulary)
         seen: dict[str, str] = {}
         for i, e in enumerate(self.correspondence.table):
             if e.model_value not in model_vocab:
@@ -198,9 +219,14 @@ class ModelObservationLink(BaseModel):
                     f"model value ({sorted(model_vocab)})"
                 )
             if e.observed_value not in observed_vocab:
+                hint = (
+                    "; categorical readings need correspondence.observed_vocabulary"
+                    if claim == "state" and vocabulary is None
+                    else ""
+                )
                 raise ValueError(
-                    f"correspondence.table[{i}].observed_value {e.observed_value!r} is not a "
-                    f"{claim} observed value ({sorted(observed_vocab)})"
+                    f"correspondence.table[{i}].observed_value {e.observed_value!r} is not in the "
+                    f"observed vocabulary ({sorted(observed_vocab)}){hint}"
                 )
             if e.model_value in seen and seen[e.model_value] != e.observed_value:
                 raise ValueError(
@@ -253,7 +279,13 @@ class ModelObservationComparison(BaseModel):
     window_request_sha256: str
     model_claim: ModelClaim
     observation: ReadoutComparison
-    observation_meaning: Literal["analytical_detection", "quantitative_change", "not_classified"]
+    observation_meaning: Literal[
+        "analytical_detection", "quantitative_change", "declared_category", "not_classified"
+    ]
+    observed_categories: list[str] = Field(
+        default_factory=list,
+        description="Categorical readings used, as written, when observed_vocabulary is declared.",
+    )
     observation_findings: list[PlanFinding] = Field(default_factory=list)
     runs_used: list[str] = Field(default_factory=list)
     comparability: Comparability
@@ -347,7 +379,13 @@ def compare_model_observation(
 ) -> ModelObservationComparison:
     target = _select(model_result, link)
     claim = _model_claim(model_result, link, target)
-    row, findings, runs_used = read_mapping(runs, link.observation, link.readout_spec)
+    vocabulary = link.correspondence.observed_vocabulary
+    row, findings, runs_used, categories = read_mapping(
+        runs,
+        link.observation,
+        link.readout_spec,
+        frozenset(vocabulary) if vocabulary is not None else None,
+    )
 
     reasons: list[str] = []
     needs: list[Need] = []
@@ -403,7 +441,9 @@ def compare_model_observation(
         _, would = _relate(claim, row.observed)
         if_accepted = would if claim.applies_to == "all_cases" else "undecided"
 
-    link_sha = _sha(link.model_dump(mode="json"))
+    # A link without a vocabulary hashes as it did before the field existed.
+    unset = {"correspondence": {"observed_vocabulary"}} if vocabulary is None else None
+    link_sha = _sha(link.model_dump(mode="json", exclude=unset))
     observations_sha = _sha(
         {
             "runs": [r.model_dump(mode="json") for r in runs],
@@ -425,8 +465,11 @@ def compare_model_observation(
         observation_meaning=(
             "not_classified"
             if row.status != "compared"
+            else "declared_category"
+            if vocabulary is not None and row.kind == "state"
             else ("analytical_detection" if row.kind == "state" else "quantitative_change")
         ),
+        observed_categories=categories,
         observation_findings=findings,
         runs_used=runs_used,
         comparability=status,
@@ -471,7 +514,93 @@ def _select(r: ModelWindowResult, link: ModelObservationLink) -> Any:
         )
     if sel.claim == "change" and r.baseline is None:
         raise LinkRefused("link.model.claim is 'change' but the model result has no baseline")
+    _check_window(r, matches[0], sel.claim)
     return matches[0]
+
+
+def _check_window(r: ModelWindowResult, target: Any, claim: str) -> None:
+    """The relations inside the result that the selected claim depends on.
+
+    A structural check of the result as given, not an authentication of it: a result the engine
+    could return (not paired, no baseline, not computed, exploration stopped) passes and is
+    limited later; a result whose parts contradict each other is refused, naming the part.
+    """
+    w = r.window
+    n = len(w.cases)
+    if len(set(w.cases)) != n:
+        raise LinkRefused("model_result.window.cases repeats a case label")
+    if n != r.cases_explored or r.cases_explored > r.cases_total:
+        raise LinkRefused(
+            f"model_result: {n} case labels, cases_explored {r.cases_explored}, cases_total "
+            f"{r.cases_total}; the labels must number cases_explored, at most cases_total"
+        )
+    if r.exploration_complete != (r.cases_explored == r.cases_total):
+        raise LinkRefused(
+            f"model_result.exploration_complete is {r.exploration_complete} with "
+            f"{r.cases_explored} of {r.cases_total} cases explored"
+        )
+    has_baseline = r.baseline is not None
+    if (target.baseline is not None) != has_baseline:
+        raise LinkRefused(
+            "model_result: the window target's baseline side does not match whether the result "
+            "has a baseline"
+        )
+    if (w.pairing.status == "no_baseline") == has_baseline:
+        raise LinkRefused(
+            f"model_result.window.pairing.status is {w.pairing.status!r}, but the result "
+            f"{'has' if has_baseline else 'has no'} baseline"
+        )
+    if (target.paired is not None) != (w.pairing.status == "paired"):
+        raise LinkRefused(
+            f"model_result: the target's paired directions are "
+            f"{'present' if target.paired is not None else 'absent'} while pairing.status is "
+            f"{w.pairing.status!r}"
+        )
+    sides = [("scenario", target.scenario, r.exploration_complete)]
+    if target.baseline is not None:
+        sides.append(("baseline", target.baseline, None))
+    for name, side, complete in sides:
+        size = n if name == "scenario" or w.baseline_cases is None else len(w.baseline_cases)
+        _check_cover(f"{name}.groups", [g.cases for g in side.groups], size)
+        if complete is not None and (side.applies_to == "all_cases") != complete:
+            raise LinkRefused(
+                f"model_result: {name}.applies_to is {side.applies_to!r} but "
+                f"exploration_complete is {complete}"
+            )
+    if target.paired is not None:
+        p = target.paired
+        _check_cover("paired.groups", [g.cases for g in p.groups], n)
+        union = sorted({d for g in p.groups for d in g.directions})
+        if union != sorted(p.directions):
+            raise LinkRefused(
+                f"model_result: paired.directions {sorted(p.directions)} differ from the "
+                f"directions of its groups {union}"
+            )
+        both = target.scenario.applies_to == "all_cases" and (
+            target.baseline is None or target.baseline.applies_to == "all_cases"
+        )
+        if (p.applies_to == "all_cases") != both:
+            raise LinkRefused(
+                f"model_result: paired.applies_to is {p.applies_to!r}, which the scenario and "
+                "baseline sides' applies_to do not support"
+            )
+    if claim == "state" and not target.scenario.groups:
+        raise LinkRefused("model_result: the target's scenario has no groups")
+
+
+def _check_cover(where: str, groups: list[list[int]], n: int) -> None:
+    """Every case position in range, and each in exactly one group."""
+    seen: list[int] = [i for cases in groups for i in cases]
+    bad = sorted({i for i in seen if not 0 <= i < n})
+    if bad:
+        raise LinkRefused(f"model_result: {where} name case positions {bad}, outside 0..{n - 1}")
+    if sorted(seen) != list(range(n)):
+        missing = sorted(set(range(n)) - set(seen))
+        repeated = sorted({i for i in seen if seen.count(i) > 1})
+        raise LinkRefused(
+            f"model_result: {where} must place each of the {n} cases once; "
+            f"missing {missing}, repeated {repeated}"
+        )
 
 
 def _model_claim(r: ModelWindowResult, link: ModelObservationLink, target: Any) -> ModelClaim:
@@ -535,6 +664,18 @@ def _unresolved(link: ModelObservationLink, row: ReadoutComparison, claim: Model
         out.append("correspondence_not_stated_for_this_experiment")
     if not c.window_correspondence:
         out.append("window_correspondence_unstated")
+    spec = link.readout_spec
+    if (
+        claim.form == "change"
+        and spec is not None
+        and spec.reference
+        and m.versus is not None
+        and _norm(spec.reference) != _norm(m.versus)
+    ):
+        out.append(
+            "readout_spec_reference_differs_from_mapping_versus "
+            f"(readout_spec.reference={spec.reference!r}, mapping.versus={m.versus!r})"
+        )
     if claim.form == "change":
         if not c.baseline_stands_for:
             out.append("baseline_correspondence_unstated")

@@ -296,24 +296,29 @@ for compare_research_observations. `link`:
   `readout_spec` for assay and unit. A normalisation reference is part of the unit, not an arm.
 - `correspondence`: `table` of {model_value, observed_value} entries (state: active/inactive to
   present/absent; change: increase/decrease/no_change to the same three as classified by the
-  rule). Nothing maps to a same-named value unless an entry says so. `asks` is category or
-  magnitude; `window_correspondence` (why the window may be read as the observation's time
-  point); `baseline_stands_for` (change: the plan reference the baseline stands for, as the
+  rule). Nothing maps to a same-named value unless an entry says so. For a state claim read
+  from recorded categorical values, `observed_vocabulary` lists the categories as written, and
+  the table maps active/inactive to them; nothing is converted, binned or inferred, and only
+  valid categorical readings are used. `asks` is category or magnitude;
+  `window_correspondence` (why the window may be read as the observation's time point);
+  `baseline_stands_for` (change: the plan reference the baseline stands for, as the
   mapping's `versus`); `applies_to_experiment_ids`, `basis`, `evidence_ids`, `assumptions`,
   `stated_by`, `accepted_by`.
 - `hypothesis_ids`, `experiment_ids`, `decision_ids` are echoed back; nothing is changed.
 
-A link that does not select exactly one claim is refused, naming the field. Otherwise
-`comparability` is checked before any value: outside_model_representation (a magnitude asked of
-a Boolean model), correspondence_unresolved (claim forms differ, the correspondence does not
-cover this experiment, the window or baseline correspondence is unstated or differs, the
-observation's reference is held, or a model value has no table entry), insufficient (the
-observation is not classified, or model values are not computed), or comparable. Only when
-comparable does it give `relation` and `result`: consistent when every model value maps to the
-observed class, inconsistent when none does, undecided when only some do or the class is
-between the rule's bands. With exploration incomplete, `explored_result` is given and `result`
-is undecided. `needs` says what would move it: check_record, state_or_review_correspondence,
-richer_model or more_measurement; which to pursue is yours.
+A link that does not select exactly one claim, or a model result whose fields contradict each
+other (case counts, labels, group coverage, pairing, applies_to), is refused, naming the field.
+Otherwise `comparability` is checked before any value: outside_model_representation (a magnitude
+asked of a Boolean model), correspondence_unresolved (claim forms differ, the correspondence
+does not cover this experiment, the window or baseline correspondence is unstated or differs,
+the observation's reference is held, the readout_spec's reference differs from the mapping's
+`versus`, or a model value has no table entry), insufficient (the observation is not classified,
+or model values are not computed), or comparable. Only when comparable does it give `relation`
+and `result`: consistent when every model value maps to the observed class, inconsistent when
+none does, undecided when only some do or the class is between the rule's bands. With
+exploration incomplete, `explored_result` is given and `result` is undecided. `needs` says what
+would move it: check_record, state_or_review_correspondence, richer_model or more_measurement;
+which to pursue is yours.
 
 Observed present/absent is analytical (a valid non-zero reading, or one recorded below the
 producer's detection limit), not biological presence or a model state. Every result holds

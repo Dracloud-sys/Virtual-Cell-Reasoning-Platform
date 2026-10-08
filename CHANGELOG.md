@@ -26,6 +26,13 @@ to [Semantic Versioning](https://semver.org/).
     threshold.
   - **Tests:** synthetic contract cases T1–T8 and the ERK regression (M2: magnitude outside the
     model; category unresolved).
+  - **Review r1** (`model_observation_link_v0/review_r1/`):
+    - a model result whose fields contradict each other is refused, naming the field;
+    - a `readout_spec.reference` that differs from `mapping.versus` makes the comparison
+      `correspondence_unresolved`;
+    - recorded categorical values compare through an explicit `observed_vocabulary` and table,
+      as written.
+    - Scope correction: v0 recorded the categorical T1–T3 asked for as numeric change cases.
 - **`run_logic_model` window view** (`simulation/logic.py`; `docs/research_sessions/logic_window_v0/`).
   - `view: "window"` with `window: {first, last, targets}` summarises the same run over a range
     of logical steps, instead of sending every step.

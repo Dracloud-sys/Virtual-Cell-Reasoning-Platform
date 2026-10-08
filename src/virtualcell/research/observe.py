@@ -45,6 +45,7 @@ from virtualcell.core.experiment import (
     AcquisitionMode,
     ExperimentRun,
     MeasurementQuality,
+    MeasurementValueType,
     TimePoint,
     deduplicate_runs,
 )
@@ -455,13 +456,17 @@ def read_mapping(
     runs: list[ExperimentRun],
     mapping: ObservationMapping,
     spec: ReadoutSpec | None = None,
-) -> tuple[ReadoutComparison, list[PlanFinding], list[str]]:
+    categories: frozenset[str] | None = None,
+) -> tuple[ReadoutComparison, list[PlanFinding], list[str], list[str]]:
     """Read one mapping's observations without a plan: the same selection, quality handling,
     reference link and classification as :func:`compare_observations`, with no prediction read.
 
     Returns the comparison row (``by_hypothesis`` stays empty), the findings, and the run ids
     used after duplicate runs are collapsed. `spec` gives the readout's assay and unit, as a
     plan's readout spec would.
+
+    With `categories`, a state is read from recorded categorical values in that declared
+    vocabulary (returned as the fourth item, as written), not from numbers or detection.
     """
     findings: list[PlanFinding] = []
     dedup = deduplicate_runs(list(runs))
@@ -489,10 +494,20 @@ def read_mapping(
     unit = m.unit if m.unit is not None else (spec.unit if spec else None)
     if spec and spec.unit and m.unit and spec.unit != m.unit:
         row.reasons.append("rule_unit_differs_from_readout_spec")
+    values: list[str] = []
     _read_arms(
-        row, dedup.runs, m, spec, unit, kind, findings, f"mapping:{m.experiment_id}:{m.readout}"
+        row,
+        dedup.runs,
+        m,
+        spec,
+        unit,
+        kind,
+        findings,
+        f"mapping:{m.experiment_id}:{m.readout}",
+        categories if kind == "state" else None,
+        values,
     )
-    return row, findings, [r.run_id for r in dedup.runs]
+    return row, findings, [r.run_id for r in dedup.runs], values
 
 
 # --- one mapping ---------------------------------------------------------------------------- #
@@ -577,6 +592,8 @@ def _read_arms(
     kind: Literal["state", "change"],
     findings: list[PlanFinding],
     where: str,
+    categories: frozenset[str] | None = None,
+    category_values: list[str] | None = None,
 ) -> bool:
     """Select one mapping's observations and classify them; no prediction is read here.
 
@@ -685,7 +702,7 @@ def _read_arms(
     row.reference_values = r_values
     # Readings that exist but that quality leaves out entirely make the arm unreadable: that
     # is a comparability failure, not a shortage of data.
-    if treatment and not t_values and not (kind == "state" and t_below):
+    if treatment and not t_values and not (kind == "state" and t_below) and categories is None:
         _add(row.reasons, "all_treatment_readings_left_out")
     if kind == "change" and reference and not r_values:
         _add(row.reasons, "all_reference_readings_left_out")
@@ -703,7 +720,9 @@ def _read_arms(
         row.reasons = list(dict.fromkeys(row.reasons))
         return False
 
-    if kind == "state":
+    if categories is not None:
+        _classify_category(row, treatment, categories, category_values)
+    elif kind == "state":
         _classify_state(row, t_values, t_below, t_zero)
     elif m.pairs:
         _classify_pairs(row, paired, m.rule, findings, where)
@@ -827,6 +846,48 @@ def _classify_state(row: ReadoutComparison, values: list[float], below: int, zer
         return
     row.status = "compared"
     (row.observed,) = states
+
+
+def _classify_category(
+    row: ReadoutComparison,
+    readings: list,
+    categories: frozenset[str],
+    out: list[str] | None,
+) -> None:
+    """A state read from recorded categorical values, as written; only for :func:`read_mapping`.
+
+    A reading counts only when its quality is valid, it is not a bound and its value is
+    categorical. Nothing is converted: a number, a flag or a below-detection reading is not a
+    category. Values outside the declared vocabulary are reported, never mapped.
+    """
+    counts: Counter[str] = Counter()
+    values: list[str] = []
+    for x in readings:
+        if x.quality is not MeasurementQuality.VALID:
+            counts[x.quality.value] += 1
+        elif x.bound is not None:
+            counts["bounded"] += 1
+        elif x.value_type is not MeasurementValueType.CATEGORICAL:
+            counts["not_categorical"] += 1
+        else:
+            values.append(str(x.value))
+    row.left_out = {k: v for k, v in counts.items() if v}
+    if out is not None:
+        out.extend(values)
+    if not values:
+        row.status = "insufficient"
+        row.reasons.append("no_usable_readings")
+        return
+    if any(v not in categories for v in values):
+        row.status = "insufficient"
+        row.reasons.append("category_outside_declared_vocabulary")
+        return
+    if len(set(values)) > 1:
+        row.status = "insufficient"
+        row.reasons.append("replicates_disagree")
+        return
+    row.status = "compared"
+    row.observed = values[0]
 
 
 def _rule_usable(row: ReadoutComparison, rule: DecisionRule | None) -> bool:
