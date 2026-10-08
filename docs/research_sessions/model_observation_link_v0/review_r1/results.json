@@ -1,0 +1,384 @@
+{
+ "C10_vocabulary_on_a_change_claim": {
+  "refused": "1 validation error for ModelObservationLink\n  Value error, correspondence.observed_vocabulary is for a state claim read from categorical values; link.model.claim is 'change' [type=value_error, input_value={'id': 'L', 'model': {'ru...'experiment_ids': ['E']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error"
+ },
+ "C1_A_vs_A": {
+  "comparability": "comparable",
+  "comparison_id": "mo-de315d4b177df488",
+  "correspondence_accepted": true,
+  "explored_result": "consistent",
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "active"
+  ],
+  "needs": [],
+  "observation_meaning": "declared_category",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "A",
+  "observed_categories": [
+   "A",
+   "A"
+  ],
+  "reasons": [],
+  "reference_values": [],
+  "relation": "single_match",
+  "result": "consistent",
+  "scientific_validity_checked": false,
+  "treatment_values": []
+ },
+ "C2_A_vs_B": {
+  "comparability": "comparable",
+  "comparison_id": "mo-9bf8952b91247206",
+  "correspondence_accepted": true,
+  "explored_result": "inconsistent",
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "inactive"
+  ],
+  "needs": [],
+  "observation_meaning": "declared_category",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "A",
+  "observed_categories": [
+   "A",
+   "A"
+  ],
+  "reasons": [],
+  "reference_values": [],
+  "relation": "outside",
+  "result": "inconsistent",
+  "scientific_validity_checked": false,
+  "treatment_values": []
+ },
+ "C3_AB_vs_A": {
+  "comparability": "comparable",
+  "comparison_id": "mo-bcaab98efd04f4c2",
+  "correspondence_accepted": true,
+  "explored_result": "undecided",
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "active",
+   "inactive"
+  ],
+  "needs": [],
+  "observation_meaning": "declared_category",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "A",
+  "observed_categories": [
+   "A"
+  ],
+  "reasons": [],
+  "reference_values": [],
+  "relation": "partial",
+  "result": "undecided",
+  "scientific_validity_checked": false,
+  "treatment_values": []
+ },
+ "C4_category_outside_vocabulary": {
+  "comparability": "insufficient",
+  "comparison_id": "mo-816a77bd24b98771",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "active"
+  ],
+  "needs": [
+   "check_record"
+  ],
+  "observation_meaning": "not_classified",
+  "observation_reasons": [
+   "category_outside_declared_vocabulary"
+  ],
+  "observation_status": "insufficient",
+  "observed": null,
+  "observed_categories": [
+   "C"
+  ],
+  "reasons": [
+   "observation_not_classified"
+  ],
+  "reference_values": [],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": []
+ },
+ "C5_left_out_readings": {
+  "comparability": "comparable",
+  "comparison_id": "mo-c76ec3a29688c8eb",
+  "correspondence_accepted": true,
+  "explored_result": "consistent",
+  "if_accepted": null,
+  "left_out": {
+   "below_detection": 1,
+   "excluded": 1,
+   "missing": 1
+  },
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "active"
+  ],
+  "needs": [],
+  "observation_meaning": "declared_category",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "A",
+  "observed_categories": [
+   "A"
+  ],
+  "reasons": [],
+  "reference_values": [],
+  "relation": "single_match",
+  "result": "consistent",
+  "scientific_validity_checked": false,
+  "treatment_values": []
+ },
+ "C6_replicates_disagree": {
+  "comparability": "insufficient",
+  "comparison_id": "mo-efc92f6b99c46e6c",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "active"
+  ],
+  "needs": [
+   "more_measurement"
+  ],
+  "observation_meaning": "not_classified",
+  "observation_reasons": [
+   "replicates_disagree"
+  ],
+  "observation_status": "insufficient",
+  "observed": null,
+  "observed_categories": [
+   "A",
+   "B"
+  ],
+  "reasons": [
+   "observation_not_classified"
+  ],
+  "reference_values": [],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": []
+ },
+ "C7_numbers_are_not_categories": {
+  "comparability": "insufficient",
+  "comparison_id": "mo-e966c5bfe2323ab6",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {
+   "not_categorical": 2
+  },
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "active"
+  ],
+  "needs": [
+   "more_measurement"
+  ],
+  "observation_meaning": "not_classified",
+  "observation_reasons": [
+   "no_usable_readings"
+  ],
+  "observation_status": "insufficient",
+  "observed": null,
+  "observed_categories": [],
+  "reasons": [
+   "observation_not_classified"
+  ],
+  "reference_values": [],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ },
+ "C8_no_vocabulary_declared": {
+  "refused": "1 validation error for ModelObservationLink\n  Value error, correspondence.table[0].observed_value 'A' is not in the observed vocabulary (['absent', 'present']); categorical readings need correspondence.observed_vocabulary [type=value_error, input_value={'id': 'L', 'model': {'ru...'experiment_ids': ['E']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error"
+ },
+ "C9_table_value_outside_vocabulary": {
+  "refused": "1 validation error for ModelObservationLink\n  Value error, correspondence.table[1].observed_value 'C' is not in the observed vocabulary (['A', 'B']) [type=value_error, input_value={'id': 'L', 'model': {'ru...'experiment_ids': ['E']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error"
+ },
+ "O1_T3_reordered": {
+  "case_labels": [
+   [
+    "X=0",
+    "X=1"
+   ],
+   [
+    "X=1",
+    "X=0"
+   ]
+  ],
+  "same_groups_by_label": true,
+  "same_outcome": true
+ },
+ "O2_C3_reordered": {
+  "case_labels": [
+   [
+    "X=0",
+    "X=1"
+   ],
+   [
+    "X=1",
+    "X=0"
+   ]
+  ],
+  "same_groups_by_label": true,
+  "same_outcome": true
+ },
+ "R1a_paired_group_dropped": {
+  "refused": "model_result: paired.groups must place each of the 2 cases once; missing [1], repeated []"
+ },
+ "R1b_paired_groups_empty": {
+  "refused": "model_result: paired.groups must place each of the 2 cases once; missing [0, 1], repeated []"
+ },
+ "R1c_case_index_out_of_range": {
+  "refused": "model_result: paired.groups name case positions [99], outside 0..1"
+ },
+ "R1d_partial_run_claims_all_cases": {
+  "refused": "model_result: paired.applies_to is 'all_cases', which the scenario and baseline sides' applies_to do not support"
+ },
+ "R1e_duplicate_case_label": {
+  "refused": "model_result.window.cases repeats a case label"
+ },
+ "R1f_cases_explored_differs": {
+  "refused": "model_result: 2 case labels, cases_explored 3, cases_total 3; the labels must number cases_explored, at most cases_total"
+ },
+ "R1g_complete_flag_contradicts_counts": {
+  "refused": "model_result.exploration_complete is True with 1 of 4 cases explored"
+ },
+ "R1h_case_in_two_groups": {
+  "refused": "model_result: paired.groups must place each of the 2 cases once; missing [], repeated [0]"
+ },
+ "R1i_directions_differ_from_groups": {
+  "refused": "model_result: paired.directions ['increase'] differ from the directions of its groups ['increase', 'no_change']"
+ },
+ "R1j_scenario_case_missing": {
+  "refused": "model_result: scenario.groups must place each of the 2 cases once; missing [1], repeated []"
+ },
+ "R1k_paired_without_pairing": {
+  "refused": "model_result: the target's paired directions are present while pairing.status is 'not_paired'"
+ },
+ "R1l_no_baseline_status_with_baseline": {
+  "refused": "model_result.window.pairing.status is 'no_baseline', but the result has baseline"
+ },
+ "R1m_baseline_side_without_baseline": {
+  "refused": "model_result: the window target's baseline side does not match whether the result has a baseline"
+ },
+ "R2_spec_reference_differs": {
+  "comparability": "correspondence_unresolved",
+  "comparison_id": "mo-62c08a734186eebd",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [
+   "state_or_review_correspondence"
+  ],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "observed_categories": [],
+  "reasons": [
+   "readout_spec_reference_differs_from_mapping_versus (readout_spec.reference='untreated', mapping.versus='B')"
+  ],
+  "reference_values": [
+   1.0
+  ],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ },
+ "R2b_differs_even_when_accepted": {
+  "comparability": "correspondence_unresolved",
+  "comparison_id": "mo-35fb1637c213851f",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [
+   "state_or_review_correspondence"
+  ],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "observed_categories": [],
+  "reasons": [
+   "readout_spec_reference_differs_from_mapping_versus (readout_spec.reference='untreated', mapping.versus='B')"
+  ],
+  "reference_values": [
+   1.0
+  ],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ },
+ "R2c_spec_reference_agrees": {
+  "comparability": "comparable",
+  "comparison_id": "mo-9554e53b73418b09",
+  "correspondence_accepted": true,
+  "explored_result": "consistent",
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "observed_categories": [],
+  "reasons": [],
+  "reference_values": [
+   1.0
+  ],
+  "relation": "single_match",
+  "result": "consistent",
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ }
+}

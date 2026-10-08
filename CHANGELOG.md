@@ -7,6 +7,36 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`compare_model_observation`: one model claim against one observed claim, under a stated
+  correspondence** (`research/model_observation.py`;
+  `docs/research_sessions/model_observation_link_v0/`).
+  - **Inputs:**
+    - a `run_logic_model` window result (or its identifying subset);
+    - `ExperimentRun`s read through one `ObservationMapping` by `observe.read_mapping`, the
+      arm-reading part of `compare_observations`, moved out with its behaviour unchanged;
+    - a link with an explicit model-value → observed-value table, `asks`, window and baseline
+      correspondences, and who stated them.
+  - **Refused:** selections that are not exactly one claim.
+  - **Before any value is compared:** `outside_model_representation`,
+    `correspondence_unresolved` or `insufficient`.
+  - **Comparable inputs** give consistent, inconsistent or undecided:
+    - several model values containing the observed one give undecided;
+    - with incomplete exploration, `explored_result` is given and `result` is undecided.
+  - **Not done:** no same-word mapping, no below-detection → absence → inactive, no new
+    threshold.
+  - **Tests:** synthetic contract cases T1–T8 and the ERK regression (M2: magnitude outside the
+    model; category unresolved).
+  - **Review r1** (`model_observation_link_v0/review_r1/`):
+    - a model result whose fields contradict each other is refused, naming the field;
+    - a `readout_spec.reference` that differs from `mapping.versus` makes the comparison
+      `correspondence_unresolved`;
+    - recorded categorical values compare through an explicit `observed_vocabulary` and table,
+      as written.
+    - Scope correction: v0 recorded the categorical T1–T3 asked for as numeric change cases.
+  - **Review r2** (`model_observation_link_v0/review_r2/`): a paired group that names cases but
+    carries no direction is refused instead of dropped; a claim without a prediction is never
+    related as inconsistent; a declared category is compared only through the table, so one
+    named `indeterminate` is not read as the rule's between-bands class.
 - **`run_logic_model` window view** (`simulation/logic.py`; `docs/research_sessions/logic_window_v0/`).
   - `view: "window"` with `window: {first, last, targets}` summarises the same run over a range
     of logical steps, instead of sending every step.

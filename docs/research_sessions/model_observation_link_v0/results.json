@@ -1,0 +1,461 @@
+{
+ "E1_magnitude": {
+  "comparability": "outside_model_representation",
+  "comparison_id": "mo-e4aa640422c23323",
+  "correspondence_accepted": false,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "no_change"
+  ],
+  "needs": [
+   "richer_model",
+   "state_or_review_correspondence"
+  ],
+  "observation_meaning": "not_classified",
+  "observation_reasons": [
+   "no_decision_rule"
+  ],
+  "observation_status": "insufficient",
+  "observed": null,
+  "reasons": [
+   "magnitude_not_computed_by_a_boolean_model",
+   "model_value_without_correspondence",
+   "observation_not_classified"
+  ],
+  "reference_values": [
+   1.109195402
+  ],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   6.00862069
+  ]
+ },
+ "E2_category": {
+  "comparability": "correspondence_unresolved",
+  "comparison_id": "mo-d5f51c8676191e85",
+  "correspondence_accepted": false,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "no_change"
+  ],
+  "needs": [
+   "state_or_review_correspondence"
+  ],
+  "observation_meaning": "not_classified",
+  "observation_reasons": [
+   "no_decision_rule"
+  ],
+  "observation_status": "insufficient",
+  "observed": null,
+  "reasons": [
+   "model_value_without_correspondence",
+   "observation_not_classified"
+  ],
+  "reference_values": [
+   1.109195402
+  ],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   6.00862069
+  ]
+ },
+ "T1_consistent": {
+  "comparability": "comparable",
+  "comparison_id": "mo-21ac8e56b815f041",
+  "correspondence_accepted": true,
+  "explored_result": "consistent",
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "reasons": [],
+  "reference_values": [
+   1.0
+  ],
+  "relation": "single_match",
+  "result": "consistent",
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ },
+ "T2_inconsistent": {
+  "comparability": "comparable",
+  "comparison_id": "mo-399d57aecaeb4efe",
+  "correspondence_accepted": true,
+  "explored_result": "inconsistent",
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "decrease",
+  "reasons": [],
+  "reference_values": [
+   1.0
+  ],
+  "relation": "outside",
+  "result": "inconsistent",
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   0.5,
+   0.6
+  ]
+ },
+ "T3_partial": {
+  "comparability": "comparable",
+  "comparison_id": "mo-cfcaee0ba86392e7",
+  "correspondence_accepted": true,
+  "explored_result": "undecided",
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase",
+   "no_change"
+  ],
+  "needs": [],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "reasons": [],
+  "reference_values": [
+   1.0
+  ],
+  "relation": "partial",
+  "result": "undecided",
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ },
+ "T4_meaning": {
+  "comparability": "correspondence_unresolved",
+  "comparison_id": "mo-33763628a51c2c20",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "no_change"
+  ],
+  "needs": [
+   "state_or_review_correspondence"
+  ],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "reasons": [
+   "model_value_without_correspondence"
+  ],
+  "reference_values": [
+   1.0
+  ],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ },
+ "T4b_magnitude": {
+  "comparability": "outside_model_representation",
+  "comparison_id": "mo-0ae83af5e142378a",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "no_change"
+  ],
+  "needs": [
+   "richer_model"
+  ],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "reasons": [
+   "magnitude_not_computed_by_a_boolean_model"
+  ],
+  "reference_values": [
+   1.0
+  ],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ },
+ "T5_detection": {
+  "comparability": "correspondence_unresolved",
+  "comparison_id": "mo-8b56756566d9e060",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "inactive"
+  ],
+  "needs": [
+   "state_or_review_correspondence"
+  ],
+  "observation_meaning": "analytical_detection",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "absent",
+  "reasons": [
+   "model_value_without_correspondence"
+  ],
+  "reference_values": [],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": []
+ },
+ "T6_reference_roles": {
+  "comparability": "comparable",
+  "comparison_id": "mo-9e716f0b18b7249c",
+  "correspondence_accepted": true,
+  "explored_result": "consistent",
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "reasons": [],
+  "reference_values": [
+   1.0
+  ],
+  "relation": "single_match",
+  "result": "consistent",
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0
+  ]
+ },
+ "T6b_host_proposed_reference": {
+  "comparability": "correspondence_unresolved",
+  "comparison_id": "mo-3ecb46fcea5030aa",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": "consistent",
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [
+   "state_or_review_correspondence"
+  ],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "reasons": [
+   "observation_reference_host_proposed"
+  ],
+  "reference_values": [
+   1.0
+  ],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0
+  ]
+ },
+ "T6c_baseline_differs": {
+  "comparability": "correspondence_unresolved",
+  "comparison_id": "mo-a3875af00d5c8e08",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [
+   "state_or_review_correspondence"
+  ],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "reasons": [
+   "baseline_correspondence_differs_from_mapping_versus"
+  ],
+  "reference_values": [
+   1.0
+  ],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ },
+ "T7_left_out": {
+  "comparability": "comparable",
+  "comparison_id": "mo-5b2c3b65617e09c0",
+  "correspondence_accepted": true,
+  "explored_result": "consistent",
+  "if_accepted": null,
+  "left_out": {
+   "excluded": 1,
+   "missing": 1
+  },
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "reasons": [],
+  "reference_values": [
+   1.0
+  ],
+  "relation": "single_match",
+  "result": "consistent",
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0
+  ]
+ },
+ "T7b_no_rule": {
+  "comparability": "insufficient",
+  "comparison_id": "mo-886c8c712a0fc038",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [
+   "state_or_review_correspondence"
+  ],
+  "observation_meaning": "not_classified",
+  "observation_reasons": [
+   "no_decision_rule"
+  ],
+  "observation_status": "insufficient",
+  "observed": null,
+  "reasons": [
+   "observation_not_classified"
+  ],
+  "reference_values": [
+   1.0
+  ],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ },
+ "T7c_partial_exploration": {
+  "comparability": "comparable",
+  "comparison_id": "mo-166e6d2cdb0c4138",
+  "correspondence_accepted": true,
+  "explored_result": "consistent",
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "explored_cases_only",
+  "model_values": [
+   "increase"
+  ],
+  "needs": [
+   "check_record"
+  ],
+  "observation_meaning": "quantitative_change",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "increase",
+  "reasons": [
+   "model_exploration_incomplete"
+  ],
+  "reference_values": [
+   1.0
+  ],
+  "relation": "single_match",
+  "result": "undecided",
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0,
+   2.2
+  ]
+ },
+ "T7d_not_computed": {
+  "comparability": "insufficient",
+  "comparison_id": "mo-819daa7d0568ef86",
+  "correspondence_accepted": true,
+  "explored_result": null,
+  "if_accepted": null,
+  "left_out": {},
+  "model_applies_to": "all_cases",
+  "model_values": [],
+  "needs": [
+   "richer_model"
+  ],
+  "observation_meaning": "analytical_detection",
+  "observation_reasons": [],
+  "observation_status": "compared",
+  "observed": "present",
+  "reasons": [
+   "model_values_not_computed"
+  ],
+  "reference_values": [],
+  "relation": null,
+  "result": null,
+  "scientific_validity_checked": false,
+  "treatment_values": [
+   2.0
+  ]
+ }
+}
