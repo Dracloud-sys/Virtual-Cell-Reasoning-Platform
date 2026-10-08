@@ -192,15 +192,57 @@ A platform that is cautious, refuses to overcall, and errs toward `insufficient_
 defensible thing to be. The question Finding 1 raises is whether the threshold for leaving that
 state was set against real data or against the questions it was going to be asked.
 
+## What the gate edit changed, and what it did not
+
+The γH2AX privilege is gone. `proliferation_signal` now asks for at least one senescence axis
+measured and reading **low while none reads high**, rather than naming γH2AX; and an
+*unreported* doubling time no longer blocks a call, while a *worsening* one still does.
+
+Two results, and the second is the more interesting one.
+
+**The external evaluation moved: `status_match` 2/9 → 4/9.** EXT-3a and EXT-3b are now
+correct — though that is the corrected encoding doing the work as much as the gate.
+
+**All four in-house scorecards are byte-identical, per question.** A material change to the
+positive-call gate left 10/10 · 10/10 · 6/6 · 10/10 completely unmoved. That is the thesis of
+this whole exercise stated as a measurement: the in-house set cannot see a change to the one
+rule that decides whether anything is ever called a candidate.
+
+One thing it *could* see, and did. The first cut of the change cleared the gate on "some axis
+reads low", and **IMM-Q10 caught it** — that question is deliberately contradictory (γH2AX
+high, p21 high, SA-β-gal low) and a single clean reading was outvoting two that screamed
+senescence. Generalizing which marker counts must not become letting a caller cherry-pick.
+The in-house suite is a regression net, it did its job here, and nothing above is an argument
+for retiring it.
+
+### The remaining five failures have one cause
+
+EXT-1, EXT-2b, EXT-2c, EXT-4a and EXT-5 still return `insufficient_evidence`. Every one of
+them reports **no senescence axis at all** — no SA-β-gal, p16, p21 or γH2AX. What they report
+is passages, karyotype, morphology, anchorage dependence and differentiation.
+
+Which is what the survey says the field reports: passages/PDL 54%, differentiation 30%,
+morphology 26%, karyotype 24% — against SA-β-gal at 8%. **Requiring a senescence axis at all
+is still requiring something 92% of these papers do not publish.**
+
+The obvious next move is to let a normal karyotype contribute to a positive call. It would
+flip EXT-2c and EXT-4a immediately. It is **not** done here, because it is a larger judgement
+than the one authorized: `genomic_stability` is currently declared orthogonal — *"instability
+does not stop the cells proliferating, so it cannot retract a call the proliferation axes
+support"* — and making stability *support* a call reverses that axis's declared role rather
+than widening a panel. That is a decision about what this vertical means by its own model,
+and it belongs to a person.
+
 ## Two open domain questions
 
-**EXT-3a/3b's encoding is wrong and its correction is not an unattended run's to make.**
-Fixing `DT_trend` to `worsening` is required by admissibility rule 3 — it restores what the
-paper reports, and leaving a known transcription error in place would be the worse sin.
-Changing `expected_status` is a different act: it would be revising an expected answer *after
-seeing the score*, in the direction that raises fidelity, which is the first thing the protocol
-prohibits. The correction is warranted by the paper's own words, and it is still a person's to
-authorize. Until then the case stands as recorded, with this note attached.
+**EXT-3a/3b's encoding was wrong; the correction is applied, and how it was authorized is
+part of the record.** `DT_trend` is restored to `worsening` (required by admissibility rule 3
+— it puts back what the paper reports). `expected_status` and `reported_outcome` are changed
+to the non-candidate branch, which is a different kind of act: revising an expected answer
+*after* a score existed, in the direction that raises fidelity, is the first thing the
+protocol prohibits an unattended run from doing. It was put to a person and authorized
+explicitly rather than folded in quietly. The basis is the paper's own Discussion, quoted in
+the spec.
 
 **EXT-2a's expected status is disputed, and is recorded as disputed rather than settled.**
 Akimov 2005 reports a clear negative — hTERT alone did not prolong replicative capacity — but
