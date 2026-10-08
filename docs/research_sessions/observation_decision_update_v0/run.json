@@ -1,0 +1,19 @@
+{
+ "code": {
+  "git_head": "19f7269ceb7af13c1660f91b5c8bf13e3e40e8f6",
+  "src_uncommitted_changes": false
+ },
+ "calls": {
+  "compare_model_observation": 2,
+  "run_logic_model": 0
+ },
+ "inputs_sha256": {
+  "observation_decision_update_v0/before.json": "d52627ccde76cbe072e16a8e2de13d40992a8ae743ba22295b7e937a2659ac41",
+  "logic_window_v0/window_results.json": "3ffb6ccd263436d312d7e89a37a467b9137673116135c31927c45d4c68dd53d3",
+  "logic_biology_v1/results.json": "d108d2fafacef1948afa127b904ab299ebb2b6f5150c2d88a1c8e6195987b532",
+  "logic_biology_v1/prereg/case.json": "9889c2a1b35eed13742c69d14e658d497c711d48c7ecb54c87422d203e3da4bb",
+  "erk_pmek_measurement_v0/extracted.json": "78eb22857d50e642741b3ca67eed7787bcd797a54908754433593a68ab139838",
+  "model_observation_link_v0/cases.py": "b9db9d66b4a7ebbd2ea5e2ab90a8294ec81521c66bebdbb619593a20448937e5"
+ },
+ "comparison_sha256": "861da95d7dc78194af9de3177bda1b51a76ca8551617f8dd824406941a4d80ee"
+}
