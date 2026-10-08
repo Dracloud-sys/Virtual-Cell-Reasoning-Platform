@@ -12,6 +12,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -272,7 +273,15 @@ def test_inputs_are_untouched(server, categorical):
 def test_the_review_results_rebuild(mod, server):
     recorded = json.loads((CASE / "results.json").read_text())
     for name, args in mod.all_cases(server).items():
-        assert mod.summary(mod.attempt(server, args)) == recorded[name], name
+        got = mod.summary(mod.attempt(server, args))
+        assert _unversioned(got) == _unversioned(recorded[name]), name
+
+
+def _unversioned(value):
+    # A refusal relayed from pydantic ends with its docs URL, which names the installed
+    # version (errors.pydantic.dev/2.13/...). Only that version is ignored; the rest is compared.
+    text = re.sub(r"errors\.pydantic\.dev/[0-9.]+/", "errors.pydantic.dev/", json.dumps(value))
+    return json.loads(text)
 
 
 def test_the_original_records_are_unchanged():

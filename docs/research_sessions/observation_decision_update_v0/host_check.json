@@ -1,0 +1,28 @@
+{
+ "about": "One call of the live host tool compare_model_observation (mcp__virtualcell__compare_model_observation), for the M1 comparison. A cross-check of the product path, not part of the decision's input.",
+ "input": "The M1 arguments of run_comparison.py, with the window reduced to the pMEK target and without the window's limits and final_step_only fields, to keep the payload to 6,037 bytes of compact JSON. Typed into the tool call by the host.",
+ "host_returned": {
+  "comparison_id": "mo-e6a40859774e51bf",
+  "link_sha256": "cf05703a392316ab47f28b9e94725ff513a6bb21f65f72e6ef232f216cc7ce54",
+  "observations_sha256": "d72ed0881ee0f24346df0179bb88e0f6eb12f534420a36ce6f1ead6780784fd8",
+  "comparability": "comparable",
+  "relation": "partial",
+  "result": "undecided",
+  "explored_result": "undecided",
+  "model_values": ["increase", "no_change"],
+  "observed": "increase",
+  "pairwise": [5.417098],
+  "correspondence_accepted": false
+ },
+ "local_same_input": {
+  "comparison_id_as_built": "mo-b795a6273a523801",
+  "comparison_id_with_pbs_value_typed_as_int_1": "mo-e6a40859774e51bf",
+  "explanation": "The host input had the PBS reading as the integer 1 where the built input has 1.0. That changes observations_sha256 and so comparison_id; the link hash, the outcome and every other field are the same. With the same bytes, local and host give the same comparison_id."
+ },
+ "what_this_shows": [
+  "The host's tool returns the same outcome as the in-process product call for this input.",
+  "The host's response carries observed_vocabulary and observed_categories, so it serves code at least as recent as review r1; the cached tool description seen by the host does not list observed_vocabulary. The exact deployed commit is not established."
+ ],
+ "not_done": "The M2 comparison was not sent to the host (one representative call). No other host tool was called.",
+ "calls": {"host compare_model_observation": 1, "local compare_model_observation (cross-check only)": 3}
+}

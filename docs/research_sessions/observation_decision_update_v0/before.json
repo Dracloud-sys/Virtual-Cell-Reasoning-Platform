@@ -1,0 +1,57 @@
+{
+ "about": "Fixed before compare_model_observation was run for this case. Written by the host (Claude Code). A retrospective decision update on published observations: every observation used here was already read and recorded in earlier work (logic_biology_v1, erk_pmek_measurement_v0), and the model outputs are stored records. It is not a holdout, a blinded test or an independent prediction.",
+ "known_before_fixing": [
+  "The Fig 6B values used (HCT116, U0126 50 uM 6.00862069, DMSO 1.109195402, both relative to PBS) and the paper's wording ('pMek levels rise sharply', six-fold HCT116, three- to four-fold SW480) were read in earlier work.",
+  "The stored window results give M1 KRAS pMEK paired directions {increase, no_change} in one group of 32 cases, and M2 KRAS pMEK {no_change} in 32 cases. The code's outcome for both models can therefore be anticipated from the records; running it is a check of the contract's reading, not a prediction.",
+  "logic_biology_v1 revision r1 already reads B01/B10 as 'conditionally compatible' for M1 (ordinal) and '불일치*' for M2 (needs the equal-category = equal-level assumption)."
+ ],
+ "question": {
+  "id": "Q-site",
+  "text": "In the ERK case, should the working base model keep the ERK-dependent feedback at RAF (M1_feedback_on_RAF) rather than at RAS (M2_feedback_on_RAS), and what should be checked next to decide it?",
+  "goal": "Choose the feedback site the case's next model work builds on, and the one check that would most change that choice."
+ },
+ "D0": {
+  "id": "D0-site",
+  "recorded_in": [
+   "docs/research_sessions/logic_biology_v1/prereg/case.json (models: M1 'Base model', M2 alternative), a677c62",
+   "docs/research_sessions/logic_biology_v1/README.md sections 6-7, a677c62/346c1b6",
+   "docs/research_sessions/logic_biology_v1/revision_r1/README.md section 2, 1b6ba87",
+   "docs/research_sessions/erk_pmek_measurement_v0/README.md and review_r1/README.md, 1f5b41c/67584b7"
+  ],
+  "decision": "Keep M1_feedback_on_RAF as the base model and M2_feedback_on_RAS as a sensitivity alternative. O1 (pMEK in KRAS-mutant lines under a MEK inhibitor) is the only scorable question that separates them; on it M1 is conditionally compatible and M2 disagrees under the identity readout.",
+  "why_reasonable_then": "M1's RAF-level feedback rests on a cited abstract (Pratilas 2009, lit-8c8245921a71); the paper's own reasoning names the RAF-level feedback (lit-03d068babab3, lit-7bd2d4075c0e); and M2's KRAS rows disagree with a reported rise.",
+  "planned_next_action": "Obtain the uncorrected Bio-Plex readings, blanks and assay validation for Fig 6B or 6D (erk_pmek_measurement_v0 review_r1 section 5)."
+ },
+ "comparison_fixed": {
+  "models": [
+   {"role": "base", "model_id": "M1_feedback_on_RAF", "record": "logic_window_v0/window_results.json key 'M1_feedback_on_RAF/KRAS'"},
+   {"role": "alternative, fixed with the base in logic_biology_v1", "model_id": "M2_feedback_on_RAS", "record": "logic_window_v0/window_results.json key 'M2_feedback_on_RAS/KRAS'"}
+  ],
+  "comparison": "KRAS_MEKi vs KRAS_control; window steps 18-24; target pMEK1_S217_S221_BioPlex; claim change",
+  "observation": "The run and mapping of model_observation_link_v0 cases.py erk_cases(), unchanged: HCT116, U0126 50 uM (6.00862069) against DMSO (1.109195402), 24 h from the results text, versus DMSO. The 50 uM arm was chosen in PR #41 and labelled there as a post hoc choice; other doses are not compared here.",
+  "rule": {
+   "comparison": "ratio",
+   "increase_at_or_above": 3.0,
+   "declared_by": "host",
+   "basis": "The lowest fold change the authors themselves call a rise for this experiment: 'three- to four-fold' in SW480 (B01, lit-69aab6e67fdb). Encodes the authors' wording; it is not a statistical, assay or biological threshold. No no_change or decrease band is declared, because nothing in the source supports one; any ratio below 3.0 is 'indeterminate'."
+  },
+  "table": [
+   {"model_value": "increase", "observed_value": "increase"},
+   {"model_value": "decrease", "observed_value": "decrease"},
+   {"model_value": "no_change", "observed_value": "no_change"}
+  ],
+  "table_assumption": "The no_change entry reads two equal Boolean states as an unchanged measured level. That is an assumption, not a computation (revision_r1 section 2). It is stated by the host and not accepted by a researcher.",
+  "correspondence_stated_by": "host",
+  "researcher_acceptance": "none",
+  "other_assumptions": [
+   "Logical steps 18-24 stand for the 24 h measurement (host assumption, unverified).",
+   "The model's MEKi input stands for 50 uM U0126 (post hoc choice from PR #41).",
+   "The model baseline (no MEKi) stands for DMSO."
+  ]
+ },
+ "what_would_change_D0": [
+  "If M1 is not a single match to the observed class, the preference for M1 on O1 rests only on the host's ordinal aggregation, and D0's reason 'M1 is conditionally compatible on O1' has to be re-examined.",
+  "If M2's disagreement exists only through the no_change table entry, O1 does not show a disagreement in Boolean category, and D0's reason 'M2 disagrees' has to be re-examined.",
+  "If the comparison is not comparable at all (unresolved, insufficient or outside), D0 stays as it is and the gap is recorded."
+ ]
+}
