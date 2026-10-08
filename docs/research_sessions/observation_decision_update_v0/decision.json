@@ -1,0 +1,93 @@
+{
+ "decision_id": "D1-site",
+ "written_by": "host (Claude Code), after reading comparison.json; not a researcher's decision",
+ "question_id": "Q-site",
+ "prior": {"id": "D0-site", "file": "before.json"},
+ "read": [
+  {
+   "model_id": "M1_feedback_on_RAF",
+   "comparison_id": "mo-5526e1d7404ba90d",
+   "link_id": "odu-M1_feedback_on_RAF-pmek-kras",
+   "link_sha256": "cf05703a392316ab47f28b9e94725ff513a6bb21f65f72e6ef232f216cc7ce54",
+   "observations_sha256": "8f3c36f17188d80f9d6f26d7e90bd0bd7a06995d3a56f75d76c21a6100a22c0b",
+   "model_sha256": "8c80ebbc4ca7df71b897e26e8f6c4e3b972c1fc887598eb660e34706df5c8c9e",
+   "run_sha256": "6b324d1aa7f9f3f2bbbfd891406645fdd23e2892e337fb1eb989f39055bd0a23",
+   "fields_read": ["comparability", "relation", "result", "explored_result", "if_accepted", "reasons", "needs", "model_claim", "observation", "correspondence"]
+  },
+  {
+   "model_id": "M2_feedback_on_RAS",
+   "comparison_id": "mo-a13253779baf2030",
+   "link_id": "odu-M2_feedback_on_RAS-pmek-kras",
+   "link_sha256": "6bf6129bb793460185de1d0943bfa112341d70b78f0f0d854dc9f4b129ec3482",
+   "observations_sha256": "8f3c36f17188d80f9d6f26d7e90bd0bd7a06995d3a56f75d76c21a6100a22c0b",
+   "model_sha256": "cd141d175cf91e265b969fe77e9eb63156c7ff438d60823f6c1a5d0b75ccd6f4",
+   "run_sha256": "b9a06b4bcc5ab259b177745ae38b03b95416f8916a2ad06e3540bdfd623d254f",
+   "fields_read": ["comparability", "relation", "result", "explored_result", "if_accepted", "reasons", "needs", "model_claim", "observation", "correspondence"]
+  }
+ ],
+ "A_code_checked": [
+  "Both comparisons are 'comparable': no claim-form, window, baseline (DMSO) or table gap, and the observation was classified. reasons and needs are empty; if_accepted is null because nothing was held.",
+  "The observation, under the host-declared rule (increase at a ratio of 3.0 or more, anchored on the authors' wording), is one pairwise ratio, 6.00862069 / 1.109195402 = 5.417, classified 'increase'. One value per arm; no replicate.",
+  "M1: one group of all 32 cases, each case giving both 'increase' and 'no_change' over steps 18-24. Translated through the table: {increase, no_change}. relation 'partial', result 'undecided' (explored_result the same; exploration complete).",
+  "M2: one group of all 32 cases, 'no_change' at every step. Translated: {no_change}. relation 'outside', result 'inconsistent'.",
+  "correspondence_accepted is false for both: the table, the window and dose correspondences and the rule are the host's; no researcher accepted them. scientific_validity_checked is false."
+ ],
+ "B_host_interpretation": [
+  "M1 does not predict the observed rise as a single outcome. Its 'partial' is not two groups of cases disagreeing: every case alternates between rise and no change from step to step, because M1 has no fixed point under KRAS_control (revision_r1 section 1). D0's 'M1 is conditionally compatible on O1' came from the ordinal aggregation, which the comparison contract does not make; under the contract, O1 gives M1 no support beyond 'the rise is among the values it allows'.",
+  "M2's 'inconsistent' comes entirely from the table entry no_change -> no_change, that is, from reading two equal Boolean states as an unchanged measured level. Without that entry the same comparison would be correspondence_unresolved (as E2 in model_observation_link_v0). O1 therefore does not show M2 wrong in Boolean category.",
+  "So O1, read through the contract, does not separate RAF-level from RAS-level feedback by itself. The separation D0 relied on comes from two host assumptions (ordinal reading for M1, equal-category = equal-level for M2), not from the observation."
+ ],
+ "C_not_yet_distinguished": [
+  "For M1's 'partial': whether the step-to-step alternation reflects a real oscillatory tendency of a RAF-level negative loop, or only that a complete veto (NOT pERK) with KRAS always on has no steady state under these rules. The comparison cannot tell these apart, and no other update scheme was run.",
+  "For M2's 'inconsistent': whether feedback in KRAS-mutant lines does not act at RAS, or the Boolean identity readout simply cannot express a rise within 'active'. Both give the same comparison output."
+ ],
+ "review_candidates": [
+  {
+   "id": "RC1",
+   "element": "table entry no_change -> no_change (before.json comparison_fixed.table_assumption)",
+   "why": "M2's inconsistency rests on it alone; it is a host assumption, not accepted by a researcher."
+  },
+  {
+   "id": "RC2",
+   "element": "M1_R_RAF (complete veto by pERK) together with KRASmut always on, under KRAS_control",
+   "why": "It is why M1 gives {increase, no_change} in every case and therefore cannot make a single prediction for O1."
+  },
+  {
+   "id": "RC3",
+   "element": "intervention correspondence: MEKi on = U0126 50 uM (before.json comparison_fixed.other_assumptions)",
+   "why": "The compared arm was a post hoc choice; at 0.5-1 uM the values fall on both sides of the references and at 100 uM (HCT116) far below them (erk_pmek_measurement_v0 review_r1 section 2). The observed 'increase' holds for the chosen arm only."
+  }
+ ],
+ "decisions": [
+  {
+   "target_id": "O1",
+   "decision": "hold",
+   "reason": "Under the comparison contract O1 gives M1 'partial/undecided' and M2 'inconsistent' only through the equal-category = equal-level table entry (RC1, RC2). O1 is held as evidence about the feedback site: it is no longer counted for M1 or against M2.",
+   "next_experiment_ids": ["N1-rasgtp-braf-record"]
+  },
+  {
+   "target_id": "M2_R_RAS",
+   "decision": "hold",
+   "reason": "D0 treated M2 as disagreeing on O1. That disagreement depends on RC1 only, so the RAS-level feedback rule is neither lowered nor promoted. Its own distinguishing consequence, a Ras-GTP rise in BRAF-mutant lines under MEK inhibition (stored window: M2 BRAF RasGTP all_inactive -> all_active, 'increase' in all 32 cases; M1 'no_change'), has not been compared with any observation.",
+   "next_experiment_ids": ["N1-rasgtp-braf-record"]
+  },
+  {
+   "target_id": "M1_feedback_on_RAF",
+   "decision": "keep",
+   "reason": "Kept as the working base model for the case's structure: no comparison here contradicts it in Boolean category. What changes is the ground for keeping it: it is no longer kept because O1 favours it, but because its RAF-level rule rests on a cited source (lit-8c8245921a71) and nothing has yet separated it from M2. The site claim itself is held (decisions on O1 and M2_R_RAS).",
+   "next_experiment_ids": ["N1-rasgtp-braf-record"]
+  }
+ ],
+ "D1_summary": "Keep M1 as the working base model; revise D0's justification (O1 no longer counts as support for RAF-level feedback); hold O1 and M2_R_RAS. The feedback-site question stays open until N1.",
+ "changed_from_D0": [
+  "D0: 'on O1 M1 is conditionally compatible and M2 disagrees'. D1: on O1 neither model is separated without a host assumption.",
+  "D0's planned next action (raw Bio-Plex readings) was aimed at the pMEK readout's resolution. D1 replaces it as the first action with a check that separates the models without RC1 or RC2."
+ ],
+ "limits": [
+  "One observation value per arm, one dose, one line (HCT116), one time stated in the text only.",
+  "The rule, the table, the window, dose and baseline correspondences are host-stated and unaccepted.",
+  "The observations and the stored model outputs were known before D0 was written down here; this is a retrospective update, not a prediction test.",
+  "No model was re-run, changed or fitted."
+ ],
+ "next_action": "N1-rasgtp-braf-record"
+}

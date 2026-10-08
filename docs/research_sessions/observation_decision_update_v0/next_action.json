@@ -1,0 +1,39 @@
+{
+ "id": "N1-rasgtp-braf-record",
+ "kind": "existing record check",
+ "proposed_by": "host (Claude Code); a proposal only, not performed",
+ "action": "Read the authors' source data for Fig 4B (Ras activity, GST-Raf-1-RBD pulldown) of Fritsche-Guenther et al. 2011, file msb201127-df4B.txt in the PMC open-access package (PMC3130559.1), and its legend. Establish which cell lines it contains, and whether it has a BRAF V600E line (HT29 or RKO) with and without a MEK inhibitor against a stated control.",
+ "known_about_the_record": [
+  "erk_pmek_measurement_v0/sources.json lists the file as downloaded with the package ('Fig 4B, Ras activity') and not used. Its content (lines, conditions, values) has not been read in any record here.",
+  "The results text read so far reports Ras activation only for Ras-mutated cells: no increase after AZD6244, 2 h, against DMSO (B06, lit-4a9493f38afd). Figures were not read.",
+  "The open-access package is CC BY-NC-SA 3.0; earlier work kept only identifiers, checksums and copied values, not the files."
+ ],
+ "serves_decisions": ["O1", "M2_R_RAS", "M1_feedback_on_RAF"],
+ "why_this_one": [
+  "It separates the two feedback sites without RC1 or RC2. The stored windows give, in BRAF-mutant cells under MEKi, Ras-GTP 'no_change' for M1 (all_active -> all_active) and 'increase' for M2 (all_inactive -> all_active in all 32 cases, one direction at every step). That is a change of Boolean category, so it needs neither the ordinal reading nor the equal-category = equal-level assumption.",
+  "It is a check of an existing public record. If the record holds the answer, no experiment is needed.",
+  "D0's planned action (raw Bio-Plex readings) would refine the pMEK readout but would still leave M1's alternation (RC2) and M2's category question on O1 as they are."
+ ],
+ "not_known": [
+  "Whether df4B contains any BRAF-mutant line, which inhibitor, dose or time, or how many values.",
+  "The time and effort of reading it; access worked in earlier work (sources.json), which is all that is known."
+ ],
+ "branches": [
+  {
+   "if": "df4B shows Ras-GTP higher with the MEK inhibitor than in its control in HT29 or RKO",
+   "then": "Revise Q-site: feedback acting at RAS is supported in BRAF-mutant lines, which M1 cannot express (its RAS is GF OR KRASmut). M1_R_RAS becomes the rule to re-examine; M2_R_RAS is no longer held as merely possible. This does not establish M2 as a whole: a partial RAS-level feedback added to M1 would show the same.",
+   "rests_on": ["stored window M2_feedback_on_RAS/BRAF RasGTP_RBD_pulldown", "Lito 2012 abstract (lit-453db638b05b, category C): in BRAF V600E melanoma, ERK-dependent feedback suppresses Ras function and RAF inhibition increases Ras-GTP; another tissue and another inhibitor, so plausibility only", "readout assumption: Ras-GTP pulldown read as RAS state (case.json readouts)"]
+  },
+  {
+   "if": "df4B shows no rise (equal, or lower) in HT29 or RKO under the inhibitor",
+   "then": "Lower M2_R_RAS as the alternative for these lines: its one category-level prediction is not seen. Keep M1 as the base model with the site question decided for now toward RAF. O1 stays held: it still does not count as support for M1 (RC2 unchanged). A 'no increase' wording is read as no increase, not as an exact no change.",
+   "rests_on": ["stored window M1_feedback_on_RAF/BRAF RasGTP_RBD_pulldown (no_change)", "revision_r1 section 2 on 'no increase' readings"]
+  },
+  {
+   "if": "df4B has no BRAF-mutant line, no inhibitor contrast, or values that cannot be tied to conditions",
+   "then": "No conclusion on the site; D1 stands unchanged. The question becomes a proposal for a new measurement of Ras-GTP in a BRAF V600E line with and without a MEK inhibitor against vehicle. Dose, time and replicate number are not fixed here: nothing in the records gives a basis for them.",
+   "rests_on": ["D1-site"]
+  }
+ ],
+ "all_branches_differ": "Yes: revise toward RAS-level feedback, lower M2, or leave D1 and move to a new measurement."
+}

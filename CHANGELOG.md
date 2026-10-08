@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Observation-driven decision update v0** (`docs/research_sessions/observation_decision_update_v0/`;
+  no product source change). The ERK case's feedback-site decision is read against one published
+  observation through `compare_model_observation`: M1 partial/undecided, M2 inconsistent only via
+  the equal-category = equal-level table entry. D1 (host's): keep M1 as base, hold O1 and
+  `M2_R_RAS`; next action a record check of the authors' Ras-activity source data for BRAF lines.
+  Retrospective, not a prediction test.
 - **`compare_model_observation`: one model claim against one observed claim, under a stated
   correspondence** (`research/model_observation.py`;
   `docs/research_sessions/model_observation_link_v0/`).

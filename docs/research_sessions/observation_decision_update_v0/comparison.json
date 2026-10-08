@@ -1,0 +1,237 @@
+{
+ "M1_feedback_on_RAF": {
+  "comparability": "comparable",
+  "comparison_id": "mo-5526e1d7404ba90d",
+  "correspondence": {
+   "accepted_by": null,
+   "assumptions": [
+    "the model's MEKi input stands for 50 uM U0126 (post hoc choice)",
+    "The no_change entry reads two equal Boolean states as an unchanged measured level. That is an assumption, not a computation (revision_r1 section 2). It is stated by the host and not accepted by a researcher."
+   ],
+   "stated_by": "host",
+   "table": [
+    {
+     "model_value": "increase",
+     "observed_value": "increase"
+    },
+    {
+     "model_value": "decrease",
+     "observed_value": "decrease"
+    },
+    {
+     "model_value": "no_change",
+     "observed_value": "no_change"
+    }
+   ]
+  },
+  "correspondence_accepted": false,
+  "explored_result": "undecided",
+  "if_accepted": null,
+  "limits_count": 7,
+  "link_id": "odu-M1_feedback_on_RAF-pmek-kras",
+  "link_sha256": "cf05703a392316ab47f28b9e94725ff513a6bb21f65f72e6ef232f216cc7ce54",
+  "model_claim": {
+   "applies_to": "all_cases",
+   "cases_explored": 32,
+   "form": "change",
+   "groups": [
+    {
+     "cases": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+     ],
+     "model_values": [
+      "increase",
+      "no_change"
+     ],
+     "observed_values": [
+      "increase",
+      "no_change"
+     ]
+    }
+   ],
+   "model_values": [
+    "increase",
+    "no_change"
+   ]
+  },
+  "model_id": "M1_feedback_on_RAF",
+  "model_sha256": "8c80ebbc4ca7df71b897e26e8f6c4e3b972c1fc887598eb660e34706df5c8c9e",
+  "needs": [],
+  "observation": {
+   "left_out": {},
+   "observed": "increase",
+   "pairwise": [
+    5.417098
+   ],
+   "pairwise_classes": [
+    "increase"
+   ],
+   "reasons": [],
+   "reference_link": "structural",
+   "reference_values": [
+    1.109195402
+   ],
+   "status": "compared",
+   "treatment_values": [
+    6.00862069
+   ],
+   "versus": "DMSO"
+  },
+  "observation_findings": [],
+  "observation_meaning": "quantitative_change",
+  "observations_sha256": "8f3c36f17188d80f9d6f26d7e90bd0bd7a06995d3a56f75d76c21a6100a22c0b",
+  "reasons": [],
+  "relation": "partial",
+  "result": "undecided",
+  "run_sha256": "6b324d1aa7f9f3f2bbbfd891406645fdd23e2892e337fb1eb989f39055bd0a23",
+  "scientific_validity_checked": false,
+  "window_request_sha256": "56b1e4f35adbba95e4a5f5cba6e77e75ab9f10dcf170b88b4d0fea555964898d"
+ },
+ "M2_feedback_on_RAS": {
+  "comparability": "comparable",
+  "comparison_id": "mo-a13253779baf2030",
+  "correspondence": {
+   "accepted_by": null,
+   "assumptions": [
+    "the model's MEKi input stands for 50 uM U0126 (post hoc choice)",
+    "The no_change entry reads two equal Boolean states as an unchanged measured level. That is an assumption, not a computation (revision_r1 section 2). It is stated by the host and not accepted by a researcher."
+   ],
+   "stated_by": "host",
+   "table": [
+    {
+     "model_value": "increase",
+     "observed_value": "increase"
+    },
+    {
+     "model_value": "decrease",
+     "observed_value": "decrease"
+    },
+    {
+     "model_value": "no_change",
+     "observed_value": "no_change"
+    }
+   ]
+  },
+  "correspondence_accepted": false,
+  "explored_result": "inconsistent",
+  "if_accepted": null,
+  "limits_count": 7,
+  "link_id": "odu-M2_feedback_on_RAS-pmek-kras",
+  "link_sha256": "6bf6129bb793460185de1d0943bfa112341d70b78f0f0d854dc9f4b129ec3482",
+  "model_claim": {
+   "applies_to": "all_cases",
+   "cases_explored": 32,
+   "form": "change",
+   "groups": [
+    {
+     "cases": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+     ],
+     "model_values": [
+      "no_change"
+     ],
+     "observed_values": [
+      "no_change"
+     ]
+    }
+   ],
+   "model_values": [
+    "no_change"
+   ]
+  },
+  "model_id": "M2_feedback_on_RAS",
+  "model_sha256": "cd141d175cf91e265b969fe77e9eb63156c7ff438d60823f6c1a5d0b75ccd6f4",
+  "needs": [],
+  "observation": {
+   "left_out": {},
+   "observed": "increase",
+   "pairwise": [
+    5.417098
+   ],
+   "pairwise_classes": [
+    "increase"
+   ],
+   "reasons": [],
+   "reference_link": "structural",
+   "reference_values": [
+    1.109195402
+   ],
+   "status": "compared",
+   "treatment_values": [
+    6.00862069
+   ],
+   "versus": "DMSO"
+  },
+  "observation_findings": [],
+  "observation_meaning": "quantitative_change",
+  "observations_sha256": "8f3c36f17188d80f9d6f26d7e90bd0bd7a06995d3a56f75d76c21a6100a22c0b",
+  "reasons": [],
+  "relation": "outside",
+  "result": "inconsistent",
+  "run_sha256": "b9a06b4bcc5ab259b177745ae38b03b95416f8916a2ad06e3540bdfd623d254f",
+  "scientific_validity_checked": false,
+  "window_request_sha256": "f992eb0214bf188d2351676d01d79c13b3942d13900b96cea1fd495d5efd51d1"
+ }
+}
