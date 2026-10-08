@@ -315,10 +315,11 @@ the observation's reference is held, the readout_spec's reference differs from t
 `versus`, or a model value has no table entry), insufficient (the observation is not classified,
 or model values are not computed), or comparable. Only when comparable does it give `relation`
 and `result`: consistent when every model value maps to the observed class, inconsistent when
-none does, undecided when only some do or the class is between the rule's bands. With
-exploration incomplete, `explored_result` is given and `result` is undecided. `needs` says what
-would move it: check_record, state_or_review_correspondence, richer_model or more_measurement;
-which to pursue is yours.
+none does, undecided when only some do or the class is between the rule's bands (a declared
+category is only ever compared through the table). With exploration incomplete,
+`explored_result` is given and `result` is undecided. `needs` says what would move it:
+check_record, state_or_review_correspondence, richer_model or more_measurement; which to pursue
+is yours.
 
 Observed present/absent is analytical (a valid non-zero reading, or one recorded below the
 producer's detection limit), not biological presence or a model state. Every result holds

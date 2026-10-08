@@ -33,6 +33,10 @@ to [Semantic Versioning](https://semver.org/).
     - recorded categorical values compare through an explicit `observed_vocabulary` and table,
       as written.
     - Scope correction: v0 recorded the categorical T1–T3 asked for as numeric change cases.
+  - **Review r2** (`model_observation_link_v0/review_r2/`): a paired group that names cases but
+    carries no direction is refused instead of dropped; a claim without a prediction is never
+    related as inconsistent; a declared category is compared only through the table, so one
+    named `indeterminate` is not read as the rule's between-bands class.
 - **`run_logic_model` window view** (`simulation/logic.py`; `docs/research_sessions/logic_window_v0/`).
   - `view: "window"` with `window: {first, last, targets}` summarises the same run over a range
     of logical steps, instead of sending every step.

@@ -431,14 +431,14 @@ def compare_model_observation(
 
     relation = result = explored = if_accepted = None
     if status == "comparable":
-        relation, explored = _relate(claim, row.observed)
+        relation, explored = _relate(claim, row.observed, vocabulary is not None)
         result = explored if claim.applies_to == "all_cases" else "undecided"
     elif (
         set(reasons) - {"model_exploration_incomplete"} == {"observation_reference_host_proposed"}
         and row.status == "compared"
         and not claim.not_computed
     ):
-        _, would = _relate(claim, row.observed)
+        _, would = _relate(claim, row.observed, vocabulary is not None)
         if_accepted = would if claim.applies_to == "all_cases" else "undecided"
 
     # A link without a vocabulary hashes as it did before the field existed.
@@ -570,6 +570,15 @@ def _check_window(r: ModelWindowResult, target: Any, claim: str) -> None:
     if target.paired is not None:
         p = target.paired
         _check_cover("paired.groups", [g.cases for g in p.groups], n)
+        for i, g in enumerate(p.groups):
+            if g.cases and not g.directions:
+                # Every step of a non-empty window gives each case a direction, "undetermined"
+                # included, so a group of cases with none is not something the engine returns.
+                raise LinkRefused(
+                    f"model_result: paired.groups[{i}].directions is empty for cases {g.cases}; "
+                    "each case has a direction for every step of the window (undetermined "
+                    "when not computed)"
+                )
         union = sorted({d for g in p.groups for d in g.directions})
         if union != sorted(p.directions):
             raise LinkRefused(
@@ -627,7 +636,11 @@ def _model_claim(r: ModelWindowResult, link: ModelObservationLink, target: Any) 
             if "undetermined" in g.directions:
                 not_computed = True
             values = [d for d in g.directions if d != "undetermined"]
+            if not values:
+                not_computed = True
             groups.append(_group(values, table, g.cases))
+    if not groups:
+        not_computed = True
     if form == "state":
         complete = target.scenario.applies_to == "all_cases"
     else:
@@ -691,10 +704,19 @@ def _unresolved(link: ModelObservationLink, row: ReadoutComparison, claim: Model
     return out
 
 
-def _relate(claim: ModelClaim, observed: str | None) -> tuple[Relation, Result]:
-    if observed == "indeterminate":
+def _relate(claim: ModelClaim, observed: str | None, declared: bool) -> tuple[Relation, Result]:
+    """How the observed class stands to the model's translated values.
+
+    `declared` says the observed value is a category from `observed_vocabulary`, compared only
+    through the table; otherwise it is the rule's or detection's class, where "indeterminate"
+    means between the rule's bands. A claim without a translated value in every group has no
+    prediction to compare, which is never read as a mismatch.
+    """
+    if not claim.groups or any(not g.observed_values for g in claim.groups):
+        raise ValueError("no model prediction to compare: a group has no translated value")
+    if observed == "indeterminate" and not declared:
         return "between_bands", "undecided"
-    translated = {v for g in claim.groups for v in (g.observed_values or [])}
+    translated = {v for g in claim.groups for v in g.observed_values}
     if translated == {observed}:
         return "single_match", "consistent"
     if observed not in translated:
