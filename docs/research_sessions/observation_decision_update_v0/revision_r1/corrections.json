@@ -1,0 +1,89 @@
+{
+ "about": "Revision r1 of observation_decision_update_v0. Corrects how the original records describe their own scope. The original files (before.json, run_comparison.py, comparison.json, run.json, decision.json, next_action.json, host_check.json, README.md) are kept byte for byte (../SHA256SUMS). Nothing is re-run and no rule, threshold, table or model is changed.",
+ "ci_failure": {
+  "run": 37794692374,
+  "job": 113370972239,
+  "tested_commit": "6d2108dc1a9bd4a54f3ed41adfe9c71f1b68acd0 (test merge of 1103343 into 06bf651)",
+  "failing_test": "tests/integration/test_model_observation_review_r1.py::test_the_review_results_rebuild",
+  "assertion": "C8_no_vocabulary_declared: recorded refusal ends 'https://errors.pydantic.dev/2.13/v/value_error', the rebuilt one 'https://errors.pydantic.dev/2.14/v/value_error'. C9 and C10 differ the same way. Every other character is equal.",
+  "cause": "CI installs the latest dependencies. pydantic resolved to 2.14.0 (pydantic-core 2.50.0); the records were made under 2.13.5 (2.46.5). A refusal relays pydantic's ValidationError text, whose docs URL carries the installed version. review_r1/results.json stores that text verbatim, so the rebuild test depends on the pydantic version.",
+  "reproduction": [
+   "Local env (pydantic 2.13.5) at 1103343: full suite 2745 passed, 5 skipped. This is the earlier local pass.",
+   "Worktree at 6d2108d, fresh venv with `uv pip install -e .[dev]` (python 3.12.3; CI used 3.12.15), pydantic 2.14.0: the test alone fails with the assertion above; the full suite gives 1 failed, 2744 passed, 5 skipped, the same as CI.",
+   "No other stored record contains a versioned pydantic docs URL (searched docs/ and tests/)."
+  ],
+  "not_this_cases_change": "The test and its records come from PR #41 and are not in this PR's diff; the same failure appears on main under the same install.",
+  "fix": "Test only: test_the_review_results_rebuild now compares both sides with the version in 'errors.pydantic.dev/<version>/' removed. Every other character of each refusal is still compared. review_r1/results.json and its SHA256SUMS are unchanged. Passes under pydantic 2.13.5 and 2.14.0.",
+  "product_code": "Unchanged. The product relays the library's error text in refusal details, including the docs URL; that is how the version entered the record. Reported, not changed."
+ },
+ "d0_timing": {
+  "what_D0_is": "A reconstruction written for this work, not the latest recorded judgement. It combines M1's 'Base model' label from the pre-registration (a design choice made before any comparison) with the r0-style reading of B01/B10 ('M1 conditionally compatible, M2 disagrees').",
+  "what_it_left_out": [
+   "logic_biology_v1/revision_r1 section 2: M2's 불일치 on B01/B10 is marked * and 'needs the assumption that two active Boolean states mean no measured change'; 'not a refutation of feedback acting at RAS'.",
+   "logic_biology_v1/revision_r1 section 3: M1's KRAS ordinal agreements 'stay 조건부 양립 under that assumption ... not promoted to a verified result'; the strict reading stays 미결정.",
+   "erk_pmek_measurement_v0/review_r1 section 4: 'Without that assumption: M2 says nothing about the size of pMek within active, so the rise is outside what it computes. That is neither agreement nor disagreement.'"
+  ],
+  "consequence": "Because D0 omitted these limits, D1 reads as a larger change than it is. Against the latest recorded judgement, O1 was already not evidence that separates the sites without host assumptions."
+ },
+ "what_was_compared": {
+  "compared": "M1 and M2, KRAS pMEK window (steps 18-24, change) against Fig 6B HCT116, U0126 50 uM vs DMSO.",
+  "not_compared": "Ras-GTP in BRAF lines. It was named during the work as a discriminating readout and is in next_action.json only as a proposal; no Ras-GTP observation was compared.",
+  "progress_vs_final": "A progress message during the work called Ras-GTP in BRAF cells 'a cleaner discriminator than pMEK'. The final run compared pMEK only; that claim is corrected below (n1_r1)."
+ },
+ "new_vs_reconfirmed": {
+  "reconfirmed_with_identifiers": [
+   "M1 gives no single direction for O1 (strict 미결정 in r0/r1): now as comparison mo-5526e1d7404ba90d, partial/undecided, with the per-case model values visible.",
+   "M2's disagreement depends on the equal-category = equal-level assumption (revision_r1 *, review_r1 section 4): now as comparison mo-a13253779baf2030, inconsistent through the single table entry no_change -> no_change.",
+   "Both comparisons are tied to stored run and model hashes, the observation's hash and the link's hash, and reproduce byte for byte."
+  ],
+  "new": [
+   "A next action different from the last recorded one: a record check of the Fig 4B source data (msb201127-df4B.txt) instead of raw Bio-Plex readings. Its scope is corrected below.",
+   "One live host call returning the same outcome as the product path for the M1 input.",
+   "Two gaps recorded: a text-stated direction cannot enter a change comparison without a host DecisionRule; HostDecision targets are validated only against a ResearchReport plan."
+  ],
+  "not_achieved": "A research judgement changed by a new observation. No observation new to the case was compared; the D1 'hold' on O1 restates the latest recorded limit rather than a change caused by this comparison. This work is a retrospective reproduction and linking of existing limits, plus one new proposed action."
+ },
+ "rule_level": {
+  "rule": "ratio >= 3.0 counts as increase (before.json comparison_fixed.rule), kept unchanged",
+  "what_it_is": "A case-specific calculation assumption the host constructed after the observations were known, so that the tool path could be run. An example of running the path.",
+  "what_it_is_not": [
+   "a classification criterion given by the paper: 'three- to four-fold' (SW480) and 'six-fold' (HCT116) are reported effect sizes, not a threshold for calling an increase;",
+   "a validated assay or analysis criterion;",
+   "new biological evidence."
+  ],
+  "mismatch_kept": "The basis cites the SW480 wording, while the comparison is HCT116 U0126 50 uM against DMSO; the authors' fold changes are not stated against DMSO, and the values are normalised to PBS. The rule's anchor and the compared ratio therefore use different lines and possibly different denominators.",
+  "tool_requirement": "compare_model_observation needs a DecisionRule to classify a change. That the tool requires one gives the rule no research justification.",
+  "effect": "The classified 'increase' (ratio 5.417) is a product of this assumption. The M1 and M2 outcomes are recorded as results under it, not as findings about the data."
+ },
+ "n1_r1": {
+  "supersedes": "../next_action.json, the 'why_this_one' claim that the Ras-GTP readout separates the sites without measurement assumptions, and its three branches. The action itself (read the Fig 4B source data and legend) is kept; it is still not performed.",
+  "kept_apart": [
+   "a quantitative Ras-GTP signal going up or down;",
+   "an analytical detection class;",
+   "the model's Boolean active / inactive;",
+   "the overall adequacy of a candidate model;",
+   "the biological site where feedback acts."
+  ],
+  "corrections": [
+   "M1's active -> active does not forbid a measured rise in Ras-GTP signal; it only computes the same Boolean category.",
+   "Comparing M2's inactive -> active with data needs a category correspondence (what signal counts as inactive), an intervention correspondence (which inhibitor, dose), a time correspondence (which steps stand for which time) and a sample-level correspondence. None is established.",
+   "So neither 'rise -> M1 refuted / RAS-level feedback confirmed' nor 'no rise or decrease -> lower M2, decide for RAF' is used."
+  ],
+  "question": "Does the file contain a valid BRAF-mutant treatment-vs-control comparison, and can only the quantitative direction be read from it, or can state categories be compared under a stated basis?",
+  "branches": [
+   {
+    "if": "a category correspondence and the intervention and observation scope can be stated with a basis",
+    "then": "compare the candidates' predictions within that scope; keep separating the candidates from deciding where the feedback acts in the cell"
+   },
+   {
+    "if": "only quantitative values, with no category correspondence",
+    "then": "keep the observation as recorded; it does not refute either model's category prediction"
+   },
+   {
+    "if": "no comparison group, missing conditions or quality, or the needed data are absent",
+    "then": "keep the current judgement (D1) and record exactly what is missing"
+   }
+  ],
+  "promise": "None. Whether the file answers the question is unknown; its contents have not been read."
+ }
+}

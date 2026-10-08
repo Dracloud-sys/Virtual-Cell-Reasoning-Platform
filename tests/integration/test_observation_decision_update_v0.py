@@ -171,9 +171,36 @@ def test_branches_lead_to_different_decisions(recorded):
         "model_observation_link_v0/review_r1",
         "model_observation_link_v0/review_r2",
         "observation_decision_update_v0",
+        "observation_decision_update_v0/revision_r1",
     ],
 )
 def test_records_match_their_checksums(folder):
     for line in (DOCS / folder / "SHA256SUMS").read_text().splitlines():
         digest, name = line.split()
         assert hashlib.sha256((DOCS / folder / name).read_bytes()).hexdigest() == digest, name
+
+
+# --- revision r1: corrections point at what exists ------------------------------------------- #
+
+
+def test_revision_r1_cites_the_comparisons_and_limits_that_exist(recorded):
+    corrections = _json(CASE / "revision_r1" / "corrections.json")
+    reconfirmed = " ".join(corrections["new_vs_reconfirmed"]["reconfirmed_with_identifiers"])
+    for out in recorded["comparison"].values():
+        assert out["comparison_id"] in reconfirmed
+    # The limits D0 left out are quoted from records that still say them.
+    r1 = (DOCS / "logic_biology_v1" / "revision_r1" / "README.md").read_text()
+    review = (DOCS / "erk_pmek_measurement_v0" / "review_r1" / "README.md").read_text()
+    assert "not a refutation of feedback acting at RAS" in r1
+    assert "not promoted to a verified result" in r1
+    assert "says nothing about the size of pMek within" in review
+    # The rule is described, not changed.
+    rule = recorded["before"]["comparison_fixed"]["rule"]
+    assert str(rule["increase_at_or_above"]) in corrections["rule_level"]["rule"]
+
+
+def test_revision_r1_keeps_the_action_and_replaces_only_its_premises(recorded):
+    n1 = _json(CASE / "revision_r1" / "corrections.json")["n1_r1"]
+    assert "../next_action.json" in n1["supersedes"]
+    assert recorded["next"]["id"] == recorded["decision"]["next_action"]
+    assert len(n1["branches"]) == 3 and len({b["then"] for b in n1["branches"]}) == 3
