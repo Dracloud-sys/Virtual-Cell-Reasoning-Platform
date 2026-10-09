@@ -1,0 +1,41 @@
+{
+ "file": "msb201127-df4B.txt",
+ "md5": "5b20422c6124264857d86eee1aad931f",
+ "sha256": "a2504c46737d2d1f2a7afacee2c3a74a85c490ccb2b2482e632b60b0215ae349",
+ "header_lines": {
+  "1": "Data derived from quantitative Westernblots and calculated as described in the Materials and Methods section Immunoblotting.\t\t\t",
+  "2": "cell type\ttreatment\tGTP-bound Ras\tSD",
+  "3": "cell type\ttreatment with\tmean normalised integrated density (normalisation to DMSO control)\tstandard deviation"
+ },
+ "rows": [
+  {
+   "line": 4,
+   "cell_line": "HCT116",
+   "treatment": "DMSO",
+   "value": "1",
+   "sd": "0"
+  },
+  {
+   "line": 5,
+   "cell_line": "HCT116",
+   "treatment": "AZD6244",
+   "value": "0.9",
+   "sd": "0.04"
+  },
+  {
+   "line": 6,
+   "cell_line": "SW480",
+   "treatment": "DMSO",
+   "value": "1",
+   "sd": "0"
+  },
+  {
+   "line": 7,
+   "cell_line": "SW480",
+   "treatment": "AZD6244",
+   "value": "0.81",
+   "sd": "0.21"
+  }
+ ],
+ "values_as": "strings copied from the file; the column header gives them as mean normalised integrated density (normalisation to DMSO control) and standard deviation"
+}

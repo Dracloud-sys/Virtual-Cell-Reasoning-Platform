@@ -1,0 +1,65 @@
+{
+ "about": "N1 of observation_decision_update_v0 (as corrected in its revision_r1): a record check of Fritsche-Guenther et al. 2011 (doi 10.1038/msb.2011.27, PMC3130559, CC BY-NC-SA 3.0), Fig 4B. Performed 2026-10-08/09 by the host (Claude Code). No model was run and no comparison was made.",
+ "question": "Does the authors' Fig 4B source data contain a MEK-inhibitor treatment-vs-control comparison in a BRAF-mutant line, and if so, at what level could it be compared with the current models?",
+ "read": {
+  "source_data": "msb201127-df4B.txt, all 7 lines (extracted.json)",
+  "figure": "PMC3130559.1.pdf page 7, rendered with pdftoppm at 110 dpi and looked at: Figure 4 panels A, B, C",
+  "legend": "Figure 4 legend, panels A-C (Europe PMC full-text XML cached in earlier work; the same text is printed under the figure on the rendered page)",
+  "methods": "Materials and methods: 'Ras activity assay' and 'Immunoblotting' paragraphs; the results paragraph citing Figure 4B"
+ },
+ "items": {
+  "cell_lines": {
+   "value": ["HCT116", "SW480"],
+   "sources": ["df4B lines 4-7", "legend 4B: 'HCT116 and SW480 cells'", "figure 4B blots and bars labelled HCT116 and SW480"]
+  },
+  "treatment_and_control": {
+   "value": "AZD6244 against DMSO in the file; the blots also show an untreated lane ('ut'), which the file does not quantify",
+   "sources": ["df4B column 2 (DMSO, AZD6244)", "figure 4B lane labels '+GTP +GDP ut AZD DMSO'", "legend 4B: 'compared with untreated or vehicle controls'"]
+  },
+  "time_and_concentration": {
+   "value": "2 h, from the methods and the results text. Concentration: the methods' general treatment list gives '1 uM AZD6244'; the Ras activity paragraph itself states no concentration, and neither the file nor the 4B legend does.",
+   "sources": ["methods 'Ras activity assay': 'treatment with AZD6244 for 2 h'", "results: 'cells treated with AZD6244 for 2 h'", "methods general treatment list: '1 uM AZD6244'"]
+  },
+  "analyte_and_readout": {
+   "value": "GTP-bound (active) Ras: GST-Raf-1-RBD affinity precipitation (Thermo Scientific active Ras pulldown kit), then western blot with a Ras-specific antibody",
+   "sources": ["legend 4B", "methods 'Ras activity assay'", "df4B line 2 'GTP-bound Ras'"]
+  },
+  "units_and_normalisation": {
+   "value": "Dimensionless: 'mean normalised integrated density (normalisation to DMSO control)'. DMSO is 1 with SD 0 in both lines by construction.",
+   "sources": ["df4B line 3", "df4B line 1: 'calculated as described in the Materials and Methods section Immunoblotting'"],
+   "not_established": "Whether a loading control was applied to the pulldown bands. The Immunoblotting paragraph says intensities were normalised to Tubulin, Actin or GAPDH and expressed relative to scramble controls; how that applies to this pulldown is not stated."
+  },
+  "per_replicate_or_summary": {
+   "value": "Summary only: one mean and one SD per condition. No per-replicate value is in the file.",
+   "sources": ["df4B lines 3-7"]
+  },
+  "replicates": {
+   "value": "'quantification relative to DMSO for three assays' (legend). Whether the three assays are independent biological replicates, separate blots of one lysate set, or otherwise is not stated.",
+   "sources": ["legend 4B"]
+  },
+  "gtp_gdp_controls": {
+   "value": "GTP and GDP were added to lysates as positive and negative assay controls. They are controls of the pulldown, not treatment arms, and have no rows in the file.",
+   "sources": ["legend 4B", "figure 4B lanes '+GTP' and '+GDP'"]
+  },
+  "braf_treatment_vs_control": {
+   "value": "absent from what was read",
+   "sources": ["df4B has HCT116 and SW480 only", "legend 4B names HCT116 and SW480 only", "figure 4B shows HCT116 and SW480 only"],
+   "not_moved_across_panels": "Panel 4A has HT29 (BRAF V600E) with U0126, read as phospho-Raf-1 and Raf-1 mobility; panel 4C has CaCo2 expressing B-Raf V600E with AZD6244, read as relative pMek. Neither is a Ras-GTP measurement, and neither is used here."
+  }
+ },
+ "data_levels": {
+  "source_data_file": "authors' summary of quantified western blots, normalised to DMSO (not raw instrument signal)",
+  "figure": "representative blots and bar chart of the same means and SDs; not read off for values",
+  "text": "results: 'no increase of Ras activation after abrogation of Erk activity in the Ras-mutated cells' (qualitative)"
+ },
+ "outcome": {
+  "branch": "A: no valid BRAF comparison in the data read",
+  "meaning": "The record is not suited to N1's purpose. The path of separating M1 and M2 by Ras-GTP in BRAF-mutant lines ends here for this record. This is a check of data suitability, not a judgement update and not a model result.",
+  "not_claimed": [
+   "that no Ras-GTP data for BRAF-mutant lines exist anywhere in the paper or in other public sources: only Fig 4B's file, figure, legend and the linked methods were read",
+   "that the KRAS values say anything about the BRAF-condition models",
+   "support for or against M1 or M2"
+  ],
+  "model_comparison": "not performed. Branch A: no BRAF observation to compare; the KRAS Ras-GTP values are already the paper's O5 statement (B06 in logic_biology_v1), and re-running a comparison on them is outside this check."
+ }
+}

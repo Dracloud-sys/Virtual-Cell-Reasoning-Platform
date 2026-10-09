@@ -1,0 +1,45 @@
+{
+ "about": "Every location used or tried for this check, with its status. Files are not committed (CC BY-NC-SA 3.0); only identifiers, checksums and the copied rows of the Fig 4B source data are.",
+ "license": "CC BY-NC-SA 3.0 (package manifest license_code 'CC BY-NC-SA')",
+ "accessed": [
+  {
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/PMC3130559.1.json",
+   "when": "2026-10-08",
+   "status": "200; package manifest",
+   "used_for": ["md5 of msb201127-df4B.txt: 5b20422c6124264857d86eee1aad931f", "md5 of PMC3130559.1.pdf: 11d44b88fbafeaad8c7c420c4b44320a"]
+  },
+  {
+   "url": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3130559.1/msb201127-df4B.txt",
+   "when": "2026-10-08",
+   "status": "HTTP 404 (305-byte error body, discarded). A failure of this location on this date, not an absence of the data: the manifest still lists the file, and erk_pmek_measurement_v0/sources.json records it as downloaded from here on 2026-10-06.",
+   "used": false
+  },
+  {
+   "path": "host cache /tmp/claude-0/erk/msb201127-df4B.txt (downloaded 2026-10-06 in erk_pmek_measurement_v0, never read until now)",
+   "status": "md5 5b20422c6124264857d86eee1aad931f, equal to the manifest; sha256 a2504c46737d2d1f2a7afacee2c3a74a85c490ccb2b2482e632b60b0215ae349; 360 bytes",
+   "used_for": ["all 7 lines (extract.py -> extracted.json)"]
+  },
+  {
+   "path": "host cache /tmp/claude-0/erk/PMC3130559.1.pdf",
+   "status": "md5 11d44b88fbafeaad8c7c420c4b44320a, equal to the manifest",
+   "used_for": ["page 7 rendered with pdftoppm -r 110 and looked at: Figure 4 A-C and its legend"]
+  },
+  {
+   "path": "host cache /tmp/claude-0/erk/epmc.xml (Europe PMC full-text XML, fetched 2026-10-06 in earlier work)",
+   "status": "read; no checksum source to verify against. Its Figure 4 legend matches the legend printed on the rendered page 7.",
+   "used_for": ["Figure 4 legend text", "methods 'Ras activity assay' and 'Immunoblotting'", "results paragraph citing Figure 4B"]
+  },
+  {
+   "url": "https://link.springer.com/article/10.1038/msb.2011.27 (official publisher page, 'Source Data for Figure 4B')",
+   "status": "not tried: the cached file already matched the manifest checksum, so a second copy was not needed",
+   "used": false
+  }
+ ],
+ "counts": {
+  "network fetches": 2,
+  "searches": 0,
+  "pdf pages rendered and viewed": 1,
+  "run_logic_model calls": 0,
+  "compare_model_observation calls": 0
+ }
+}
