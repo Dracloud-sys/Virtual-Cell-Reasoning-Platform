@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **N1 record check: Fig 4B Ras activity** (`docs/research_sessions/rasgtp_fig4b_check_v0/`; no
+  product source change). The authors' Fig 4B source data, figure and legend hold only HCT116
+  and SW480 (AZD6244 vs DMSO, 2 h, DMSO-normalised means): no BRAF-mutant comparison, so the
+  record does not serve N1. No model run or comparison; D1 unchanged.
 - **Observation-driven decision update v0** (`docs/research_sessions/observation_decision_update_v0/`;
   no product source change). The ERK case's feedback-site decision is read against one published
   observation through `compare_model_observation`: M1 partial/undecided, M2 inconsistent only via
